@@ -96,6 +96,16 @@ function OrderDetail() {
                 <div className="font-medium">{order.receiver_name}</div>
                 <div className="text-sm text-muted-foreground">{order.receiver_phone}</div>
                 <div className="text-sm text-muted-foreground leading-relaxed">{order.shipping_address}</div>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.shipping_address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                >
+                  <MapPin className="h-3 w-3" />
+                  在地圖查看
+                  <ExternalLink className="h-3 w-3" />
+                </a>
               </div>
               <p className="mt-3 pt-3 border-t border-border/40 text-[11px] text-muted-foreground/80">
                 此地址為下單時所使用的收件資訊，之後變更預設地址不會影響本訂單。
