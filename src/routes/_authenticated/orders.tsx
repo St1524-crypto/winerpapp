@@ -741,6 +741,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             name: customer,
             email: email || null,
             phone: phone || null,
+            company_id: currentCompanyId!,
           })
           .select("id")
           .single();
