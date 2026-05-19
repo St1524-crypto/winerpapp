@@ -47,12 +47,16 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       const { data: mems, error: memErr } = await supabase
         .from("company_members")
         .select("role, company_id, companies:company_id(id, company_name, status, logo_url)")
         .eq("user_id", user.id);
-      if (memErr) console.error("[use-current-company] load members error:", memErr);
+      if (memErr) {
+        console.error("[use-current-company] load members error:", memErr);
+        throw memErr;
+      }
 
       const list: CompanyOption[] = (mems ?? [])
         .map((m: any) => {
@@ -75,7 +79,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         .select("current_company_id")
         .eq("id", user.id)
         .maybeSingle();
-      if (profErr) console.error("[use-current-company] load profile error:", profErr);
+      if (profErr) {
+        console.error("[use-current-company] load profile error:", profErr);
+        throw profErr;
+      }
 
       let cur = prof?.current_company_id ?? null;
       // Auto-select first if none set or invalid
@@ -88,8 +95,9 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         if (updErr) console.error("[use-current-company] auto-set profile error:", updErr);
       }
       setCurrentCompanyId(cur);
-    } catch (e) {
+    } catch (e: any) {
       console.error("[use-current-company] load failed:", e);
+      setError(e?.message ?? "載入公司清單失敗");
     } finally {
       setLoading(false);
     }
