@@ -950,7 +950,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
           <div className="flex items-center justify-between border-t pt-3">
             <div className="text-xs text-muted-foreground">
-              小計 {fmt(subtotalNum)} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)}
+              小計 {fmt(subtotalNum)}{taxAdded ? ` ＋ 稅 ${fmt(taxAmount)}` : ""} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)}
             </div>
             <div className="text-sm">
               訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
