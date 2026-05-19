@@ -1,11 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 
 export function MobileBottomNav() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { count, setOpen } = useCart();
+  const { user } = useAuth();
 
   const items = [
     { to: "/shop", icon: Home, label: "首頁" },
@@ -29,7 +31,10 @@ export function MobileBottomNav() {
           購物車
           {count > 0 && <Badge className="absolute top-2 right-6 h-4 min-w-4 px-1 rounded-full text-[9px]">{count}</Badge>}
         </button>
-        <Link to="/login" className="flex flex-col items-center justify-center gap-1 text-[10px] text-muted-foreground">
+        <Link
+          to={user ? "/shop/account" : "/login"}
+          className={`flex flex-col items-center justify-center gap-1 text-[10px] ${path.startsWith("/shop/account") ? "text-primary" : "text-muted-foreground"}`}
+        >
           <User className="h-5 w-5" />
           會員
         </Link>
