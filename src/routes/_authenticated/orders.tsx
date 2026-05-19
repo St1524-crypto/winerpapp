@@ -480,7 +480,23 @@ function OrderDetailDialog({
                   <div className="border-t border-border my-1" />
                   <Row k="訂單總額" v={fmt(order.total_amount)} bold />
                   <Row k="已收款" v={fmt(paidTotal)} accent="text-success" />
-                  <Row k="未收款" v={fmt(unpaid)} accent={unpaid > 0 ? "text-warning" : ""} />
+                  <Row k="未收款" v={fmt(unpaid)} accent={unpaid > 0 ? "text-warning" : "text-success"} />
+                  <div className="pt-2 space-y-1">
+                    <Progress
+                      value={Number(order.total_amount) > 0
+                        ? Math.min(100, (paidTotal / Number(order.total_amount)) * 100)
+                        : 0}
+                      className="h-2"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>收款進度</span>
+                      <span>
+                        {Number(order.total_amount) > 0
+                          ? Math.round((paidTotal / Number(order.total_amount)) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
