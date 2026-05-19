@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Product } from "@/types/product";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 interface Props {
   open: boolean;
