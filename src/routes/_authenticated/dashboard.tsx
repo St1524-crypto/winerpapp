@@ -54,18 +54,50 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
 function Dashboard() {
   const { logoUrl } = useBranding();
   const [stats, setStats] = useState({ total: 0, low: 0, featured: 0, today: 0 });
+  const [proc, setProc] = useState({ todayInAmount: 0, pendingPO: 0, vendorCount: 0, lowCount: 0 });
+  const [purchaseTrend, setPurchaseTrend] = useState<{ day: string; amount: number }[]>([]);
 
   useEffect(() => {
     (async () => {
+      const sb: any = supabase;
       const since = new Date(); since.setHours(0, 0, 0, 0);
       const [{ count: total }, { data: all }, { count: featured }, { count: today }] = await Promise.all([
-        supabase.from("products").select("id", { count: "exact", head: true }),
-        supabase.from("products").select("stock,safe_stock"),
-        supabase.from("products").select("id", { count: "exact", head: true }).eq("featured", true),
-        supabase.from("products").select("id", { count: "exact", head: true }).gte("created_at", since.toISOString()),
+        sb.from("products").select("id", { count: "exact", head: true }),
+        sb.from("products").select("stock,safe_stock"),
+        sb.from("products").select("id", { count: "exact", head: true }).eq("featured", true),
+        sb.from("products").select("id", { count: "exact", head: true }).gte("created_at", since.toISOString()),
       ]);
       const low = (all ?? []).filter((p: any) => p.stock <= p.safe_stock).length;
       setStats({ total: total ?? 0, low, featured: featured ?? 0, today: today ?? 0 });
+
+      // 採購相關
+      const [{ data: todayGr }, { count: pendingPO }, { count: vendorCount }] = await Promise.all([
+        sb.from("goods_receiving").select("purchase_order_id, received_date").gte("received_date", since.toISOString()),
+        sb.from("purchase_orders").select("id", { count: "exact", head: true }).in("status", ["submitted", "confirmed", "partial"]),
+        sb.from("vendors").select("id", { count: "exact", head: true }).eq("status", "active"),
+      ]);
+      // 計算今日進貨金額（從 inventory_transactions 計算 purchase_in）
+      const { data: txToday } = await sb.from("inventory_transactions").select("quantity, product_id").eq("type", "purchase_in").gte("created_at", since.toISOString());
+      let todayAmt = 0;
+      if (txToday && txToday.length) {
+        const ids = Array.from(new Set(txToday.map((x: any) => x.product_id).filter(Boolean)));
+        const { data: prices } = await sb.from("products").select("id, cost_price").in("id", ids);
+        const pm: Record<string, number> = {};
+        (prices ?? []).forEach((p: any) => pm[p.id] = Number(p.cost_price) || 0);
+        todayAmt = txToday.reduce((s: number, t: any) => s + (pm[t.product_id] ?? 0) * t.quantity, 0);
+      }
+      setProc({ todayInAmount: todayAmt, pendingPO: pendingPO ?? 0, vendorCount: vendorCount ?? 0, lowCount: low });
+
+      // 採購趨勢（過去 7 天 PO 金額）
+      const since7 = new Date(); since7.setDate(since7.getDate() - 6); since7.setHours(0, 0, 0, 0);
+      const { data: pos } = await sb.from("purchase_orders").select("total_amount, created_at").gte("created_at", since7.toISOString());
+      const buckets: Record<string, number> = {};
+      for (let i = 0; i < 7; i++) { const d = new Date(since7); d.setDate(d.getDate() + i); buckets[d.toISOString().slice(0, 10)] = 0; }
+      (pos ?? []).forEach((p: any) => {
+        const k = new Date(p.created_at).toISOString().slice(0, 10);
+        if (k in buckets) buckets[k] += Number(p.total_amount) || 0;
+      });
+      setPurchaseTrend(Object.entries(buckets).map(([k, v]) => ({ day: k.slice(5), amount: v })));
     })();
   }, []);
 
