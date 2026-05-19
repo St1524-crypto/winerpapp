@@ -18,7 +18,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Building2, Plus, Loader2, Users, Trash2, UserPlus } from "lucide-react";
+import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 
