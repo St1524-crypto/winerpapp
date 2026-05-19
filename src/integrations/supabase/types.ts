@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_statements: {
+        Row: {
+          business_account_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          paid_amount: number
+          statement_month: string
+          status: string
+          total_amount: number
+          unpaid_amount: number
+        }
+        Insert: {
+          business_account_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          paid_amount?: number
+          statement_month: string
+          status?: string
+          total_amount?: number
+          unpaid_amount?: number
+        }
+        Update: {
+          business_account_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          paid_amount?: number
+          statement_month?: string
+          status?: string
+          total_amount?: number
+          unpaid_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_statements_business_account_id_fkey"
+            columns: ["business_account_id"]
+            isOneToOne: false
+            referencedRelation: "business_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -41,6 +85,195 @@ export type Database = {
           id?: string
           metadata?: Json
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      b2b_order_items: {
+        Row: {
+          b2b_order_id: string
+          created_at: string
+          id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          sku: string | null
+          subtotal: number
+          unit_price: number
+        }
+        Insert: {
+          b2b_order_id: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          sku?: string | null
+          subtotal?: number
+          unit_price?: number
+        }
+        Update: {
+          b2b_order_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          sku?: string | null
+          subtotal?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_order_items_b2b_order_id_fkey"
+            columns: ["b2b_order_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_orders: {
+        Row: {
+          business_account_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          order_no: string
+          order_status: string
+          payment_status: string
+          payment_terms: number
+          sales_rep_id: string | null
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          business_account_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_no: string
+          order_status?: string
+          payment_status?: string
+          payment_terms?: number
+          sales_rep_id?: string | null
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          business_account_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_no?: string
+          order_status?: string
+          payment_status?: string
+          payment_terms?: number
+          sales_rep_id?: string | null
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_orders_business_account_id_fkey"
+            columns: ["business_account_id"]
+            isOneToOne: false
+            referencedRelation: "business_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_account_users: {
+        Row: {
+          business_account_id: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          business_account_id: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          business_account_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_account_users_business_account_id_fkey"
+            columns: ["business_account_id"]
+            isOneToOne: false
+            referencedRelation: "business_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_accounts: {
+        Row: {
+          account_level: string
+          address: string | null
+          company_name: string
+          contact_name: string | null
+          created_at: string
+          credit_limit: number
+          credit_used: number
+          email: string | null
+          id: string
+          notes: string | null
+          payment_terms: number
+          phone: string | null
+          sales_rep_id: string | null
+          status: string
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_level?: string
+          address?: string | null
+          company_name: string
+          contact_name?: string | null
+          created_at?: string
+          credit_limit?: number
+          credit_used?: number
+          email?: string | null
+          id?: string
+          notes?: string | null
+          payment_terms?: number
+          phone?: string | null
+          sales_rep_id?: string | null
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_level?: string
+          address?: string | null
+          company_name?: string
+          contact_name?: string | null
+          created_at?: string
+          credit_limit?: number
+          credit_used?: number
+          email?: string | null
+          id?: string
+          notes?: string | null
+          payment_terms?: number
+          phone?: string | null
+          sales_rep_id?: string | null
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -318,6 +551,36 @@ export type Database = {
           },
         ]
       }
+      moq_rules: {
+        Row: {
+          carton_quantity: number
+          created_at: string
+          id: string
+          moq: number
+          product_id: string
+          updated_at: string
+          volume_tiers: Json
+        }
+        Insert: {
+          carton_quantity?: number
+          created_at?: string
+          id?: string
+          moq?: number
+          product_id: string
+          updated_at?: string
+          volume_tiers?: Json
+        }
+        Update: {
+          carton_quantity?: number
+          created_at?: string
+          id?: string
+          moq?: number
+          product_id?: string
+          updated_at?: string
+          volume_tiers?: Json
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -372,6 +635,33 @@ export type Database = {
           order_no?: string
           status?: string
           total_amount?: number
+        }
+        Relationships: []
+      }
+      price_tiers: {
+        Row: {
+          account_level: string
+          created_at: string
+          id: string
+          min_quantity: number
+          price: number
+          product_id: string
+        }
+        Insert: {
+          account_level: string
+          created_at?: string
+          id?: string
+          min_quantity?: number
+          price?: number
+          product_id: string
+        }
+        Update: {
+          account_level?: string
+          created_at?: string
+          id?: string
+          min_quantity?: number
+          price?: number
+          product_id?: string
         }
         Relationships: []
       }
@@ -604,6 +894,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_representatives: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          department: string | null
+          id: string
+          name: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          department?: string | null
+          id?: string
+          name: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          department?: string | null
+          id?: string
+          name?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           created_at: string
@@ -793,6 +1113,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_account_member: {
+        Args: { _account_id: string; _user_id: string }
         Returns: boolean
       }
     }
