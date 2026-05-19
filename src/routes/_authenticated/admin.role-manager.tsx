@@ -56,7 +56,7 @@ const ROLE_TONES: Record<AppRole, string> = {
 type DraftMap = Record<string, Set<AppRole>>;
 
 function RoleManagerPage() {
-  const { roles, user: me } = useAuth();
+  const { roles, user: me, refreshRoles } = useAuth();
   const isAdmin = roles.includes("super_admin");
   const qc = useQueryClient();
 
