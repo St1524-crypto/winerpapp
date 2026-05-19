@@ -53,6 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       roles,
       loading,
       signOut: async () => { await supabase.auth.signOut(); },
+      refreshRoles: async () => {
+        if (session?.user) await loadRoles(session.user.id);
+      },
     }}>
       {children}
     </AuthContext.Provider>
