@@ -12,7 +12,7 @@ import { useBranding } from "@/hooks/use-branding";
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
 function LoginPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, roles } = useAuth();
   const { logoUrl } = useBranding();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
@@ -22,8 +22,10 @@ function LoginPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/dashboard" });
-  }, [user, loading, navigate]);
+    if (!loading && user) {
+      navigate({ to: roles.includes("super_admin") ? "/admin" : "/dashboard" });
+    }
+  }, [user, loading, roles, navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
