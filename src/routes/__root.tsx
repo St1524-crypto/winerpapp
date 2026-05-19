@@ -6,7 +6,6 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/use-auth";
 import { BrandingProvider } from "@/hooks/use-branding";
-import { CompanyProvider } from "@/hooks/use-current-company";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -49,8 +48,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "源晶 ERP — 企業級電商與營運管理系統，整合商品、庫存、訂單、財務與會員。" },
       { name: "theme-color", content: "#0e1626" },
       { property: "og:title", content: "源晶 ERP 管理系統" },
-      { property: "og:description", content: "現代化企業級 ERP / 電商管理平台" },
+      { property: "og:description", content: "源晶 ERP — 企業級電商與營運管理系統，整合商品、庫存、訂單、財務與會員。" },
       { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "源晶 ERP 管理系統" },
+      { name: "twitter:description", content: "源晶 ERP — 企業級電商與營運管理系統，整合商品、庫存、訂單、財務與會員。" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1b20b34c-f72a-4cdd-ba7f-22ad1c9cfa42/id-preview-3306ba07--8759c219-ed53-49ec-b52a-60a002da48ec.lovable.app-1779209020249.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1b20b34c-f72a-4cdd-ba7f-22ad1c9cfa42/id-preview-3306ba07--8759c219-ed53-49ec-b52a-60a002da48ec.lovable.app-1779209020249.png" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
@@ -74,12 +78,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <CompanyProvider>
-          <BrandingProvider>
-            <Outlet />
-            <Toaster richColors position="top-right" />
-          </BrandingProvider>
-        </CompanyProvider>
+        <BrandingProvider>
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </BrandingProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
