@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import {
   Crown, LayoutDashboard, Users, ShieldCheck, Shield, Settings, Bell, FileClock,
-  Package, Tag, Boxes, ShoppingCart, Truck, UserCircle, Wallet, ArrowLeft, Database,
+  Package, Tag, Boxes, ShoppingCart, Truck, UserCircle, Wallet, ArrowLeft, Database, KeyRound,
 } from "lucide-react";
 
 interface AdminNavItem { title: string; url: string; icon: any; }
@@ -26,6 +26,7 @@ const GROUPS: AdminNavGroup[] = [
     label: "身份與安全",
     items: [
       { title: "會員管理", url: "/members", icon: Users },
+      { title: "角色批次管理", url: "/admin/role-manager", icon: KeyRound },
       { title: "角色權限", url: "/rls-test", icon: ShieldCheck },
       { title: "安全中心", url: "/admin/security", icon: Shield },
       { title: "個人資料", url: "/settings", icon: UserCircle },

@@ -52,6 +52,7 @@ import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authe
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
+import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
@@ -279,6 +280,12 @@ const AuthenticatedAdminSecurityRoute =
     path: '/security',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminRoleManagerRoute =
+  AuthenticatedAdminRoleManagerRouteImport.update({
+    id: '/role-manager',
+    path: '/role-manager',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminAuditLogsRoute =
   AuthenticatedAdminAuditLogsRouteImport.update({
     id: '/audit-logs',
@@ -327,6 +334,7 @@ export interface FileRoutesByFullPath {
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -371,6 +379,7 @@ export interface FileRoutesByTo {
   '/shop/products': typeof ShopProductsRoute
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -420,6 +429,7 @@ export interface FileRoutesById {
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -469,6 +479,7 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop/'
     | '/admin/audit-logs'
+    | '/admin/role-manager'
     | '/admin/security'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
@@ -513,6 +524,7 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop'
     | '/admin/audit-logs'
+    | '/admin/role-manager'
     | '/admin/security'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
@@ -561,6 +573,7 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop/'
     | '/_authenticated/admin/audit-logs'
+    | '/_authenticated/admin/role-manager'
     | '/_authenticated/admin/security'
     | '/_authenticated/b2b/accounts'
     | '/_authenticated/finance/bank-accounts'
@@ -891,6 +904,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSecurityRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/role-manager': {
+      id: '/_authenticated/admin/role-manager'
+      path: '/role-manager'
+      fullPath: '/admin/role-manager'
+      preLoaderRoute: typeof AuthenticatedAdminRoleManagerRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/audit-logs': {
       id: '/_authenticated/admin/audit-logs'
       path: '/audit-logs'
@@ -917,11 +937,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
+  AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
+  AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
 }
 
