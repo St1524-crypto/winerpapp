@@ -1019,6 +1019,8 @@ function OrderDetailDialog({
   onChanged: () => void;
 }) {
   const qc = useQueryClient();
+  const { logoUrl } = useBranding();
+  const [printing, setPrinting] = useState(false);
   const detailQ = useQuery({
     queryKey: ["sales-order-detail", orderId],
     enabled: !!orderId,
