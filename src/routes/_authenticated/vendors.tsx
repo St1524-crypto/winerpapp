@@ -19,10 +19,11 @@ interface Vendor {
   id: string; code: string; name: string;
   contact: string | null; phone: string | null; email: string | null;
   tax_id: string | null; bank_account: string | null; payment_terms: string | null;
+  shipping_method: string | null;
   address: string | null; notes: string | null; status: string; created_at: string;
 }
 
-const empty = { code: "", name: "", contact: "", phone: "", email: "", tax_id: "", bank_account: "", payment_terms: "", address: "", notes: "", status: "active" };
+const empty = { code: "", name: "", contact: "", phone: "", email: "", tax_id: "", bank_account: "", payment_terms: "", shipping_method: "", address: "", notes: "", status: "active" };
 
 function Page() {
   const [list, setList] = useState<Vendor[]>([]);
