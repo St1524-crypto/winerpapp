@@ -123,7 +123,15 @@ function NewCompanyPage() {
           <Form {...form}>
             <form
               className="space-y-4"
-              onSubmit={form.handleSubmit((values) => m.mutate(values))}
+              onSubmit={form.handleSubmit(
+                (values) => m.mutate(values),
+                (errors) => {
+                  const first = Object.values(errors)[0] as any;
+                  toast.error("表單驗證失敗", {
+                    description: first?.message ?? "請檢查欄位內容",
+                  });
+                },
+              )}
             >
               <FormField
                 control={form.control}
