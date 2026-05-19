@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { CompanySwitcher } from "@/components/CompanySwitcher";
 
 export function AppHeader() {
   const { user, roles, signOut } = useAuth();
