@@ -564,6 +564,7 @@ function EditCompanyDialog({
           email: company.email,
           phone: company.phone,
           address: company.address,
+          logo_url: company.logo_url,
           status: company.status,
         };
         const changed: Record<string, { from: any; to: any }> = {};
