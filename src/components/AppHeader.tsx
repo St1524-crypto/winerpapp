@@ -6,21 +6,34 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, Bell, LogOut, User } from "lucide-react";
+import { Search, Bell, LogOut, User, Shield, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export function AppHeader() {
   const { user, roles, signOut } = useAuth();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const initial = user?.email?.[0]?.toUpperCase() ?? "U";
+  const isSuperAdmin = roles.includes("super_admin");
+  const inAdmin = pathname.startsWith("/admin");
 
   async function handleSignOut() {
     await signOut();
     toast.success("已登出");
     navigate({ to: "/login" });
+  }
+
+  function toggleAdmin() {
+    if (inAdmin) {
+      navigate({ to: "/dashboard" });
+      toast.success("已切換至營運模式");
+    } else {
+      navigate({ to: "/admin" });
+      toast.success("已切換至管理員模式");
+    }
   }
 
   return (
