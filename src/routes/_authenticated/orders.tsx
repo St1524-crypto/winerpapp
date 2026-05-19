@@ -5,8 +5,10 @@ import { toast } from "sonner";
 import {
   ShoppingCart, Search, Plus, Loader2, Eye, Truck, CreditCard,
   PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check, UserPlus,
-  Package, Trash2,
+  Package, Trash2, Printer,
 } from "lucide-react";
+import { exportOrderPdf } from "@/lib/order-pdf";
+import { useBranding } from "@/hooks/use-branding";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -120,6 +122,31 @@ function OrdersPage() {
   const [tab, setTab] = useState<"all" | keyof typeof ORDER_STATUS>("all");
   const [search, setSearch] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [printingId, setPrintingId] = useState<string | null>(null);
+  const { logoUrl } = useBranding();
+
+  async function handlePrintOrder(orderId: string) {
+    try {
+      setPrintingId(orderId);
+      const [orderRes, itemsRes, paymentsRes] = await Promise.all([
+        supabase.from("sales_orders").select("*").eq("id", orderId).maybeSingle(),
+        supabase.from("sales_order_items").select("*").eq("sales_order_id", orderId).order("created_at"),
+        supabase.from("payments").select("*").eq("sales_order_id", orderId).order("created_at", { ascending: false }),
+      ]);
+      if (orderRes.error || !orderRes.data) throw new Error(orderRes.error?.message ?? "找不到訂單");
+      await exportOrderPdf({
+        order: orderRes.data as any,
+        items: (itemsRes.data ?? []) as any,
+        payments: (paymentsRes.data ?? []) as any,
+        logoUrl,
+      });
+      toast.success("PDF 已產生");
+    } catch (e: any) {
+      toast.error(e?.message ?? "列印失敗");
+    } finally {
+      setPrintingId(null);
+    }
+  }
 
   const ordersQ = useQuery({
     queryKey: ["sales-orders", tab, search],
@@ -271,9 +298,23 @@ function OrdersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" onClick={() => setDetailId(o.id)}>
-                          <Eye className="h-3.5 w-3.5 mr-1" /> 詳情
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => setDetailId(o.id)}>
+                            <Eye className="h-3.5 w-3.5 mr-1" /> 詳情
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handlePrintOrder(o.id)}
+                            disabled={printingId === o.id}
+                            title="列印 PDF"
+                          >
+                            {printingId === o.id
+                              ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                              : <Printer className="h-3.5 w-3.5 mr-1" />}
+                            列印
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -978,6 +1019,8 @@ function OrderDetailDialog({
   onChanged: () => void;
 }) {
   const qc = useQueryClient();
+  const { logoUrl } = useBranding();
+  const [printing, setPrinting] = useState(false);
   const detailQ = useQuery({
     queryKey: ["sales-order-detail", orderId],
     enabled: !!orderId,
@@ -1358,6 +1401,33 @@ function OrderDetailDialog({
         )}
 
         <DialogFooter>
+          {order && (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  setPrinting(true);
+                  await exportOrderPdf({
+                    order: order as any,
+                    items: items as any,
+                    payments: payments as any,
+                    logoUrl,
+                  });
+                  toast.success("PDF 已產生");
+                } catch (e: any) {
+                  toast.error(e?.message ?? "列印失敗");
+                } finally {
+                  setPrinting(false);
+                }
+              }}
+              disabled={printing}
+            >
+              {printing
+                ? <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                : <Printer className="h-4 w-4 mr-1" />}
+              列印 PDF
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose}>關閉</Button>
         </DialogFooter>
       </DialogContent>
