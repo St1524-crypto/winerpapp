@@ -248,7 +248,18 @@ function CreateCompanyDialog() {
       <DialogContent>
         <DialogHeader><DialogTitle>新增公司</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((v) => m.mutate(v))} className="space-y-3">
+          <form
+            onSubmit={form.handleSubmit(
+              (v) => m.mutate(v),
+              (errors) => {
+                const first = Object.values(errors)[0] as any;
+                toast.error("表單驗證失敗", {
+                  description: first?.message ?? "請檢查欄位內容",
+                });
+              },
+            )}
+            className="space-y-3"
+          >
             <FormField
               control={form.control}
               name="company_name"
