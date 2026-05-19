@@ -32,6 +32,7 @@ import {
 import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
+import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/companies")({
   head: () => ({ meta: [{ title: "公司管理 — 源倍力 ERP" }] }),
