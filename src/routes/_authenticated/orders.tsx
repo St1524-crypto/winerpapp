@@ -318,6 +318,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [deposit, setDeposit] = useState("0");
   const [balance, setBalance] = useState("0");
   const [depositMethod, setDepositMethod] = useState("bank_transfer");
+  const [taxAdded, setTaxAdded] = useState(false);
   const [notes, setNotes] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
