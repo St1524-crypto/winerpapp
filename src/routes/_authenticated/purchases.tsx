@@ -14,8 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { Plus, Search, Truck, Eye, Printer, Trash2, FileDown } from "lucide-react";
+import { Plus, Search, Truck, Eye, Printer, Trash2, FileDown, ArrowRight } from "lucide-react";
 import { exportPdfReport } from "@/lib/pdf-report";
+import { useBranding } from "@/hooks/use-branding";
 
 const STATUS = [
   { v: "draft", label: "草稿", variant: "secondary" as const },
@@ -26,6 +27,16 @@ const STATUS = [
   { v: "cancelled", label: "已取消", variant: "destructive" as const },
 ];
 const statusMeta = (s: string) => STATUS.find((x) => x.v === s) ?? STATUS[0];
+
+// 合法的狀態流轉路徑
+const TRANSITIONS: Record<string, string[]> = {
+  draft: ["submitted", "cancelled"],
+  submitted: ["confirmed", "draft", "cancelled"],
+  confirmed: ["partial", "completed", "cancelled"],
+  partial: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+};
 
 interface PO {
   id: string; po_no: string; vendor_id: string | null; vendor_name: string;
