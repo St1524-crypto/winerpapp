@@ -38,12 +38,17 @@ import { Route as AuthenticatedCustomersRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ShopAccountIndexRouteImport } from './routes/shop.account.index'
+import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountOrdersRouteImport } from './routes/shop.account.orders'
 import { Route as ShopAccountAddressesRouteImport } from './routes/shop.account.addresses'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
+import { Route as AuthenticatedFinanceTransactionsRouteImport } from './routes/_authenticated/finance.transactions'
+import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_authenticated/finance.receivable'
+import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
+import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
@@ -193,6 +198,12 @@ const ShopAccountIndexRoute = ShopAccountIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ShopAccountRoute,
 } as any)
+const AuthenticatedFinanceIndexRoute =
+  AuthenticatedFinanceIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedFinanceRoute,
+  } as any)
 const ShopProductIdRoute = ShopProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
@@ -224,6 +235,30 @@ const AuthenticatedProductsProductIdRoute =
     path: '/$productId',
     getParentRoute: () => AuthenticatedProductsRoute,
   } as any)
+const AuthenticatedFinanceTransactionsRoute =
+  AuthenticatedFinanceTransactionsRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
+    getParentRoute: () => AuthenticatedFinanceRoute,
+  } as any)
+const AuthenticatedFinanceReceivableRoute =
+  AuthenticatedFinanceReceivableRouteImport.update({
+    id: '/receivable',
+    path: '/receivable',
+    getParentRoute: () => AuthenticatedFinanceRoute,
+  } as any)
+const AuthenticatedFinancePayableRoute =
+  AuthenticatedFinancePayableRouteImport.update({
+    id: '/payable',
+    path: '/payable',
+    getParentRoute: () => AuthenticatedFinanceRoute,
+  } as any)
+const AuthenticatedFinanceBankAccountsRoute =
+  AuthenticatedFinanceBankAccountsRouteImport.update({
+    id: '/bank-accounts',
+    path: '/bank-accounts',
+    getParentRoute: () => AuthenticatedFinanceRoute,
+  } as any)
 const AuthenticatedB2bAccountsRoute =
   AuthenticatedB2bAccountsRouteImport.update({
     id: '/b2b/accounts',
@@ -252,7 +287,7 @@ export interface FileRoutesByFullPath {
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dealers': typeof AuthenticatedDealersRoute
-  '/finance': typeof AuthenticatedFinanceRoute
+  '/finance': typeof AuthenticatedFinanceRouteWithChildren
   '/inventory': typeof AuthenticatedInventoryRoute
   '/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/members': typeof AuthenticatedMembersRoute
@@ -271,12 +306,17 @@ export interface FileRoutesByFullPath {
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
+  '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
+  '/finance/payable': typeof AuthenticatedFinancePayableRoute
+  '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
+  '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
+  '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
@@ -290,7 +330,6 @@ export interface FileRoutesByTo {
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/dealers': typeof AuthenticatedDealersRoute
-  '/finance': typeof AuthenticatedFinanceRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/members': typeof AuthenticatedMembersRoute
@@ -308,12 +347,17 @@ export interface FileRoutesByTo {
   '/shop/products': typeof ShopProductsRoute
   '/shop': typeof ShopIndexRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
+  '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
+  '/finance/payable': typeof AuthenticatedFinancePayableRoute
+  '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
+  '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
+  '/finance': typeof AuthenticatedFinanceIndexRoute
   '/shop/account': typeof ShopAccountIndexRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
@@ -330,7 +374,7 @@ export interface FileRoutesById {
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/dealers': typeof AuthenticatedDealersRoute
-  '/_authenticated/finance': typeof AuthenticatedFinanceRoute
+  '/_authenticated/finance': typeof AuthenticatedFinanceRouteWithChildren
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
@@ -349,12 +393,17 @@ export interface FileRoutesById {
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
+  '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
+  '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
+  '/_authenticated/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
+  '/_authenticated/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
+  '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
@@ -390,12 +439,17 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop/'
     | '/b2b/accounts'
+    | '/finance/bank-accounts'
+    | '/finance/payable'
+    | '/finance/receivable'
+    | '/finance/transactions'
     | '/products/$productId'
     | '/shop/account/addresses'
     | '/shop/account/orders'
     | '/shop/account/profile'
     | '/shop/category/$slug'
     | '/shop/product/$id'
+    | '/finance/'
     | '/shop/account/'
     | '/b2b/accounts/$id'
     | '/shop/account/orders/$id'
@@ -409,7 +463,6 @@ export interface FileRouteTypes {
     | '/customers'
     | '/dashboard'
     | '/dealers'
-    | '/finance'
     | '/inventory'
     | '/inventory-tx'
     | '/members'
@@ -427,12 +480,17 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop'
     | '/b2b/accounts'
+    | '/finance/bank-accounts'
+    | '/finance/payable'
+    | '/finance/receivable'
+    | '/finance/transactions'
     | '/products/$productId'
     | '/shop/account/addresses'
     | '/shop/account/orders'
     | '/shop/account/profile'
     | '/shop/category/$slug'
     | '/shop/product/$id'
+    | '/finance'
     | '/shop/account'
     | '/b2b/accounts/$id'
     | '/shop/account/orders/$id'
@@ -467,12 +525,17 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop/'
     | '/_authenticated/b2b/accounts'
+    | '/_authenticated/finance/bank-accounts'
+    | '/_authenticated/finance/payable'
+    | '/_authenticated/finance/receivable'
+    | '/_authenticated/finance/transactions'
     | '/_authenticated/products/$productId'
     | '/shop/account/addresses'
     | '/shop/account/orders'
     | '/shop/account/profile'
     | '/shop/category/$slug'
     | '/shop/product/$id'
+    | '/_authenticated/finance/'
     | '/shop/account/'
     | '/_authenticated/b2b/accounts/$id'
     | '/shop/account/orders/$id'
@@ -691,6 +754,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopAccountIndexRouteImport
       parentRoute: typeof ShopAccountRoute
     }
+    '/_authenticated/finance/': {
+      id: '/_authenticated/finance/'
+      path: '/'
+      fullPath: '/finance/'
+      preLoaderRoute: typeof AuthenticatedFinanceIndexRouteImport
+      parentRoute: typeof AuthenticatedFinanceRoute
+    }
     '/shop/product/$id': {
       id: '/shop/product/$id'
       path: '/product/$id'
@@ -733,6 +803,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProductsProductIdRouteImport
       parentRoute: typeof AuthenticatedProductsRoute
     }
+    '/_authenticated/finance/transactions': {
+      id: '/_authenticated/finance/transactions'
+      path: '/transactions'
+      fullPath: '/finance/transactions'
+      preLoaderRoute: typeof AuthenticatedFinanceTransactionsRouteImport
+      parentRoute: typeof AuthenticatedFinanceRoute
+    }
+    '/_authenticated/finance/receivable': {
+      id: '/_authenticated/finance/receivable'
+      path: '/receivable'
+      fullPath: '/finance/receivable'
+      preLoaderRoute: typeof AuthenticatedFinanceReceivableRouteImport
+      parentRoute: typeof AuthenticatedFinanceRoute
+    }
+    '/_authenticated/finance/payable': {
+      id: '/_authenticated/finance/payable'
+      path: '/payable'
+      fullPath: '/finance/payable'
+      preLoaderRoute: typeof AuthenticatedFinancePayableRouteImport
+      parentRoute: typeof AuthenticatedFinanceRoute
+    }
+    '/_authenticated/finance/bank-accounts': {
+      id: '/_authenticated/finance/bank-accounts'
+      path: '/bank-accounts'
+      fullPath: '/finance/bank-accounts'
+      preLoaderRoute: typeof AuthenticatedFinanceBankAccountsRouteImport
+      parentRoute: typeof AuthenticatedFinanceRoute
+    }
     '/_authenticated/b2b/accounts': {
       id: '/_authenticated/b2b/accounts'
       path: '/b2b/accounts'
@@ -756,6 +854,25 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedFinanceRouteChildren {
+  AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
+  AuthenticatedFinancePayableRoute: typeof AuthenticatedFinancePayableRoute
+  AuthenticatedFinanceReceivableRoute: typeof AuthenticatedFinanceReceivableRoute
+  AuthenticatedFinanceTransactionsRoute: typeof AuthenticatedFinanceTransactionsRoute
+  AuthenticatedFinanceIndexRoute: typeof AuthenticatedFinanceIndexRoute
+}
+
+const AuthenticatedFinanceRouteChildren: AuthenticatedFinanceRouteChildren = {
+  AuthenticatedFinanceBankAccountsRoute: AuthenticatedFinanceBankAccountsRoute,
+  AuthenticatedFinancePayableRoute: AuthenticatedFinancePayableRoute,
+  AuthenticatedFinanceReceivableRoute: AuthenticatedFinanceReceivableRoute,
+  AuthenticatedFinanceTransactionsRoute: AuthenticatedFinanceTransactionsRoute,
+  AuthenticatedFinanceIndexRoute: AuthenticatedFinanceIndexRoute,
+}
+
+const AuthenticatedFinanceRouteWithChildren =
+  AuthenticatedFinanceRoute._addFileChildren(AuthenticatedFinanceRouteChildren)
 
 interface AuthenticatedProductsRouteChildren {
   AuthenticatedProductsProductIdRoute: typeof AuthenticatedProductsProductIdRoute
@@ -790,7 +907,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDealersRoute: typeof AuthenticatedDealersRoute
-  AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
+  AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRouteWithChildren
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedInventoryTxRoute: typeof AuthenticatedInventoryTxRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
@@ -813,7 +930,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDealersRoute: AuthenticatedDealersRoute,
-  AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
+  AuthenticatedFinanceRoute: AuthenticatedFinanceRouteWithChildren,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedInventoryTxRoute: AuthenticatedInventoryTxRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,

@@ -58,6 +58,184 @@ export type Database = {
           },
         ]
       }
+      accounts_payable: {
+        Row: {
+          bill_no: string
+          created_at: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          paid_amount: number
+          reference_po_id: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+          vendor_id: string | null
+          vendor_name: string
+        }
+        Insert: {
+          bill_no: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_amount?: number
+          reference_po_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_name: string
+        }
+        Update: {
+          bill_no?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_amount?: number
+          reference_po_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_payable_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounts_receivable: {
+        Row: {
+          business_account_id: string | null
+          created_at: string
+          customer_name: string
+          due_date: string | null
+          id: string
+          invoice_no: string
+          notes: string | null
+          paid_amount: number
+          reference_order_id: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          business_account_id?: string | null
+          created_at?: string
+          customer_name: string
+          due_date?: string | null
+          id?: string
+          invoice_no: string
+          notes?: string | null
+          paid_amount?: number
+          reference_order_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          business_account_id?: string | null
+          created_at?: string
+          customer_name?: string
+          due_date?: string | null
+          id?: string
+          invoice_no?: string
+          notes?: string | null
+          paid_amount?: number
+          reference_order_id?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_receivable_business_account_id_fkey"
+            columns: ["business_account_id"]
+            isOneToOne: false
+            referencedRelation: "business_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_logs: {
+        Row: {
+          analysis_result: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          model: string | null
+          module: string
+          prompt: string | null
+          tokens_used: number
+        }
+        Insert: {
+          analysis_result?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string | null
+          module: string
+          prompt?: string | null
+          tokens_used?: number
+        }
+        Update: {
+          analysis_result?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string | null
+          module?: string
+          prompt?: string | null
+          tokens_used?: number
+        }
+        Relationships: []
+      }
+      api_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          scopes: string[]
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          scopes?: string[]
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          scopes?: string[]
+          status?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -85,6 +263,89 @@ export type Database = {
           id?: string
           metadata?: Json
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      automation_runs: {
+        Row: {
+          error: string | null
+          id: string
+          ran_at: string
+          result: Json
+          status: string
+          workflow_id: string
+        }
+        Insert: {
+          error?: string | null
+          id?: string
+          ran_at?: string
+          result?: Json
+          status?: string
+          workflow_id: string
+        }
+        Update: {
+          error?: string | null
+          id?: string
+          ran_at?: string
+          result?: Json
+          status?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "automation_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_workflows: {
+        Row: {
+          action_config: Json
+          action_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          last_run_at: string | null
+          name: string
+          run_count: number
+          status: string
+          trigger_config: Json
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          action_config?: Json
+          action_type: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          last_run_at?: string | null
+          name: string
+          run_count?: number
+          status?: string
+          trigger_config?: Json
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          action_config?: Json
+          action_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          last_run_at?: string | null
+          name?: string
+          run_count?: number
+          status?: string
+          trigger_config?: Json
+          trigger_type?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -187,6 +448,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bank_accounts: {
+        Row: {
+          account_name: string
+          account_no: string
+          balance: number
+          bank_name: string
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_name: string
+          account_no: string
+          balance?: number
+          bank_name: string
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string
+          account_no?: string
+          balance?: number
+          bank_name?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       business_account_users: {
         Row: {
@@ -374,6 +674,77 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          address: string | null
+          company_name: string
+          created_at: string
+          email: string | null
+          id: string
+          logo_url: string | null
+          phone: string | null
+          status: string
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company_name: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          phone?: string | null
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          phone?: string | null
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      company_members: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           code: string
@@ -539,6 +910,62 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_transactions: {
+        Row: {
+          amount: number
+          bank_account_id: string | null
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          occurred_at: string
+          payment_method: string
+          reference_no: string | null
+          reference_type: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          bank_account_id?: string | null
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          occurred_at?: string
+          payment_method?: string
+          reference_no?: string | null
+          reference_type?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          occurred_at?: string
+          payment_method?: string
+          reference_no?: string | null
+          reference_type?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goods_receiving: {
         Row: {
           created_at: string
@@ -691,6 +1118,68 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          amount: number
+          buyer_name: string
+          created_at: string
+          external_id: string | null
+          id: string
+          invoice_no: string
+          invoice_type: string
+          issued_at: string | null
+          sales_order_id: string | null
+          status: string
+          tax_amount: number
+          tax_id: string | null
+          total_amount: number
+          updated_at: string
+          void_at: string | null
+        }
+        Insert: {
+          amount?: number
+          buyer_name: string
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          invoice_no: string
+          invoice_type?: string
+          issued_at?: string | null
+          sales_order_id?: string | null
+          status?: string
+          tax_amount?: number
+          tax_id?: string | null
+          total_amount?: number
+          updated_at?: string
+          void_at?: string | null
+        }
+        Update: {
+          amount?: number
+          buyer_name?: string
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          invoice_no?: string
+          invoice_type?: string
+          issued_at?: string | null
+          sales_order_id?: string | null
+          status?: string
+          tax_amount?: number
+          tax_id?: string | null
+          total_amount?: number
+          updated_at?: string
+          void_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       moq_rules: {
         Row: {
           carton_quantity: number
@@ -718,6 +1207,39 @@ export type Database = {
           product_id?: string
           updated_at?: string
           volume_tiers?: Json
+        }
+        Relationships: []
+      }
+      notification_rules: {
+        Row: {
+          channels: string[]
+          conditions: Json
+          created_at: string
+          id: string
+          name: string
+          rule_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          channels?: string[]
+          conditions?: Json
+          created_at?: string
+          id?: string
+          name: string
+          rule_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          channels?: string[]
+          conditions?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          rule_type?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

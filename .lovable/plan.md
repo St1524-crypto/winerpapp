@@ -1,103 +1,112 @@
-# 第四週：B2C 電商與訂單系統 — 分階段實作計畫
+# 第六週開發計畫：財務 / AI / BI / 自動化
 
-第四週是 17 個子系統（前台商城 + 購物車 + 結帳 + 金流 + 訂單流程 + 出貨 + 優惠券 + Dashboard 升級），規模與第五週相當，無法在單一回合裡做到位且保證品質。建議分 **4 階段** 連續執行。
-
-目前資料庫已有 `customers`、`products`、`orders`（簡易版）、`product_images`、`warehouse_inventory`、`inventory_logs`、`goods_receiving`。第四週將擴充而不是覆蓋。
+本週範圍極大（19 大區塊、近 50 個檔案、8 張新資料表 + 多項 AI/自動化功能）。為確保品質與可審查性，將分 **4 個 Stage 交付**，每個 Stage 完成後可立即試用。
 
 ---
 
-## 階段 1：資料骨架 + B2C 前台商城（本回合先做）
+## Stage 1 — 財務核心 + Schema 基礎建設
 
-**SQL Schema（單一 migration）**
-- `customer_addresses`（收件人、電話、地址、is_default）
-- `carts` / `cart_items`（支援登入會員 + 訪客 session token）
-- `sales_orders`（取代簡易 `orders`；含 subtotal/shipping_fee/discount/total、payment_status、shipping_status、order_status）
-- `sales_order_items`（product 快照：name/sku/price/quantity/subtotal）
-- `payments`（method、status、paid_at、transaction_id）
-- `shipments`（shipping_company、tracking_no、shipped_at、status）
-- `coupons`（code、type=fixed/percent、value、min_amount、expired_at、usage_limit、used_count）
-- `wishlist`（customer_id + product_id）
-- `generate_so_no()` 函式：`SO-YYYYMMDD-0001`
-- RLS：訪客可建立 cart；會員只看自己的 order/wishlist/cart；員工依角色管理
-- 種子：3 張優惠券 + 範例地址
+**Migration（一次性建立全部新表）**
 
-**前端 B2C 前台路由**（公開，不在 `_authenticated/` 下）
-- `/shop` — 首頁（Hero Banner、熱銷、新品、分類入口、優惠活動）
-- `/shop/products` — 商品列表（搜尋、分類篩選、排序、分頁）
-- `/shop/category/$slug` — 分類頁
-- `/shop/product/$id` — 商品詳細頁（圖片輪播、規格、推薦商品、加入購物車 / 立即購買 / 收藏）
-- 共用：`StorefrontLayout`、`StorefrontHeader`（Logo + 搜尋 + Cart Drawer 入口 + 會員）、`StorefrontFooter`、`MobileBottomNav`
+```text
+finance_transactions     收支總帳（income/expense, category, payment_method, account_id, reference）
+accounts_receivable      應收帳款（綁 business_account, invoice_no, due_date, paid/unpaid/overdue）
+accounts_payable         應付帳款（綁 vendor, bill_no, due_date, status）
+invoices                 發票（綁 sales_order, invoice_type 二聯/三聯/個人, tax_id, status）
+bank_accounts            銀行帳戶（多帳戶 + 餘額）
+companies                多公司（company_name, tax_id, status）
+company_members          公司成員（user_id, company_id, role）— 為 SaaS 多租戶預留
+automation_workflows     自動化規則（trigger_type, action_type, config jsonb, status）
+automation_runs          自動化執行紀錄
+api_keys                 API 金鑰（hashed key, scopes, last_used）
+ai_logs                  AI 分析結果歷史
+notification_rules       智能通知規則
+```
 
-**Cart Drawer**
-- 全域 `useCart` hook：訪客用 localStorage session_token，登入後 merge 到 DB
-- 右側 Drawer：列表、數量加減、刪除、小計、運費試算、「前往結帳」按鈕
+全部含 RLS：
+- 財務/發票表 → `finance` + `super_admin` 可管理；`sales` 可讀本身負責的單。
+- API keys / companies → 僅 `super_admin`。
+- automation / ai_logs → `super_admin` + `finance`。
 
----
+**頁面**
 
-## 階段 2：會員中心 + Checkout + 訂單建立
+- `/finance` 升級為 Finance Hub（總覽 + 子分頁路由）
+- `/finance/transactions` 收支總帳（含新增、分類、付款方式）
+- `/finance/receivable` 應收帳款（自動串 `b2b_orders` + `account_statements`）
+- `/finance/payable` 應付帳款（自動串 `purchase_orders` + `vendors`）
+- `/finance/bank-accounts` 銀行帳戶管理
 
-- `/account` 會員中心（layout）
-  - `/account/orders` — 我的訂單
-  - `/account/orders/$id` — 訂單詳情 + 物流追蹤
-  - `/account/addresses` — 收件地址 CRUD
-  - `/account/wishlist` — 收藏
-  - `/account/profile` — 個人資料 + 密碼
-- `/checkout` — 結帳流程（4 步驟）：購物車 → 收件資料 → 物流/付款 → 確認
-  - 套用優惠券（即時驗證碼、額度、期限、使用次數）
-  - 建立 `sales_orders` + items、產生 `SO-` 編號
-- `/checkout/success/$orderNo` — 訂單完成頁
+**Hooks / Services**
 
----
-
-## 階段 3：金流介面 + 庫存扣除 + 出貨
-
-- `PaymentGateway` 介面 + ECPay / NewebPay adapter stub + Mock adapter（預設啟用）
-- `/checkout/pay/$orderNo` — 模擬付款頁（信用卡 / ATM / 超商三選一）
-- 付款成功 → 觸發庫存扣除（讀 `sales_order_items` → 寫 `inventory_logs`、更新 `warehouse_inventory`）
-- 取消 / 退貨 → 回補庫存
-- `/admin/sales-orders` — 後台訂單管理（狀態流轉、列印、PDF）
-- `/admin/shipments` — 出貨管理（撿貨、包貨、產生物流單號、超商/宅配）
+```text
+src/hooks/use-finance-transactions.tsx
+src/hooks/use-receivables.tsx
+src/hooks/use-payables.tsx
+src/services/finance.service.ts   ← repository 層，集中 supabase 查詢
+```
 
 ---
 
-## 階段 4：優惠券後台 + Dashboard 升級
+## Stage 2 — 發票 + 財務報表 + KPI
 
-- `/admin/coupons` — 優惠券 CRUD（折扣碼、滿額、百分比、期限、次數）
-- `/dashboard` 升級：今日訂單、今日營收、待出貨、熱銷 Top 5、銷售趨勢圖（recharts 7 日折線）、訂單狀態圓餅、商品排行
-
----
-
-## 技術規範
-
-- **架構**：
-  - `src/lib/shop/*.ts` — services（cart、checkout、pricing、coupon validator）
-  - `src/lib/payments/*.ts` — payment gateway interface + adapters
-  - `src/hooks/use-cart.tsx`、`use-wishlist.tsx`、`use-shop-products.tsx`
-  - `src/components/shop/*` — 前台元件
-  - `src/components/account/*` — 會員中心元件
-- **路由分區**：
-  - `src/routes/shop.*.tsx` — 公開商城（無 auth gate）
-  - `src/routes/checkout.*.tsx` — 結帳（部分需登入）
-  - `src/routes/_authenticated/account.*.tsx` — 會員中心
-  - `src/routes/_authenticated/admin-orders.tsx` 等 — 後台
-- **訪客購物車**：localStorage `cart_token` (uuid) → `carts.session_token` 欄位；登入時 merge
-- **UI**：高端電商風（大圖、留白、Apple 風卡片、glassmorphism Hero）、Cart Drawer 用 Sheet、Skeleton loading、sonner toast、Hover scale
-- **響應式**：桌面 sidebar + 商品 grid；手機 bottom nav（首頁 / 分類 / 購物車 / 會員）
-- **假資料**：沿用既有 `products` + 自動生成 3 張優惠券
+- `/finance/invoices` 發票列表 + 開立 Dialog（預留台灣電子發票 API 介面 `src/services/einvoice.service.ts`）
+- `/finance/reports` 財務報表中心
+  - 損益表 / 現金流量表 / 銷售報表 / 採購報表 / 庫存報表 / 客戶分析
+  - PDF 匯出（沿用既有 `src/lib/pdf-report.ts`）
+  - CSV 匯出
+  - 日期區間 + 公司篩選
+- `/dashboard` 升級加上 **KPI Bar**：月營收、毛利率、庫存週轉、回購率、客單價、客戶成長率
 
 ---
 
-## 本回合（階段 1）交付物
+## Stage 3 — AI 智能分析 + 智能客服
 
-1. 一次 Supabase migration（8 張新表 + RLS + `generate_so_no` + 種子優惠券）
-2. 前台 layout：`src/components/shop/StorefrontLayout.tsx` + Header / Footer / MobileBottomNav / CartDrawer
-3. Cart hook：`src/hooks/use-cart.tsx`（訪客 + 會員 + merge）
-4. 路由：`/shop`（首頁）、`/shop/products`、`/shop/product/$id`、`/shop/category/$slug`
-5. 後台「B2C 商城」入口 + 公開 `/shop` 連結
+採用 **Lovable AI Gateway**（`google/gemini-3-flash-preview`，免額外 API Key），全部走 `createServerFn`：
 
-確認後我會先送 migration，待你核准後寫入前端，再進入階段 2。
+```text
+src/lib/ai-gateway.ts                    provider helper
+src/lib/ai-analytics.functions.ts        AI 分析 server fn（餵入彙總後的 SQL 統計，回傳結構化見解）
+src/lib/ai-chat.functions.ts             AI 客服 streamText
+```
 
-請確認：
-- 是否同意分 4 階段，先做階段 1？
-- 訪客購物車是否用 localStorage token（建議）vs. 強制登入才可加入購物車？
-- 既有的 `orders` 表是否保留（作為舊版/簡易訂單）？我建議**保留**，新表 `sales_orders` 作為 B2C 主訂單。
+- `/ai/analytics` AI Dashboard — Summary Cards（如「本月保健食品銷量成長 23%」）、商品推薦、庫存預測、客戶分群
+- `/ai/assistant` AI 客服全頁 + 全站懸浮 **ChatWidget**（商城與後台共用）
+  - 工具：`lookup_order` / `lookup_product` / `lookup_inventory`（讓 AI 可查真實資料）
+  - 訊息渲染走 `useChat` + `message.parts`（含 markdown + 工具卡片）
+- 所有 AI 結果寫入 `ai_logs` 供回顧
+
+---
+
+## Stage 4 — BI / 自動化 / 多公司 / API / 設定
+
+- `/bi` BI Dashboard：銷售趨勢（折線）、利潤分析（面積）、商品/客戶排行（橫條）、區域分析、庫存週轉率（Recharts，深色科技風）
+- `/automation` 工作流中心：規則列表 + Builder（Trigger × Action 表單式）
+  - Triggers: 低庫存 / 訂單建立 / 月結到期 / 異常金額
+  - Actions: 站內通知 / Email（預留）/ Webhook
+  - 由 `pg_cron` + 一支 `/api/public/automation/tick` server route 排程觸發
+- `/admin/companies` 多公司管理 + Header 公司切換器（公司 context 寫入 localStorage）
+- `/admin/api-keys` API 金鑰管理（建立時一次性顯示，僅儲存 hash）
+- `/admin/webhooks` Webhook 設定
+- `/settings` 升級：公司設定 / 稅率 / 金流 / 物流 / Email / 通知
+- 升級 `/notifications` 為 Smart Notification Center（接 AI 異常、庫存、財務、高風險客戶、熱銷預測）
+
+---
+
+## 共用技術約束
+
+- **架構**：repository (`/services`) → hooks → routes，每個模組 self-contained。
+- **設計**：沿用既有 `oklch` design tokens 與 `src/styles.css`，所有新元件用語義色（`bg-card`、`text-primary` …），維持深色科技風。
+- **圖表**：使用既有的 `recharts`，封裝為 `src/components/charts/*` 可重用元件。
+- **響應式**：手機 / 平板 / 桌面三斷點都驗證；手機版用底部 sheet + 抽屜。
+- **假資料**：每個 Stage 結束會用 supabase--insert 灌入展示資料，讓 Dashboard / 報表 / AI 有東西可看。
+- **權限**：所有新 route 走 `_authenticated/` 子樹；財務/API/Companies 在 UI 層額外用 `useAuth().role` 做角色守門。
+
+---
+
+## 確認事項
+
+1. **是否照此分 4 Stage 推進？** 我會從 **Stage 1（財務核心 + Schema migration）** 開始；migration 會用一張 migration 一次建好全部新表 + RLS，避免後續來回。
+2. AI 模組可直接使用 **Lovable AI Gateway**（無需用戶提供 API Key），這是最佳實踐選擇 — 預設用此方案。
+3. 多公司架構先做 **UI + companies 表 + 切換器**，現有資料表不立即加 `company_id`（避免大規模 schema 改動破壞既有功能）；待用戶確認真的要全面 SaaS 化再做第二輪 backfill。
+
+回覆「開始」即從 Stage 1 動工；若有想調整的範圍/優先順序也請直接說。
