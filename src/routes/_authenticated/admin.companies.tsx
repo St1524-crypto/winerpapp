@@ -50,7 +50,7 @@ function AdminCompaniesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("id, company_name, tax_id, email, phone, address, status, created_at")
+        .select("id, company_name, tax_id, email, phone, address, status, logo_url, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
