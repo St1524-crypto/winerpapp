@@ -37,6 +37,7 @@ interface WH { id: string; warehouse_code: string; name: string; }
 
 function Page() {
   const { user } = useAuth();
+  const { currentCompanyId } = useCurrentCompany();
   const [list, setList] = useState<Tx[]>([]);
   const [prodMap, setProdMap] = useState<Record<string, Product>>({});
   const [whMap, setWhMap] = useState<Record<string, WH>>({});
