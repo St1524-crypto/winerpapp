@@ -2117,10 +2117,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_account_member: {
-        Args: { _account_id: string; _user_id: string }
-        Returns: boolean
-      }
       set_default_address: { Args: { _address_id: string }; Returns: undefined }
     }
     Enums: {
