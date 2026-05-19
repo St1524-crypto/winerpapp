@@ -204,9 +204,48 @@ function AdminPanel() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent activity */}
+      <Card className="bg-card/60 backdrop-blur border-border/60">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" /> 近期動態
+          </CardTitle>
+          <Badge variant="outline" className="text-[10px]">最新 10 筆</Badge>
+        </CardHeader>
+        <CardContent className="p-0">
+          <ScrollArea className="h-[320px]">
+            <div className="divide-y divide-border/60">
+              {activity === null && (
+                <div className="p-4 space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                </div>
+              )}
+              {activity?.length === 0 && (
+                <div className="p-8 text-center text-sm text-muted-foreground">尚無動態資料</div>
+              )}
+              {activity?.map((row) => (
+                <div key={row.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${row.kind === "audit" ? "bg-amber-500/15 text-amber-500" : "bg-emerald-500/15 text-emerald-500"}`}>
+                    {row.kind === "audit" ? <FileClock className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{row.title}</div>
+                    <div className="text-xs text-muted-foreground truncate">{row.detail}</div>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
+                    {new Date(row.ts).toLocaleString("zh-TW", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
 
 function HealthRow({ label, status, detail }: { label: string; status: "ok" | "warn" | "err"; detail: string }) {
   const color = status === "ok" ? "bg-emerald-500" : status === "warn" ? "bg-amber-500" : "bg-rose-500";
