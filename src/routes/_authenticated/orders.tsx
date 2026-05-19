@@ -903,6 +903,17 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             <div><Label>折扣</Label><Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} /></div>
           </div>
 
+          <div className="flex items-center justify-between rounded-md border p-3 bg-muted/20">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={taxAdded} onCheckedChange={(v) => setTaxAdded(v === true)} />
+              <span>稅外加 5%</span>
+            </label>
+            <div className="text-sm text-muted-foreground">
+              稅額：<span className="tabular-nums font-medium text-foreground">{fmt(taxAmount)}</span>
+            </div>
+          </div>
+
+
           {/* ===== 訂金 / 尾款 ===== */}
           <div className="rounded-md border p-3 space-y-2 bg-muted/20">
             <div className="text-sm font-medium flex items-center gap-1.5">
