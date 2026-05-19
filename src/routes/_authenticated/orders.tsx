@@ -581,7 +581,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           <Plus className="h-4 w-4 mr-2" /> 新增訂單
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>新增訂單</DialogTitle>
         </DialogHeader>
