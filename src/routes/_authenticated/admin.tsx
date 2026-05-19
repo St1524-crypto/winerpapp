@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Lock, ShieldCheck, Users, Settings, Tag, Package, Boxes, ShoppingCart,
+  ShieldCheck, Users, Settings, Tag, Package, Boxes, ShoppingCart,
   Wallet, FileClock, Bell, Database, Activity, ArrowRight, Server, KeyRound,
   UserPlus, Sparkles,
 } from "lucide-react";
+import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -73,17 +74,7 @@ function AdminPanel() {
   }, [isAdmin]);
 
   if (!isAdmin) {
-    return (
-      <div className="p-6">
-        <Card className="bg-card/60 backdrop-blur border-border/60 max-w-md mx-auto mt-12">
-          <CardContent className="p-8 text-center space-y-3">
-            <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
-            <div className="font-medium">僅超級管理員可進入控制中心</div>
-            <p className="text-xs text-muted-foreground">您目前的角色：{roles.join(", ") || "未指派"}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <ForbiddenScreen requiredRoles={["super_admin"]} pageName="管理員控制中心" />;
   }
 
   const sections: { title: string; desc: string; icon: any; to: string; tone: string }[] = [

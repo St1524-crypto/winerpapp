@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Upload, Image as ImageIcon, Trash2, Loader2, Lock } from "lucide-react";
+import { Upload, Image as ImageIcon, Trash2, Loader2 } from "lucide-react";
+import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 
 export const Route = createFileRoute("/_authenticated/settings")({ component: SettingsPage });
 
@@ -78,16 +79,7 @@ function SettingsPage() {
   }
 
   if (!isAdmin) {
-    return (
-      <div className="p-6">
-        <Card className="bg-card/60 backdrop-blur border-border/60 max-w-md mx-auto mt-12">
-          <CardContent className="p-8 text-center space-y-3">
-            <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
-            <div className="font-medium">僅超級管理員可存取系統設定</div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <ForbiddenScreen requiredRoles={["super_admin"]} pageName="系統設定" />;
   }
 
   return (
