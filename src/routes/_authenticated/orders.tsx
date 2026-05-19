@@ -627,6 +627,87 @@ function OrderDetailDialog({
               </CardContent>
             </Card>
 
+            {/* Outstanding (unpaid) breakdown - expandable */}
+            {unpaid > 0 && (
+              <Card>
+                <CardContent className="p-0">
+                  <details className="group" open={pendingPayments.length > 0}>
+                    <summary className="cursor-pointer list-none p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-2 text-sm">
+                        <CreditCard className="h-4 w-4 text-warning" />
+                        <span className="font-medium">未收款明細</span>
+                        <Badge variant="outline" className="bg-amber-500/15 text-amber-400 border-amber-500/30">
+                          應收 {fmt(unpaid)}
+                        </Badge>
+                        {pendingPayments.length > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            其中 {pendingPayments.length} 筆待入帳 ({fmt(pendingPaymentsTotal)})
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
+                    </summary>
+                    <div className="border-t border-border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>項目</TableHead>
+                            <TableHead>付款狀態</TableHead>
+                            <TableHead>方式</TableHead>
+                            <TableHead>建立時間</TableHead>
+                            <TableHead className="text-right">應收金額</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pendingPayments.map((p: any) => (
+                            <TableRow key={p.id}>
+                              <TableCell className="text-sm">待入帳付款</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-amber-500/15 text-amber-400 border-amber-500/30">
+                                  {p.payment_status === "pending" ? "待處理"
+                                    : p.payment_status === "failed" ? "失敗"
+                                    : p.payment_status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {PAYMENT_METHOD_LABEL[p.payment_method] ?? p.payment_method}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {new Date(p.created_at).toLocaleString("zh-TW")}
+                              </TableCell>
+                              <TableCell className="text-right font-medium text-warning">{fmt(p.amount)}</TableCell>
+                            </TableRow>
+                          ))}
+                          {unpaid - pendingPaymentsTotal > 0 && (
+                            <TableRow>
+                              <TableCell className="text-sm">尚未記錄的餘額</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-rose-500/15 text-rose-400 border-rose-500/30">
+                                  未開立
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                              <TableCell className="text-right font-medium text-rose-400">
+                                {fmt(Math.max(0, unpaid - pendingPaymentsTotal))}
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                        <TableFooter>
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">應收合計</TableCell>
+                            <TableCell className="text-right font-semibold text-warning">{fmt(unpaid)}</TableCell>
+                          </TableRow>
+                        </TableFooter>
+                      </Table>
+                    </div>
+                  </details>
+                </CardContent>
+              </Card>
+            )}
+
+
             {order.order_status !== "cancelled" && (
               <div className="flex justify-end">
                 <Button
