@@ -19,6 +19,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { z } from "zod";
+
+// =================== Quick-add customer schema ===================
+const quickAddCustomerSchema = z.object({
+  name: z.string().trim().min(1, "請輸入客戶姓名").max(100, "姓名最多 100 字"),
+  email: z
+    .string()
+    .trim()
+    .max(255, "Email 最多 255 字")
+    .email("Email 格式不正確")
+    .optional()
+    .or(z.literal("")),
+  phone: z
+    .string()
+    .trim()
+    .max(20, "電話最多 20 碼")
+    .regex(/^[0-9+\-\s()]{7,20}$/, "電話格式不正確（僅允許數字與 +-() 空白，至少 7 碼）")
+    .optional()
+    .or(z.literal("")),
+  company: z.string().trim().max(100, "公司名稱最多 100 字").optional().or(z.literal("")),
+});
 
 export const Route = createFileRoute("/_authenticated/orders")({
   head: () => ({
@@ -315,16 +336,37 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  // 即時校驗：取得各欄位的錯誤訊息（僅在欄位被觸碰過後顯示）
+  const [qaTouched, setQaTouched] = useState<Record<string, boolean>>({});
+  const qaValidation = useMemo(() => {
+    const result = quickAddCustomerSchema.safeParse({
+      name: qaName, email: qaEmail, phone: qaPhone, company: qaCompany,
+    });
+    if (result.success) return { ok: true as const, errors: {} as Record<string, string> };
+    const errors: Record<string, string> = {};
+    for (const issue of result.error.issues) {
+      const key = issue.path[0] as string;
+      if (!errors[key]) errors[key] = issue.message;
+    }
+    return { ok: false as const, errors };
+  }, [qaName, qaEmail, qaPhone, qaCompany]);
+
   const quickAddMut = useMutation({
     mutationFn: async () => {
-      if (!qaName.trim()) throw new Error("請輸入客戶姓名");
+      const parsed = quickAddCustomerSchema.safeParse({
+        name: qaName, email: qaEmail, phone: qaPhone, company: qaCompany,
+      });
+      if (!parsed.success) {
+        setQaTouched({ name: true, email: true, phone: true, company: true });
+        throw new Error(parsed.error.issues[0]?.message ?? "資料格式不正確");
+      }
       const { data, error } = await supabase
         .from("customers")
         .insert({
-          name: qaName.trim(),
-          email: qaEmail.trim() || null,
-          phone: qaPhone.trim() || null,
-          company: qaCompany.trim() || null,
+          name: parsed.data.name,
+          email: parsed.data.email?.trim() || null,
+          phone: parsed.data.phone?.trim() || null,
+          company: parsed.data.company?.trim() || null,
         })
         .select("id,name,email,phone,company")
         .single();
@@ -337,9 +379,11 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       pickCustomer(created);
       setQuickAddOpen(false);
       setQaName(""); setQaEmail(""); setQaPhone(""); setQaCompany("");
+      setQaTouched({});
     },
     onError: (e: any) => toast.error(e?.message ?? "新增客戶失敗"),
   });
+
 
 
 
@@ -477,21 +521,67 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                     <div className="grid gap-2">
                       <div>
                         <Label className="text-xs">姓名 *</Label>
-                        <Input value={qaName} onChange={(e) => setQaName(e.target.value)} placeholder="例：王小明" />
+                        <Input
+                          value={qaName}
+                          onChange={(e) => setQaName(e.target.value)}
+                          onBlur={() => setQaTouched((t) => ({ ...t, name: true }))}
+                          placeholder="例：王小明"
+                          maxLength={100}
+                          aria-invalid={qaTouched.name && !!qaValidation.errors.name}
+                          className={qaTouched.name && qaValidation.errors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                        />
+                        {qaTouched.name && qaValidation.errors.name && (
+                          <p className="text-xs text-destructive mt-1">{qaValidation.errors.name}</p>
+                        )}
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <Label className="text-xs">電話</Label>
-                          <Input value={qaPhone} onChange={(e) => setQaPhone(e.target.value)} />
+                          <Input
+                            value={qaPhone}
+                            onChange={(e) => setQaPhone(e.target.value)}
+                            onBlur={() => setQaTouched((t) => ({ ...t, phone: true }))}
+                            placeholder="0912345678"
+                            maxLength={20}
+                            inputMode="tel"
+                            aria-invalid={qaTouched.phone && !!qaValidation.errors.phone}
+                            className={qaTouched.phone && qaValidation.errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+                          />
+                          {qaTouched.phone && qaValidation.errors.phone && (
+                            <p className="text-xs text-destructive mt-1">{qaValidation.errors.phone}</p>
+                          )}
                         </div>
                         <div>
                           <Label className="text-xs">Email</Label>
-                          <Input type="email" value={qaEmail} onChange={(e) => setQaEmail(e.target.value)} />
+                          <Input
+                            type="email"
+                            value={qaEmail}
+                            onChange={(e) => setQaEmail(e.target.value)}
+                            onBlur={() => setQaTouched((t) => ({ ...t, email: true }))}
+                            placeholder="name@example.com"
+                            maxLength={255}
+                            aria-invalid={qaTouched.email && !!qaValidation.errors.email}
+                            className={qaTouched.email && qaValidation.errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                          />
+                          {qaTouched.email && qaValidation.errors.email && (
+                            <p className="text-xs text-destructive mt-1">{qaValidation.errors.email}</p>
+                          )}
                         </div>
                       </div>
                       <div>
                         <Label className="text-xs">公司</Label>
-                        <Input value={qaCompany} onChange={(e) => setQaCompany(e.target.value)} placeholder="選填" />
+                        <Input
+                          value={qaCompany}
+                          onChange={(e) => setQaCompany(e.target.value)}
+                          onBlur={() => setQaTouched((t) => ({ ...t, company: true }))}
+                          placeholder="選填"
+                          maxLength={100}
+                          aria-invalid={qaTouched.company && !!qaValidation.errors.company}
+                          className={qaTouched.company && qaValidation.errors.company ? "border-destructive focus-visible:ring-destructive" : ""}
+                        />
+                        {qaTouched.company && qaValidation.errors.company && (
+                          <p className="text-xs text-destructive mt-1">{qaValidation.errors.company}</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 pt-1">
@@ -508,7 +598,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                         type="button"
                         size="sm"
                         className="flex-1 bg-gradient-primary"
-                        disabled={quickAddMut.isPending}
+                        disabled={quickAddMut.isPending || !qaValidation.ok}
                         onClick={() => quickAddMut.mutate()}
                       >
                         {quickAddMut.isPending
@@ -517,6 +607,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                         新增並套用
                       </Button>
                     </div>
+
                   </div>
                 ) : (
                   <Command>
