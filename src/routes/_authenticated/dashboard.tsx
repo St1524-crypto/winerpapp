@@ -118,7 +118,7 @@ function Dashboard() {
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard title="商品總數" value={String(stats.total)} icon={Package} accent="primary" />
           <StatCard title="庫存不足商品" value={String(stats.low)} icon={AlertTriangle} accent="warning" />
-          <StatCard title="熱銷商品" value={String(stats.featured)} icon={Flame} accent="chart-5" />
+          <StatCard title="熱銷商品" value={String(stats.featured)} icon={Flame} accent="chart-2" />
           <StatCard title="今日新增商品" value={String(stats.today)} icon={Sparkles} accent="success" />
         </div>
       </div>
