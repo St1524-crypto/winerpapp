@@ -292,6 +292,23 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [shippingFee, setShippingFee] = useState("0");
   const [discount, setDiscount] = useState("0");
   const [notes, setNotes] = useState("");
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const customersQ = useQuery({
+    queryKey: ["customers-picker"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id,name,email,phone,company")
+        .order("updated_at", { ascending: false })
+        .limit(200);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
 
   const total = useMemo(
     () => Math.max(0, Number(subtotal || 0) + Number(shippingFee || 0) - Number(discount || 0)),
