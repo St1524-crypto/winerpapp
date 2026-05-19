@@ -116,7 +116,16 @@ function RoleManagerPage() {
       setConfirmOpen(false);
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "套用失敗"),
+    onError: (e: any) => {
+      const msg = String(e?.message ?? "");
+      if (msg.includes("SUPER_ADMIN_ZERO")) {
+        toast.error("套用後系統將沒有任何超級管理員，已由伺服器拒絕寫入。", {
+          description: msg.replace(/^.*SUPER_ADMIN_ZERO:\s*/, ""),
+        });
+      } else {
+        toast.error(msg || "套用失敗");
+      }
+    },
   });
 
   // Super admin impact analysis
