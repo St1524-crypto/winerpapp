@@ -21,6 +21,7 @@ export const companySchema = z.object({
       .max(30, "電話號碼過長"),
   ]),
   address: z.string().trim().max(255, "地址過長").optional(),
+  logo_url: z.union([z.literal(""), z.string().url("Logo 連結格式不正確")]).optional().nullable(),
 });
 
 export type CompanyFormValues = z.infer<typeof companySchema>;
