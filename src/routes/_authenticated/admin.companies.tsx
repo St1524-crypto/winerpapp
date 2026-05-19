@@ -172,9 +172,10 @@ function AdminCompaniesPage() {
 // =================== Create Company ===================
 function CreateCompanyDialog() {
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user, refreshRoles } = useAuth();
   const { refresh, setCurrent } = useCurrentCompany();
   const [open, setOpen] = useState(false);
+
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
