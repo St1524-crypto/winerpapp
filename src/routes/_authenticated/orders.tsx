@@ -320,8 +320,28 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (!customer || !address || !phone || !subtotal) {
         throw new Error("請填寫必填欄位（客戶、電話、地址、小計）");
       }
+
+      // 若未從客戶名單選取，使用手動輸入資料建立新客戶以保持訂單與客戶資料一致
+      let linkedCustomerId = customerId;
+      let createdNewCustomer = false;
+      if (!linkedCustomerId) {
+        const { data: created, error: custErr } = await supabase
+          .from("customers")
+          .insert({
+            name: customer,
+            email: email || null,
+            phone: phone || null,
+          })
+          .select("id")
+          .single();
+        if (custErr) throw new Error(`建立客戶失敗：${custErr.message}`);
+        linkedCustomerId = created.id;
+        createdNewCustomer = true;
+      }
+
       const { error } = await supabase.from("sales_orders").insert({
         order_no: genOrderNo(),
+        customer_id: linkedCustomerId,
         customer_name: customer,
         customer_email: email || null,
         customer_phone: phone || null,
@@ -339,9 +359,11 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         payment_status: "pending",
       });
       if (error) throw new Error(error.message);
+      return { createdNewCustomer };
     },
-    onSuccess: () => {
-      toast.success("訂單已建立");
+
+    onSuccess: (res) => {
+      toast.success(res?.createdNewCustomer ? "訂單已建立，並同步新增客戶" : "訂單已建立");
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
       setSubtotal(""); setShippingFee("0"); setDiscount("0"); setNotes("");

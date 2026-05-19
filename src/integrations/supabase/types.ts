@@ -1682,6 +1682,7 @@ export type Database = {
           coupon_code: string | null
           created_at: string
           customer_email: string | null
+          customer_id: string | null
           customer_name: string
           customer_phone: string | null
           discount_amount: number
@@ -1707,6 +1708,7 @@ export type Database = {
           coupon_code?: string | null
           created_at?: string
           customer_email?: string | null
+          customer_id?: string | null
           customer_name: string
           customer_phone?: string | null
           discount_amount?: number
@@ -1732,6 +1734,7 @@ export type Database = {
           coupon_code?: string | null
           created_at?: string
           customer_email?: string | null
+          customer_id?: string | null
           customer_name?: string
           customer_phone?: string | null
           discount_amount?: number
@@ -1753,7 +1756,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sales_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales_representatives: {
         Row: {
