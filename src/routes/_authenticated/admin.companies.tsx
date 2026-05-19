@@ -497,86 +497,173 @@ function EditCompanyDialog({
   company, onClose,
 }: { company: any; onClose: () => void }) {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const { refresh } = useCurrentCompany();
-  const [form, setForm] = useState({
-    company_name: company.company_name ?? "",
-    tax_id: company.tax_id ?? "",
-    email: company.email ?? "",
-    phone: company.phone ?? "",
-    address: company.address ?? "",
-    status: company.status ?? "active",
+  const [status, setStatus] = useState<string>(company.status ?? "active");
+
+  const form = useForm<CompanyFormValues>({
+    resolver: zodResolver(companySchema),
+    mode: "onChange",
+    defaultValues: {
+      company_name: company.company_name ?? "",
+      tax_id: company.tax_id ?? "",
+      email: company.email ?? "",
+      phone: company.phone ?? "",
+      address: company.address ?? "",
+    },
   });
 
   const m = useMutation({
-    mutationFn: async () => {
-      if (!form.company_name.trim()) throw new Error("請輸入公司名稱");
+    mutationFn: async (values: CompanyFormValues) => {
+      const patch = {
+        company_name: values.company_name.trim(),
+        tax_id: values.tax_id || null,
+        email: values.email || null,
+        phone: values.phone || null,
+        address: values.address || null,
+        status,
+      };
       const { error } = await supabase
         .from("companies")
-        .update({
-          company_name: form.company_name.trim(),
-          tax_id: form.tax_id || null,
-          email: form.email || null,
-          phone: form.phone || null,
-          address: form.address || null,
-          status: form.status,
-        })
+        .update(patch)
         .eq("id", company.id);
-      if (error) throw error;
+      if (error) throw new Error(`更新失敗：${error.message}（${error.code || "unknown"}）`);
+
+      // Audit log（失敗不阻擋更新）
+      try {
+        const before: Record<string, any> = {
+          company_name: company.company_name,
+          tax_id: company.tax_id,
+          email: company.email,
+          phone: company.phone,
+          address: company.address,
+          status: company.status,
+        };
+        const changed: Record<string, { from: any; to: any }> = {};
+        for (const k of Object.keys(patch) as (keyof typeof patch)[]) {
+          if (before[k] !== (patch as any)[k]) {
+            changed[k] = { from: before[k] ?? null, to: (patch as any)[k] };
+          }
+        }
+        if (user && Object.keys(changed).length > 0) {
+          await supabase.from("audit_logs").insert({
+            user_id: user.id,
+            action: "company.update",
+            entity: "companies",
+            entity_id: company.id,
+            metadata: {
+              company_name: patch.company_name,
+              changed,
+              updated_at: new Date().toISOString(),
+            },
+          });
+        }
+      } catch (e) {
+        console.warn("[edit-company] audit log failed:", e);
+      }
     },
-    onSuccess: () => {
-      toast.success("已更新");
-      qc.invalidateQueries({ queryKey: ["admin-companies"] });
-      refresh();
+    onSuccess: async () => {
+      toast.success("已更新公司資料");
+      await qc.invalidateQueries({ queryKey: ["admin-companies"] });
+      await refresh();
       onClose();
     },
-    onError: (e: any) => toast.error("更新失敗", { description: e.message }),
+    onError: (e: any) => toast.error("更新失敗", { description: e?.message ?? "發生未知錯誤" }),
   });
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader><DialogTitle>編輯公司</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>公司名稱 *</Label>
-            <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>統一編號</Label>
-              <Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} />
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(
+              (v) => m.mutate(v),
+              (errors) => {
+                const first = Object.values(errors)[0] as any;
+                toast.error("表單驗證失敗", {
+                  description: first?.message ?? "請檢查欄位內容",
+                });
+              },
+            )}
+            className="space-y-3"
+          >
+            <FormField
+              control={form.control}
+              name="company_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>公司名稱 <span className="text-destructive">*</span></FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="tax_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>統一編號</FormLabel>
+                    <FormControl><Input {...field} maxLength={8} inputMode="numeric" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>電話</FormLabel>
+                    <FormControl><Input {...field} maxLength={30} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl><Input {...field} type="email" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>地址</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div>
-              <Label>電話</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <Label>狀態</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">啟用</SelectItem>
+                  <SelectItem value="inactive">停用</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-          <div>
-            <Label>Email</Label>
-            <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          </div>
-          <div>
-            <Label>地址</Label>
-            <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-          </div>
-          <div>
-            <Label>狀態</Label>
-            <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">啟用</SelectItem>
-                <SelectItem value="inactive">停用</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>取消</Button>
-          <Button onClick={() => m.mutate()} disabled={m.isPending} className="bg-gradient-primary">
-            {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            儲存
-          </Button>
-        </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>取消</Button>
+              <Button type="submit" disabled={m.isPending} className="bg-gradient-primary">
+                {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                儲存
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
