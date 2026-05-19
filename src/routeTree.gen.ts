@@ -57,6 +57,7 @@ import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
+import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 
 const TwoFactorRoute = TwoFactorRouteImport.update({
   id: '/two-factor',
@@ -310,6 +311,12 @@ const AuthenticatedB2bAccountsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedB2bAccountsRoute,
   } as any)
+const AuthenticatedAdminCompaniesNewRoute =
+  AuthenticatedAdminCompaniesNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => AuthenticatedAdminCompaniesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -341,7 +348,7 @@ export interface FileRoutesByFullPath {
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
-  '/admin/companies': typeof AuthenticatedAdminCompaniesRoute
+  '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
@@ -357,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/shop/product/$id': typeof ShopProductIdRoute
   '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
+  '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
@@ -387,7 +395,7 @@ export interface FileRoutesByTo {
   '/shop/products': typeof ShopProductsRoute
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
-  '/admin/companies': typeof AuthenticatedAdminCompaniesRoute
+  '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
@@ -403,6 +411,7 @@ export interface FileRoutesByTo {
   '/shop/product/$id': typeof ShopProductIdRoute
   '/finance': typeof AuthenticatedFinanceIndexRoute
   '/shop/account': typeof ShopAccountIndexRoute
+  '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
@@ -438,7 +447,7 @@ export interface FileRoutesById {
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
-  '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRoute
+  '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
@@ -454,6 +463,7 @@ export interface FileRoutesById {
   '/shop/product/$id': typeof ShopProductIdRoute
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
+  '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
@@ -505,6 +515,7 @@ export interface FileRouteTypes {
     | '/shop/product/$id'
     | '/finance/'
     | '/shop/account/'
+    | '/admin/companies/new'
     | '/b2b/accounts/$id'
     | '/shop/account/orders/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -551,6 +562,7 @@ export interface FileRouteTypes {
     | '/shop/product/$id'
     | '/finance'
     | '/shop/account'
+    | '/admin/companies/new'
     | '/b2b/accounts/$id'
     | '/shop/account/orders/$id'
   id:
@@ -601,6 +613,7 @@ export interface FileRouteTypes {
     | '/shop/product/$id'
     | '/_authenticated/finance/'
     | '/shop/account/'
+    | '/_authenticated/admin/companies/new'
     | '/_authenticated/b2b/accounts/$id'
     | '/shop/account/orders/$id'
   fileRoutesById: FileRoutesById
@@ -952,19 +965,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedB2bAccountsIdRouteImport
       parentRoute: typeof AuthenticatedB2bAccountsRoute
     }
+    '/_authenticated/admin/companies/new': {
+      id: '/_authenticated/admin/companies/new'
+      path: '/new'
+      fullPath: '/admin/companies/new'
+      preLoaderRoute: typeof AuthenticatedAdminCompaniesNewRouteImport
+      parentRoute: typeof AuthenticatedAdminCompaniesRoute
+    }
   }
 }
 
+interface AuthenticatedAdminCompaniesRouteChildren {
+  AuthenticatedAdminCompaniesNewRoute: typeof AuthenticatedAdminCompaniesNewRoute
+}
+
+const AuthenticatedAdminCompaniesRouteChildren: AuthenticatedAdminCompaniesRouteChildren =
+  {
+    AuthenticatedAdminCompaniesNewRoute: AuthenticatedAdminCompaniesNewRoute,
+  }
+
+const AuthenticatedAdminCompaniesRouteWithChildren =
+  AuthenticatedAdminCompaniesRoute._addFileChildren(
+    AuthenticatedAdminCompaniesRouteChildren,
+  )
+
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
-  AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRoute
+  AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
-  AuthenticatedAdminCompaniesRoute: AuthenticatedAdminCompaniesRoute,
+  AuthenticatedAdminCompaniesRoute:
+    AuthenticatedAdminCompaniesRouteWithChildren,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
 }
@@ -1128,13 +1163,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
