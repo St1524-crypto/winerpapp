@@ -31,6 +31,7 @@ function AdminPanel() {
   const { roles, user } = useAuth();
   const isAdmin = roles.includes("super_admin");
   const [m, setM] = useState<Metric | null>(null);
+  const [activity, setActivity] = useState<ActivityRow[] | null>(null);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -51,6 +52,23 @@ function AdminPanel() {
         notifications: counts[4].count ?? 0,
         audits: counts[5].count ?? 0,
       });
+
+      const [audits, users] = await Promise.all([
+        supabase.from("audit_logs").select("id, action, entity, created_at").order("created_at", { ascending: false }).limit(8),
+        supabase.from("profiles").select("id, name, email, created_at").order("created_at", { ascending: false }).limit(5),
+      ]);
+      const rows: ActivityRow[] = [
+        ...(audits.data ?? []).map((a) => ({
+          id: `a-${a.id}`, kind: "audit" as const,
+          title: `${a.action} · ${a.entity}`, detail: "稽核紀錄", ts: a.created_at,
+        })),
+        ...(users.data ?? []).map((u) => ({
+          id: `u-${u.id}`, kind: "user" as const,
+          title: u.name || u.email || "新用戶",
+          detail: `加入系統 · ${u.email ?? ""}`, ts: u.created_at,
+        })),
+      ].sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()).slice(0, 10);
+      setActivity(rows);
     })();
   }, [isAdmin]);
 
