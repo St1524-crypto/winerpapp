@@ -13,6 +13,7 @@ import { exportPdfReport } from "@/lib/pdf-report";
 import { useBranding } from "@/hooks/use-branding";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
@@ -53,6 +54,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
 
 function Dashboard() {
   const { logoUrl } = useBranding();
+  const { currentCompanyId } = useCurrentCompany();
   const [stats, setStats] = useState({ total: 0, low: 0, featured: 0, today: 0 });
   const [proc, setProc] = useState({ todayInAmount: 0, pendingPO: 0, vendorCount: 0, lowCount: 0 });
   const [purchaseTrend, setPurchaseTrend] = useState<{ day: string; amount: number }[]>([]);
@@ -77,7 +79,9 @@ function Dashboard() {
         sb.from("vendors").select("id", { count: "exact", head: true }).eq("status", "active"),
       ]);
       // 計算今日進貨金額（從 inventory_transactions 計算 purchase_in）
-      const { data: txToday } = await sb.from("inventory_transactions").select("quantity, product_id").eq("type", "purchase_in").gte("created_at", since.toISOString());
+      const txQuery = sb.from("inventory_transactions").select("quantity, product_id").eq("type", "purchase_in").gte("created_at", since.toISOString());
+      if (currentCompanyId) txQuery.eq("company_id", currentCompanyId);
+      const { data: txToday } = await txQuery;
       let todayAmt = 0;
       if (txToday && txToday.length) {
         const ids = Array.from(new Set(txToday.map((x: any) => x.product_id).filter(Boolean)));
@@ -99,7 +103,7 @@ function Dashboard() {
       });
       setPurchaseTrend(Object.entries(buckets).map(([k, v]) => ({ day: k.slice(5), amount: v })));
     })();
-  }, []);
+  }, [currentCompanyId]);
 
 
   async function exportRecentOrders() {

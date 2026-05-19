@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import type { InventoryLog, Product, ProductImage } from "@/types/product";
 
 export const Route = createFileRoute("/_authenticated/products/$productId")({ component: ProductDetail });
 
 function ProductDetail() {
   const { productId } = Route.useParams();
+  const { currentCompanyId } = useCurrentCompany();
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [logs, setLogs] = useState<InventoryLog[]>([]);
@@ -21,17 +23,25 @@ function ProductDetail() {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      const logsQuery = supabase
+        .from("inventory_logs")
+        .select("*")
+        .eq("product_id", productId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (currentCompanyId) logsQuery.eq("company_id", currentCompanyId);
+
       const [{ data: p }, { data: imgs }, { data: lg }] = await Promise.all([
         supabase.from("products").select("*").eq("id", productId).maybeSingle(),
         supabase.from("product_images").select("*").eq("product_id", productId).order("sort_order"),
-        supabase.from("inventory_logs").select("*").eq("product_id", productId).order("created_at", { ascending: false }).limit(20),
+        logsQuery,
       ]);
       setProduct(p as Product | null);
       setImages((imgs ?? []) as ProductImage[]);
       setLogs((lg ?? []) as InventoryLog[]);
       setLoading(false);
     })();
-  }, [productId]);
+  }, [productId, currentCompanyId]);
 
   if (loading) return <div className="space-y-4 max-w-5xl mx-auto"><Skeleton className="h-8 w-48" /><Skeleton className="h-96 w-full" /></div>;
   if (!product) return <div className="text-center py-20"><Package className="h-12 w-12 mx-auto text-muted-foreground/40" /><p className="mt-3">商品不存在</p><Button asChild className="mt-4"><Link to="/products">返回</Link></Button></div>;

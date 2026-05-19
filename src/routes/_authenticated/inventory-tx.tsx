@@ -52,8 +52,15 @@ function Page() {
 
   async function load() {
     setLoading(true);
+    const txQuery = sb
+      .from("inventory_transactions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (currentCompanyId) txQuery.eq("company_id", currentCompanyId);
+
     const [{ data: tx }, { data: p }, { data: w }] = await Promise.all([
-      sb.from("inventory_transactions").select("*").order("created_at", { ascending: false }).limit(200),
+      txQuery,
       sb.from("products").select("id,sku,name,stock"),
       sb.from("warehouses").select("id,warehouse_code,name"),
     ]);
@@ -62,7 +69,7 @@ function Page() {
     const wm: Record<string, WH> = {}; (w ?? []).forEach((x: WH) => wm[x.id] = x); setWhMap(wm); setWarehouses(w ?? []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [currentCompanyId]);
 
   const filtered = useMemo(() => list.filter((t) => {
     if (typeFilter !== "all" && t.type !== typeFilter) return false;
