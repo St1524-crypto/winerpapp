@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package } from "lucide-react";
+import { ArrowLeft, Package, MapPin, Lock } from "lucide-react";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, SHIPPING_STATUS_LABELS, type SalesOrder, type SalesOrderItem } from "@/types/shop";
 
 export const Route = createFileRoute("/shop/account/orders/$id")({ component: OrderDetail });
@@ -82,13 +82,24 @@ function OrderDetail() {
           <Separator />
 
           <div className="grid sm:grid-cols-2 gap-6 text-sm">
-            <div>
-              <div className="text-xs text-muted-foreground mb-2">收件資訊</div>
-              <div className="space-y-1">
-                <div>{order.receiver_name}</div>
-                <div className="text-muted-foreground">{order.receiver_phone}</div>
-                <div className="text-muted-foreground">{order.shipping_address}</div>
+            <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
+                  收件資訊（下單當下快照）
+                </div>
+                <Badge variant="secondary" className="gap-1 text-[10px] h-5">
+                  <Lock className="h-3 w-3" />已鎖定
+                </Badge>
               </div>
+              <div className="space-y-1.5">
+                <div className="font-medium">{order.receiver_name}</div>
+                <div className="text-sm text-muted-foreground">{order.receiver_phone}</div>
+                <div className="text-sm text-muted-foreground leading-relaxed">{order.shipping_address}</div>
+              </div>
+              <p className="mt-3 pt-3 border-t border-border/40 text-[11px] text-muted-foreground/80">
+                此地址為下單時所使用的收件資訊，之後變更預設地址不會影響本訂單。
+              </p>
             </div>
             <div>
               <div className="text-xs text-muted-foreground mb-2">金額明細</div>
