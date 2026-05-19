@@ -68,9 +68,8 @@ async function urlToDataUrl(url: string): Promise<string> {
   }
 }
 
-export async function exportOrderPdf(data: OrderPdfData) {
-  const { order, items, payments, logoUrl } = data;
-  const logoData = await urlToDataUrl(logoUrl);
+function buildOrderHtml(data: Omit<OrderPdfData, "logoUrl">, logoData: string): string {
+  const { order, items, payments } = data;
   const now = new Date().toLocaleString("zh-TW", { hour12: false });
   const created = new Date(order.created_at).toLocaleString("zh-TW", { hour12: false });
 
@@ -107,8 +106,8 @@ export async function exportOrderPdf(data: OrderPdfData) {
         .join("")
     : `<tr><td colspan="5" style="padding:18px;text-align:center;color:#94a3b8;font-size:12px">尚無付款紀錄</td></tr>`;
 
-  const html = `
-    <div id="__order_pdf" style="width:794px;background:#fff;padding:36px;font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;color:#0f172a">
+  return `
+    <div style="width:794px;background:#fff;padding:36px;font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;color:#0f172a">
       <div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #7c3aed;padding-bottom:16px;margin-bottom:20px">
         <div style="width:56px;height:56px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;overflow:hidden">
           <img src="${logoData}" style="width:100%;height:100%;object-fit:contain" crossorigin="anonymous" />
@@ -206,34 +205,59 @@ export async function exportOrderPdf(data: OrderPdfData) {
         <div>© 源倍力 ERP · 機密文件</div>
       </div>
     </div>`;
+}
 
+async function renderHtmlIntoPdf(pdf: jsPDF, html: string, addPageFirst: boolean) {
   const host = document.createElement("div");
   host.style.cssText = "position:fixed;left:-10000px;top:0;z-index:-1";
   host.innerHTML = html;
   document.body.appendChild(host);
-
   try {
     const node = host.firstElementChild as HTMLElement;
     const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-    const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
     const imgW = pageW;
     const imgH = (canvas.height * imgW) / canvas.width;
     const img = canvas.toDataURL("image/jpeg", 0.95);
 
+    if (addPageFirst) pdf.addPage();
     if (imgH <= pageH) {
       pdf.addImage(img, "JPEG", 0, 0, imgW, imgH);
     } else {
       let y = 0;
+      let first = true;
       while (y < imgH) {
+        if (!first) pdf.addPage();
         pdf.addImage(img, "JPEG", 0, -y, imgW, imgH);
         y += pageH;
-        if (y < imgH) pdf.addPage();
+        first = false;
       }
     }
-    pdf.save(`訂單-${order.order_no}.pdf`);
   } finally {
     document.body.removeChild(host);
   }
 }
+
+export async function exportOrderPdf(data: OrderPdfData) {
+  const logoData = await urlToDataUrl(data.logoUrl);
+  const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+  await renderHtmlIntoPdf(pdf, buildOrderHtml(data, logoData), false);
+  pdf.save(`訂單-${data.order.order_no}.pdf`);
+}
+
+export async function exportOrdersPdf(
+  orders: Array<Omit<OrderPdfData, "logoUrl">>,
+  logoUrl: string,
+  filename?: string,
+) {
+  if (orders.length === 0) return;
+  const logoData = await urlToDataUrl(logoUrl);
+  const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+  for (let i = 0; i < orders.length; i++) {
+    await renderHtmlIntoPdf(pdf, buildOrderHtml(orders[i], logoData), i > 0);
+  }
+  const name = filename ?? `訂單批次-${orders.length}筆-${Date.now()}.pdf`;
+  pdf.save(name);
+}
+

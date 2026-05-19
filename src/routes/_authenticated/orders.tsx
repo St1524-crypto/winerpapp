@@ -7,7 +7,7 @@ import {
   PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check, UserPlus,
   Package, Trash2, Printer,
 } from "lucide-react";
-import { exportOrderPdf } from "@/lib/order-pdf";
+import { exportOrderPdf, exportOrdersPdf } from "@/lib/order-pdf";
 import { useBranding } from "@/hooks/use-branding";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,7 +123,66 @@ function OrdersPage() {
   const [search, setSearch] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [printingId, setPrintingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchPrinting, setBatchPrinting] = useState(false);
   const { logoUrl } = useBranding();
+
+  function toggleSelect(id: string) {
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+  function toggleSelectAll(ids: string[], checked: boolean) {
+    setSelected((s) => {
+      const n = new Set(s);
+      if (checked) ids.forEach((id) => n.add(id));
+      else ids.forEach((id) => n.delete(id));
+      return n;
+    });
+  }
+
+  async function handleBatchPrint() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    try {
+      setBatchPrinting(true);
+      const [ordersRes, itemsRes, paymentsRes] = await Promise.all([
+        supabase.from("sales_orders").select("*").in("id", ids),
+        supabase.from("sales_order_items").select("*").in("sales_order_id", ids).order("created_at"),
+        supabase.from("payments").select("*").in("sales_order_id", ids).order("created_at", { ascending: false }),
+      ]);
+      if (ordersRes.error) throw new Error(ordersRes.error.message);
+      const orderList = (ordersRes.data ?? []) as any[];
+      const itemsByOrder = new Map<string, any[]>();
+      (itemsRes.data ?? []).forEach((it: any) => {
+        const arr = itemsByOrder.get(it.sales_order_id) ?? [];
+        arr.push(it);
+        itemsByOrder.set(it.sales_order_id, arr);
+      });
+      const paymentsByOrder = new Map<string, any[]>();
+      (paymentsRes.data ?? []).forEach((p: any) => {
+        const arr = paymentsByOrder.get(p.sales_order_id) ?? [];
+        arr.push(p);
+        paymentsByOrder.set(p.sales_order_id, arr);
+      });
+      // 依使用者勾選順序輸出
+      const orderMap = new Map(orderList.map((o) => [o.id, o]));
+      const sorted = ids.map((id) => orderMap.get(id)).filter(Boolean);
+      const payload = sorted.map((o: any) => ({
+        order: o,
+        items: itemsByOrder.get(o.id) ?? [],
+        payments: paymentsByOrder.get(o.id) ?? [],
+      }));
+      await exportOrdersPdf(payload, logoUrl);
+      toast.success(`已匯出 ${payload.length} 筆訂單 PDF`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "批次列印失敗");
+    } finally {
+      setBatchPrinting(false);
+    }
+  }
 
   async function handlePrintOrder(orderId: string) {
     try {
@@ -243,8 +302,22 @@ function OrdersPage() {
 
       {/* Table */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
           <CardTitle className="text-base">訂單清單 ({ordersQ.data?.length ?? 0})</CardTitle>
+          {selected.size > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">已選 {selected.size} 筆</span>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())} disabled={batchPrinting}>
+                取消選取
+              </Button>
+              <Button size="sm" className="bg-gradient-primary" onClick={handleBatchPrint} disabled={batchPrinting}>
+                {batchPrinting
+                  ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  : <Printer className="h-3.5 w-3.5 mr-1" />}
+                批次匯出 PDF
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           {ordersQ.isLoading ? (
@@ -258,6 +331,18 @@ function OrdersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={
+                          ordersQ.data.length > 0 &&
+                          ordersQ.data.every((o) => selected.has(o.id))
+                        }
+                        onCheckedChange={(c) =>
+                          toggleSelectAll(ordersQ.data!.map((o) => o.id), !!c)
+                        }
+                        aria-label="全選"
+                      />
+                    </TableHead>
                     <TableHead>訂單號</TableHead>
                     <TableHead>客戶</TableHead>
                     <TableHead>建立日期</TableHead>
@@ -270,7 +355,14 @@ function OrdersPage() {
                 </TableHeader>
                 <TableBody>
                   {ordersQ.data.map((o) => (
-                    <TableRow key={o.id} className="hover:bg-muted/30">
+                    <TableRow key={o.id} className="hover:bg-muted/30" data-state={selected.has(o.id) ? "selected" : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selected.has(o.id)}
+                          onCheckedChange={() => toggleSelect(o.id)}
+                          aria-label={`選取 ${o.order_no}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{o.order_no}</TableCell>
                       <TableCell>
                         <div className="font-medium text-sm">{o.customer_name}</div>
