@@ -341,6 +341,40 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  const productsQ = useQuery({
+    queryKey: ["products-picker-orders"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id,name,sku,price,image,stock")
+        .eq("status", "active")
+        .order("updated_at", { ascending: false })
+        .limit(300);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+  function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null }) {
+    setItems((prev) => {
+      const idx = prev.findIndex((x) => x.product_id === p.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+        return next;
+      }
+      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1 }];
+    });
+    setProductPickerOpen(false);
+  }
+  function updateItem(idx: number, patch: Partial<{ unit_price: number; quantity: number }>) {
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  }
+  function removeItem(idx: number) {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  }
+
   // 即時校驗：取得各欄位的錯誤訊息（僅在欄位被觸碰過後顯示）
   const [qaTouched, setQaTouched] = useState<Record<string, boolean>>({});
   const qaValidation = useMemo(() => {
