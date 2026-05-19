@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,11 +28,12 @@ export const Route = createFileRoute("/_authenticated/admin/companies/new")({
 });
 
 function NewCompanyPage() {
-  const { roles, user } = useAuth();
+  const { roles, user, refreshRoles } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { refresh, setCurrent } = useCurrentCompany();
+
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
@@ -72,15 +74,23 @@ function NewCompanyPage() {
       return data;
     },
     onSuccess: async (data) => {
-      toast.success("公司已建立，已切換至此公司");
-      qc.invalidateQueries({ queryKey: ["admin-companies"] });
-      qc.invalidateQueries({ queryKey: ["admin-companies-member-count"] });
+      // 1) 重新載入公司清單，確保新公司在 options 內
       await refresh();
+      // 2) 切換到新公司（會寫入 profiles.current_company_id 並 invalidate 所有 query）
       if (data?.id) {
         try { await setCurrent(data.id); } catch {}
       }
+      // 3) 同步重新載入使用者角色，讓側邊選單即時反映權限
+      try { await refreshRoles(); } catch {}
+      // 4) 顯式重新整理本頁所需的 query
+      await qc.invalidateQueries({ queryKey: ["admin-companies"] });
+      await qc.invalidateQueries({ queryKey: ["admin-companies-member-count"] });
+      // 5) 全域 invalidate 確保所有頁面資料以新公司為準
+      await qc.invalidateQueries();
+      toast.success(`已建立並切換至「${data.company_name}」`);
       navigate({ to: "/admin/companies" });
     },
+
     onError: (e: any) => {
       toast.error("建立失敗", { description: e?.message ?? "發生未知錯誤" });
     },

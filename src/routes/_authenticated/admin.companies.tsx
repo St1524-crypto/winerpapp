@@ -172,9 +172,10 @@ function AdminCompaniesPage() {
 // =================== Create Company ===================
 function CreateCompanyDialog() {
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user, refreshRoles } = useAuth();
   const { refresh, setCurrent } = useCurrentCompany();
   const [open, setOpen] = useState(false);
+
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
@@ -216,16 +217,19 @@ function CreateCompanyDialog() {
       return data;
     },
     onSuccess: async (data) => {
-      toast.success("公司已建立，已切換至此公司");
-      qc.invalidateQueries({ queryKey: ["admin-companies"] });
-      qc.invalidateQueries({ queryKey: ["admin-companies-member-count"] });
       await refresh();
       if (data?.id) {
         try { await setCurrent(data.id); } catch {}
       }
+      try { await refreshRoles(); } catch {}
+      await qc.invalidateQueries({ queryKey: ["admin-companies"] });
+      await qc.invalidateQueries({ queryKey: ["admin-companies-member-count"] });
+      await qc.invalidateQueries();
+      toast.success(`已建立並切換至「${data.company_name}」`);
       setOpen(false);
       form.reset();
     },
+
     onError: (e: any) => {
       toast.error("建立失敗", { description: e?.message ?? "發生未知錯誤" });
     },
