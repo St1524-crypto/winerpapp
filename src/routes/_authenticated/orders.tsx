@@ -403,6 +403,8 @@ function OrderDetailDialog({
   const paidTotal = payments
     .filter((p: any) => p.payment_status === "completed")
     .reduce((s: number, p: any) => s + Number(p.amount), 0);
+  const pendingPayments = payments.filter((p: any) => p.payment_status !== "completed");
+  const pendingPaymentsTotal = pendingPayments.reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
   const unpaid = order ? Math.max(0, Number(order.total_amount) - paidTotal) : 0;
 
   const updateStatus = useMutation({
