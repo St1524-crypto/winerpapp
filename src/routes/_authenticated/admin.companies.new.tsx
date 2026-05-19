@@ -45,8 +45,11 @@ function NewCompanyPage() {
       email: "",
       phone: "",
       address: "",
+      logo_url: "",
     },
   });
+
+  const logoUrl = form.watch("logo_url") ?? "";
 
   const m = useMutation({
     mutationFn: async (values: CompanyFormValues) => {
