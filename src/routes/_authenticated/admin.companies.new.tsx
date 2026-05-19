@@ -1,13 +1,22 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { companySchema, type CompanyFormValues } from "@/lib/company-schema";
 import { Building2, Plus, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
@@ -23,25 +32,29 @@ function NewCompanyPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { refresh, setCurrent } = useCurrentCompany();
-  const [form, setForm] = useState({
-    company_name: "",
-    tax_id: "",
-    email: "",
-    phone: "",
-    address: "",
+
+  const form = useForm<CompanyFormValues>({
+    resolver: zodResolver(companySchema),
+    mode: "onChange",
+    defaultValues: {
+      company_name: "",
+      tax_id: "",
+      email: "",
+      phone: "",
+      address: "",
+    },
   });
 
   const m = useMutation({
-    mutationFn: async () => {
-      if (!form.company_name.trim()) throw new Error("請輸入公司名稱");
+    mutationFn: async (values: CompanyFormValues) => {
       const { data, error } = await supabase
         .from("companies")
         .insert({
-          company_name: form.company_name.trim(),
-          tax_id: form.tax_id || null,
-          email: form.email || null,
-          phone: form.phone || null,
-          address: form.address || null,
+          company_name: values.company_name,
+          tax_id: values.tax_id || null,
+          email: values.email || null,
+          phone: values.phone || null,
+          address: values.address || null,
           status: "active",
         })
         .select()
@@ -97,52 +110,114 @@ function NewCompanyPage() {
           <CardTitle className="text-base">公司資料</CardTitle>
         </CardHeader>
         <CardContent>
-          <form
-            className="space-y-4"
-            onSubmit={(e) => { e.preventDefault(); m.mutate(); }}
-          >
-            <div>
-              <Label>公司名稱 *</Label>
-              <Input
-                autoFocus
-                value={form.company_name}
-                onChange={(e) => setForm({ ...form, company_name: e.target.value })}
-                placeholder="例：源倍力科技股份有限公司"
+          <Form {...form}>
+            <form
+              className="space-y-4"
+              onSubmit={form.handleSubmit((values) => m.mutate(values))}
+            >
+              <FormField
+                control={form.control}
+                name="company_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>公司名稱 <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Input
+                        autoFocus
+                        placeholder="例：源倍力科技股份有限公司"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>統一編號</Label>
-                <Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="tax_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>統一編號</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="例：12345678"
+                          maxLength={8}
+                          inputMode="numeric"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>電話</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="例：02-2345-6789"
+                          maxLength={30}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <div>
-                <Label>電話</Label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              </div>
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            </div>
-            <div>
-              <Label>地址</Label>
-              <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-            </div>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="例：contact@company.com"
+                        type="email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>地址</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="例：台北市信義區..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => navigate({ to: "/admin/companies" })}>
-                取消
-              </Button>
-              <Button
-                type="submit"
-                disabled={m.isPending}
-                className="bg-gradient-primary gap-2 shadow-lg shadow-primary/30"
-              >
-                {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                建立公司
-              </Button>
-            </div>
-          </form>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => navigate({ to: "/admin/companies" })}>
+                  取消
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={m.isPending || !form.formState.isValid}
+                  className="bg-gradient-primary gap-2 shadow-lg shadow-primary/30"
+                >
+                  {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  建立公司
+                </Button>
+              </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
