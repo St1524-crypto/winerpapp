@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ShoppingCart, Search, Plus, Loader2, Eye, Truck, CreditCard,
-  PackageCheck, XCircle, RotateCw, Receipt,
+  PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   head: () => ({
@@ -290,6 +292,23 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [shippingFee, setShippingFee] = useState("0");
   const [discount, setDiscount] = useState("0");
   const [notes, setNotes] = useState("");
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const customersQ = useQuery({
+    queryKey: ["customers-picker"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id,name,email,phone,company")
+        .order("updated_at", { ascending: false })
+        .limit(200);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
 
   const total = useMemo(
     () => Math.max(0, Number(subtotal || 0) + Number(shippingFee || 0) - Number(discount || 0)),
@@ -326,10 +345,20 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
       setSubtotal(""); setShippingFee("0"); setDiscount("0"); setNotes("");
+      setCustomerId(null);
       onCreated();
     },
     onError: (e: any) => toast.error(e?.message ?? "建立失敗"),
   });
+
+  function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null }) {
+    setCustomerId(c.id);
+    setCustomer(c.name);
+    setEmail(c.email ?? "");
+    setPhone(c.phone ?? "");
+    setPickerOpen(false);
+    toast.success(`已套用客戶資料：${c.name}`);
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -343,10 +372,80 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           <DialogTitle>新增訂單</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
+          {/* Customer lookup */}
+          <div className="space-y-1.5">
+            <Label className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <UserSearch className="h-3.5 w-3.5" /> 從客戶名單帶入
+              </span>
+              {customerId && (
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => { setCustomerId(null); setCustomer(""); setEmail(""); setPhone(""); }}
+                >
+                  清除選取
+                </button>
+              )}
+            </Label>
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between font-normal"
+                >
+                  <span className="truncate">
+                    {customerId
+                      ? `${customer}${email ? ` · ${email}` : ""}`
+                      : "搜尋客戶姓名 / Email / 電話 / 公司"}
+                  </span>
+                  <Search className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
+                <Command>
+                  <CommandInput placeholder="輸入關鍵字搜尋..." />
+                  <CommandList>
+                    {customersQ.isLoading ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">載入中...</div>
+                    ) : (
+                      <>
+                        <CommandEmpty>查無客戶，請於下方手動輸入。</CommandEmpty>
+                        <CommandGroup heading={`客戶 (${customersQ.data?.length ?? 0})`}>
+                          {(customersQ.data ?? []).map((c: any) => (
+                            <CommandItem
+                              key={c.id}
+                              value={`${c.name} ${c.email ?? ""} ${c.phone ?? ""} ${c.company ?? ""}`}
+                              onSelect={() => pickCustomer(c)}
+                            >
+                              <Check className={`h-4 w-4 mr-2 ${customerId === c.id ? "opacity-100" : "opacity-0"}`} />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium truncate">
+                                  {c.name}
+                                  {c.company && <span className="text-xs text-muted-foreground ml-2">{c.company}</span>}
+                                </div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {[c.email, c.phone].filter(Boolean).join(" · ") || "—"}
+                                </div>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>客戶姓名 *</Label><Input value={customer} onChange={(e) => setCustomer(e.target.value)} /></div>
+            <div><Label>客戶姓名 *</Label><Input value={customer} onChange={(e) => { setCustomer(e.target.value); setCustomerId(null); }} /></div>
             <div><Label>電話 *</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
           </div>
+
           <div><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           <div><Label>收件地址 *</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
           <div className="grid grid-cols-3 gap-3">
