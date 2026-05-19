@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import logo from "@/assets/logo.jpg";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
@@ -61,10 +62,10 @@ function LoginPage() {
 
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow mb-4">
-            <Sparkles className="h-7 w-7 text-primary-foreground" />
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-glow mb-4 overflow-hidden ring-1 ring-primary/30">
+            <img src={logo} alt="源倍力 Logo" className="h-full w-full object-contain" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">源晶 ERP</h1>
+          <h1 className="text-3xl font-bold tracking-tight">源倍力 ERP</h1>
           <p className="text-sm text-muted-foreground mt-1">Enterprise Resource Platform</p>
         </div>
 
