@@ -78,6 +78,12 @@ export function AppHeader() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem><User className="h-4 w-4 mr-2" />個人資料</DropdownMenuItem>
+          {isSuperAdmin && (
+            <DropdownMenuItem onClick={toggleAdmin}>
+              {inAdmin ? <LayoutDashboard className="h-4 w-4 mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
+              切換至{inAdmin ? "營運模式" : "管理員模式"}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
             <LogOut className="h-4 w-4 mr-2" />登出
