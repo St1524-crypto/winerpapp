@@ -19,6 +19,7 @@ const GROUPS: AdminNavGroup[] = [
     label: "控制中心",
     items: [
       { title: "管理首頁", url: "/admin", icon: LayoutDashboard },
+      { title: "公司管理", url: "/admin/companies", icon: Building2 },
       { title: "營運儀表板", url: "/dashboard", icon: Database },
     ],
   },
