@@ -426,12 +426,13 @@ function RoleManagerPage() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    setServerError(null);
-                    qc.invalidateQueries({ queryKey: ["admin-users"] });
-                  }}
+                  onClick={() => recheck()}
+                  disabled={usersQ.isFetching}
                 >
-                  <RotateCw className="h-3.5 w-3.5 mr-1" /> 重新檢查使用者資料
+                  {usersQ.isFetching
+                    ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    : <RotateCw className="h-3.5 w-3.5 mr-1" />}
+                  重新檢查使用者資料
                 </Button>
               </div>
             </div>
