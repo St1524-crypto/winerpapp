@@ -336,16 +336,37 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  // 即時校驗：取得各欄位的錯誤訊息（僅在欄位被觸碰過後顯示）
+  const [qaTouched, setQaTouched] = useState<Record<string, boolean>>({});
+  const qaValidation = useMemo(() => {
+    const result = quickAddCustomerSchema.safeParse({
+      name: qaName, email: qaEmail, phone: qaPhone, company: qaCompany,
+    });
+    if (result.success) return { ok: true as const, errors: {} as Record<string, string> };
+    const errors: Record<string, string> = {};
+    for (const issue of result.error.issues) {
+      const key = issue.path[0] as string;
+      if (!errors[key]) errors[key] = issue.message;
+    }
+    return { ok: false as const, errors };
+  }, [qaName, qaEmail, qaPhone, qaCompany]);
+
   const quickAddMut = useMutation({
     mutationFn: async () => {
-      if (!qaName.trim()) throw new Error("請輸入客戶姓名");
+      const parsed = quickAddCustomerSchema.safeParse({
+        name: qaName, email: qaEmail, phone: qaPhone, company: qaCompany,
+      });
+      if (!parsed.success) {
+        setQaTouched({ name: true, email: true, phone: true, company: true });
+        throw new Error(parsed.error.issues[0]?.message ?? "資料格式不正確");
+      }
       const { data, error } = await supabase
         .from("customers")
         .insert({
-          name: qaName.trim(),
-          email: qaEmail.trim() || null,
-          phone: qaPhone.trim() || null,
-          company: qaCompany.trim() || null,
+          name: parsed.data.name,
+          email: parsed.data.email?.trim() || null,
+          phone: parsed.data.phone?.trim() || null,
+          company: parsed.data.company?.trim() || null,
         })
         .select("id,name,email,phone,company")
         .single();
@@ -358,9 +379,11 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       pickCustomer(created);
       setQuickAddOpen(false);
       setQaName(""); setQaEmail(""); setQaPhone(""); setQaCompany("");
+      setQaTouched({});
     },
     onError: (e: any) => toast.error(e?.message ?? "新增客戶失敗"),
   });
+
 
 
 
