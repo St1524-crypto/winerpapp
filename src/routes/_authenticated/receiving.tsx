@@ -99,6 +99,7 @@ function Page() {
           reference_no: gr.receipt_no,
           reason: `採購入庫 ${receiving.po_no}`,
           operator_id: user?.id ?? null,
+          company_id: currentCompanyId,
         });
 
         // upsert warehouse_inventory
