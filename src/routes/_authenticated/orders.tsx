@@ -302,8 +302,22 @@ function OrdersPage() {
 
       {/* Table */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
           <CardTitle className="text-base">訂單清單 ({ordersQ.data?.length ?? 0})</CardTitle>
+          {selected.size > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">已選 {selected.size} 筆</span>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())} disabled={batchPrinting}>
+                取消選取
+              </Button>
+              <Button size="sm" className="bg-gradient-primary" onClick={handleBatchPrint} disabled={batchPrinting}>
+                {batchPrinting
+                  ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                  : <Printer className="h-3.5 w-3.5 mr-1" />}
+                批次匯出 PDF
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           {ordersQ.isLoading ? (
@@ -317,6 +331,18 @@ function OrdersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={
+                          ordersQ.data.length > 0 &&
+                          ordersQ.data.every((o) => selected.has(o.id))
+                        }
+                        onCheckedChange={(c) =>
+                          toggleSelectAll(ordersQ.data!.map((o) => o.id), !!c)
+                        }
+                        aria-label="全選"
+                      />
+                    </TableHead>
                     <TableHead>訂單號</TableHead>
                     <TableHead>客戶</TableHead>
                     <TableHead>建立日期</TableHead>
@@ -329,7 +355,14 @@ function OrdersPage() {
                 </TableHeader>
                 <TableBody>
                   {ordersQ.data.map((o) => (
-                    <TableRow key={o.id} className="hover:bg-muted/30">
+                    <TableRow key={o.id} className="hover:bg-muted/30" data-state={selected.has(o.id) ? "selected" : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selected.has(o.id)}
+                          onCheckedChange={() => toggleSelect(o.id)}
+                          aria-label={`選取 ${o.order_no}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{o.order_no}</TableCell>
                       <TableCell>
                         <div className="font-medium text-sm">{o.customer_name}</div>
