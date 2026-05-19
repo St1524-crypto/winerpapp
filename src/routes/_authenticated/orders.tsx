@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { exportOrderPdf, exportOrdersPdf } from "@/lib/order-pdf";
 import { useBranding } from "@/hooks/use-branding";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -107,6 +108,7 @@ type OrderRow = {
   payment_status: keyof typeof PAYMENT_STATUS;
   notes: string | null;
   created_at: string;
+  company_id: string;
 };
 
 // =================== Helpers ===================
@@ -592,6 +594,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [qaPhone, setQaPhone] = useState("");
   const [qaCompany, setQaCompany] = useState("");
   const qc = useQueryClient();
+  const { currentCompanyId } = useCurrentCompany();
 
   const customersQ = useQuery({
     queryKey: ["customers-picker"],
@@ -665,6 +668,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         setQaTouched({ name: true, email: true, phone: true, company: true });
         throw new Error(parsed.error.issues[0]?.message ?? "資料格式不正確");
       }
+      if (!currentCompanyId) throw new Error("尚未選擇公司");
       const { data, error } = await supabase
         .from("customers")
         .insert({
@@ -672,6 +676,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           email: parsed.data.email?.trim() || null,
           phone: parsed.data.phone?.trim() || null,
           company: parsed.data.company?.trim() || null,
+          company_id: currentCompanyId,
         })
         .select("id,name,email,phone,company")
         .single();
@@ -737,6 +742,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             name: customer,
             email: email || null,
             phone: phone || null,
+            company_id: currentCompanyId!,
           })
           .select("id")
           .single();
@@ -1820,6 +1826,7 @@ function EditOrderDialog({
             unit_price: it.unit_price,
             quantity: it.quantity,
             subtotal: Number(it.unit_price) * Number(it.quantity),
+            company_id: order.company_id,
           })),
         );
       if (insErr) throw new Error(`寫入新品項失敗：${insErr.message}`);

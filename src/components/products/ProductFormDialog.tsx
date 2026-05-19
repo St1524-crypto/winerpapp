@@ -13,6 +13,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import type { Category, Product } from "@/types/product";
 import { ImageUploader, UploaderImage } from "./ImageUploader";
 import { generateSku, isSkuUnique } from "@/lib/sku";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 interface Props {
   open: boolean;
@@ -34,6 +35,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
   const [form, setForm] = useState({ ...empty });
   const [images, setImages] = useState<UploaderImage[]>([]);
   const [saving, setSaving] = useState(false);
+  const { currentCompanyId } = useCurrentCompany();
 
   useEffect(() => {
     if (!open) return;
@@ -66,6 +68,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
   async function save() {
     if (!form.name.trim()) { toast.error("請輸入商品名稱"); return; }
     if (!form.sku.trim()) { toast.error("請輸入或產生 SKU"); return; }
+    if (!product && !currentCompanyId) { toast.error("尚未選擇公司"); return; }
     const unique = await isSkuUnique(form.sku, product?.id);
     if (!unique) { toast.error("SKU 已存在"); return; }
 
@@ -92,7 +95,11 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         const { error } = await supabase.from("products").update(payload).eq("id", product.id);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("products").insert(payload).select("id").single();
+        const { data, error } = await supabase
+          .from("products")
+          .insert({ ...payload, company_id: currentCompanyId! })
+          .select("id")
+          .single();
         if (error) throw error;
         productId = data.id;
       }
