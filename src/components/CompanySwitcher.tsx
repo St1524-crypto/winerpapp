@@ -1,4 +1,5 @@
-import { Building2, Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Building2, Check, ChevronsUpDown, Loader2, AlertCircle, RotateCw } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -8,13 +9,47 @@ import { useCurrentCompany } from "@/hooks/use-current-company";
 import { toast } from "sonner";
 
 export function CompanySwitcher() {
-  const { current, companies, loading, setCurrent } = useCurrentCompany();
+  const { current, companies, loading, error, refresh, setCurrent } = useCurrentCompany();
+  const lastErrorRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (error && error !== lastErrorRef.current) {
+      lastErrorRef.current = error;
+      toast.error("公司清單載入失敗", {
+        description: error,
+        action: {
+          label: "重新嘗試",
+          onClick: () => {
+            lastErrorRef.current = null;
+            refresh();
+          },
+        },
+      });
+    }
+    if (!error) lastErrorRef.current = null;
+  }, [error, refresh]);
 
   if (loading) {
     return (
       <Button variant="outline" size="sm" disabled className="gap-2">
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
         <span className="hidden sm:inline">載入中...</span>
+      </Button>
+    );
+  }
+
+  if (error) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-2 text-destructive border-destructive/40 hover:bg-destructive/10"
+        onClick={() => refresh()}
+      >
+        <AlertCircle className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">載入失敗</span>
+        <RotateCw className="h-3 w-3" />
+        <span className="hidden md:inline">重新嘗試</span>
       </Button>
     );
   }
