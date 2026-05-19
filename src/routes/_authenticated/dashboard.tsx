@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
-import { ShoppingCart, DollarSign, Boxes, Users } from "lucide-react";
+import { ShoppingCart, DollarSign, Boxes, Users, FileDown } from "lucide-react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
 } from "recharts";
+import { exportPdfReport } from "@/lib/pdf-report";
+import { useBranding } from "@/hooks/use-branding";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
@@ -46,11 +50,40 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
 };
 
 function Dashboard() {
+  const { logoUrl } = useBranding();
+
+  async function exportRecentOrders() {
+    try {
+      await exportPdfReport({
+        title: "最近訂單報表",
+        subtitle: "Dashboard 最新 6 筆交易摘要",
+        logoUrl,
+        meta: { 區間: "本週", 筆數: recentOrders.length, 產生人: "系統" },
+        columns: [
+          { key: "no", label: "訂單編號" },
+          { key: "customer", label: "客戶" },
+          { key: "amount", label: "金額", align: "right" },
+          { key: "status", label: "狀態", align: "right" },
+        ],
+        rows: recentOrders,
+        filename: `recent-orders-${Date.now()}.pdf`,
+      });
+      toast.success("PDF 報表已產生");
+    } catch (e: any) {
+      toast.error(e.message ?? "匯出失敗");
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">營運總覽</h1>
-        <p className="text-sm text-muted-foreground mt-1">即時掌握公司關鍵營運指標</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">營運總覽</h1>
+          <p className="text-sm text-muted-foreground mt-1">即時掌握公司關鍵營運指標</p>
+        </div>
+        <Button onClick={exportRecentOrders} className="bg-gradient-primary">
+          <FileDown className="h-4 w-4 mr-2" /> 匯出 PDF
+        </Button>
       </div>
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
