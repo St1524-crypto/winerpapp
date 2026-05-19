@@ -142,6 +142,13 @@ function AdminCompaniesPage() {
           onClose={() => setMemberDialogCompany(null)}
         />
       )}
+
+      {editCompany && (
+        <EditCompanyDialog
+          company={editCompany}
+          onClose={() => setEditCompany(null)}
+        />
+      )}
     </div>
   );
 }
