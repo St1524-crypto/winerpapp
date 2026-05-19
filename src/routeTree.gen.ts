@@ -33,6 +33,8 @@ import { Route as AuthenticatedCustomersRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
+import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
+import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -155,6 +157,18 @@ const AuthenticatedProductsProductIdRoute =
     path: '/$productId',
     getParentRoute: () => AuthenticatedProductsRoute,
   } as any)
+const AuthenticatedB2bAccountsRoute =
+  AuthenticatedB2bAccountsRouteImport.update({
+    id: '/b2b/accounts',
+    path: '/b2b/accounts',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedB2bAccountsIdRoute =
+  AuthenticatedB2bAccountsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedB2bAccountsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -179,7 +193,9 @@ export interface FileRoutesByFullPath {
   '/user-roles': typeof AuthenticatedUserRolesRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
+  '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -204,7 +220,9 @@ export interface FileRoutesByTo {
   '/user-roles': typeof AuthenticatedUserRolesRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
+  '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -231,7 +249,9 @@ export interface FileRoutesById {
   '/_authenticated/user-roles': typeof AuthenticatedUserRolesRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/warehouses': typeof AuthenticatedWarehousesRoute
+  '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -258,7 +278,9 @@ export interface FileRouteTypes {
     | '/user-roles'
     | '/vendors'
     | '/warehouses'
+    | '/b2b/accounts'
     | '/products/$productId'
+    | '/b2b/accounts/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -283,7 +305,9 @@ export interface FileRouteTypes {
     | '/user-roles'
     | '/vendors'
     | '/warehouses'
+    | '/b2b/accounts'
     | '/products/$productId'
+    | '/b2b/accounts/$id'
   id:
     | '__root__'
     | '/'
@@ -309,7 +333,9 @@ export interface FileRouteTypes {
     | '/_authenticated/user-roles'
     | '/_authenticated/vendors'
     | '/_authenticated/warehouses'
+    | '/_authenticated/b2b/accounts'
     | '/_authenticated/products/$productId'
+    | '/_authenticated/b2b/accounts/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -489,6 +515,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProductsProductIdRouteImport
       parentRoute: typeof AuthenticatedProductsRoute
     }
+    '/_authenticated/b2b/accounts': {
+      id: '/_authenticated/b2b/accounts'
+      path: '/b2b/accounts'
+      fullPath: '/b2b/accounts'
+      preLoaderRoute: typeof AuthenticatedB2bAccountsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/b2b/accounts/$id': {
+      id: '/_authenticated/b2b/accounts/$id'
+      path: '/$id'
+      fullPath: '/b2b/accounts/$id'
+      preLoaderRoute: typeof AuthenticatedB2bAccountsIdRouteImport
+      parentRoute: typeof AuthenticatedB2bAccountsRoute
+    }
   }
 }
 
@@ -503,6 +543,20 @@ const AuthenticatedProductsRouteChildren: AuthenticatedProductsRouteChildren = {
 const AuthenticatedProductsRouteWithChildren =
   AuthenticatedProductsRoute._addFileChildren(
     AuthenticatedProductsRouteChildren,
+  )
+
+interface AuthenticatedB2bAccountsRouteChildren {
+  AuthenticatedB2bAccountsIdRoute: typeof AuthenticatedB2bAccountsIdRoute
+}
+
+const AuthenticatedB2bAccountsRouteChildren: AuthenticatedB2bAccountsRouteChildren =
+  {
+    AuthenticatedB2bAccountsIdRoute: AuthenticatedB2bAccountsIdRoute,
+  }
+
+const AuthenticatedB2bAccountsRouteWithChildren =
+  AuthenticatedB2bAccountsRoute._addFileChildren(
+    AuthenticatedB2bAccountsRouteChildren,
   )
 
 interface AuthenticatedRouteChildren {
@@ -525,6 +579,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedUserRolesRoute: typeof AuthenticatedUserRolesRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedWarehousesRoute: typeof AuthenticatedWarehousesRoute
+  AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -547,6 +602,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedUserRolesRoute: AuthenticatedUserRolesRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedWarehousesRoute: AuthenticatedWarehousesRoute,
+  AuthenticatedB2bAccountsRoute: AuthenticatedB2bAccountsRouteWithChildren,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
