@@ -13,6 +13,7 @@ import { exportPdfReport } from "@/lib/pdf-report";
 import { useBranding } from "@/hooks/use-branding";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
