@@ -798,13 +798,158 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
           <div><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           <div><Label>收件地址 *</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
+
+          {/* ===== 商品明細 ===== */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" /> 商品明細 *</Label>
+              <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="outline" size="sm">
+                    <Plus className="h-3.5 w-3.5 mr-1" /> 加入商品
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[420px]" align="end">
+                  <Command>
+                    <CommandInput placeholder="搜尋商品名稱 / SKU..." />
+                    <CommandList>
+                      {productsQ.isLoading ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">載入中...</div>
+                      ) : (
+                        <>
+                          <CommandEmpty>查無商品</CommandEmpty>
+                          <CommandGroup heading={`商品 (${productsQ.data?.length ?? 0})`}>
+                            {(productsQ.data ?? []).map((p: any) => (
+                              <CommandItem
+                                key={p.id}
+                                value={`${p.name} ${p.sku ?? ""}`}
+                                onSelect={() => addItem(p)}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium truncate">{p.name}</div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {p.sku ?? "—"} · 庫存 {p.stock ?? 0}
+                                  </div>
+                                </div>
+                                <div className="text-sm tabular-nums ml-2">{fmt(p.price)}</div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {items.length === 0 ? (
+              <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+                尚未加入商品，請點選右上「加入商品」
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>商品</TableHead>
+                      <TableHead className="w-28">單價</TableHead>
+                      <TableHead className="w-24">數量</TableHead>
+                      <TableHead className="w-28 text-right">小計</TableHead>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((it, i) => (
+                      <TableRow key={it.product_id}>
+                        <TableCell>
+                          <div className="text-sm font-medium">{it.name}</div>
+                          {it.sku && <div className="text-xs text-muted-foreground">{it.sku}</div>}
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={it.unit_price}
+                            onChange={(e) => updateItem(i, { unit_price: Number(e.target.value) })}
+                            className="h-8"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={it.quantity}
+                            onChange={(e) => updateItem(i, { quantity: Math.max(1, Number(e.target.value) || 1) })}
+                            className="h-8"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-medium">
+                          {fmt(it.unit_price * it.quantity)}
+                        </TableCell>
+                        <TableCell>
+                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeItem(i)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-3 gap-3">
-            <div><Label>小計 *</Label><Input type="number" value={subtotal} onChange={(e) => setSubtotal(e.target.value)} /></div>
+            <div>
+              <Label>商品小計</Label>
+              <Input type="number" value={subtotalNum} readOnly className="bg-muted/40" />
+            </div>
             <div><Label>運費</Label><Input type="number" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} /></div>
             <div><Label>折扣</Label><Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} /></div>
           </div>
-          <div className="text-right text-sm">
-            訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
+
+          {/* ===== 訂金 / 尾款 ===== */}
+          <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+            <div className="text-sm font-medium flex items-center gap-1.5">
+              <CreditCard className="h-3.5 w-3.5" /> 付款設定（訂金 / 尾款）
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">訂金（已收）</Label>
+                <Input type="number" min={0} value={deposit} onChange={(e) => setDeposit(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">尾款（待收）</Label>
+                <Input type="number" min={0} value={balance} onChange={(e) => setBalance(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">付款方式</Label>
+                <Select value={depositMethod} onValueChange={setDepositMethod}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PAYMENT_METHOD_LABEL).map(([v, l]) => (
+                      <SelectItem key={v} value={v}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>訂金 + 尾款 = <span className="tabular-nums font-medium text-foreground">{fmt(paymentsTotal)}</span></span>
+              <span className={paymentsDiff < 0 ? "text-destructive font-medium" : ""}>
+                與訂單總額差額：{fmt(paymentsDiff)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t pt-3">
+            <div className="text-xs text-muted-foreground">
+              小計 {fmt(subtotalNum)} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)}
+            </div>
+            <div className="text-sm">
+              訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
+            </div>
           </div>
           <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
         </div>
