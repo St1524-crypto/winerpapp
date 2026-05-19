@@ -172,6 +172,7 @@ function AdminCompaniesPage() {
 
       {editCompany && (
         <EditCompanyDialog
+          key={editCompany.id}
           company={editCompany}
           onClose={() => setEditCompany(null)}
         />
@@ -369,6 +370,8 @@ function CompanyMembersDialog({
   company, onClose,
 }: { company: { id: string; name: string }; onClose: () => void }) {
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const { refresh: refreshCompanies } = useCurrentCompany();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
 
@@ -399,35 +402,47 @@ function CompanyMembersDialog({
     mutationFn: async () => {
       const e = email.trim().toLowerCase();
       if (!e) throw new Error("請輸入 Email");
-      const { data: prof } = await supabase
+      const { data: prof, error: profErr } = await supabase
         .from("profiles")
         .select("id")
         .eq("email", e)
         .maybeSingle();
-      if (!prof) throw new Error("找不到此 Email 的使用者（需先註冊）");
+      if (profErr) throw new Error(`查詢使用者失敗：${profErr.message}`);
+      if (!prof) throw new Error("找不到此 Email 的使用者（需先註冊登入過系統）");
       const { error } = await supabase
         .from("company_members")
         .insert({ company_id: company.id, user_id: prof.id, role });
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505" || error.message.toLowerCase().includes("duplicate")) {
+          throw new Error("此使用者已是公司成員");
+        }
+        throw new Error(`加入失敗：${error.message}`);
+      }
     },
     onSuccess: () => {
       toast.success("已加入公司");
       qc.invalidateQueries({ queryKey: ["company-members", company.id] });
       qc.invalidateQueries({ queryKey: ["admin-companies-member-count"] });
+      refreshCompanies();
       setEmail("");
     },
     onError: (e: any) => toast.error("加入失敗", { description: e.message }),
   });
 
   const removeMember = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("company_members").delete().eq("id", id);
+    mutationFn: async (row: { id: string; user_id: string }) => {
+      const { error } = await supabase.from("company_members").delete().eq("id", row.id);
       if (error) throw error;
+      return row;
     },
-    onSuccess: () => {
+    onSuccess: (row) => {
       toast.success("已移除");
       qc.invalidateQueries({ queryKey: ["company-members", company.id] });
       qc.invalidateQueries({ queryKey: ["admin-companies-member-count"] });
+      // 若移除的是自己，重新整理目前公司清單與選單
+      if (user && row.user_id === user.id) {
+        refreshCompanies();
+      }
     },
     onError: (e: any) => toast.error("移除失敗", { description: e.message }),
   });
@@ -498,7 +513,7 @@ function CompanyMembersDialog({
                       <Button
                         size="sm" variant="ghost"
                         className="text-destructive"
-                        onClick={() => removeMember.mutate(m.id)}
+                        onClick={() => removeMember.mutate({ id: m.id, user_id: m.user_id })}
                         disabled={removeMember.isPending}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
