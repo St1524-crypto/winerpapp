@@ -31,6 +31,7 @@ function AdminCompaniesPage() {
   const { roles } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
   const [memberDialogCompany, setMemberDialogCompany] = useState<{ id: string; name: string } | null>(null);
+  const [editCompany, setEditCompany] = useState<any | null>(null);
 
   const companiesQ = useQuery({
     queryKey: ["admin-companies"],
