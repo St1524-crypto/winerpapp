@@ -64,6 +64,7 @@ function RoleManagerPage() {
   const [roleFilter, setRoleFilter] = useState<AppRole | "__all">("__all");
   const [draft, setDraft] = useState<DraftMap>({});
   const [signOutTarget, setSignOutTarget] = useState<{ id: string; email: string | null } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const params = useMemo(
     () => ({
