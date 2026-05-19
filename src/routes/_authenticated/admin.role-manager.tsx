@@ -111,20 +111,46 @@ function RoleManagerPage() {
 
   const applyMut = useMutation({
     mutationFn: () => batchUpdateRoles({ data: { changes } }),
+    onMutate: () => {
+      setServerError(null);
+    },
     onSuccess: (res) => {
       toast.success(`已套用：${res.affected} 名使用者（+${res.added} / −${res.removed}）`);
       setDraft({});
+      setServerError(null);
       setConfirmOpen(false);
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (e: any) => {
-      const msg = String(e?.message ?? "");
-      if (msg.includes("SUPER_ADMIN_ZERO")) {
+      const raw = String(e?.message ?? "套用失敗");
+      const isZero = raw.includes("SUPER_ADMIN_ZERO");
+      const cleaned = raw.replace(/^.*SUPER_ADMIN_ZERO:\s*/, "");
+
+      setServerError({ kind: isZero ? "super_admin_zero" : "other", message: cleaned });
+      // Keep the confirm dialog open so the user sees the error in context.
+      setConfirmOpen(true);
+
+      if (isZero) {
         toast.error("套用後系統將沒有任何超級管理員，已由伺服器拒絕寫入。", {
-          description: msg.replace(/^.*SUPER_ADMIN_ZERO:\s*/, ""),
+          description: cleaned,
+          action: {
+            label: "重新檢查",
+            onClick: () => {
+              setServerError(null);
+              qc.invalidateQueries({ queryKey: ["admin-users"] });
+            },
+          },
         });
       } else {
-        toast.error(msg || "套用失敗");
+        toast.error(cleaned, {
+          action: {
+            label: "重新檢查",
+            onClick: () => {
+              setServerError(null);
+              qc.invalidateQueries({ queryKey: ["admin-users"] });
+            },
+          },
+        });
       }
     },
   });
