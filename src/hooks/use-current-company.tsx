@@ -16,6 +16,7 @@ interface CompanyCtx {
   current: CompanyOption | null;
   companies: CompanyOption[];
   loading: boolean;
+  error: string | null;
   refresh: () => Promise<void>;
   setCurrent: (companyId: string) => Promise<void>;
 }
@@ -25,6 +26,7 @@ const Ctx = createContext<CompanyCtx>({
   current: null,
   companies: [],
   loading: true,
+  error: null,
   refresh: async () => {},
   setCurrent: async () => {},
 });
