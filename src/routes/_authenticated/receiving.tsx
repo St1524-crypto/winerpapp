@@ -25,6 +25,7 @@ interface WH { id: string; name: string; warehouse_code: string; }
 
 function Page() {
   const { user } = useAuth();
+  const { currentCompanyId } = useCurrentCompany();
   const [list, setList] = useState<PO[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
