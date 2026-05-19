@@ -22,10 +22,12 @@ export function InventoryDialog({ open, onOpenChange, product, onDone }: Props) 
   const [qty, setQty] = useState(0);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
+  const { currentCompanyId } = useCurrentCompany();
 
   async function submit() {
     if (!product) return;
     if (!qty || qty <= 0) { toast.error("請輸入大於 0 的數量"); return; }
+    if (!currentCompanyId) { toast.error("尚未選擇公司"); return; }
     setSaving(true);
     try {
       const before = product.stock;
@@ -39,6 +41,7 @@ export function InventoryDialog({ open, onOpenChange, product, onDone }: Props) 
         product_id: product.id, type, quantity: qty,
         before_stock: before, after_stock: after,
         reason: reason || null, operator_id: u.user?.id ?? null,
+        company_id: currentCompanyId,
       });
       if (e1) throw e1;
       const { error: e2 } = await supabase.from("products").update({ stock: after }).eq("id", product.id);
