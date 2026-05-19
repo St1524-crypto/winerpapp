@@ -461,13 +461,31 @@ function Page() {
                 </CardContent></Card>
                 <div className="space-y-2">
                   <Label>狀態流轉</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {STATUS.map((s) => (
-                      <Button key={s.v} size="sm" variant={viewing.status === s.v ? "default" : "outline"} onClick={() => setStatus(viewing, s.v)}>{s.label}</Button>
-                    ))}
-                  </div>
+                  {(() => {
+                    const allowed = TRANSITIONS[viewing.status] ?? [];
+                    const isFinal = allowed.length === 0;
+                    return (
+                      <>
+                        <div className="flex flex-wrap gap-2 items-center">
+                          <Badge variant={statusMeta(viewing.status).variant}>{statusMeta(viewing.status).label}</Badge>
+                          {!isFinal && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
+                          {isFinal ? (
+                            <span className="text-xs text-muted-foreground">已為終止狀態，無法再變更</span>
+                          ) : (
+                            STATUS.filter((s) => allowed.includes(s.v)).map((s) => (
+                              <Button key={s.v} size="sm" variant="outline" onClick={() => setStatus(viewing, s.v)}>
+                                {s.label}
+                              </Button>
+                            ))
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">流程：草稿 → 已送出 → 已確認 → 部分到貨 → 全部到貨（任一階段可取消）</p>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div className="flex gap-2 pt-2">
+                  <Button onClick={() => printBrowser(viewing)} variant="outline"><Printer className="h-4 w-4 mr-1" />列印</Button>
                   <Button onClick={() => printPdf(viewing)} variant="outline"><FileDown className="h-4 w-4 mr-1" />匯出 PDF</Button>
                 </div>
               </div>
