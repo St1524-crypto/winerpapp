@@ -17,6 +17,7 @@ import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRlsTestRouteImport } from './routes/_authenticated/rls-test'
+import { Route as AuthenticatedReceivingRouteImport } from './routes/_authenticated/receiving'
 import { Route as AuthenticatedPurchasesRouteImport } from './routes/_authenticated/purchases'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
@@ -67,6 +68,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const AuthenticatedRlsTestRoute = AuthenticatedRlsTestRouteImport.update({
   id: '/rls-test',
   path: '/rls-test',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReceivingRoute = AuthenticatedReceivingRouteImport.update({
+  id: '/receiving',
+  path: '/receiving',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPurchasesRoute = AuthenticatedPurchasesRouteImport.update({
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/orders': typeof AuthenticatedOrdersRoute
   '/products': typeof AuthenticatedProductsRouteWithChildren
   '/purchases': typeof AuthenticatedPurchasesRoute
+  '/receiving': typeof AuthenticatedReceivingRoute
   '/rls-test': typeof AuthenticatedRlsTestRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/vendors': typeof AuthenticatedVendorsRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/orders': typeof AuthenticatedOrdersRoute
   '/products': typeof AuthenticatedProductsRouteWithChildren
   '/purchases': typeof AuthenticatedPurchasesRoute
+  '/receiving': typeof AuthenticatedReceivingRoute
   '/rls-test': typeof AuthenticatedRlsTestRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/vendors': typeof AuthenticatedVendorsRoute
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
   '/_authenticated/products': typeof AuthenticatedProductsRouteWithChildren
   '/_authenticated/purchases': typeof AuthenticatedPurchasesRoute
+  '/_authenticated/receiving': typeof AuthenticatedReceivingRoute
   '/_authenticated/rls-test': typeof AuthenticatedRlsTestRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/products'
     | '/purchases'
+    | '/receiving'
     | '/rls-test'
     | '/settings'
     | '/vendors'
@@ -234,6 +244,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/products'
     | '/purchases'
+    | '/receiving'
     | '/rls-test'
     | '/settings'
     | '/vendors'
@@ -256,6 +267,7 @@ export interface FileRouteTypes {
     | '/_authenticated/orders'
     | '/_authenticated/products'
     | '/_authenticated/purchases'
+    | '/_authenticated/receiving'
     | '/_authenticated/rls-test'
     | '/_authenticated/settings'
     | '/_authenticated/vendors'
@@ -326,6 +338,13 @@ declare module '@tanstack/react-router' {
       path: '/rls-test'
       fullPath: '/rls-test'
       preLoaderRoute: typeof AuthenticatedRlsTestRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/receiving': {
+      id: '/_authenticated/receiving'
+      path: '/receiving'
+      fullPath: '/receiving'
+      preLoaderRoute: typeof AuthenticatedReceivingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/purchases': {
@@ -440,6 +459,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRouteWithChildren
   AuthenticatedPurchasesRoute: typeof AuthenticatedPurchasesRoute
+  AuthenticatedReceivingRoute: typeof AuthenticatedReceivingRoute
   AuthenticatedRlsTestRoute: typeof AuthenticatedRlsTestRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
@@ -458,6 +478,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRouteWithChildren,
   AuthenticatedPurchasesRoute: AuthenticatedPurchasesRoute,
+  AuthenticatedReceivingRoute: AuthenticatedReceivingRoute,
   AuthenticatedRlsTestRoute: AuthenticatedRlsTestRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
@@ -477,3 +498,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
