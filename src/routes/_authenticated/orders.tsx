@@ -511,6 +511,40 @@ function OrderDetailDialog({
               </Card>
             </div>
 
+            {/* 收款摘要：已收 / 應收 / 差額 */}
+            {(() => {
+              const receivable = Number(order.total_amount);
+              const diff = paidTotal - receivable; // 負數表示尚有未收
+              const diffNegative = diff < 0;
+              const diffColor = diffNegative
+                ? "text-destructive"
+                : diff > 0 ? "text-warning" : "text-success";
+              return (
+                <div className="grid grid-cols-3 gap-3">
+                  <Card><CardContent className="pt-4">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">已收</div>
+                    <div className="text-xl font-bold mt-1 text-success">{fmt(paidTotal)}</div>
+                  </CardContent></Card>
+                  <Card><CardContent className="pt-4">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">應收</div>
+                    <div className="text-xl font-bold mt-1">{fmt(receivable)}</div>
+                  </CardContent></Card>
+                  <Card className={diffNegative ? "border-destructive/40" : undefined}>
+                    <CardContent className="pt-4">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">差額</div>
+                      <div className={`text-xl font-bold mt-1 ${diffColor}`}>
+                        {diff < 0 ? `- ${fmt(Math.abs(diff))}` : fmt(diff)}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        {diffNegative ? "尚有未收款" : diff > 0 ? "已超收" : "已結清"}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })()}
+
+
             {/* Items */}
             <Card>
               <CardHeader className="pb-2"><CardTitle className="text-sm">訂單品項 ({items.length})</CardTitle></CardHeader>
