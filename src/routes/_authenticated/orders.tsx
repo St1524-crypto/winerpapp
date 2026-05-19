@@ -294,6 +294,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [notes, setNotes] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [qaName, setQaName] = useState("");
+  const [qaEmail, setQaEmail] = useState("");
+  const [qaPhone, setQaPhone] = useState("");
+  const [qaCompany, setQaCompany] = useState("");
+  const qc = useQueryClient();
 
   const customersQ = useQuery({
     queryKey: ["customers-picker"],
@@ -308,6 +314,33 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       return data ?? [];
     },
   });
+
+  const quickAddMut = useMutation({
+    mutationFn: async () => {
+      if (!qaName.trim()) throw new Error("請輸入客戶姓名");
+      const { data, error } = await supabase
+        .from("customers")
+        .insert({
+          name: qaName.trim(),
+          email: qaEmail.trim() || null,
+          phone: qaPhone.trim() || null,
+          company: qaCompany.trim() || null,
+        })
+        .select("id,name,email,phone,company")
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: (created) => {
+      toast.success(`已新增客戶：${created.name}`);
+      qc.invalidateQueries({ queryKey: ["customers-picker"] });
+      pickCustomer(created);
+      setQuickAddOpen(false);
+      setQaName(""); setQaEmail(""); setQaPhone(""); setQaCompany("");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "新增客戶失敗"),
+  });
+
 
 
   const total = useMemo(
