@@ -2105,3 +2105,63 @@ function RecordPaymentDialog({
     </Dialog>
   );
 }
+
+// =================== Inline 付款狀態快速修改 ===================
+function PaymentStatusCell({
+  orderId,
+  value,
+  onChanged,
+}: {
+  orderId: string;
+  value: keyof typeof PAYMENT_STATUS;
+  onChanged: () => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const current = PAYMENT_STATUS[value];
+
+  async function update(next: keyof typeof PAYMENT_STATUS) {
+    if (next === value) return;
+    setPending(true);
+    const { error } = await supabase
+      .from("sales_orders")
+      .update({ payment_status: next })
+      .eq("id", orderId);
+    setPending(false);
+    if (error) {
+      toast.error("更新付款狀態失敗", { description: error.message });
+      return;
+    }
+    toast.success(`付款狀態已更新為「${PAYMENT_STATUS[next].label}」`);
+    onChanged();
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          disabled={pending}
+          className="inline-flex items-center gap-1 disabled:opacity-60"
+          title="點擊修改付款狀態"
+        >
+          <Badge variant="outline" className={`${current?.tone ?? ""} cursor-pointer hover:opacity-80`}>
+            {pending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            {current?.label ?? value}
+          </Badge>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[140px]">
+        {(Object.keys(PAYMENT_STATUS) as Array<keyof typeof PAYMENT_STATUS>).map((k) => (
+          <DropdownMenuItem
+            key={k}
+            onClick={() => update(k)}
+            className="flex items-center justify-between gap-2"
+          >
+            <span>{PAYMENT_STATUS[k].label}</span>
+            {k === value && <Check className="h-3.5 w-3.5 text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
