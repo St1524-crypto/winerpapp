@@ -172,7 +172,7 @@ function RoleManagerPage() {
           </Button>
           <Button
             className="bg-gradient-primary"
-            onClick={() => applyMut.mutate()}
+            onClick={() => setConfirmOpen(true)}
             disabled={pendingCount === 0 || applyMut.isPending}
           >
             {applyMut.isPending
