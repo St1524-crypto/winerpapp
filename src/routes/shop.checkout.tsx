@@ -79,10 +79,21 @@ function CheckoutPage() {
       if (noErr) throw noErr;
       const order_no = noData as string;
 
+      // Derive company_id from the products being ordered (shop is per-tenant via product)
+      const productIds = items.map((it) => it.product_id).filter(Boolean) as string[];
+      const { data: prodRows, error: pErr } = await supabase
+        .from("products")
+        .select("id, company_id")
+        .in("id", productIds);
+      if (pErr) throw pErr;
+      const companyId = prodRows?.[0]?.company_id;
+      if (!companyId) throw new Error("無法判斷商品所屬公司，請聯絡客服");
+
       const { data: order, error: oErr } = await supabase
         .from("sales_orders")
         .insert({
           order_no,
+          company_id: companyId,
           user_id: user.id,
           customer_name: form.receiver_name,
           customer_email: user.email,
@@ -99,8 +110,10 @@ function CheckoutPage() {
         .single();
       if (oErr) throw oErr;
 
+      const prodCompanyMap = new Map(prodRows?.map((p: any) => [p.id, p.company_id]) ?? []);
       const rows = items.map((it) => ({
         sales_order_id: order.id,
+        company_id: (prodCompanyMap.get(it.product_id) as string) ?? companyId,
         product_id: it.product_id,
         product_name: it.product?.name ?? "",
         sku: it.product?.sku ?? null,

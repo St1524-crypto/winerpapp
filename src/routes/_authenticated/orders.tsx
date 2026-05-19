@@ -1471,6 +1471,7 @@ function OrderDetailDialog({
                 {unpaid > 0 && order.order_status !== "cancelled" && (
                   <RecordPaymentDialog
                     orderId={order.id}
+                    companyId={order.company_id}
                     unpaid={unpaid}
                     totalAmount={Number(order.total_amount)}
                     onRecorded={() => {
@@ -2017,9 +2018,10 @@ function StatusSelect<T extends string>({
 
 // =================== Record payment ===================
 function RecordPaymentDialog({
-  orderId, unpaid, totalAmount, onRecorded,
+  orderId, companyId, unpaid, totalAmount, onRecorded,
 }: {
   orderId: string;
+  companyId: string;
   unpaid: number;
   totalAmount: number;
   onRecorded: () => void;
@@ -2038,6 +2040,7 @@ function RecordPaymentDialog({
       const nowIso = new Date().toISOString();
       const { error: payErr } = await supabase.from("payments").insert({
         sales_order_id: orderId,
+        company_id: companyId,
         payment_method: method,
         payment_status: "completed",
         amount: n,
