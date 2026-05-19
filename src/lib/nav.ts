@@ -20,6 +20,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "商品分類", url: "/categories", icon: Tag, roles: ["super_admin", "sales", "warehouse"] },
   { title: "庫存管理", url: "/inventory", icon: Boxes, roles: ["super_admin", "warehouse"] },
   { title: "訂單管理", url: "/orders", icon: ShoppingCart, roles: ["super_admin", "sales", "finance"] },
+  { title: "供應商管理", url: "/suppliers", icon: Building2, roles: ["super_admin", "warehouse", "finance"] },
   { title: "採購管理", url: "/purchases", icon: Truck, roles: ["super_admin", "warehouse", "vendor"] },
   { title: "收貨管理", url: "/receiving", icon: PackageCheck, roles: ["super_admin", "warehouse"] },
   { title: "倉庫管理", url: "/warehouses", icon: WarehouseIcon, roles: ["super_admin", "warehouse"] },
