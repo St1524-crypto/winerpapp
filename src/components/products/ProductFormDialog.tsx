@@ -35,6 +35,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
   const [form, setForm] = useState({ ...empty });
   const [images, setImages] = useState<UploaderImage[]>([]);
   const [saving, setSaving] = useState(false);
+  const { currentCompanyId } = useCurrentCompany();
 
   useEffect(() => {
     if (!open) return;
