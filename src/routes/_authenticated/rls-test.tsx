@@ -59,7 +59,7 @@ function RlsTest() {
         next[t.table].write = "skip";
       } else {
         const payload = t.insert();
-        const { data: ins, error: wErr } = await supabase.from(t.table).insert(payload).select().maybeSingle();
+        const { data: ins, error: wErr } = await (supabase.from(t.table) as any).insert(payload).select().maybeSingle();
         if (wErr) {
           next[t.table].write = "fail";
           next[t.table].writeMsg = wErr.message;
