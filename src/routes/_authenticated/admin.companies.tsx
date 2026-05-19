@@ -176,7 +176,7 @@ function CreateCompanyDialog() {
         })
         .select()
         .single();
-      if (error) throw error;
+      if (error) throw new Error(`公司建立失敗：${error.message}（${error.code || "unknown"}）`);
 
       // Auto-add current user as admin member
       if (user) {
@@ -184,7 +184,7 @@ function CreateCompanyDialog() {
           .from("company_members")
           .insert({ company_id: data.id, user_id: user.id, role: "admin" });
         if (memErr && !memErr.message.toLowerCase().includes("duplicate")) {
-          throw memErr;
+          throw new Error(`成員加入失敗：${memErr.message}（${memErr.code || "unknown"}）`);
         }
       }
       return data;
@@ -200,7 +200,9 @@ function CreateCompanyDialog() {
       setOpen(false);
       setForm({ company_name: "", tax_id: "", email: "", phone: "", address: "" });
     },
-    onError: (e: any) => toast.error("建立失敗", { description: e.message }),
+    onError: (e: any) => {
+      toast.error("建立失敗", { description: e?.message ?? "發生未知錯誤" });
+    },
   });
 
   return (
