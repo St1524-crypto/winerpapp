@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowRightLeft, Plus, Search, ArrowDown, ArrowUp, RefreshCcw } from "lucide-react";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 const sb: any = supabase;
 
