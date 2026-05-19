@@ -513,7 +513,7 @@ function CompanyMembersDialog({
                       <Button
                         size="sm" variant="ghost"
                         className="text-destructive"
-                        onClick={() => removeMember.mutate(m.id)}
+                        onClick={() => removeMember.mutate({ id: m.id, user_id: m.user_id })}
                         disabled={removeMember.isPending}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
