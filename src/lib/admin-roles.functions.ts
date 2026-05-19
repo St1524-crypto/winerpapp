@@ -110,7 +110,7 @@ export const batchUpdateRoles = createServerFn({ method: "POST" })
       entity: string;
       entity_id: string;
       action: string;
-      metadata: Record<string, unknown>;
+      metadata: any;
     }> = [];
 
     for (const change of data.changes) {
