@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { exportOrderPdf, exportOrdersPdf } from "@/lib/order-pdf";
 import { useBranding } from "@/hooks/use-branding";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
