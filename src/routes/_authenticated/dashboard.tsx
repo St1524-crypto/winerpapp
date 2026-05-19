@@ -79,7 +79,9 @@ function Dashboard() {
         sb.from("vendors").select("id", { count: "exact", head: true }).eq("status", "active"),
       ]);
       // 計算今日進貨金額（從 inventory_transactions 計算 purchase_in）
-      const { data: txToday } = await sb.from("inventory_transactions").select("quantity, product_id").eq("type", "purchase_in").gte("created_at", since.toISOString());
+      const txQuery = sb.from("inventory_transactions").select("quantity, product_id").eq("type", "purchase_in").gte("created_at", since.toISOString());
+      if (currentCompanyId) txQuery.eq("company_id", currentCompanyId);
+      const { data: txToday } = await txQuery;
       let todayAmt = 0;
       if (txToday && txToday.length) {
         const ids = Array.from(new Set(txToday.map((x: any) => x.product_id).filter(Boolean)));
