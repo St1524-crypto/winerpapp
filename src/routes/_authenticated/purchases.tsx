@@ -148,9 +148,19 @@ function Page() {
   }
 
   async function setStatus(po: PO, status: string) {
+    const allowed = TRANSITIONS[po.status] ?? [];
+    if (!allowed.includes(status)) {
+      toast.error(`無法從「${statusMeta(po.status).label}」變更為「${statusMeta(status).label}」`);
+      return;
+    }
     const { error } = await sb.from("purchase_orders").update({ status }).eq("id", po.id);
-    if (error) toast.error(error.message);
-    else { toast.success("狀態已更新"); load(); if (viewing?.id === po.id) setViewing({ ...po, status }); }
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(`狀態已更新為「${statusMeta(status).label}」`);
+      setList((prev) => prev.map((x) => (x.id === po.id ? { ...x, status } : x)));
+      if (viewing?.id === po.id) setViewing({ ...viewing, status });
+    }
   }
   async function remove(po: PO) {
     if (!confirm(`確定刪除 ${po.po_no}？`)) return;
@@ -164,22 +174,106 @@ function Page() {
   }
   async function printPdf(po: PO) {
     const { data: rows } = await sb.from("purchase_order_items").select("*").eq("purchase_order_id", po.id);
+    const sub = (rows ?? []).reduce((s: number, r: any) => s + Number(r.subtotal ?? 0), 0);
     await exportPdfReport({
       title: `採購單 ${po.po_no}`,
-      logoUrl: "",
-      subtitle: `供應商：${po.vendor_name}`,
-      meta: { 狀態: statusMeta(po.status).label, 預計到貨: po.expected_at ?? "—", 總金額: `NT$ ${po.total_amount.toLocaleString()}` },
+      logoUrl,
+      subtitle: `供應商：${po.vendor_name}  ·  狀態：${statusMeta(po.status).label}`,
+      meta: {
+        採購單號: po.po_no,
+        狀態: statusMeta(po.status).label,
+        建立日期: new Date(po.created_at).toLocaleDateString("zh-TW"),
+        預計到貨: po.expected_at ?? "—",
+        未稅金額: `NT$ ${(po.subtotal ?? sub).toLocaleString()}`,
+        稅額: `NT$ ${(po.tax_amount ?? 0).toLocaleString()}`,
+        總金額: `NT$ ${(po.total_amount ?? 0).toLocaleString()}`,
+        備註: po.notes ?? "—",
+      },
       columns: [
         { key: "sku", label: "SKU" },
         { key: "product_name", label: "商品" },
+        { key: "unit", label: "單位" },
         { key: "quantity", label: "數量", align: "right" },
-        { key: "price", label: "單價", align: "right" },
-        { key: "subtotal", label: "小計", align: "right" },
+        { key: "received_quantity", label: "已到貨", align: "right" },
+        { key: "price", label: "單價", align: "right", format: (r: any) => Number(r.price).toLocaleString() },
+        { key: "subtotal", label: "小計", align: "right", format: (r: any) => Number(r.subtotal).toLocaleString() },
       ],
       rows: rows ?? [],
       filename: `${po.po_no}.pdf`,
     });
     toast.success("PDF 已產生");
+  }
+
+  async function printBrowser(po: PO) {
+    const { data: rows } = await sb.from("purchase_order_items").select("*").eq("purchase_order_id", po.id);
+    const items = rows ?? [];
+    const sm = statusMeta(po.status);
+    const fmt = (n: number) => `NT$ ${Number(n ?? 0).toLocaleString()}`;
+    const esc = (s: any) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
+    const rowsHtml = items.map((i: any) => `
+      <tr>
+        <td style="font-family:monospace;font-size:11px">${esc(i.sku)}</td>
+        <td>${esc(i.product_name)}</td>
+        <td>${esc(i.unit)}</td>
+        <td style="text-align:right">${i.quantity}</td>
+        <td style="text-align:right">${i.received_quantity ?? 0}</td>
+        <td style="text-align:right">${Number(i.price).toLocaleString()}</td>
+        <td style="text-align:right">${Number(i.subtotal).toLocaleString()}</td>
+      </tr>`).join("");
+
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(po.po_no)}</title>
+      <style>
+        body{font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;color:#0f172a;padding:32px;max-width:900px;margin:auto}
+        .head{display:flex;align-items:center;gap:16px;border-bottom:3px solid #7c3aed;padding-bottom:14px;margin-bottom:18px}
+        .head img{width:52px;height:52px;object-fit:contain;border:1px solid #e2e8f0;border-radius:10px}
+        h1{font-size:22px;margin:0}
+        .sub{font-size:12px;color:#64748b}
+        .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;background:#ede9fe;color:#6d28d9;font-weight:600;margin-left:6px}
+        .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0;font-size:12px}
+        .meta div{background:#f8fafc;padding:8px 10px;border-radius:6px}
+        .meta b{display:block;color:#64748b;font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+        table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+        th{background:#f1f5f9;text-align:left;padding:8px;border-bottom:2px solid #cbd5e1;font-size:11px;color:#475569}
+        td{padding:8px;border-bottom:1px solid #e2e8f0}
+        .total{margin-top:18px;text-align:right;font-size:14px}
+        .total div{margin:2px 0}
+        .grand{font-size:20px;font-weight:700;color:#7c3aed;border-top:2px solid #cbd5e1;padding-top:6px;margin-top:6px}
+        .footer{margin-top:30px;font-size:10px;color:#94a3b8;text-align:center;border-top:1px solid #e2e8f0;padding-top:8px}
+        @media print { body{padding:16px} }
+      </style></head><body>
+      <div class="head">
+        <img src="${logoUrl}" />
+        <div style="flex:1">
+          <h1>採購單 <span class="badge">${esc(sm.label)}</span></h1>
+          <div class="sub">源倍力 ERP · Purchase Order</div>
+        </div>
+        <div style="text-align:right;font-size:11px;color:#64748b">
+          <div>列印時間</div><div style="color:#0f172a">${new Date().toLocaleString("zh-TW", { hour12: false })}</div>
+        </div>
+      </div>
+      <div class="meta">
+        <div><b>採購單號</b>${esc(po.po_no)}</div>
+        <div><b>供應商</b>${esc(po.vendor_name)}</div>
+        <div><b>建立日期</b>${new Date(po.created_at).toLocaleDateString("zh-TW")}</div>
+        <div><b>預計到貨</b>${esc(po.expected_at ?? "—")}</div>
+      </div>
+      <table>
+        <thead><tr><th>SKU</th><th>商品</th><th>單位</th><th style="text-align:right">數量</th><th style="text-align:right">已到貨</th><th style="text-align:right">單價</th><th style="text-align:right">小計</th></tr></thead>
+        <tbody>${rowsHtml || `<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px">無明細</td></tr>`}</tbody>
+      </table>
+      <div class="total">
+        <div>未稅金額：${fmt(po.subtotal)}</div>
+        <div>稅額：${fmt(po.tax_amount)}</div>
+        <div class="grand">總金額：${fmt(po.total_amount)}</div>
+      </div>
+      ${po.notes ? `<div style="margin-top:18px;font-size:12px"><b style="color:#64748b">備註：</b>${esc(po.notes)}</div>` : ""}
+      <div class="footer">© 源倍力 ERP 管理系統 · 機密文件</div>
+      <script>window.onload=function(){setTimeout(function(){window.print();},300)}</script>
+      </body></html>`;
+
+    const w = window.open("", "_blank", "width=900,height=1000");
+    if (!w) { toast.error("瀏覽器封鎖了彈出視窗，請允許後再試"); return; }
+    w.document.open(); w.document.write(html); w.document.close();
   }
 
   return (
