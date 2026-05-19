@@ -45,6 +45,7 @@ export function AppHeader() {
         <Input placeholder="搜尋商品、訂單、客戶..." className="pl-9 bg-muted/40 border-muted" />
       </div>
       <div className="flex-1 md:hidden" />
+      <CompanySwitcher />
       {isSuperAdmin && (
         <Button
           variant={inAdmin ? "default" : "outline"}
