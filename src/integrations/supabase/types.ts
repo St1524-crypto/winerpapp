@@ -1180,6 +1180,39 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          created_at: string
+          email: string | null
+          failure_reason: string | null
+          id: string
+          ip_address: string | null
+          success: boolean
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       moq_rules: {
         Row: {
           carton_quantity: number
@@ -1826,6 +1859,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_2fa: {
+        Row: {
+          backup_codes: string[]
+          created_at: string
+          enabled: boolean
+          enrolled_at: string | null
+          last_used_at: string | null
+          secret: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          backup_codes?: string[]
+          created_at?: string
+          enabled?: boolean
+          enrolled_at?: string | null
+          last_used_at?: string | null
+          secret: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          backup_codes?: string[]
+          created_at?: string
+          enabled?: boolean
+          enrolled_at?: string | null
+          last_used_at?: string | null
+          secret?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1843,6 +1909,48 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string
+          device_label: string | null
+          expires_at: string | null
+          id: string
+          ip_address: string | null
+          last_active_at: string
+          mfa_verified_at: string | null
+          revoked_at: string | null
+          session_token_hash: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_label?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          last_active_at?: string
+          mfa_verified_at?: string | null
+          revoked_at?: string | null
+          session_token_hash: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_label?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          last_active_at?: string
+          mfa_verified_at?: string | null
+          revoked_at?: string | null
+          session_token_hash?: string
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
