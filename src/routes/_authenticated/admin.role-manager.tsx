@@ -486,7 +486,7 @@ function RoleManagerPage() {
             <AlertDialogCancel disabled={applyMut.isPending}>取消</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => { e.preventDefault(); applyMut.mutate(); }}
-              disabled={applyMut.isPending || superAdminImpact.willBeZero}
+              disabled={applyMut.isPending || superAdminImpact.willBeZero || !!serverError}
               className="bg-gradient-primary"
             >
               {applyMut.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
