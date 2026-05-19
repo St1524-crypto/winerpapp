@@ -275,6 +275,14 @@ function CreateCompanyDialog() {
             )}
             className="space-y-3"
           >
+            <FormItem>
+              <FormLabel>公司 Logo</FormLabel>
+              <CompanyLogoUploader
+                value={logoUrl}
+                onChange={(url) => form.setValue("logo_url", url ?? "", { shouldDirty: true })}
+                disabled={m.isPending}
+              />
+            </FormItem>
             <FormField
               control={form.control}
               name="company_name"
