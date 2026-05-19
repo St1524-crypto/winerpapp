@@ -37,6 +37,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const [currentCompanyId, setCurrentCompanyId] = useState<string | null>(null);
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) {
