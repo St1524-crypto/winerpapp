@@ -64,6 +64,7 @@ function Page() {
 
   async function confirm() {
     if (!receiving || !warehouseId) return toast.error("請選擇倉庫");
+    if (!currentCompanyId) return toast.error("尚未選擇公司");
     const toReceive = items.filter((i) => (receiveQty[i.id] ?? 0) > 0);
     if (toReceive.length === 0) return toast.error("請輸入收貨數量");
 
