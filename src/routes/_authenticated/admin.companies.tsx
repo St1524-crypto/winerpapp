@@ -104,6 +104,7 @@ function AdminCompaniesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16">Logo</TableHead>
                   <TableHead>公司名稱</TableHead>
                   <TableHead>統編</TableHead>
                   <TableHead>聯絡</TableHead>
@@ -115,6 +116,15 @@ function AdminCompaniesPage() {
               <TableBody>
                 {companiesQ.data.map((c) => (
                   <TableRow key={c.id}>
+                    <TableCell>
+                      <div className="h-10 w-10 rounded-md bg-white ring-1 ring-border flex items-center justify-center overflow-hidden">
+                        {c.logo_url ? (
+                          <img src={c.logo_url} alt={c.company_name} className="h-full w-full object-contain" />
+                        ) : (
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium">{c.company_name}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
                     <TableCell className="text-xs">
