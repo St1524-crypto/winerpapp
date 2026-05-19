@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
-import { ShoppingCart, DollarSign, Boxes, Users, FileDown } from "lucide-react";
+import { ShoppingCart, DollarSign, Boxes, Users, FileDown, Package, AlertTriangle, Flame, Sparkles } from "lucide-react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
@@ -11,6 +12,7 @@ import {
 import { exportPdfReport } from "@/lib/pdf-report";
 import { useBranding } from "@/hooks/use-branding";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
@@ -51,6 +53,22 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
 
 function Dashboard() {
   const { logoUrl } = useBranding();
+  const [stats, setStats] = useState({ total: 0, low: 0, featured: 0, today: 0 });
+
+  useEffect(() => {
+    (async () => {
+      const since = new Date(); since.setHours(0, 0, 0, 0);
+      const [{ count: total }, { data: all }, { count: featured }, { count: today }] = await Promise.all([
+        supabase.from("products").select("id", { count: "exact", head: true }),
+        supabase.from("products").select("stock,safe_stock"),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("featured", true),
+        supabase.from("products").select("id", { count: "exact", head: true }).gte("created_at", since.toISOString()),
+      ]);
+      const low = (all ?? []).filter((p: any) => p.stock <= p.safe_stock).length;
+      setStats({ total: total ?? 0, low, featured: featured ?? 0, today: today ?? 0 });
+    })();
+  }, []);
+
 
   async function exportRecentOrders() {
     try {
@@ -91,6 +109,18 @@ function Dashboard() {
         <StatCard title="今日營收" value="NT$ 482K" delta={8.2} icon={DollarSign} accent="success" />
         <StatCard title="庫存總量" value="14,392" delta={-2.1} icon={Boxes} accent="warning" />
         <StatCard title="會員總數" value="3,247" delta={5.4} icon={Users} accent="chart-2" />
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground tracking-wider uppercase mb-3 flex items-center gap-2">
+          <Package className="h-4 w-4" /> 商品營運指標
+        </h2>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <StatCard title="商品總數" value={String(stats.total)} icon={Package} accent="primary" />
+          <StatCard title="庫存不足商品" value={String(stats.low)} icon={AlertTriangle} accent="warning" />
+          <StatCard title="熱銷商品" value={String(stats.featured)} icon={Flame} accent="chart-5" />
+          <StatCard title="今日新增商品" value={String(stats.today)} icon={Sparkles} accent="success" />
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
