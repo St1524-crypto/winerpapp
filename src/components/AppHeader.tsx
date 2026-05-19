@@ -44,6 +44,17 @@ export function AppHeader() {
         <Input placeholder="搜尋商品、訂單、客戶..." className="pl-9 bg-muted/40 border-muted" />
       </div>
       <div className="flex-1 md:hidden" />
+      {isSuperAdmin && (
+        <Button
+          variant={inAdmin ? "default" : "outline"}
+          size="sm"
+          onClick={toggleAdmin}
+          className={inAdmin ? "bg-gradient-primary gap-2" : "gap-2"}
+        >
+          {inAdmin ? <LayoutDashboard className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
+          <span className="hidden sm:inline">{inAdmin ? "營運模式" : "管理員模式"}</span>
+        </Button>
+      )}
       <Button variant="ghost" size="icon" className="relative">
         <Bell className="h-4 w-4" />
         <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary shadow-glow" />
