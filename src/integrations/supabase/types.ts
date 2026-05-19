@@ -166,6 +166,57 @@ export type Database = {
         }
         Relationships: []
       }
+      goods_receiving: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          purchase_order_id: string
+          receipt_no: string
+          received_by: string | null
+          received_date: string
+          status: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purchase_order_id: string
+          receipt_no: string
+          received_by?: string | null
+          received_date?: string
+          status?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purchase_order_id?: string
+          receipt_no?: string
+          received_by?: string | null
+          received_date?: string
+          status?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goods_receiving_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_receiving_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_logs: {
         Row: {
           after_stock: number
@@ -206,6 +257,63 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_transactions: {
+        Row: {
+          after_stock: number
+          before_stock: number
+          created_at: string
+          id: string
+          operator_id: string | null
+          product_id: string | null
+          quantity: number
+          reason: string | null
+          reference_no: string | null
+          type: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          after_stock?: number
+          before_stock?: number
+          created_at?: string
+          id?: string
+          operator_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          reason?: string | null
+          reference_no?: string | null
+          type: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          after_stock?: number
+          before_stock?: number
+          created_at?: string
+          id?: string
+          operator_id?: string | null
+          product_id?: string | null
+          quantity?: number
+          reason?: string | null
+          reference_no?: string | null
+          type?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
         ]
@@ -391,13 +499,74 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          price: number
+          product_id: string | null
+          product_name: string
+          purchase_order_id: string
+          quantity: number
+          received_quantity: number
+          sku: string | null
+          subtotal: number
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          price?: number
+          product_id?: string | null
+          product_name: string
+          purchase_order_id: string
+          quantity?: number
+          received_quantity?: number
+          sku?: string | null
+          subtotal?: number
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          price?: number
+          product_id?: string | null
+          product_name?: string
+          purchase_order_id?: string
+          quantity?: number
+          received_quantity?: number
+          sku?: string | null
+          subtotal?: number
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_orders: {
         Row: {
           created_at: string
+          created_by: string | null
           expected_at: string | null
           id: string
+          notes: string | null
           po_no: string
           status: string
+          subtotal: number
+          tax_amount: number
           total_amount: number
           updated_at: string
           vendor_id: string | null
@@ -405,10 +574,14 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           expected_at?: string | null
           id?: string
+          notes?: string | null
           po_no: string
           status?: string
+          subtotal?: number
+          tax_amount?: number
           total_amount?: number
           updated_at?: string
           vendor_id?: string | null
@@ -416,10 +589,14 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           expected_at?: string | null
           id?: string
+          notes?: string | null
           po_no?: string
           status?: string
+          subtotal?: number
+          tax_amount?: number
           total_amount?: number
           updated_at?: string
           vendor_id?: string | null
@@ -491,6 +668,7 @@ export type Database = {
           notes: string | null
           payment_terms: string | null
           phone: string | null
+          shipping_method: string | null
           status: string
           tax_id: string | null
           updated_at: string
@@ -507,6 +685,7 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          shipping_method?: string | null
           status?: string
           tax_id?: string | null
           updated_at?: string
@@ -523,9 +702,82 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          shipping_method?: string | null
           status?: string
           tax_id?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      warehouse_inventory: {
+        Row: {
+          id: string
+          product_id: string
+          stock: number
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          stock?: number
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          stock?: number
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouse_inventory_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouses: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          status: string
+          updated_at: string
+          warehouse_code: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          warehouse_code: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          warehouse_code?: string
         }
         Relationships: []
       }
@@ -534,6 +786,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_po_no: { Args: never; Returns: string }
+      generate_receipt_no: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
