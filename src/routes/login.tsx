@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useBranding } from "@/hooks/use-branding";
+import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
@@ -23,7 +24,11 @@ function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate({ to: roles.includes("super_admin") ? "/admin" : "/dashboard" });
+      if (sessionStorage.getItem("mfa_pending") === user.id) {
+        navigate({ to: "/two-factor" });
+      } else {
+        navigate({ to: roles.includes("super_admin") ? "/admin" : "/dashboard" });
+      }
     }
   }, [user, loading, roles, navigate]);
 
@@ -32,8 +37,34 @@ function LoginPage() {
     setBusy(true);
     try {
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          await recordLoginAttempt({ data: { email, success: false, failureReason: error.message } }).catch(() => {});
+          throw error;
+        }
+        const session = data.session;
+        const uid = data.user?.id;
+
+        await recordLoginAttempt({ data: { email, success: true, userId: uid } }).catch(() => {});
+
+        if (session && uid) {
+          // Register this session row (server-side decides if 2FA verification is required)
+          await recordSession({
+            data: {
+              sessionToken: session.access_token,
+              expiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : undefined,
+            },
+          }).catch(() => {});
+
+          const tfa = await getTwoFactorStatus().catch(() => ({ enabled: false }));
+          if (tfa.enabled) {
+            sessionStorage.setItem("mfa_pending", uid);
+            toast.success("請完成二階段驗證");
+            navigate({ to: "/two-factor" });
+            return;
+          }
+        }
+
         toast.success("登入成功");
       } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
