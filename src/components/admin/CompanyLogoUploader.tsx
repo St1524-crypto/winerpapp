@@ -22,12 +22,20 @@ export function CompanyLogoUploader({ value, onChange, disabled }: Props) {
     if (!file.type.startsWith("image/")) { toast.error("僅支援圖片檔"); return; }
     setBusy(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const path = `companies/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const safeName = file.name.toLowerCase().replace(/[^a-z0-9.\-_]/g, "_");
+      const ext = safeName.split(".").pop() || "png";
+      const rand = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+      const path = `companies/${rand}.${ext}`;
       const { error } = await supabase.storage
         .from("branding")
-        .upload(path, file, { upsert: false, contentType: file.type });
-      if (error) throw error;
+        .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
+      if (error) {
+        const msg = error.message || "";
+        if (msg.toLowerCase().includes("row-level security") || msg.toLowerCase().includes("policy")) {
+          throw new Error("您沒有上傳 Logo 的權限（需 super_admin）");
+        }
+        throw error;
+      }
       const { data } = supabase.storage.from("branding").getPublicUrl(path);
       onChange(data.publicUrl);
       toast.success("Logo 已上傳");
