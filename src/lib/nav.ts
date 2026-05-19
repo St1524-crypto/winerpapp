@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Package, Boxes, ShoppingCart, Truck,
   Users, Wallet, UserCircle, Settings, ShieldCheck, Tag, Crown,
   Store, Factory, Warehouse as WarehouseIcon, PackageCheck, ArrowRightLeft,
-  Building2, UserCog, Briefcase,
+  Building2, UserCog, Briefcase, ShoppingBag,
 } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 
@@ -15,6 +15,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: [] },
+  { title: "B2C 商城前台", url: "/shop", icon: ShoppingBag, roles: [] },
   { title: "管理員控制台", url: "/admin", icon: Crown, roles: ["super_admin"] },
   { title: "商品管理", url: "/products", icon: Package, roles: ["super_admin", "sales", "warehouse"] },
   { title: "商品分類", url: "/categories", icon: Tag, roles: ["super_admin", "sales", "warehouse"] },
