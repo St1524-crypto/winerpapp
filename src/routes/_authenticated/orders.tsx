@@ -298,9 +298,23 @@ function OrdersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" onClick={() => setDetailId(o.id)}>
-                          <Eye className="h-3.5 w-3.5 mr-1" /> 詳情
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => setDetailId(o.id)}>
+                            <Eye className="h-3.5 w-3.5 mr-1" /> 詳情
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handlePrintOrder(o.id)}
+                            disabled={printingId === o.id}
+                            title="列印 PDF"
+                          >
+                            {printingId === o.id
+                              ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                              : <Printer className="h-3.5 w-3.5 mr-1" />}
+                            列印
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
