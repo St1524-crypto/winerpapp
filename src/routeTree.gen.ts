@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authenticated/warehouses'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
+import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRlsTestRouteImport } from './routes/_authenticated/rls-test'
 import { Route as AuthenticatedReceivingRouteImport } from './routes/_authenticated/receiving'
@@ -59,6 +60,11 @@ const AuthenticatedWarehousesRoute = AuthenticatedWarehousesRouteImport.update({
 const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSuppliersRoute = AuthenticatedSuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/receiving': typeof AuthenticatedReceivingRoute
   '/rls-test': typeof AuthenticatedRlsTestRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/suppliers': typeof AuthenticatedSuppliersRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/receiving': typeof AuthenticatedReceivingRoute
   '/rls-test': typeof AuthenticatedRlsTestRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/suppliers': typeof AuthenticatedSuppliersRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/_authenticated/receiving': typeof AuthenticatedReceivingRoute
   '/_authenticated/rls-test': typeof AuthenticatedRlsTestRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/warehouses': typeof AuthenticatedWarehousesRoute
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/receiving'
     | '/rls-test'
     | '/settings'
+    | '/suppliers'
     | '/vendors'
     | '/warehouses'
     | '/products/$productId'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/receiving'
     | '/rls-test'
     | '/settings'
+    | '/suppliers'
     | '/vendors'
     | '/warehouses'
     | '/products/$productId'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/_authenticated/receiving'
     | '/_authenticated/rls-test'
     | '/_authenticated/settings'
+    | '/_authenticated/suppliers'
     | '/_authenticated/vendors'
     | '/_authenticated/warehouses'
     | '/_authenticated/products/$productId'
@@ -337,6 +349,13 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof AuthenticatedVendorsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/suppliers': {
+      id: '/_authenticated/suppliers'
+      path: '/suppliers'
+      fullPath: '/suppliers'
+      preLoaderRoute: typeof AuthenticatedSuppliersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
@@ -483,6 +502,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReceivingRoute: typeof AuthenticatedReceivingRoute
   AuthenticatedRlsTestRoute: typeof AuthenticatedRlsTestRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSuppliersRoute: typeof AuthenticatedSuppliersRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedWarehousesRoute: typeof AuthenticatedWarehousesRoute
 }
@@ -503,6 +523,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReceivingRoute: AuthenticatedReceivingRoute,
   AuthenticatedRlsTestRoute: AuthenticatedRlsTestRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSuppliersRoute: AuthenticatedSuppliersRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedWarehousesRoute: AuthenticatedWarehousesRoute,
 }
