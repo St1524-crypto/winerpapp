@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   ShoppingCart, Search, Plus, Loader2, Eye, Truck, CreditCard,
   PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check, UserPlus,
+  Package, Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -309,9 +310,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [subtotal, setSubtotal] = useState("");
+  const [items, setItems] = useState<Array<{ product_id: string; name: string; sku: string | null; image: string | null; unit_price: number; quantity: number }>>([]);
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [shippingFee, setShippingFee] = useState("0");
   const [discount, setDiscount] = useState("0");
+  const [deposit, setDeposit] = useState("0");
+  const [balance, setBalance] = useState("0");
+  const [depositMethod, setDepositMethod] = useState("bank_transfer");
   const [notes, setNotes] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -335,6 +340,40 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       return data ?? [];
     },
   });
+
+  const productsQ = useQuery({
+    queryKey: ["products-picker-orders"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id,name,sku,price,image,stock")
+        .eq("status", "active")
+        .order("updated_at", { ascending: false })
+        .limit(300);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+  function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null }) {
+    setItems((prev) => {
+      const idx = prev.findIndex((x) => x.product_id === p.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+        return next;
+      }
+      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1 }];
+    });
+    setProductPickerOpen(false);
+  }
+  function updateItem(idx: number, patch: Partial<{ unit_price: number; quantity: number }>) {
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  }
+  function removeItem(idx: number) {
+    setItems((prev) => prev.filter((_, i) => i !== idx));
+  }
 
   // 即時校驗：取得各欄位的錯誤訊息（僅在欄位被觸碰過後顯示）
   const [qaTouched, setQaTouched] = useState<Record<string, boolean>>({});
@@ -387,15 +426,35 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
 
 
-  const total = useMemo(
-    () => Math.max(0, Number(subtotal || 0) + Number(shippingFee || 0) - Number(discount || 0)),
-    [subtotal, shippingFee, discount],
+  const subtotalNum = useMemo(
+    () => items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
+    [items],
   );
+  const total = useMemo(
+    () => Math.max(0, subtotalNum + Number(shippingFee || 0) - Number(discount || 0)),
+    [subtotalNum, shippingFee, discount],
+  );
+  const depositNum = Number(deposit || 0);
+  const balanceNum = Number(balance || 0);
+  const paymentsTotal = depositNum + balanceNum;
+  const paymentsDiff = total - paymentsTotal;
 
   const m = useMutation({
     mutationFn: async () => {
-      if (!customer || !address || !phone || !subtotal) {
-        throw new Error("請填寫必填欄位（客戶、電話、地址、小計）");
+      if (!customer || !address || !phone) {
+        throw new Error("請填寫必填欄位（客戶、電話、地址）");
+      }
+      if (items.length === 0) {
+        throw new Error("請至少加入一項商品");
+      }
+      if (items.some((it) => !it.quantity || it.quantity <= 0 || it.unit_price < 0)) {
+        throw new Error("商品數量需大於 0，且單價不可為負");
+      }
+      if (depositNum < 0 || balanceNum < 0) {
+        throw new Error("訂金與尾款不可為負");
+      }
+      if (depositNum + balanceNum > total) {
+        throw new Error("訂金 + 尾款不可超過訂單總額");
       }
 
       // 若未從客戶名單選取，使用手動輸入資料建立新客戶以保持訂單與客戶資料一致
@@ -416,26 +475,81 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         createdNewCustomer = true;
       }
 
-      const { error } = await supabase.from("sales_orders").insert({
-        order_no: genOrderNo(),
-        customer_id: linkedCustomerId,
-        customer_name: customer,
-        customer_email: email || null,
-        customer_phone: phone || null,
-        receiver_name: customer,
-        receiver_phone: phone,
-        shipping_address: address,
-        shipping_method: "home_delivery",
-        subtotal: Number(subtotal),
-        shipping_fee: Number(shippingFee || 0),
-        discount_amount: Number(discount || 0),
-        total_amount: total,
-        notes: notes || null,
-        order_status: "pending",
-        shipping_status: "pending",
-        payment_status: "pending",
-      });
+      // 依訂金決定付款狀態
+      let paymentStatus: "pending" | "partial" | "paid" = "pending";
+      if (depositNum >= total && total > 0) paymentStatus = "paid";
+      else if (depositNum > 0) paymentStatus = "partial";
+
+      const { data: orderRow, error } = await supabase
+        .from("sales_orders")
+        .insert({
+          order_no: genOrderNo(),
+          customer_id: linkedCustomerId,
+          customer_name: customer,
+          customer_email: email || null,
+          customer_phone: phone || null,
+          receiver_name: customer,
+          receiver_phone: phone,
+          shipping_address: address,
+          shipping_method: "home_delivery",
+          subtotal: subtotalNum,
+          shipping_fee: Number(shippingFee || 0),
+          discount_amount: Number(discount || 0),
+          total_amount: total,
+          notes: notes || null,
+          order_status: "pending",
+          shipping_status: "pending",
+          payment_status: paymentStatus,
+        })
+        .select("id")
+        .single();
       if (error) throw new Error(error.message);
+
+      // 寫入商品明細
+      const itemsPayload = items.map((it) => ({
+        sales_order_id: orderRow.id,
+        product_id: it.product_id,
+        product_name: it.name,
+        sku: it.sku,
+        image: it.image,
+        unit_price: it.unit_price,
+        quantity: it.quantity,
+        subtotal: Number(it.unit_price) * Number(it.quantity),
+      }));
+      const { error: itemsErr } = await supabase.from("sales_order_items").insert(itemsPayload);
+      if (itemsErr) throw new Error(`寫入商品明細失敗：${itemsErr.message}`);
+
+      // 寫入訂金 / 尾款付款紀錄
+      type PaymentInsert = {
+        sales_order_id: string;
+        amount: number;
+        payment_method: string;
+        payment_status: string;
+        paid_at?: string;
+      };
+      const paymentsPayload: PaymentInsert[] = [];
+      if (depositNum > 0) {
+        paymentsPayload.push({
+          sales_order_id: orderRow.id,
+          amount: depositNum,
+          payment_method: depositMethod,
+          payment_status: "paid",
+          paid_at: new Date().toISOString(),
+        });
+      }
+      if (balanceNum > 0) {
+        paymentsPayload.push({
+          sales_order_id: orderRow.id,
+          amount: balanceNum,
+          payment_method: depositMethod,
+          payment_status: "pending",
+        });
+      }
+      if (paymentsPayload.length > 0) {
+        const { error: payErr } = await supabase.from("payments").insert(paymentsPayload);
+        if (payErr) throw new Error(`寫入付款紀錄失敗：${payErr.message}`);
+      }
+
       return { createdNewCustomer };
     },
 
@@ -443,7 +557,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       toast.success(res?.createdNewCustomer ? "訂單已建立，並同步新增客戶" : "訂單已建立");
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
-      setSubtotal(""); setShippingFee("0"); setDiscount("0"); setNotes("");
+      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes("");
+      setDeposit("0"); setBalance("0");
       setCustomerId(null);
       onCreated();
     },
@@ -466,7 +581,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           <Plus className="h-4 w-4 mr-2" /> 新增訂單
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>新增訂單</DialogTitle>
         </DialogHeader>
@@ -683,13 +798,158 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
           <div><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           <div><Label>收件地址 *</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
+
+          {/* ===== 商品明細 ===== */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" /> 商品明細 *</Label>
+              <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="outline" size="sm">
+                    <Plus className="h-3.5 w-3.5 mr-1" /> 加入商品
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[420px]" align="end">
+                  <Command>
+                    <CommandInput placeholder="搜尋商品名稱 / SKU..." />
+                    <CommandList>
+                      {productsQ.isLoading ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">載入中...</div>
+                      ) : (
+                        <>
+                          <CommandEmpty>查無商品</CommandEmpty>
+                          <CommandGroup heading={`商品 (${productsQ.data?.length ?? 0})`}>
+                            {(productsQ.data ?? []).map((p: any) => (
+                              <CommandItem
+                                key={p.id}
+                                value={`${p.name} ${p.sku ?? ""}`}
+                                onSelect={() => addItem(p)}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium truncate">{p.name}</div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {p.sku ?? "—"} · 庫存 {p.stock ?? 0}
+                                  </div>
+                                </div>
+                                <div className="text-sm tabular-nums ml-2">{fmt(p.price)}</div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {items.length === 0 ? (
+              <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+                尚未加入商品，請點選右上「加入商品」
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>商品</TableHead>
+                      <TableHead className="w-28">單價</TableHead>
+                      <TableHead className="w-24">數量</TableHead>
+                      <TableHead className="w-28 text-right">小計</TableHead>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((it, i) => (
+                      <TableRow key={it.product_id}>
+                        <TableCell>
+                          <div className="text-sm font-medium">{it.name}</div>
+                          {it.sku && <div className="text-xs text-muted-foreground">{it.sku}</div>}
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={it.unit_price}
+                            onChange={(e) => updateItem(i, { unit_price: Number(e.target.value) })}
+                            className="h-8"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={it.quantity}
+                            onChange={(e) => updateItem(i, { quantity: Math.max(1, Number(e.target.value) || 1) })}
+                            className="h-8"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-medium">
+                          {fmt(it.unit_price * it.quantity)}
+                        </TableCell>
+                        <TableCell>
+                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeItem(i)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-3 gap-3">
-            <div><Label>小計 *</Label><Input type="number" value={subtotal} onChange={(e) => setSubtotal(e.target.value)} /></div>
+            <div>
+              <Label>商品小計</Label>
+              <Input type="number" value={subtotalNum} readOnly className="bg-muted/40" />
+            </div>
             <div><Label>運費</Label><Input type="number" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} /></div>
             <div><Label>折扣</Label><Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} /></div>
           </div>
-          <div className="text-right text-sm">
-            訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
+
+          {/* ===== 訂金 / 尾款 ===== */}
+          <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+            <div className="text-sm font-medium flex items-center gap-1.5">
+              <CreditCard className="h-3.5 w-3.5" /> 付款設定（訂金 / 尾款）
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">訂金（已收）</Label>
+                <Input type="number" min={0} value={deposit} onChange={(e) => setDeposit(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">尾款（待收）</Label>
+                <Input type="number" min={0} value={balance} onChange={(e) => setBalance(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">付款方式</Label>
+                <Select value={depositMethod} onValueChange={setDepositMethod}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PAYMENT_METHOD_LABEL).map(([v, l]) => (
+                      <SelectItem key={v} value={v}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>訂金 + 尾款 = <span className="tabular-nums font-medium text-foreground">{fmt(paymentsTotal)}</span></span>
+              <span className={paymentsDiff < 0 ? "text-destructive font-medium" : ""}>
+                與訂單總額差額：{fmt(paymentsDiff)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t pt-3">
+            <div className="text-xs text-muted-foreground">
+              小計 {fmt(subtotalNum)} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)}
+            </div>
+            <div className="text-sm">
+              訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
+            </div>
           </div>
           <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
         </div>
