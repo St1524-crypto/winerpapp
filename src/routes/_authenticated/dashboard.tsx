@@ -103,7 +103,7 @@ function Dashboard() {
       });
       setPurchaseTrend(Object.entries(buckets).map(([k, v]) => ({ day: k.slice(5), amount: v })));
     })();
-  }, []);
+  }, [currentCompanyId]);
 
 
   async function exportRecentOrders() {
