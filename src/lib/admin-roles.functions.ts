@@ -103,27 +103,45 @@ export const batchUpdateRoles = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertSuperAdmin(context.userId);
 
-    let added = 0;
-    let removed = 0;
-    const audits: Array<{
-      user_id: string;
-      entity: string;
-      entity_id: string;
-      action: string;
-      metadata: any;
-    }> = [];
-
-    for (const change of data.changes) {
-      // Guard: cannot strip last super_admin from yourself or globally
-      if (change.remove.includes("super_admin")) {
-        const { count } = await supabaseAdmin
-          .from("user_roles")
-          .select("*", { count: "exact", head: true })
-          .eq("role", "super_admin");
-        if ((count ?? 0) <= 1) {
-          throw new Error("無法移除系統中最後一位 super_admin");
-        }
+    // ===== Pre-flight: super_admin holistic check =====
+    // Aggregate net effect across the entire batch BEFORE writing anything.
+    let netDelta = 0;
+    const removingFromUsers = new Set<string>();
+    for (const c of data.changes) {
+      if (c.add.includes("super_admin")) netDelta += 1;
+      if (c.remove.includes("super_admin")) {
+        netDelta -= 1;
+        removingFromUsers.add(c.userId);
       }
+    }
+
+    if (netDelta < 0) {
+      // Verify removals actually target existing super_admins (avoid double-count)
+      const { data: existing } = await supabaseAdmin
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "super_admin")
+        .in("user_id", Array.from(removingFromUsers));
+      const actuallyRemovable = (existing ?? []).length;
+
+      const { count: currentCount } = await supabaseAdmin
+        .from("user_roles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "super_admin");
+
+      const adding = data.changes.reduce(
+        (n, c) => n + (c.add.includes("super_admin") ? 1 : 0),
+        0,
+      );
+      const after = (currentCount ?? 0) - actuallyRemovable + adding;
+
+      if (after <= 0) {
+        throw new Error(
+          `SUPER_ADMIN_ZERO: 套用後系統將沒有任何超級管理員（${currentCount ?? 0} → ${after}），已拒絕寫入以避免鎖死系統。`,
+        );
+      }
+    }
+
 
       // Add roles (upsert ignores duplicates via unique constraint)
       if (change.add.length) {
