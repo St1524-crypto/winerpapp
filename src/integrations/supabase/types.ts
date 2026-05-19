@@ -2110,17 +2110,6 @@ export type Database = {
       generate_po_no: { Args: never; Returns: string }
       generate_receipt_no: { Args: never; Returns: string }
       generate_so_no: { Args: never; Returns: string }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_account_member: {
-        Args: { _account_id: string; _user_id: string }
-        Returns: boolean
-      }
       set_default_address: { Args: { _address_id: string }; Returns: undefined }
     }
     Enums: {
