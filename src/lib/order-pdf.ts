@@ -246,18 +246,56 @@ export async function exportOrderPdf(data: OrderPdfData) {
   pdf.save(`訂單-${data.order.order_no}.pdf`);
 }
 
+export type BatchExportFailure = { orderNo: string; error: string };
+export type BatchExportResult = {
+  success: number;
+  failures: BatchExportFailure[];
+  cancelled: boolean;
+};
+
 export async function exportOrdersPdf(
   orders: Array<Omit<OrderPdfData, "logoUrl">>,
   logoUrl: string,
-  filename?: string,
-) {
-  if (orders.length === 0) return;
+  options?: {
+    filename?: string;
+    signal?: AbortSignal;
+    onProgress?: (current: number, total: number, orderNo: string) => void;
+  },
+): Promise<BatchExportResult> {
+  const result: BatchExportResult = { success: 0, failures: [], cancelled: false };
+  if (orders.length === 0) return result;
   const logoData = await urlToDataUrl(logoUrl);
   const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+  let rendered = 0;
+
   for (let i = 0; i < orders.length; i++) {
-    await renderHtmlIntoPdf(pdf, buildOrderHtml(orders[i], logoData), i > 0);
+    if (options?.signal?.aborted) {
+      result.cancelled = true;
+      break;
+    }
+    const o = orders[i];
+    options?.onProgress?.(i + 1, orders.length, o.order.order_no);
+    try {
+      await renderHtmlIntoPdf(pdf, buildOrderHtml(o, logoData), rendered > 0);
+      rendered++;
+      result.success++;
+    } catch (e: any) {
+      result.failures.push({
+        orderNo: o.order.order_no,
+        error: e?.message ?? String(e),
+      });
+    }
+    // 讓出主執行緒，使取消按鈕可即時反應
+    await new Promise((r) => setTimeout(r, 0));
   }
-  const name = filename ?? `訂單批次-${orders.length}筆-${Date.now()}.pdf`;
-  pdf.save(name);
+
+  if (rendered > 0) {
+    const name =
+      options?.filename ??
+      `訂單批次-${rendered}筆${result.cancelled ? "-已取消" : ""}-${Date.now()}.pdf`;
+    pdf.save(name);
+  }
+  return result;
 }
+
 
