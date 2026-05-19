@@ -117,6 +117,12 @@ function AdminCompaniesPage() {
                     <TableCell className="text-right">
                       <Button
                         size="sm" variant="ghost"
+                        onClick={() => setEditCompany(c)}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1" /> 編輯
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost"
                         onClick={() => setMemberDialogCompany({ id: c.id, name: c.company_name })}
                       >
                         <Users className="h-3.5 w-3.5 mr-1" /> 成員
