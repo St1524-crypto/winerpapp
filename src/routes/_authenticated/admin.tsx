@@ -6,12 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Lock, ShieldCheck, Users, Settings, Tag, Package, Boxes, ShoppingCart,
   Wallet, FileClock, Bell, Database, Activity, ArrowRight, Server, KeyRound,
+  UserPlus, Sparkles,
 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPanel });
+export const Route = createFileRoute("/_authenticated/admin")({
+  head: () => ({
+    meta: [
+      { title: "管理員控制中心 — 源倍力 ERP" },
+      { name: "description", content: "源倍力 ERP 超級管理員專屬控制中心，總覽系統運作、模組入口與安全狀態。" },
+    ],
+  }),
+  component: AdminPanel,
+});
+
+interface ActivityRow { id: string; kind: "audit" | "user"; title: string; detail: string; ts: string; }
 
 interface Metric { users: number; roles: number; products: number; orders: number; notifications: number; audits: number; }
 
