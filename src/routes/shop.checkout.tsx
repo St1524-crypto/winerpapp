@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { useAddresses } from "@/hooks/use-addresses";
+import { buildShippingSnapshot } from "@/lib/order-snapshot";
 
 export const Route = createFileRoute("/shop/checkout")({
   component: CheckoutPage,
@@ -47,14 +48,16 @@ function CheckoutPage() {
     }
   }, [addresses, defaultAddress, addrLoading]);
 
-  // Sync form snapshot from the selected address
+  // Sync form snapshot from the selected address using the shared helper
+  // (same function the test suite asserts is decoupled from later edits).
   useEffect(() => {
     const a = addresses.find((x) => x.id === selectedAddrId);
     if (a) {
+      const snap = buildShippingSnapshot(a);
       setForm({
-        receiver_name: a.receiver_name,
-        phone: a.phone,
-        address: [a.postal_code, a.city, a.address].filter(Boolean).join(" "),
+        receiver_name: snap.receiver_name,
+        phone: snap.receiver_phone,
+        address: snap.shipping_address,
         notes: form.notes,
       });
     }
