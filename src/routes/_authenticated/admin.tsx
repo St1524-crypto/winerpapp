@@ -6,12 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Lock, ShieldCheck, Users, Settings, Tag, Package, Boxes, ShoppingCart,
   Wallet, FileClock, Bell, Database, Activity, ArrowRight, Server, KeyRound,
+  UserPlus, Sparkles,
 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPanel });
+export const Route = createFileRoute("/_authenticated/admin")({
+  head: () => ({
+    meta: [
+      { title: "管理員控制中心 — 源倍力 ERP" },
+      { name: "description", content: "源倍力 ERP 超級管理員專屬控制中心，總覽系統運作、模組入口與安全狀態。" },
+    ],
+  }),
+  component: AdminPanel,
+});
+
+interface ActivityRow { id: string; kind: "audit" | "user"; title: string; detail: string; ts: string; }
 
 interface Metric { users: number; roles: number; products: number; orders: number; notifications: number; audits: number; }
 
@@ -19,6 +31,7 @@ function AdminPanel() {
   const { roles, user } = useAuth();
   const isAdmin = roles.includes("super_admin");
   const [m, setM] = useState<Metric | null>(null);
+  const [activity, setActivity] = useState<ActivityRow[] | null>(null);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -39,6 +52,23 @@ function AdminPanel() {
         notifications: counts[4].count ?? 0,
         audits: counts[5].count ?? 0,
       });
+
+      const [audits, users] = await Promise.all([
+        supabase.from("audit_logs").select("id, action, entity, created_at").order("created_at", { ascending: false }).limit(8),
+        supabase.from("profiles").select("id, name, email, created_at").order("created_at", { ascending: false }).limit(5),
+      ]);
+      const rows: ActivityRow[] = [
+        ...(audits.data ?? []).map((a) => ({
+          id: `a-${a.id}`, kind: "audit" as const,
+          title: `${a.action} · ${a.entity}`, detail: "稽核紀錄", ts: a.created_at,
+        })),
+        ...(users.data ?? []).map((u) => ({
+          id: `u-${u.id}`, kind: "user" as const,
+          title: u.name || u.email || "新用戶",
+          detail: `加入系統 · ${u.email ?? ""}`, ts: u.created_at,
+        })),
+      ].sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()).slice(0, 10);
+      setActivity(rows);
     })();
   }, [isAdmin]);
 
@@ -174,9 +204,48 @@ function AdminPanel() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent activity */}
+      <Card className="bg-card/60 backdrop-blur border-border/60">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" /> 近期動態
+          </CardTitle>
+          <Badge variant="outline" className="text-[10px]">最新 10 筆</Badge>
+        </CardHeader>
+        <CardContent className="p-0">
+          <ScrollArea className="h-[320px]">
+            <div className="divide-y divide-border/60">
+              {activity === null && (
+                <div className="p-4 space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                </div>
+              )}
+              {activity?.length === 0 && (
+                <div className="p-8 text-center text-sm text-muted-foreground">尚無動態資料</div>
+              )}
+              {activity?.map((row) => (
+                <div key={row.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${row.kind === "audit" ? "bg-amber-500/15 text-amber-500" : "bg-emerald-500/15 text-emerald-500"}`}>
+                    {row.kind === "audit" ? <FileClock className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{row.title}</div>
+                    <div className="text-xs text-muted-foreground truncate">{row.detail}</div>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
+                    {new Date(row.ts).toLocaleString("zh-TW", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
 
 function HealthRow({ label, status, detail }: { label: string; status: "ok" | "warn" | "err"; detail: string }) {
   const color = status === "ok" ? "bg-emerald-500" : status === "warn" ? "bg-amber-500" : "bg-rose-500";

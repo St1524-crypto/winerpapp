@@ -1,7 +1,8 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { AdminSidebar } from "@/components/AdminSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
@@ -9,8 +10,9 @@ import { Loader2 } from "lucide-react";
 export const Route = createFileRoute("/_authenticated")({ component: AuthLayout });
 
 function AuthLayout() {
-  const { user, loading } = useAuth();
+  const { user, loading, roles } = useAuth();
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -24,10 +26,12 @@ function AuthLayout() {
     );
   }
 
+  const inAdmin = pathname.startsWith("/admin") && roles.includes("super_admin");
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        {inAdmin ? <AdminSidebar /> : <AppSidebar />}
         <div className="flex-1 flex flex-col min-w-0">
           <AppHeader />
           <main className="flex-1 p-4 md:p-6 lg:p-8 animate-in fade-in duration-300">
