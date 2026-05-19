@@ -28,11 +28,12 @@ export const Route = createFileRoute("/_authenticated/admin/companies/new")({
 });
 
 function NewCompanyPage() {
-  const { roles, user } = useAuth();
+  const { roles, user, refreshRoles } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { refresh, setCurrent } = useCurrentCompany();
+
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
