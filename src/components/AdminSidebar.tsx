@@ -48,7 +48,7 @@ const GROUPS: AdminNavGroup[] = [
     items: [
       { title: "系統設定", url: "/settings", icon: Settings },
       { title: "通知中心", url: "/admin", icon: Bell },
-      { title: "稽核紀錄", url: "/admin", icon: FileClock },
+      { title: "稽核紀錄", url: "/admin/audit-logs", icon: FileClock },
     ],
   },
 ];
