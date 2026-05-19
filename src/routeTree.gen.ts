@@ -52,6 +52,7 @@ import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authe
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
+import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 
@@ -278,6 +279,12 @@ const AuthenticatedAdminSecurityRoute =
     path: '/security',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAuditLogsRoute =
+  AuthenticatedAdminAuditLogsRouteImport.update({
+    id: '/audit-logs',
+    path: '/audit-logs',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const ShopAccountOrdersIdRoute = ShopAccountOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -319,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
+  '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -362,6 +370,7 @@ export interface FileRoutesByTo {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop': typeof ShopIndexRoute
+  '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -410,6 +419,7 @@ export interface FileRoutesById {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
+  '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -458,6 +468,7 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/'
+    | '/admin/audit-logs'
     | '/admin/security'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
@@ -501,6 +512,7 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop'
+    | '/admin/audit-logs'
     | '/admin/security'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
@@ -548,6 +560,7 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/'
+    | '/_authenticated/admin/audit-logs'
     | '/_authenticated/admin/security'
     | '/_authenticated/b2b/accounts'
     | '/_authenticated/finance/bank-accounts'
@@ -878,6 +891,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSecurityRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/audit-logs': {
+      id: '/_authenticated/admin/audit-logs'
+      path: '/audit-logs'
+      fullPath: '/admin/audit-logs'
+      preLoaderRoute: typeof AuthenticatedAdminAuditLogsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/shop/account/orders/$id': {
       id: '/shop/account/orders/$id'
       path: '/$id'
@@ -896,10 +916,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
 }
 
