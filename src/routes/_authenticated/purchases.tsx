@@ -154,6 +154,7 @@ function Page() {
     const { data: rows } = await sb.from("purchase_order_items").select("*").eq("purchase_order_id", po.id);
     await exportPdfReport({
       title: `採購單 ${po.po_no}`,
+      logoUrl: null,
       subtitle: `供應商：${po.vendor_name}`,
       meta: { 狀態: statusMeta(po.status).label, 預計到貨: po.expected_at ?? "—", 總金額: `NT$ ${po.total_amount.toLocaleString()}` },
       columns: [
