@@ -65,6 +65,7 @@ function RoleManagerPage() {
   const [draft, setDraft] = useState<DraftMap>({});
   const [signOutTarget, setSignOutTarget] = useState<{ id: string; email: string | null } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [serverError, setServerError] = useState<{ kind: "super_admin_zero" | "other"; message: string } | null>(null);
 
   const params = useMemo(
     () => ({
