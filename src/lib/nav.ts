@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Package, Boxes, ShoppingCart, Truck,
   Users, Wallet, UserCircle, Settings, ShieldCheck, Tag, Crown,
-  Store, Factory,
+  Store, Factory, Warehouse as WarehouseIcon, PackageCheck, ArrowRightLeft,
 } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 
