@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, Package, Boxes, ShoppingCart, Truck,
   Users, Wallet, UserCircle, Settings, ShieldCheck, Tag, Crown,
+  Store, Factory,
 } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 
@@ -20,6 +21,8 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "訂單管理", url: "/orders", icon: ShoppingCart, roles: ["super_admin", "sales", "finance"] },
   { title: "採購管理", url: "/purchases", icon: Truck, roles: ["super_admin", "warehouse", "vendor"] },
   { title: "客戶管理", url: "/customers", icon: Users, roles: ["super_admin", "sales"] },
+  { title: "經銷商管理", url: "/dealers", icon: Store, roles: ["super_admin", "sales", "finance"] },
+  { title: "廠商管理", url: "/vendors", icon: Factory, roles: ["super_admin", "warehouse", "finance"] },
   { title: "財務管理", url: "/finance", icon: Wallet, roles: ["super_admin", "finance"] },
   { title: "會員管理", url: "/members", icon: UserCircle, roles: ["super_admin"] },
   { title: "系統設定", url: "/settings", icon: Settings, roles: ["super_admin"] },
