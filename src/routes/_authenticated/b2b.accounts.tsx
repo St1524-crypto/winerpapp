@@ -44,7 +44,7 @@ function BusinessAccountsPage() {
     return { total, approved, pending, totalCredit, usedCredit };
   }, [data]);
 
-  if (!canManage && roles.length > 0) return <ForbiddenScreen />;
+  if (!canManage && roles.length > 0) return <ForbiddenScreen requiredRoles={["super_admin", "sales"]} pageName="B2B 廠商會員" />;
 
   async function approve(row: BusinessAccount) {
     const { error } = await supabase.from("business_accounts" as any).update({ status: "approved" }).eq("id", row.id);
