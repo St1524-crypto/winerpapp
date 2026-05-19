@@ -313,8 +313,8 @@ function CreateCompanyDialog() {
               )}
             />
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setOpen(false); form.reset(); }}>取消</Button>
-              <Button type="submit" disabled={m.isPending || !form.formState.isValid} className="bg-gradient-primary">
+              <Button type="button" variant="outline" onClick={() => { setOpen(false); form.reset(); }}>取消</Button>
+              <Button type="submit" disabled={m.isPending} className="bg-gradient-primary">
                 {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 建立
               </Button>
