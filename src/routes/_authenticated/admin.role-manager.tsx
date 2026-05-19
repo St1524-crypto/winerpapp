@@ -413,6 +413,34 @@ function RoleManagerPage() {
             </div>
           )}
 
+          {/* Server-side rejection banner (e.g. SUPER_ADMIN_ZERO) */}
+          {serverError && (
+            <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm space-y-2">
+              <div className="flex items-center gap-2 font-medium text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                {serverError.kind === "super_admin_zero"
+                  ? "伺服器拒絕：套用後將沒有超級管理員"
+                  : "伺服器回傳錯誤"}
+              </div>
+              <p className="text-xs text-destructive/90 whitespace-pre-wrap break-words">
+                {serverError.message}
+              </p>
+              <div className="flex gap-2 pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setServerError(null);
+                    qc.invalidateQueries({ queryKey: ["admin-users"] });
+                  }}
+                >
+                  <RotateCw className="h-3.5 w-3.5 mr-1" /> 重新檢查使用者資料
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Change list */}
           <div className="max-h-[40vh] overflow-y-auto space-y-2 border rounded-md p-2 bg-muted/30">
             {changes.map((c) => {
