@@ -521,21 +521,67 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                     <div className="grid gap-2">
                       <div>
                         <Label className="text-xs">姓名 *</Label>
-                        <Input value={qaName} onChange={(e) => setQaName(e.target.value)} placeholder="例：王小明" />
+                        <Input
+                          value={qaName}
+                          onChange={(e) => setQaName(e.target.value)}
+                          onBlur={() => setQaTouched((t) => ({ ...t, name: true }))}
+                          placeholder="例：王小明"
+                          maxLength={100}
+                          aria-invalid={qaTouched.name && !!qaValidation.errors.name}
+                          className={qaTouched.name && qaValidation.errors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                        />
+                        {qaTouched.name && qaValidation.errors.name && (
+                          <p className="text-xs text-destructive mt-1">{qaValidation.errors.name}</p>
+                        )}
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <Label className="text-xs">電話</Label>
-                          <Input value={qaPhone} onChange={(e) => setQaPhone(e.target.value)} />
+                          <Input
+                            value={qaPhone}
+                            onChange={(e) => setQaPhone(e.target.value)}
+                            onBlur={() => setQaTouched((t) => ({ ...t, phone: true }))}
+                            placeholder="0912345678"
+                            maxLength={20}
+                            inputMode="tel"
+                            aria-invalid={qaTouched.phone && !!qaValidation.errors.phone}
+                            className={qaTouched.phone && qaValidation.errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+                          />
+                          {qaTouched.phone && qaValidation.errors.phone && (
+                            <p className="text-xs text-destructive mt-1">{qaValidation.errors.phone}</p>
+                          )}
                         </div>
                         <div>
                           <Label className="text-xs">Email</Label>
-                          <Input type="email" value={qaEmail} onChange={(e) => setQaEmail(e.target.value)} />
+                          <Input
+                            type="email"
+                            value={qaEmail}
+                            onChange={(e) => setQaEmail(e.target.value)}
+                            onBlur={() => setQaTouched((t) => ({ ...t, email: true }))}
+                            placeholder="name@example.com"
+                            maxLength={255}
+                            aria-invalid={qaTouched.email && !!qaValidation.errors.email}
+                            className={qaTouched.email && qaValidation.errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                          />
+                          {qaTouched.email && qaValidation.errors.email && (
+                            <p className="text-xs text-destructive mt-1">{qaValidation.errors.email}</p>
+                          )}
                         </div>
                       </div>
                       <div>
                         <Label className="text-xs">公司</Label>
-                        <Input value={qaCompany} onChange={(e) => setQaCompany(e.target.value)} placeholder="選填" />
+                        <Input
+                          value={qaCompany}
+                          onChange={(e) => setQaCompany(e.target.value)}
+                          onBlur={() => setQaTouched((t) => ({ ...t, company: true }))}
+                          placeholder="選填"
+                          maxLength={100}
+                          aria-invalid={qaTouched.company && !!qaValidation.errors.company}
+                          className={qaTouched.company && qaValidation.errors.company ? "border-destructive focus-visible:ring-destructive" : ""}
+                        />
+                        {qaTouched.company && qaValidation.errors.company && (
+                          <p className="text-xs text-destructive mt-1">{qaValidation.errors.company}</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 pt-1">
@@ -552,7 +598,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                         type="button"
                         size="sm"
                         className="flex-1 bg-gradient-primary"
-                        disabled={quickAddMut.isPending}
+                        disabled={quickAddMut.isPending || !qaValidation.ok}
                         onClick={() => quickAddMut.mutate()}
                       >
                         {quickAddMut.isPending
@@ -561,6 +607,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                         新增並套用
                       </Button>
                     </div>
+
                   </div>
                 ) : (
                   <Command>
