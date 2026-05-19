@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ShoppingCart, Search, Plus, Loader2, Eye, Truck, CreditCard,
-  PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check,
+  PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check, UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -294,6 +294,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [notes, setNotes] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [qaName, setQaName] = useState("");
+  const [qaEmail, setQaEmail] = useState("");
+  const [qaPhone, setQaPhone] = useState("");
+  const [qaCompany, setQaCompany] = useState("");
+  const qc = useQueryClient();
 
   const customersQ = useQuery({
     queryKey: ["customers-picker"],
@@ -308,6 +314,33 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       return data ?? [];
     },
   });
+
+  const quickAddMut = useMutation({
+    mutationFn: async () => {
+      if (!qaName.trim()) throw new Error("請輸入客戶姓名");
+      const { data, error } = await supabase
+        .from("customers")
+        .insert({
+          name: qaName.trim(),
+          email: qaEmail.trim() || null,
+          phone: qaPhone.trim() || null,
+          company: qaCompany.trim() || null,
+        })
+        .select("id,name,email,phone,company")
+        .single();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: (created) => {
+      toast.success(`已新增客戶：${created.name}`);
+      qc.invalidateQueries({ queryKey: ["customers-picker"] });
+      pickCustomer(created);
+      setQuickAddOpen(false);
+      setQaName(""); setQaEmail(""); setQaPhone(""); setQaCompany("");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "新增客戶失敗"),
+  });
+
 
 
   const total = useMemo(
@@ -427,39 +460,128 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
-                <Command>
-                  <CommandInput placeholder="輸入關鍵字搜尋..." />
-                  <CommandList>
-                    {customersQ.isLoading ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">載入中...</div>
-                    ) : (
-                      <>
-                        <CommandEmpty>查無客戶，請於下方手動輸入。</CommandEmpty>
-                        <CommandGroup heading={`客戶 (${customersQ.data?.length ?? 0})`}>
-                          {(customersQ.data ?? []).map((c: any) => (
-                            <CommandItem
-                              key={c.id}
-                              value={`${c.name} ${c.email ?? ""} ${c.phone ?? ""} ${c.company ?? ""}`}
-                              onSelect={() => pickCustomer(c)}
-                            >
-                              <Check className={`h-4 w-4 mr-2 ${customerId === c.id ? "opacity-100" : "opacity-0"}`} />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium truncate">
-                                  {c.name}
-                                  {c.company && <span className="text-xs text-muted-foreground ml-2">{c.company}</span>}
+                {quickAddOpen ? (
+                  <div className="p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium flex items-center gap-1.5">
+                        <UserPlus className="h-4 w-4 text-primary" /> 快速新增客戶
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => setQuickAddOpen(false)}
+                      >
+                        返回搜尋
+                      </button>
+                    </div>
+                    <div className="grid gap-2">
+                      <div>
+                        <Label className="text-xs">姓名 *</Label>
+                        <Input value={qaName} onChange={(e) => setQaName(e.target.value)} placeholder="例：王小明" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">電話</Label>
+                          <Input value={qaPhone} onChange={(e) => setQaPhone(e.target.value)} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Email</Label>
+                          <Input type="email" value={qaEmail} onChange={(e) => setQaEmail(e.target.value)} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">公司</Label>
+                        <Input value={qaCompany} onChange={(e) => setQaCompany(e.target.value)} placeholder="選填" />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setQuickAddOpen(false)}
+                      >
+                        取消
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="flex-1 bg-gradient-primary"
+                        disabled={quickAddMut.isPending}
+                        onClick={() => quickAddMut.mutate()}
+                      >
+                        {quickAddMut.isPending
+                          ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          : <UserPlus className="h-3.5 w-3.5 mr-1" />}
+                        新增並套用
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Command>
+                    <CommandInput
+                      placeholder="輸入關鍵字搜尋..."
+                      onValueChange={(v) => setQaName(v)}
+                    />
+                    <CommandList>
+                      {customersQ.isLoading ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">載入中...</div>
+                      ) : (
+                        <>
+                          <CommandEmpty>
+                            <div className="py-4 px-3 space-y-2 text-center">
+                              <div className="text-sm text-muted-foreground">查無此客戶</div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => setQuickAddOpen(true)}
+                              >
+                                <UserPlus className="h-3.5 w-3.5 mr-1" /> 快速新增客戶
+                              </Button>
+                            </div>
+                          </CommandEmpty>
+                          <CommandGroup heading={`客戶 (${customersQ.data?.length ?? 0})`}>
+                            {(customersQ.data ?? []).map((c: any) => (
+                              <CommandItem
+                                key={c.id}
+                                value={`${c.name} ${c.email ?? ""} ${c.phone ?? ""} ${c.company ?? ""}`}
+                                onSelect={() => pickCustomer(c)}
+                              >
+                                <Check className={`h-4 w-4 mr-2 ${customerId === c.id ? "opacity-100" : "opacity-0"}`} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium truncate">
+                                    {c.name}
+                                    {c.company && <span className="text-xs text-muted-foreground ml-2">{c.company}</span>}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {[c.email, c.phone].filter(Boolean).join(" · ") || "—"}
+                                  </div>
                                 </div>
-                                <div className="text-xs text-muted-foreground truncate">
-                                  {[c.email, c.phone].filter(Boolean).join(" · ") || "—"}
-                                </div>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </>
-                    )}
-                  </CommandList>
-                </Command>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </>
+                      )}
+                    </CommandList>
+                    <div className="border-t border-border p-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="w-full justify-start text-sm"
+                        onClick={() => setQuickAddOpen(true)}
+                      >
+                        <UserPlus className="h-3.5 w-3.5 mr-2 text-primary" />
+                        新增客戶到名單
+                      </Button>
+                    </div>
+                  </Command>
+                )}
               </PopoverContent>
+
             </Popover>
           </div>
 
