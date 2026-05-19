@@ -584,7 +584,7 @@ function OrderDetailDialog({
                           <TableCell className="text-xs text-muted-foreground">
                             {new Date(p.paid_at ?? p.created_at).toLocaleString("zh-TW")}
                           </TableCell>
-                          <TableCell>{p.payment_method}</TableCell>
+                          <TableCell className="text-sm">{PAYMENT_METHOD_LABEL[p.payment_method] ?? p.payment_method}</TableCell>
                           <TableCell className="font-mono text-xs">{p.transaction_id ?? "—"}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={
@@ -599,7 +599,20 @@ function OrderDetailDialog({
                         </TableRow>
                       ))}
                     </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">已收款合計</TableCell>
+                        <TableCell className="text-right font-semibold text-success">{fmt(paidTotal)}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">未收款</TableCell>
+                        <TableCell className={`text-right font-semibold ${unpaid > 0 ? "text-warning" : "text-success"}`}>
+                          {fmt(unpaid)}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
                   </Table>
+
                 )}
               </CardContent>
             </Card>
