@@ -108,6 +108,7 @@ type OrderRow = {
   payment_status: keyof typeof PAYMENT_STATUS;
   notes: string | null;
   created_at: string;
+  company_id: string;
 };
 
 // =================== Helpers ===================
