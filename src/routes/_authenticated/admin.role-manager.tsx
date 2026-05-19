@@ -114,12 +114,30 @@ function RoleManagerPage() {
     onMutate: () => {
       setServerError(null);
     },
-    onSuccess: (res) => {
-      toast.success(`已套用：${res.affected} 名使用者（+${res.added} / −${res.removed}）`);
+    onSuccess: async (res) => {
+      // Snapshot whether the operator changed their own roles before clearing draft.
+      const selfChanged = changes.some((c) => c.userId === me?.id);
+
       setDraft({});
       setServerError(null);
       setConfirmOpen(false);
-      qc.invalidateQueries({ queryKey: ["admin-users"] });
+
+      // Refresh the admin user list (server source of truth).
+      await qc.invalidateQueries({ queryKey: ["admin-users"] });
+
+      // If the current user's roles changed, refresh the RBAC menu / sidebar.
+      if (selfChanged) {
+        await refreshRoles();
+      }
+
+      toast.success(
+        `已套用：${res.affected} 名使用者（+${res.added} / −${res.removed}）`,
+        {
+          description: selfChanged
+            ? "您自己的角色已變更，左側選單與權限已即時更新。"
+            : "使用者角色清單已重新載入。",
+        },
+      );
     },
     onError: (e: any) => {
       const raw = String(e?.message ?? "套用失敗");
