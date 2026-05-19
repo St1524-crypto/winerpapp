@@ -529,7 +529,21 @@ function OrderDetailDialog({
                         </TableRow>
                       ))}
                     </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-right text-xs text-muted-foreground">
+                          品項合計
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">
+                          {items.reduce((s: number, it: any) => s + Number(it.quantity ?? 0), 0)} 件
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {fmt(items.reduce((s: number, it: any) => s + Number(it.subtotal ?? 0), 0))}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
                   </Table>
+
                 )}
               </CardContent>
             </Card>
