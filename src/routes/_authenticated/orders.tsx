@@ -432,9 +432,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     () => items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
     [items],
   );
+  const taxAmount = useMemo(
+    () => (taxAdded ? Math.round(subtotalNum * 0.05) : 0),
+    [taxAdded, subtotalNum],
+  );
   const total = useMemo(
-    () => Math.max(0, subtotalNum + Number(shippingFee || 0) - Number(discount || 0)),
-    [subtotalNum, shippingFee, discount],
+    () => Math.max(0, subtotalNum + taxAmount + Number(shippingFee || 0) - Number(discount || 0)),
+    [subtotalNum, taxAmount, shippingFee, discount],
   );
   const depositNum = Number(deposit || 0);
   const balanceNum = Number(balance || 0);
