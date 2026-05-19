@@ -208,13 +208,53 @@ function buildOrderHtml(data: Omit<OrderPdfData, "logoUrl">, logoData: string): 
 }
 
 async function renderHtmlIntoPdf(pdf: jsPDF, html: string, addPageFirst: boolean) {
-  const host = document.createElement("div");
-  host.style.cssText = "position:fixed;left:-10000px;top:0;z-index:-1";
-  host.innerHTML = html;
-  document.body.appendChild(host);
+  // 使用獨立 iframe 隔離站台 CSS（避免 oklch 等 html2canvas 不支援的色彩函式
+  // 從 :root/body 透過繼承污染 computed style）
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.style.cssText =
+    "position:fixed;left:-10000px;top:0;width:830px;height:10px;border:0;background:#fff";
+  document.body.appendChild(iframe);
+
   try {
-    const node = host.firstElementChild as HTMLElement;
-    const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+    const doc = iframe.contentDocument;
+    if (!doc) throw new Error("無法建立列印框架");
+    doc.open();
+    doc.write(
+      `<!doctype html><html><head><meta charset="utf-8"><style>
+        html,body{margin:0;padding:0;background:#fff;color:#0f172a;font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif}
+        *{box-sizing:border-box}
+      </style></head><body>${html}</body></html>`,
+    );
+    doc.close();
+
+    // 等待框架內所有圖片載入
+    const imgs = Array.from(doc.images);
+    await Promise.all(
+      imgs.map((img) =>
+        img.complete && img.naturalWidth > 0
+          ? Promise.resolve()
+          : new Promise<void>((resolve) => {
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            }),
+      ),
+    );
+
+    const node = doc.body.firstElementChild as HTMLElement;
+    if (!node) throw new Error("列印內容為空");
+    // 等下一個 frame，確保排版完成
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    iframe.style.height = `${node.scrollHeight + 40}px`;
+
+    const canvas = await html2canvas(node, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      windowWidth: 830,
+      logging: false,
+    });
+
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
     const imgW = pageW;
@@ -235,7 +275,7 @@ async function renderHtmlIntoPdf(pdf: jsPDF, html: string, addPageFirst: boolean
       }
     }
   } finally {
-    document.body.removeChild(host);
+    document.body.removeChild(iframe);
   }
 }
 
