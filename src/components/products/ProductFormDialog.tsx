@@ -13,6 +13,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import type { Category, Product } from "@/types/product";
 import { ImageUploader, UploaderImage } from "./ImageUploader";
 import { generateSku, isSkuUnique } from "@/lib/sku";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 interface Props {
   open: boolean;
