@@ -122,6 +122,31 @@ function OrdersPage() {
   const [tab, setTab] = useState<"all" | keyof typeof ORDER_STATUS>("all");
   const [search, setSearch] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [printingId, setPrintingId] = useState<string | null>(null);
+  const { logoUrl } = useBranding();
+
+  async function handlePrintOrder(orderId: string) {
+    try {
+      setPrintingId(orderId);
+      const [orderRes, itemsRes, paymentsRes] = await Promise.all([
+        supabase.from("sales_orders").select("*").eq("id", orderId).maybeSingle(),
+        supabase.from("sales_order_items").select("*").eq("sales_order_id", orderId).order("created_at"),
+        supabase.from("payments").select("*").eq("sales_order_id", orderId).order("created_at", { ascending: false }),
+      ]);
+      if (orderRes.error || !orderRes.data) throw new Error(orderRes.error?.message ?? "找不到訂單");
+      await exportOrderPdf({
+        order: orderRes.data as any,
+        items: (itemsRes.data ?? []) as any,
+        payments: (paymentsRes.data ?? []) as any,
+        logoUrl,
+      });
+      toast.success("PDF 已產生");
+    } catch (e: any) {
+      toast.error(e?.message ?? "列印失敗");
+    } finally {
+      setPrintingId(null);
+    }
+  }
 
   const ordersQ = useQuery({
     queryKey: ["sales-orders", tab, search],
