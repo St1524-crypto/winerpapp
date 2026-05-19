@@ -172,6 +172,7 @@ function AdminCompaniesPage() {
 
       {editCompany && (
         <EditCompanyDialog
+          key={editCompany.id}
           company={editCompany}
           onClose={() => setEditCompany(null)}
         />
