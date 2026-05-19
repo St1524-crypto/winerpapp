@@ -465,6 +465,89 @@ function OrdersPage() {
         onClose={() => setDetailId(null)}
         onChanged={refresh}
       />
+
+      {/* 批次匯出進度 */}
+      <Dialog
+        open={batchPrinting}
+        onOpenChange={(o) => {
+          if (!o && batchPrinting) cancelBatchPrint();
+        }}
+      >
+        <DialogContent className="max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="h-4 w-4 text-primary" />
+              批次匯出 PDF
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Progress
+              value={
+                batchProgress && batchProgress.total > 0
+                  ? (batchProgress.current / batchProgress.total) * 100
+                  : 0
+              }
+              className="h-2"
+            />
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {batchProgress
+                  ? `處理中 ${batchProgress.current} / ${batchProgress.total}`
+                  : "準備中..."}
+              </span>
+              <span className="font-mono text-xs text-muted-foreground">
+                {batchProgress?.orderNo ?? ""}
+              </span>
+            </div>
+            {batchAbortRef.current?.signal.aborted && (
+              <p className="text-xs text-warning">已要求取消，正在收尾中...</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={cancelBatchPrint}
+              disabled={!!batchAbortRef.current?.signal.aborted}
+            >
+              <XCircle className="h-4 w-4 mr-1" />
+              {batchAbortRef.current?.signal.aborted ? "取消中..." : "取消"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 失敗清單 */}
+      <Dialog
+        open={!batchPrinting && batchFailures.length > 0}
+        onOpenChange={(o) => !o && setBatchFailures([])}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-4 w-4" />
+              批次匯出有 {batchFailures.length} 筆失敗
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-72 overflow-y-auto space-y-2 py-2">
+            {batchFailures.map((f, i) => (
+              <div
+                key={`${f.orderNo}-${i}`}
+                className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2"
+              >
+                <div className="font-mono text-xs font-medium">{f.orderNo}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 break-words">
+                  {f.error}
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBatchFailures([])}>
+              關閉
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
