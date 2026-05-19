@@ -50,6 +50,14 @@ const PAYMENT_STATUS = {
   refunded: { label: "已退款", tone: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
 } as const;
 
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  bank_transfer: "銀行轉帳",
+  credit_card: "信用卡",
+  cash: "現金",
+  cod: "貨到付款",
+  other: "其他",
+};
+
 type OrderRow = {
   id: string;
   order_no: string;
