@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/use-auth";
 import { BrandingProvider } from "@/hooks/use-branding";
 import { CompanyProvider } from "@/hooks/use-current-company";
+import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -78,14 +79,16 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CompanyProvider>
-          <BrandingProvider>
-            <Outlet />
-            <Toaster richColors position="top-right" />
-          </BrandingProvider>
-        </CompanyProvider>
-      </AuthProvider>
+      <GlobalErrorBoundary>
+        <AuthProvider>
+          <CompanyProvider>
+            <BrandingProvider>
+              <Outlet />
+              <Toaster richColors position="top-right" />
+            </BrandingProvider>
+          </CompanyProvider>
+        </AuthProvider>
+      </GlobalErrorBoundary>
     </QueryClientProvider>
   );
 }
