@@ -21,6 +21,7 @@ import { companySchema, type CompanyFormValues } from "@/lib/company-schema";
 import { Building2, Plus, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
+import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/companies/new")({
   head: () => ({ meta: [{ title: "新增公司 — 源倍力 ERP" }] }),
@@ -44,8 +45,11 @@ function NewCompanyPage() {
       email: "",
       phone: "",
       address: "",
+      logo_url: "",
     },
   });
+
+  const logoUrl = form.watch("logo_url") ?? "";
 
   const m = useMutation({
     mutationFn: async (values: CompanyFormValues) => {
@@ -57,6 +61,7 @@ function NewCompanyPage() {
           email: values.email || null,
           phone: values.phone || null,
           address: values.address || null,
+          logo_url: values.logo_url || null,
           status: "active",
         })
         .select()
@@ -133,6 +138,14 @@ function NewCompanyPage() {
                 },
               )}
             >
+              <FormItem>
+                <FormLabel>公司 Logo</FormLabel>
+                <CompanyLogoUploader
+                  value={logoUrl}
+                  onChange={(url) => form.setValue("logo_url", url ?? "", { shouldDirty: true })}
+                  disabled={m.isPending}
+                />
+              </FormItem>
               <FormField
                 control={form.control}
                 name="company_name"

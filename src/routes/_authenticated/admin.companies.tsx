@@ -32,6 +32,7 @@ import {
 import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
+import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/companies")({
   head: () => ({ meta: [{ title: "公司管理 — 源倍力 ERP" }] }),
@@ -49,7 +50,7 @@ function AdminCompaniesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("id, company_name, tax_id, email, phone, address, status, created_at")
+        .select("id, company_name, tax_id, email, phone, address, status, logo_url, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -103,6 +104,7 @@ function AdminCompaniesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16">Logo</TableHead>
                   <TableHead>公司名稱</TableHead>
                   <TableHead>統編</TableHead>
                   <TableHead>聯絡</TableHead>
@@ -114,6 +116,15 @@ function AdminCompaniesPage() {
               <TableBody>
                 {companiesQ.data.map((c) => (
                   <TableRow key={c.id}>
+                    <TableCell>
+                      <div className="h-10 w-10 rounded-md bg-white ring-1 ring-border flex items-center justify-center overflow-hidden">
+                        {c.logo_url ? (
+                          <img src={c.logo_url} alt={c.company_name} className="h-full w-full object-contain" />
+                        ) : (
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium">{c.company_name}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{c.tax_id ?? "—"}</TableCell>
                     <TableCell className="text-xs">
@@ -186,8 +197,11 @@ function CreateCompanyDialog() {
       email: "",
       phone: "",
       address: "",
+      logo_url: "",
     },
   });
+
+  const logoUrl = form.watch("logo_url") ?? "";
 
   const m = useMutation({
     mutationFn: async (values: CompanyFormValues) => {
@@ -199,6 +213,7 @@ function CreateCompanyDialog() {
           email: values.email || null,
           phone: values.phone || null,
           address: values.address || null,
+          logo_url: values.logo_url || null,
           status: "active",
         })
         .select()
@@ -260,6 +275,14 @@ function CreateCompanyDialog() {
             )}
             className="space-y-3"
           >
+            <FormItem>
+              <FormLabel>公司 Logo</FormLabel>
+              <CompanyLogoUploader
+                value={logoUrl}
+                onChange={(url) => form.setValue("logo_url", url ?? "", { shouldDirty: true })}
+                disabled={m.isPending}
+              />
+            </FormItem>
             <FormField
               control={form.control}
               name="company_name"
@@ -510,8 +533,11 @@ function EditCompanyDialog({
       email: company.email ?? "",
       phone: company.phone ?? "",
       address: company.address ?? "",
+      logo_url: company.logo_url ?? "",
     },
   });
+
+  const logoUrl = form.watch("logo_url") ?? "";
 
   const m = useMutation({
     mutationFn: async (values: CompanyFormValues) => {
@@ -521,6 +547,7 @@ function EditCompanyDialog({
         email: values.email || null,
         phone: values.phone || null,
         address: values.address || null,
+        logo_url: values.logo_url || null,
         status,
       };
       const { error } = await supabase
@@ -537,6 +564,7 @@ function EditCompanyDialog({
           email: company.email,
           phone: company.phone,
           address: company.address,
+          logo_url: company.logo_url,
           status: company.status,
         };
         const changed: Record<string, { from: any; to: any }> = {};
@@ -588,6 +616,14 @@ function EditCompanyDialog({
             )}
             className="space-y-3"
           >
+            <FormItem>
+              <FormLabel>公司 Logo</FormLabel>
+              <CompanyLogoUploader
+                value={logoUrl}
+                onChange={(url) => form.setValue("logo_url", url ?? "", { shouldDirty: true })}
+                disabled={m.isPending}
+              />
+            </FormItem>
             <FormField
               control={form.control}
               name="company_name"
