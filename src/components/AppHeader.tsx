@@ -67,7 +67,11 @@ export function AppHeader() {
             </Avatar>
             <div className="hidden md:block text-left">
               <div className="text-xs font-medium leading-tight">{user?.email?.split("@")[0]}</div>
-              <div className="text-[10px] text-muted-foreground">{roles[0] ? ROLE_LABELS[roles[0]] : "—"}</div>
+              <div className="text-[10px] text-muted-foreground">{
+                isSuperAdmin
+                  ? (inAdmin ? ROLE_LABELS["super_admin"] : (ROLE_LABELS[roles.find((r) => r !== "super_admin" && r !== "member") ?? roles[0] ?? "member"]))
+                  : (roles[0] ? ROLE_LABELS[roles[0]] : "—")
+              }</div>
             </div>
           </button>
         </DropdownMenuTrigger>
