@@ -7,7 +7,7 @@ import {
   PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check, UserPlus,
   Package, Trash2, Printer,
 } from "lucide-react";
-import { exportOrderPdf } from "@/lib/order-pdf";
+import { exportOrderPdf, exportOrdersPdf } from "@/lib/order-pdf";
 import { useBranding } from "@/hooks/use-branding";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
