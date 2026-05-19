@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import logo from "@/assets/logo.jpg";
+import { useBranding } from "@/hooks/use-branding";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
 function LoginPage() {
   const { user, loading } = useAuth();
+  const { logoUrl } = useBranding();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
@@ -63,7 +64,7 @@ function LoginPage() {
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-glow mb-4 overflow-hidden ring-1 ring-primary/30">
-            <img src={logo} alt="源倍力 Logo" className="h-full w-full object-contain" />
+            <img src={logoUrl} alt="源倍力 Logo" className="h-full w-full object-contain" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">源倍力 ERP</h1>
           <p className="text-sm text-muted-foreground mt-1">Enterprise Resource Platform</p>
