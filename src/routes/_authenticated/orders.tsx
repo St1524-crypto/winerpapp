@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ShoppingCart, Search, Plus, Loader2, Eye, Truck, CreditCard,
-  PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check,
+  PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check, UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
