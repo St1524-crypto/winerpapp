@@ -1086,6 +1086,7 @@ export type Database = {
         Row: {
           after_stock: number
           before_stock: number
+          company_id: string
           created_at: string
           id: string
           operator_id: string | null
@@ -1099,6 +1100,7 @@ export type Database = {
         Insert: {
           after_stock?: number
           before_stock?: number
+          company_id: string
           created_at?: string
           id?: string
           operator_id?: string | null
@@ -1112,6 +1114,7 @@ export type Database = {
         Update: {
           after_stock?: number
           before_stock?: number
+          company_id?: string
           created_at?: string
           id?: string
           operator_id?: string | null
@@ -1123,6 +1126,13 @@ export type Database = {
           warehouse_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inventory_transactions_product_id_fkey"
             columns: ["product_id"]

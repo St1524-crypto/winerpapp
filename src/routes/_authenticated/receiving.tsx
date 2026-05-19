@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PackageCheck, Search } from "lucide-react";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 const sb: any = supabase;
 const PENDING = ["submitted", "confirmed", "partial"];
@@ -24,6 +25,7 @@ interface WH { id: string; name: string; warehouse_code: string; }
 
 function Page() {
   const { user } = useAuth();
+  const { currentCompanyId } = useCurrentCompany();
   const [list, setList] = useState<PO[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -62,6 +64,7 @@ function Page() {
 
   async function confirm() {
     if (!receiving || !warehouseId) return toast.error("請選擇倉庫");
+    if (!currentCompanyId) return toast.error("尚未選擇公司");
     const toReceive = items.filter((i) => (receiveQty[i.id] ?? 0) > 0);
     if (toReceive.length === 0) return toast.error("請輸入收貨數量");
 
@@ -99,6 +102,7 @@ function Page() {
           reference_no: gr.receipt_no,
           reason: `採購入庫 ${receiving.po_no}`,
           operator_id: user?.id ?? null,
+          company_id: currentCompanyId,
         });
 
         // upsert warehouse_inventory

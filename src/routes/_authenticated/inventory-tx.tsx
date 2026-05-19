@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowRightLeft, Plus, Search, ArrowDown, ArrowUp, RefreshCcw } from "lucide-react";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 const sb: any = supabase;
 
@@ -36,6 +37,7 @@ interface WH { id: string; warehouse_code: string; name: string; }
 
 function Page() {
   const { user } = useAuth();
+  const { currentCompanyId } = useCurrentCompany();
   const [list, setList] = useState<Tx[]>([]);
   const [prodMap, setProdMap] = useState<Record<string, Product>>({});
   const [whMap, setWhMap] = useState<Record<string, WH>>({});
@@ -74,6 +76,7 @@ function Page() {
 
   async function save() {
     if (!form.product_id || !form.warehouse_id || form.quantity === 0) return toast.error("請完整填寫");
+    if (!currentCompanyId) return toast.error("尚未選擇公司");
     const prod = prodMap[form.product_id];
     const before = prod?.stock ?? 0;
     const isOut = form.type === "manual_out" || form.type === "order_out";
@@ -91,6 +94,7 @@ function Page() {
       after_stock: after,
       reason: form.reason || null,
       operator_id: user?.id ?? null,
+      company_id: currentCompanyId,
     });
     const { data: wi } = await sb.from("warehouse_inventory").select("id,stock").eq("warehouse_id", form.warehouse_id).eq("product_id", form.product_id).maybeSingle();
     if (wi) await sb.from("warehouse_inventory").update({ stock: Math.max(0, wi.stock + delta) }).eq("id", wi.id);
