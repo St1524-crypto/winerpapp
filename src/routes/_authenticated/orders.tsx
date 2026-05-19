@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -125,6 +125,15 @@ function OrdersPage() {
   const [printingId, setPrintingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchPrinting, setBatchPrinting] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{
+    current: number;
+    total: number;
+    orderNo: string;
+  } | null>(null);
+  const [batchFailures, setBatchFailures] = useState<
+    Array<{ orderNo: string; error: string }>
+  >([]);
+  const batchAbortRef = useRef<AbortController | null>(null);
   const { logoUrl } = useBranding();
 
   function toggleSelect(id: string) {
@@ -143,17 +152,28 @@ function OrdersPage() {
     });
   }
 
+  function cancelBatchPrint() {
+    batchAbortRef.current?.abort();
+  }
+
   async function handleBatchPrint() {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
+    const controller = new AbortController();
+    batchAbortRef.current = controller;
+    setBatchFailures([]);
+    setBatchProgress({ current: 0, total: ids.length, orderNo: "" });
+    setBatchPrinting(true);
+
     try {
-      setBatchPrinting(true);
       const [ordersRes, itemsRes, paymentsRes] = await Promise.all([
         supabase.from("sales_orders").select("*").in("id", ids),
         supabase.from("sales_order_items").select("*").in("sales_order_id", ids).order("created_at"),
         supabase.from("payments").select("*").in("sales_order_id", ids).order("created_at", { ascending: false }),
       ]);
       if (ordersRes.error) throw new Error(ordersRes.error.message);
+      if (controller.signal.aborted) return;
+
       const orderList = (ordersRes.data ?? []) as any[];
       const itemsByOrder = new Map<string, any[]>();
       (itemsRes.data ?? []).forEach((it: any) => {
@@ -167,7 +187,6 @@ function OrdersPage() {
         arr.push(p);
         paymentsByOrder.set(p.sales_order_id, arr);
       });
-      // 依使用者勾選順序輸出
       const orderMap = new Map(orderList.map((o) => [o.id, o]));
       const sorted = ids.map((id) => orderMap.get(id)).filter(Boolean);
       const payload = sorted.map((o: any) => ({
@@ -175,14 +194,38 @@ function OrdersPage() {
         items: itemsByOrder.get(o.id) ?? [],
         payments: paymentsByOrder.get(o.id) ?? [],
       }));
-      await exportOrdersPdf(payload, logoUrl);
-      toast.success(`已匯出 ${payload.length} 筆訂單 PDF`);
+
+      const res = await exportOrdersPdf(payload, logoUrl, {
+        signal: controller.signal,
+        onProgress: (current, total, orderNo) =>
+          setBatchProgress({ current, total, orderNo }),
+      });
+
+      setBatchFailures(res.failures);
+
+      if (res.cancelled) {
+        toast.warning(
+          `已取消，已輸出 ${res.success} 筆${res.failures.length ? `、失敗 ${res.failures.length} 筆` : ""}`,
+        );
+      } else if (res.failures.length === 0) {
+        toast.success(`已匯出 ${res.success} 筆訂單 PDF`);
+      } else {
+        toast.error(
+          `完成：成功 ${res.success} 筆、失敗 ${res.failures.length} 筆（${res.failures
+            .slice(0, 3)
+            .map((f) => f.orderNo)
+            .join("、")}${res.failures.length > 3 ? "..." : ""}）`,
+        );
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "批次列印失敗");
     } finally {
       setBatchPrinting(false);
+      setBatchProgress(null);
+      batchAbortRef.current = null;
     }
   }
+
 
   async function handlePrintOrder(orderId: string) {
     try {
@@ -422,6 +465,89 @@ function OrdersPage() {
         onClose={() => setDetailId(null)}
         onChanged={refresh}
       />
+
+      {/* 批次匯出進度 */}
+      <Dialog
+        open={batchPrinting}
+        onOpenChange={(o) => {
+          if (!o && batchPrinting) cancelBatchPrint();
+        }}
+      >
+        <DialogContent className="max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Printer className="h-4 w-4 text-primary" />
+              批次匯出 PDF
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Progress
+              value={
+                batchProgress && batchProgress.total > 0
+                  ? (batchProgress.current / batchProgress.total) * 100
+                  : 0
+              }
+              className="h-2"
+            />
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {batchProgress
+                  ? `處理中 ${batchProgress.current} / ${batchProgress.total}`
+                  : "準備中..."}
+              </span>
+              <span className="font-mono text-xs text-muted-foreground">
+                {batchProgress?.orderNo ?? ""}
+              </span>
+            </div>
+            {batchAbortRef.current?.signal.aborted && (
+              <p className="text-xs text-warning">已要求取消，正在收尾中...</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={cancelBatchPrint}
+              disabled={!!batchAbortRef.current?.signal.aborted}
+            >
+              <XCircle className="h-4 w-4 mr-1" />
+              {batchAbortRef.current?.signal.aborted ? "取消中..." : "取消"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 失敗清單 */}
+      <Dialog
+        open={!batchPrinting && batchFailures.length > 0}
+        onOpenChange={(o) => !o && setBatchFailures([])}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-4 w-4" />
+              批次匯出有 {batchFailures.length} 筆失敗
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-72 overflow-y-auto space-y-2 py-2">
+            {batchFailures.map((f, i) => (
+              <div
+                key={`${f.orderNo}-${i}`}
+                className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2"
+              >
+                <div className="font-mono text-xs font-medium">{f.orderNo}</div>
+                <div className="text-xs text-muted-foreground mt-0.5 break-words">
+                  {f.error}
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBatchFailures([])}>
+              關閉
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
