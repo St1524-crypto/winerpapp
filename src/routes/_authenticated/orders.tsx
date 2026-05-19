@@ -667,6 +667,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         setQaTouched({ name: true, email: true, phone: true, company: true });
         throw new Error(parsed.error.issues[0]?.message ?? "資料格式不正確");
       }
+      if (!currentCompanyId) throw new Error("尚未選擇公司");
       const { data, error } = await supabase
         .from("customers")
         .insert({
@@ -674,6 +675,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           email: parsed.data.email?.trim() || null,
           phone: parsed.data.phone?.trim() || null,
           company: parsed.data.company?.trim() || null,
+          company_id: currentCompanyId,
         })
         .select("id,name,email,phone,company")
         .single();
