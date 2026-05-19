@@ -3,7 +3,7 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
-import logo from "@/assets/logo.jpg";
+import { useBranding } from "@/hooks/use-branding";
 import { useAuth } from "@/hooks/use-auth";
 import { filterNav, ROLE_LABELS } from "@/lib/nav";
 
@@ -11,6 +11,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { roles, user } = useAuth();
+  const { logoUrl } = useBranding();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const items = filterNav(roles);
   const primaryRole = roles[0];
