@@ -156,7 +156,8 @@ function AdminCompaniesPage() {
 // =================== Create Company ===================
 function CreateCompanyDialog() {
   const qc = useQueryClient();
-  const { refresh } = useCurrentCompany();
+  const { user } = useAuth();
+  const { refresh, setCurrent } = useCurrentCompany();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ company_name: "", tax_id: "", email: "", phone: "", address: "" });
 
@@ -176,12 +177,26 @@ function CreateCompanyDialog() {
         .select()
         .single();
       if (error) throw error;
+
+      // Auto-add current user as admin member
+      if (user) {
+        const { error: memErr } = await supabase
+          .from("company_members")
+          .insert({ company_id: data.id, user_id: user.id, role: "admin" });
+        if (memErr && !memErr.message.toLowerCase().includes("duplicate")) {
+          throw memErr;
+        }
+      }
       return data;
     },
-    onSuccess: () => {
-      toast.success("公司已建立");
+    onSuccess: async (data) => {
+      toast.success("公司已建立，已切換至此公司");
       qc.invalidateQueries({ queryKey: ["admin-companies"] });
-      refresh();
+      qc.invalidateQueries({ queryKey: ["admin-companies-member-count"] });
+      await refresh();
+      if (data?.id) {
+        try { await setCurrent(data.id); } catch {}
+      }
       setOpen(false);
       setForm({ company_name: "", tax_id: "", email: "", phone: "", address: "" });
     },
