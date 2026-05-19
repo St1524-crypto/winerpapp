@@ -383,3 +383,93 @@ function CompanyMembersDialog({
     </Dialog>
   );
 }
+
+// =================== Edit Company ===================
+function EditCompanyDialog({
+  company, onClose,
+}: { company: any; onClose: () => void }) {
+  const qc = useQueryClient();
+  const { refresh } = useCurrentCompany();
+  const [form, setForm] = useState({
+    company_name: company.company_name ?? "",
+    tax_id: company.tax_id ?? "",
+    email: company.email ?? "",
+    phone: company.phone ?? "",
+    address: company.address ?? "",
+    status: company.status ?? "active",
+  });
+
+  const m = useMutation({
+    mutationFn: async () => {
+      if (!form.company_name.trim()) throw new Error("請輸入公司名稱");
+      const { error } = await supabase
+        .from("companies")
+        .update({
+          company_name: form.company_name.trim(),
+          tax_id: form.tax_id || null,
+          email: form.email || null,
+          phone: form.phone || null,
+          address: form.address || null,
+          status: form.status,
+        })
+        .eq("id", company.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("已更新");
+      qc.invalidateQueries({ queryKey: ["admin-companies"] });
+      refresh();
+      onClose();
+    },
+    onError: (e: any) => toast.error("更新失敗", { description: e.message }),
+  });
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>編輯公司</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>公司名稱 *</Label>
+            <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>統一編號</Label>
+              <Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} />
+            </div>
+            <div>
+              <Label>電話</Label>
+              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </div>
+          </div>
+          <div>
+            <Label>Email</Label>
+            <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
+          <div>
+            <Label>地址</Label>
+            <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+          </div>
+          <div>
+            <Label>狀態</Label>
+            <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">啟用</SelectItem>
+                <SelectItem value="inactive">停用</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>取消</Button>
+          <Button onClick={() => m.mutate()} disabled={m.isPending} className="bg-gradient-primary">
+            {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            儲存
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
