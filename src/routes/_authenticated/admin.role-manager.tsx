@@ -130,30 +130,26 @@ function RoleManagerPage() {
       // Keep the confirm dialog open so the user sees the error in context.
       setConfirmOpen(true);
 
-      if (isZero) {
-        toast.error("套用後系統將沒有任何超級管理員，已由伺服器拒絕寫入。", {
-          description: cleaned,
-          action: {
-            label: "重新檢查",
-            onClick: () => {
-              setServerError(null);
-              qc.invalidateQueries({ queryKey: ["admin-users"] });
-            },
-          },
-        });
-      } else {
-        toast.error(cleaned, {
-          action: {
-            label: "重新檢查",
-            onClick: () => {
-              setServerError(null);
-              qc.invalidateQueries({ queryKey: ["admin-users"] });
-            },
-          },
-        });
-      }
+      const toastTitle = isZero
+        ? "套用後系統將沒有任何超級管理員，已由伺服器拒絕寫入。"
+        : cleaned;
+      toast.error(toastTitle, {
+        description: isZero ? cleaned : undefined,
+        action: {
+          label: "重新檢查",
+          onClick: () => recheck(),
+        },
+      });
     },
   });
+
+  // Re-pull users → useMemo for superAdminImpact recomputes from fresh data,
+  // changes list re-derives (no-op edits drop out automatically),
+  // keeping the warning + confirm-button enable state in sync.
+  const recheck = async () => {
+    setServerError(null);
+    await usersQ.refetch();
+  };
 
   // Super admin impact analysis
   const superAdminImpact = useMemo(() => {
