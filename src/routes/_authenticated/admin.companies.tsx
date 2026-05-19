@@ -191,8 +191,11 @@ function CreateCompanyDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-primary gap-2">
-          <Plus className="h-4 w-4" /> 新增公司
+        <Button
+          size="lg"
+          className="bg-gradient-primary gap-2 shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-[1.02] transition-all font-semibold ring-2 ring-primary/40 ring-offset-2 ring-offset-background"
+        >
+          <Plus className="h-5 w-5" /> 新增公司
         </Button>
       </DialogTrigger>
       <DialogContent>
