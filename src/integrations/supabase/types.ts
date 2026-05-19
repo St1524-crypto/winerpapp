@@ -14,16 +14,164 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      inventory_logs: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string | null
+          quantity: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          quantity: number
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          quantity?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          customer_name: string
+          id: string
+          order_no: string
+          status: string
+          total_amount: number
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          id?: string
+          order_no: string
+          status?: string
+          total_amount?: number
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          id?: string
+          order_no?: string
+          status?: string
+          total_amount?: number
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          image: string | null
+          name: string
+          price: number
+          sku: string
+          stock: number
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          image?: string | null
+          name: string
+          price?: number
+          sku: string
+          stock?: number
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          image?: string | null
+          name?: string
+          price?: number
+          sku?: string
+          stock?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          name?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "super_admin"
+        | "finance"
+        | "warehouse"
+        | "sales"
+        | "vendor"
+        | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +298,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "super_admin",
+        "finance",
+        "warehouse",
+        "sales",
+        "vendor",
+        "member",
+      ],
+    },
   },
 } as const
