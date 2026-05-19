@@ -1471,6 +1471,7 @@ function OrderDetailDialog({
                 {unpaid > 0 && order.order_status !== "cancelled" && (
                   <RecordPaymentDialog
                     orderId={order.id}
+                    companyId={order.company_id}
                     unpaid={unpaid}
                     totalAmount={Number(order.total_amount)}
                     onRecorded={() => {
