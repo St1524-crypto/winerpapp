@@ -44,6 +44,47 @@ export type Database = {
         }
         Relationships: []
       }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          image: string | null
+          name: string
+          parent_id: string | null
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image?: string | null
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image?: string | null
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           company: string | null
@@ -79,24 +120,36 @@ export type Database = {
       }
       inventory_logs: {
         Row: {
+          after_stock: number
+          before_stock: number
           created_at: string
           id: string
+          operator_id: string | null
           product_id: string | null
           quantity: number
+          reason: string | null
           type: string
         }
         Insert: {
+          after_stock?: number
+          before_stock?: number
           created_at?: string
           id?: string
+          operator_id?: string | null
           product_id?: string | null
           quantity: number
+          reason?: string | null
           type: string
         }
         Update: {
+          after_stock?: number
+          before_stock?: number
           created_at?: string
           id?: string
+          operator_id?: string | null
           product_id?: string | null
           quantity?: number
+          reason?: string | null
           type?: string
         }
         Relationships: [
@@ -166,38 +219,105 @@ export type Database = {
         }
         Relationships: []
       }
+      product_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string | null
+          category_id: string | null
+          cost_price: number
           created_at: string
+          description: string | null
+          featured: boolean
           id: string
           image: string | null
           name: string
           price: number
+          safe_stock: number
+          short_description: string | null
           sku: string
+          status: string
           stock: number
+          updated_at: string
+          wholesale_price: number
         }
         Insert: {
           category?: string | null
+          category_id?: string | null
+          cost_price?: number
           created_at?: string
+          description?: string | null
+          featured?: boolean
           id?: string
           image?: string | null
           name: string
           price?: number
+          safe_stock?: number
+          short_description?: string | null
           sku: string
+          status?: string
           stock?: number
+          updated_at?: string
+          wholesale_price?: number
         }
         Update: {
           category?: string | null
+          category_id?: string | null
+          cost_price?: number
           created_at?: string
+          description?: string | null
+          featured?: boolean
           id?: string
           image?: string | null
           name?: string
           price?: number
+          safe_stock?: number
+          short_description?: string | null
           sku?: string
+          status?: string
           stock?: number
+          updated_at?: string
+          wholesale_price?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
