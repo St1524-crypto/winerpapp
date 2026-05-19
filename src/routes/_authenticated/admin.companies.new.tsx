@@ -61,6 +61,7 @@ function NewCompanyPage() {
           email: values.email || null,
           phone: values.phone || null,
           address: values.address || null,
+          logo_url: values.logo_url || null,
           status: "active",
         })
         .select()
