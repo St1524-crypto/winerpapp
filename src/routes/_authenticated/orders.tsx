@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   head: () => ({
@@ -48,6 +49,14 @@ const PAYMENT_STATUS = {
   paid:     { label: "已付款", tone: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
   refunded: { label: "已退款", tone: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
 } as const;
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  bank_transfer: "銀行轉帳",
+  credit_card: "信用卡",
+  cash: "現金",
+  cod: "貨到付款",
+  other: "其他",
+};
 
 type OrderRow = {
   id: string;
@@ -479,7 +488,23 @@ function OrderDetailDialog({
                   <div className="border-t border-border my-1" />
                   <Row k="訂單總額" v={fmt(order.total_amount)} bold />
                   <Row k="已收款" v={fmt(paidTotal)} accent="text-success" />
-                  <Row k="未收款" v={fmt(unpaid)} accent={unpaid > 0 ? "text-warning" : ""} />
+                  <Row k="未收款" v={fmt(unpaid)} accent={unpaid > 0 ? "text-warning" : "text-success"} />
+                  <div className="pt-2 space-y-1">
+                    <Progress
+                      value={Number(order.total_amount) > 0
+                        ? Math.min(100, (paidTotal / Number(order.total_amount)) * 100)
+                        : 0}
+                      className="h-2"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>收款進度</span>
+                      <span>
+                        {Number(order.total_amount) > 0
+                          ? Math.round((paidTotal / Number(order.total_amount)) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -512,7 +537,21 @@ function OrderDetailDialog({
                         </TableRow>
                       ))}
                     </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-right text-xs text-muted-foreground">
+                          品項合計
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-muted-foreground">
+                          {items.reduce((s: number, it: any) => s + Number(it.quantity ?? 0), 0)} 件
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {fmt(items.reduce((s: number, it: any) => s + Number(it.subtotal ?? 0), 0))}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
                   </Table>
+
                 )}
               </CardContent>
             </Card>
@@ -553,7 +592,7 @@ function OrderDetailDialog({
                           <TableCell className="text-xs text-muted-foreground">
                             {new Date(p.paid_at ?? p.created_at).toLocaleString("zh-TW")}
                           </TableCell>
-                          <TableCell>{p.payment_method}</TableCell>
+                          <TableCell className="text-sm">{PAYMENT_METHOD_LABEL[p.payment_method] ?? p.payment_method}</TableCell>
                           <TableCell className="font-mono text-xs">{p.transaction_id ?? "—"}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={
@@ -568,7 +607,20 @@ function OrderDetailDialog({
                         </TableRow>
                       ))}
                     </TableBody>
+                    <TableFooter>
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">已收款合計</TableCell>
+                        <TableCell className="text-right font-semibold text-success">{fmt(paidTotal)}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">未收款</TableCell>
+                        <TableCell className={`text-right font-semibold ${unpaid > 0 ? "text-warning" : "text-success"}`}>
+                          {fmt(unpaid)}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
                   </Table>
+
                 )}
               </CardContent>
             </Card>
