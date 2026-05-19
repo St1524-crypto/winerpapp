@@ -123,7 +123,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const current = companies.find((c) => c.id === currentCompanyId) ?? null;
 
   return (
-    <Ctx.Provider value={{ currentCompanyId, current, companies, loading, refresh: load, setCurrent }}>
+    <Ctx.Provider value={{ currentCompanyId, current, companies, loading, error, refresh: load, setCurrent }}>
       {children}
     </Ctx.Provider>
   );
