@@ -1825,6 +1825,7 @@ function EditOrderDialog({
             unit_price: it.unit_price,
             quantity: it.quantity,
             subtotal: Number(it.unit_price) * Number(it.quantity),
+            company_id: order.company_id,
           })),
         );
       if (insErr) throw new Error(`寫入新品項失敗：${insErr.message}`);
