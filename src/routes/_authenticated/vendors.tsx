@@ -143,6 +143,7 @@ function Page() {
             <div className="space-y-2"><Label>統一編號</Label><Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} className="font-mono" /></div>
             <div className="space-y-2"><Label>銀行帳號</Label><Input value={form.bank_account} onChange={(e) => setForm({ ...form, bank_account: e.target.value })} className="font-mono" /></div>
             <div className="space-y-2"><Label>付款條件</Label><Input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} placeholder="月結30天" /></div>
+            <div className="space-y-2"><Label>配送方式</Label><Input value={form.shipping_method} onChange={(e) => setForm({ ...form, shipping_method: e.target.value })} placeholder="貨運 / 自取" /></div>
             <div className="space-y-2"><Label>狀態</Label>
               <Select value={form.status} onValueChange={(s) => setForm({ ...form, status: s })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
