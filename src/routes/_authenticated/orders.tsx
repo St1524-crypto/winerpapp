@@ -520,7 +520,14 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (itemsErr) throw new Error(`寫入商品明細失敗：${itemsErr.message}`);
 
       // 寫入訂金 / 尾款付款紀錄
-      const paymentsPayload: Array<Record<string, any>> = [];
+      type PaymentInsert = {
+        sales_order_id: string;
+        amount: number;
+        payment_method: string;
+        payment_status: string;
+        paid_at?: string;
+      };
+      const paymentsPayload: PaymentInsert[] = [];
       if (depositNum > 0) {
         paymentsPayload.push({
           sales_order_id: orderRow.id,
