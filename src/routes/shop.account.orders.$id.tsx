@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package } from "lucide-react";
+import { ArrowLeft, Package, MapPin, Lock } from "lucide-react";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, SHIPPING_STATUS_LABELS, type SalesOrder, type SalesOrderItem } from "@/types/shop";
 
 export const Route = createFileRoute("/shop/account/orders/$id")({ component: OrderDetail });
