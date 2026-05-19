@@ -593,6 +593,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [qaPhone, setQaPhone] = useState("");
   const [qaCompany, setQaCompany] = useState("");
   const qc = useQueryClient();
+  const { currentCompanyId } = useCurrentCompany();
 
   const customersQ = useQuery({
     queryKey: ["customers-picker"],
