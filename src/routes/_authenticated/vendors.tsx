@@ -52,7 +52,7 @@ function Page() {
   function openNew() { setEditing(null); setForm({ ...empty }); setOpen(true); }
   function openEdit(v: Vendor) {
     setEditing(v);
-    setForm({ code: v.code, name: v.name, contact: v.contact ?? "", phone: v.phone ?? "", email: v.email ?? "", tax_id: v.tax_id ?? "", bank_account: v.bank_account ?? "", payment_terms: v.payment_terms ?? "", address: v.address ?? "", notes: v.notes ?? "", status: v.status });
+    setForm({ code: v.code, name: v.name, contact: v.contact ?? "", phone: v.phone ?? "", email: v.email ?? "", tax_id: v.tax_id ?? "", bank_account: v.bank_account ?? "", payment_terms: v.payment_terms ?? "", shipping_method: v.shipping_method ?? "", address: v.address ?? "", notes: v.notes ?? "", status: v.status });
     setOpen(true);
   }
   async function save() {
