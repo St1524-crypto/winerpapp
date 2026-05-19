@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
+import { companySchema, type CompanyFormValues } from "@/lib/company-schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
