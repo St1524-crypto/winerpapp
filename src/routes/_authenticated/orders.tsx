@@ -20,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
 import { z } from "zod";
 
 // =================== Quick-add customer schema ===================
@@ -317,6 +318,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [deposit, setDeposit] = useState("0");
   const [balance, setBalance] = useState("0");
   const [depositMethod, setDepositMethod] = useState("bank_transfer");
+  const [taxAdded, setTaxAdded] = useState(false);
   const [notes, setNotes] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -430,9 +432,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     () => items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
     [items],
   );
+  const taxAmount = useMemo(
+    () => (taxAdded ? Math.round(subtotalNum * 0.05) : 0),
+    [taxAdded, subtotalNum],
+  );
   const total = useMemo(
-    () => Math.max(0, subtotalNum + Number(shippingFee || 0) - Number(discount || 0)),
-    [subtotalNum, shippingFee, discount],
+    () => Math.max(0, subtotalNum + taxAmount + Number(shippingFee || 0) - Number(discount || 0)),
+    [subtotalNum, taxAmount, shippingFee, discount],
   );
   const depositNum = Number(deposit || 0);
   const balanceNum = Number(balance || 0);
@@ -897,6 +903,17 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             <div><Label>折扣</Label><Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} /></div>
           </div>
 
+          <div className="flex items-center justify-between rounded-md border p-3 bg-muted/20">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={taxAdded} onCheckedChange={(v) => setTaxAdded(v === true)} />
+              <span>稅外加 5%</span>
+            </label>
+            <div className="text-sm text-muted-foreground">
+              稅額：<span className="tabular-nums font-medium text-foreground">{fmt(taxAmount)}</span>
+            </div>
+          </div>
+
+
           {/* ===== 訂金 / 尾款 ===== */}
           <div className="rounded-md border p-3 space-y-2 bg-muted/20">
             <div className="text-sm font-medium flex items-center gap-1.5">
@@ -933,7 +950,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
           <div className="flex items-center justify-between border-t pt-3">
             <div className="text-xs text-muted-foreground">
-              小計 {fmt(subtotalNum)} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)}
+              小計 {fmt(subtotalNum)}{taxAdded ? ` ＋ 稅 ${fmt(taxAmount)}` : ""} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)}
             </div>
             <div className="text-sm">
               訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
