@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   ShoppingCart, Search, Plus, Loader2, Eye, Truck, CreditCard,
   PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check, UserPlus,
-  Package, Trash2, Printer,
+  Package, Trash2, Printer, Pencil,
 } from "lucide-react";
 import { exportOrderPdf, exportOrdersPdf } from "@/lib/order-pdf";
 import { useBranding } from "@/hooks/use-branding";
@@ -1239,6 +1239,7 @@ function OrderDetailDialog({
   const qc = useQueryClient();
   const { logoUrl } = useBranding();
   const [printing, setPrinting] = useState(false);
+  const [editing, setEditing] = useState(false);
   const detailQ = useQuery({
     queryKey: ["sales-order-detail", orderId],
     enabled: !!orderId,
@@ -1619,6 +1620,11 @@ function OrderDetailDialog({
         )}
 
         <DialogFooter>
+          {order && order.order_status !== "cancelled" && (
+            <Button variant="outline" onClick={() => setEditing(true)}>
+              <Pencil className="h-4 w-4 mr-1" /> 編輯訂單
+            </Button>
+          )}
           {order && (
             <Button
               variant="outline"
@@ -1647,6 +1653,316 @@ function OrderDetailDialog({
             </Button>
           )}
           <Button variant="outline" onClick={onClose}>關閉</Button>
+        </DialogFooter>
+      </DialogContent>
+      {order && (
+        <EditOrderDialog
+          open={editing}
+          onClose={() => setEditing(false)}
+          order={order}
+          items={items as any}
+          onSaved={() => {
+            setEditing(false);
+            qc.invalidateQueries({ queryKey: ["sales-order-detail", orderId] });
+            onChanged();
+          }}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+// =================== Edit order dialog ===================
+function EditOrderDialog({
+  open, onClose, order, items: initialItems, onSaved,
+}: {
+  open: boolean;
+  onClose: () => void;
+  order: OrderRow;
+  items: Array<{ id: string; product_id: string | null; product_name: string; sku: string | null; image: string | null; unit_price: number; quantity: number }>;
+  onSaved: () => void;
+}) {
+  const [customerName, setCustomerName] = useState(order.customer_name);
+  const [email, setEmail] = useState(order.customer_email ?? "");
+  const [phone, setPhone] = useState(order.customer_phone ?? "");
+  const [receiverName, setReceiverName] = useState(order.receiver_name);
+  const [receiverPhone, setReceiverPhone] = useState(order.receiver_phone);
+  const [address, setAddress] = useState(order.shipping_address);
+  const [shippingFee, setShippingFee] = useState(String(order.shipping_fee ?? 0));
+  const [discount, setDiscount] = useState(String(order.discount_amount ?? 0));
+  const [notes, setNotes] = useState(order.notes ?? "");
+  const [editItems, setEditItems] = useState(
+    initialItems.map((it) => ({
+      product_id: it.product_id,
+      product_name: it.product_name,
+      sku: it.sku,
+      image: it.image,
+      unit_price: Number(it.unit_price),
+      quantity: Number(it.quantity),
+    })),
+  );
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // 每次重新打開時，重置為當前訂單資料
+  const [syncKey, setSyncKey] = useState(order.id);
+  if (open && syncKey !== order.id) {
+    setSyncKey(order.id);
+    setCustomerName(order.customer_name);
+    setEmail(order.customer_email ?? "");
+    setPhone(order.customer_phone ?? "");
+    setReceiverName(order.receiver_name);
+    setReceiverPhone(order.receiver_phone);
+    setAddress(order.shipping_address);
+    setShippingFee(String(order.shipping_fee ?? 0));
+    setDiscount(String(order.discount_amount ?? 0));
+    setNotes(order.notes ?? "");
+    setEditItems(
+      initialItems.map((it) => ({
+        product_id: it.product_id,
+        product_name: it.product_name,
+        sku: it.sku,
+        image: it.image,
+        unit_price: Number(it.unit_price),
+        quantity: Number(it.quantity),
+      })),
+    );
+  }
+
+  const productsQ = useQuery({
+    queryKey: ["products-picker-edit-orders"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id,name,sku,price,image,stock")
+        .eq("status", "active")
+        .order("updated_at", { ascending: false })
+        .limit(300);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+  const subtotalNum = useMemo(
+    () => editItems.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
+    [editItems],
+  );
+  const total = useMemo(
+    () => Math.max(0, subtotalNum + Number(shippingFee || 0) - Number(discount || 0)),
+    [subtotalNum, shippingFee, discount],
+  );
+
+  function addProduct(p: { id: string; name: string; sku: string | null; price: number; image: string | null }) {
+    setEditItems((prev) => {
+      const idx = prev.findIndex((x) => x.product_id === p.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+        return next;
+      }
+      return [...prev, { product_id: p.id, product_name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1 }];
+    });
+    setPickerOpen(false);
+  }
+
+  const m = useMutation({
+    mutationFn: async () => {
+      if (!customerName.trim() || !address.trim() || !phone.trim()) {
+        throw new Error("請填寫必填欄位（客戶、電話、地址）");
+      }
+      if (editItems.length === 0) {
+        throw new Error("請至少保留一項商品");
+      }
+      if (editItems.some((it) => !it.quantity || it.quantity <= 0 || it.unit_price < 0)) {
+        throw new Error("商品數量需大於 0，且單價不可為負");
+      }
+
+      // 1) 更新訂單主檔
+      const { error: upErr } = await supabase
+        .from("sales_orders")
+        .update({
+          customer_name: customerName.trim(),
+          customer_email: email.trim() || null,
+          customer_phone: phone.trim() || null,
+          receiver_name: receiverName.trim() || customerName.trim(),
+          receiver_phone: receiverPhone.trim() || phone.trim(),
+          shipping_address: address.trim(),
+          subtotal: subtotalNum,
+          shipping_fee: Number(shippingFee || 0),
+          discount_amount: Number(discount || 0),
+          total_amount: total,
+          notes: notes.trim() || null,
+        })
+        .eq("id", order.id);
+      if (upErr) throw new Error(`更新訂單失敗：${upErr.message}`);
+
+      // 2) 重建品項（先刪後新增，較簡單可靠）
+      const { error: delErr } = await supabase
+        .from("sales_order_items")
+        .delete()
+        .eq("sales_order_id", order.id);
+      if (delErr) throw new Error(`清除舊品項失敗：${delErr.message}`);
+
+      const { error: insErr } = await supabase
+        .from("sales_order_items")
+        .insert(
+          editItems.map((it) => ({
+            sales_order_id: order.id,
+            product_id: it.product_id,
+            product_name: it.product_name,
+            sku: it.sku,
+            image: it.image,
+            unit_price: it.unit_price,
+            quantity: it.quantity,
+            subtotal: Number(it.unit_price) * Number(it.quantity),
+          })),
+        );
+      if (insErr) throw new Error(`寫入新品項失敗：${insErr.message}`);
+    },
+    onSuccess: () => {
+      toast.success("訂單已更新");
+      onSaved();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "更新失敗"),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="h-4 w-4 text-primary" />
+            編輯訂單 <span className="font-mono text-sm text-muted-foreground">{order.order_no}</span>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>客戶姓名 *</Label><Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} /></div>
+            <div><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+            <div><Label>電話 *</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+            <div><Label>收件人</Label><Input value={receiverName} onChange={(e) => setReceiverName(e.target.value)} /></div>
+            <div><Label>收件電話</Label><Input value={receiverPhone} onChange={(e) => setReceiverPhone(e.target.value)} /></div>
+            <div className="col-span-2"><Label>寄送地址 *</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" />訂單品項 ({editItems.length})</Label>
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button type="button" size="sm" variant="outline">
+                    <Plus className="h-3.5 w-3.5 mr-1" /> 加入商品
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[420px]" align="end">
+                  <Command>
+                    <CommandInput placeholder="搜尋商品名稱 / SKU" />
+                    <CommandList>
+                      <CommandEmpty>
+                        {productsQ.isLoading ? "載入中..." : "找不到商品"}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {(productsQ.data ?? []).map((p: any) => (
+                          <CommandItem
+                            key={p.id}
+                            value={`${p.name} ${p.sku ?? ""}`}
+                            onSelect={() => addProduct(p)}
+                          >
+                            <div className="flex flex-1 items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium truncate">{p.name}</div>
+                                <div className="text-xs text-muted-foreground">{p.sku ?? "—"} · 庫存 {p.stock ?? 0}</div>
+                              </div>
+                              <div className="text-sm font-semibold tabular-nums">{fmt(p.price)}</div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            {editItems.length === 0 ? (
+              <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+                尚未加入商品
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>商品</TableHead>
+                      <TableHead className="w-28">單價</TableHead>
+                      <TableHead className="w-24">數量</TableHead>
+                      <TableHead className="w-28 text-right">小計</TableHead>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {editItems.map((it, i) => (
+                      <TableRow key={`${it.product_id ?? "x"}-${i}`}>
+                        <TableCell>
+                          <div className="text-sm font-medium">{it.product_name}</div>
+                          {it.sku && <div className="text-xs text-muted-foreground">{it.sku}</div>}
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number" min={0} value={it.unit_price}
+                            onChange={(e) => setEditItems((prev) => prev.map((x, j) => j === i ? { ...x, unit_price: Number(e.target.value) } : x))}
+                            className="h-8"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number" min={1} value={it.quantity}
+                            onChange={(e) => setEditItems((prev) => prev.map((x, j) => j === i ? { ...x, quantity: Math.max(1, Number(e.target.value) || 1) } : x))}
+                            className="h-8"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-medium">
+                          {fmt(it.unit_price * it.quantity)}
+                        </TableCell>
+                        <TableCell>
+                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8"
+                            onClick={() => setEditItems((prev) => prev.filter((_, j) => j !== i))}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div><Label>商品小計</Label><Input type="number" value={subtotalNum} readOnly className="bg-muted/40" /></div>
+            <div><Label>運費</Label><Input type="number" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} /></div>
+            <div><Label>折扣</Label><Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} /></div>
+          </div>
+
+          <div className="flex items-center justify-between border-t pt-3">
+            <div className="text-xs text-muted-foreground">
+              小計 {fmt(subtotalNum)} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)}
+            </div>
+            <div className="text-sm">
+              訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
+            </div>
+          </div>
+
+          <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+
+          <div className="text-xs text-muted-foreground">
+            注意：訂單金額變動後，付款 / 收款狀態需於詳情頁另行核對。
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={m.isPending}>取消</Button>
+          <Button onClick={() => m.mutate()} disabled={m.isPending} className="bg-gradient-primary">
+            {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} 儲存變更
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
