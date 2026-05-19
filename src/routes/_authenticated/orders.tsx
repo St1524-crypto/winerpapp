@@ -431,9 +431,11 @@ function OrdersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={PAYMENT_STATUS[o.payment_status]?.tone}>
-                          {PAYMENT_STATUS[o.payment_status]?.label ?? o.payment_status}
-                        </Badge>
+                        <PaymentStatusCell
+                          orderId={o.id}
+                          value={o.payment_status}
+                          onChanged={refresh}
+                        />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
