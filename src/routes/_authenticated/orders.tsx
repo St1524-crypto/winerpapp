@@ -5,8 +5,10 @@ import { toast } from "sonner";
 import {
   ShoppingCart, Search, Plus, Loader2, Eye, Truck, CreditCard,
   PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check, UserPlus,
-  Package, Trash2,
+  Package, Trash2, Printer,
 } from "lucide-react";
+import { exportOrderPdf } from "@/lib/order-pdf";
+import { useBranding } from "@/hooks/use-branding";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
