@@ -209,7 +209,7 @@ function NewCompanyPage() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={m.isPending || !form.formState.isValid}
+                  disabled={m.isPending}
                   className="bg-gradient-primary gap-2 shadow-lg shadow-primary/30"
                 >
                   {m.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
