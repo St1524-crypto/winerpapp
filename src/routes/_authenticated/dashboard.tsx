@@ -54,6 +54,7 @@ const statusVariant: Record<string, "default" | "secondary" | "destructive" | "o
 
 function Dashboard() {
   const { logoUrl } = useBranding();
+  const { currentCompanyId } = useCurrentCompany();
   const [stats, setStats] = useState({ total: 0, low: 0, featured: 0, today: 0 });
   const [proc, setProc] = useState({ todayInAmount: 0, pendingPO: 0, vendorCount: 0, lowCount: 0 });
   const [purchaseTrend, setPurchaseTrend] = useState<{ day: string; amount: number }[]>([]);
