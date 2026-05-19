@@ -19,6 +19,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { z } from "zod";
+
+// =================== Quick-add customer schema ===================
+const quickAddCustomerSchema = z.object({
+  name: z.string().trim().min(1, "請輸入客戶姓名").max(100, "姓名最多 100 字"),
+  email: z
+    .string()
+    .trim()
+    .max(255, "Email 最多 255 字")
+    .email("Email 格式不正確")
+    .optional()
+    .or(z.literal("")),
+  phone: z
+    .string()
+    .trim()
+    .max(20, "電話最多 20 碼")
+    .regex(/^[0-9+\-\s()]{7,20}$/, "電話格式不正確（僅允許數字與 +-() 空白，至少 7 碼）")
+    .optional()
+    .or(z.literal("")),
+  company: z.string().trim().max(100, "公司名稱最多 100 字").optional().or(z.literal("")),
+});
 
 export const Route = createFileRoute("/_authenticated/orders")({
   head: () => ({
