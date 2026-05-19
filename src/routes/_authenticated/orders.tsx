@@ -362,8 +362,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       return { createdNewCustomer };
     },
 
-    onSuccess: () => {
-      toast.success("訂單已建立");
+    onSuccess: (res) => {
+      toast.success(res?.createdNewCustomer ? "訂單已建立，並同步新增客戶" : "訂單已建立");
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
       setSubtotal(""); setShippingFee("0"); setDiscount("0"); setNotes("");
