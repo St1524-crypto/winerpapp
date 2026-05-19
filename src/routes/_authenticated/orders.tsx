@@ -426,15 +426,35 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
 
 
-  const total = useMemo(
-    () => Math.max(0, Number(subtotal || 0) + Number(shippingFee || 0) - Number(discount || 0)),
-    [subtotal, shippingFee, discount],
+  const subtotalNum = useMemo(
+    () => items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
+    [items],
   );
+  const total = useMemo(
+    () => Math.max(0, subtotalNum + Number(shippingFee || 0) - Number(discount || 0)),
+    [subtotalNum, shippingFee, discount],
+  );
+  const depositNum = Number(deposit || 0);
+  const balanceNum = Number(balance || 0);
+  const paymentsTotal = depositNum + balanceNum;
+  const paymentsDiff = total - paymentsTotal;
 
   const m = useMutation({
     mutationFn: async () => {
-      if (!customer || !address || !phone || !subtotal) {
-        throw new Error("請填寫必填欄位（客戶、電話、地址、小計）");
+      if (!customer || !address || !phone) {
+        throw new Error("請填寫必填欄位（客戶、電話、地址）");
+      }
+      if (items.length === 0) {
+        throw new Error("請至少加入一項商品");
+      }
+      if (items.some((it) => !it.quantity || it.quantity <= 0 || it.unit_price < 0)) {
+        throw new Error("商品數量需大於 0，且單價不可為負");
+      }
+      if (depositNum < 0 || balanceNum < 0) {
+        throw new Error("訂金與尾款不可為負");
+      }
+      if (depositNum + balanceNum > total) {
+        throw new Error("訂金 + 尾款不可超過訂單總額");
       }
 
       // 若未從客戶名單選取，使用手動輸入資料建立新客戶以保持訂單與客戶資料一致
@@ -455,26 +475,74 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         createdNewCustomer = true;
       }
 
-      const { error } = await supabase.from("sales_orders").insert({
-        order_no: genOrderNo(),
-        customer_id: linkedCustomerId,
-        customer_name: customer,
-        customer_email: email || null,
-        customer_phone: phone || null,
-        receiver_name: customer,
-        receiver_phone: phone,
-        shipping_address: address,
-        shipping_method: "home_delivery",
-        subtotal: Number(subtotal),
-        shipping_fee: Number(shippingFee || 0),
-        discount_amount: Number(discount || 0),
-        total_amount: total,
-        notes: notes || null,
-        order_status: "pending",
-        shipping_status: "pending",
-        payment_status: "pending",
-      });
+      // 依訂金決定付款狀態
+      let paymentStatus: "pending" | "partial" | "paid" = "pending";
+      if (depositNum >= total && total > 0) paymentStatus = "paid";
+      else if (depositNum > 0) paymentStatus = "partial";
+
+      const { data: orderRow, error } = await supabase
+        .from("sales_orders")
+        .insert({
+          order_no: genOrderNo(),
+          customer_id: linkedCustomerId,
+          customer_name: customer,
+          customer_email: email || null,
+          customer_phone: phone || null,
+          receiver_name: customer,
+          receiver_phone: phone,
+          shipping_address: address,
+          shipping_method: "home_delivery",
+          subtotal: subtotalNum,
+          shipping_fee: Number(shippingFee || 0),
+          discount_amount: Number(discount || 0),
+          total_amount: total,
+          notes: notes || null,
+          order_status: "pending",
+          shipping_status: "pending",
+          payment_status: paymentStatus,
+        })
+        .select("id")
+        .single();
       if (error) throw new Error(error.message);
+
+      // 寫入商品明細
+      const itemsPayload = items.map((it) => ({
+        sales_order_id: orderRow.id,
+        product_id: it.product_id,
+        product_name: it.name,
+        sku: it.sku,
+        image: it.image,
+        unit_price: it.unit_price,
+        quantity: it.quantity,
+        subtotal: Number(it.unit_price) * Number(it.quantity),
+      }));
+      const { error: itemsErr } = await supabase.from("sales_order_items").insert(itemsPayload);
+      if (itemsErr) throw new Error(`寫入商品明細失敗：${itemsErr.message}`);
+
+      // 寫入訂金 / 尾款付款紀錄
+      const paymentsPayload: Array<Record<string, any>> = [];
+      if (depositNum > 0) {
+        paymentsPayload.push({
+          sales_order_id: orderRow.id,
+          amount: depositNum,
+          payment_method: depositMethod,
+          payment_status: "paid",
+          paid_at: new Date().toISOString(),
+        });
+      }
+      if (balanceNum > 0) {
+        paymentsPayload.push({
+          sales_order_id: orderRow.id,
+          amount: balanceNum,
+          payment_method: depositMethod,
+          payment_status: "pending",
+        });
+      }
+      if (paymentsPayload.length > 0) {
+        const { error: payErr } = await supabase.from("payments").insert(paymentsPayload);
+        if (payErr) throw new Error(`寫入付款紀錄失敗：${payErr.message}`);
+      }
+
       return { createdNewCustomer };
     },
 
@@ -482,7 +550,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       toast.success(res?.createdNewCustomer ? "訂單已建立，並同步新增客戶" : "訂單已建立");
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
-      setSubtotal(""); setShippingFee("0"); setDiscount("0"); setNotes("");
+      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes("");
+      setDeposit("0"); setBalance("0");
       setCustomerId(null);
       onCreated();
     },
