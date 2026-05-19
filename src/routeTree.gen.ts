@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
@@ -50,9 +51,15 @@ import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_au
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
+import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 
+const TwoFactorRoute = TwoFactorRouteImport.update({
+  id: '/two-factor',
+  path: '/two-factor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
@@ -265,6 +272,12 @@ const AuthenticatedB2bAccountsRoute =
     path: '/b2b/accounts',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminSecurityRoute =
+  AuthenticatedAdminSecurityRouteImport.update({
+    id: '/security',
+    path: '/security',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const ShopAccountOrdersIdRoute = ShopAccountOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -282,7 +295,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
-  '/admin': typeof AuthenticatedAdminRoute
+  '/two-factor': typeof TwoFactorRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/categories': typeof AuthenticatedCategoriesRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -305,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
+  '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -325,7 +340,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/two-factor': typeof TwoFactorRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/categories': typeof AuthenticatedCategoriesRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -346,6 +362,7 @@ export interface FileRoutesByTo {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop': typeof ShopIndexRoute
+  '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -369,7 +386,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/two-factor': typeof TwoFactorRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -392,6 +410,7 @@ export interface FileRoutesById {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
+  '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -415,6 +434,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/shop'
+    | '/two-factor'
     | '/admin'
     | '/categories'
     | '/customers'
@@ -438,6 +458,7 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/'
+    | '/admin/security'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
     | '/finance/payable'
@@ -458,6 +479,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/reset-password'
+    | '/two-factor'
     | '/admin'
     | '/categories'
     | '/customers'
@@ -479,6 +501,7 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop'
+    | '/admin/security'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
     | '/finance/payable'
@@ -501,6 +524,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/shop'
+    | '/two-factor'
     | '/_authenticated/admin'
     | '/_authenticated/categories'
     | '/_authenticated/customers'
@@ -524,6 +548,7 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/'
+    | '/_authenticated/admin/security'
     | '/_authenticated/b2b/accounts'
     | '/_authenticated/finance/bank-accounts'
     | '/_authenticated/finance/payable'
@@ -547,10 +572,18 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRouteWithChildren
+  TwoFactorRoute: typeof TwoFactorRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/two-factor': {
+      id: '/two-factor'
+      path: '/two-factor'
+      fullPath: '/two-factor'
+      preLoaderRoute: typeof TwoFactorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop': {
       id: '/shop'
       path: '/shop'
@@ -838,6 +871,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedB2bAccountsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/security': {
+      id: '/_authenticated/admin/security'
+      path: '/security'
+      fullPath: '/admin/security'
+      preLoaderRoute: typeof AuthenticatedAdminSecurityRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/shop/account/orders/$id': {
       id: '/shop/account/orders/$id'
       path: '/$id'
@@ -854,6 +894,17 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedFinanceRouteChildren {
   AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
@@ -902,7 +953,7 @@ const AuthenticatedB2bAccountsRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedCategoriesRoute: typeof AuthenticatedCategoriesRoute
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -925,7 +976,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedCategoriesRoute: AuthenticatedCategoriesRoute,
   AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -1006,17 +1057,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRouteWithChildren,
+  TwoFactorRoute: TwoFactorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

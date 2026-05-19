@@ -7,7 +7,7 @@ import { useBranding } from "@/hooks/use-branding";
 import { useAuth } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import {
-  Crown, LayoutDashboard, Users, ShieldCheck, Settings, Bell, FileClock,
+  Crown, LayoutDashboard, Users, ShieldCheck, Shield, Settings, Bell, FileClock,
   Package, Tag, Boxes, ShoppingCart, Truck, UserCircle, Wallet, ArrowLeft, Database,
 } from "lucide-react";
 
@@ -27,6 +27,7 @@ const GROUPS: AdminNavGroup[] = [
     items: [
       { title: "會員管理", url: "/members", icon: Users },
       { title: "角色權限", url: "/rls-test", icon: ShieldCheck },
+      { title: "安全中心", url: "/admin/security", icon: Shield },
       { title: "個人資料", url: "/settings", icon: UserCircle },
     ],
   },
