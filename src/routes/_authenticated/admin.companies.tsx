@@ -533,8 +533,11 @@ function EditCompanyDialog({
       email: company.email ?? "",
       phone: company.phone ?? "",
       address: company.address ?? "",
+      logo_url: company.logo_url ?? "",
     },
   });
+
+  const logoUrl = form.watch("logo_url") ?? "";
 
   const m = useMutation({
     mutationFn: async (values: CompanyFormValues) => {
@@ -544,6 +547,7 @@ function EditCompanyDialog({
         email: values.email || null,
         phone: values.phone || null,
         address: values.address || null,
+        logo_url: values.logo_url || null,
         status,
       };
       const { error } = await supabase
