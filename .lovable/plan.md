@@ -1,112 +1,99 @@
-# 第六週開發計畫：財務 / AI / BI / 自動化
+# 多公司租戶系統 建置計畫
 
-本週範圍極大（19 大區塊、近 50 個檔案、8 張新資料表 + 多項 AI/自動化功能）。為確保品質與可審查性，將分 **4 個 Stage 交付**，每個 Stage 完成後可立即試用。
+將現有 ERP 改造為多公司（multi-tenant）SaaS 模式：共用資料庫 + `company_id` 隔離，一個帳號可加入多家公司並切換，僅 `super_admin` 可建立公司。
 
 ---
 
-## Stage 1 — 財務核心 + Schema 基礎建設
+## 階段 1：租戶基礎建設（必做，先上線）
 
-**Migration（一次性建立全部新表）**
+### 資料模型
+- 沿用既有的 `companies` 表（已有 company_name / tax_id / logo_url / status 等欄位）。
+- 沿用既有的 `company_members` 表（user_id / company_id / role）作為「使用者—公司」關聯。
+- 新增 `current_company_id` 欄位到 `profiles`，記錄使用者目前選擇的公司（切換用）。
+- 新增 SECURITY DEFINER function：
+  - `private.current_company_id()` — 回傳當前使用者切換中的公司 id。
+  - `private.is_company_member(_company_id, _user_id)` — 判斷使用者是否屬於該公司。
+  - `private.has_company_role(_company_id, _user_id, _role)` — 公司內角色檢查（admin / member）。
 
+### RLS 模式（所有業務表共用）
 ```text
-finance_transactions     收支總帳（income/expense, category, payment_method, account_id, reference）
-accounts_receivable      應收帳款（綁 business_account, invoice_no, due_date, paid/unpaid/overdue）
-accounts_payable         應付帳款（綁 vendor, bill_no, due_date, status）
-invoices                 發票（綁 sales_order, invoice_type 二聯/三聯/個人, tax_id, status）
-bank_accounts            銀行帳戶（多帳戶 + 餘額）
-companies                多公司（company_name, tax_id, status）
-company_members          公司成員（user_id, company_id, role）— 為 SaaS 多租戶預留
-automation_workflows     自動化規則（trigger_type, action_type, config jsonb, status）
-automation_runs          自動化執行紀錄
-api_keys                 API 金鑰（hashed key, scopes, last_used）
-ai_logs                  AI 分析結果歷史
-notification_rules       智能通知規則
+SELECT  USING  ( company_id = private.current_company_id()
+                 OR private.has_role(auth.uid(), 'super_admin') )
+INSERT  WITH CHECK ( company_id = private.current_company_id() )
+UPDATE  USING  ( company_id = private.current_company_id() )
+DELETE  USING  ( company_id = private.current_company_id() )
 ```
+super_admin 不受公司隔離，可跨公司查詢（平台維運）。
 
-全部含 RLS：
-- 財務/發票表 → `finance` + `super_admin` 可管理；`sales` 可讀本身負責的單。
-- API keys / companies → 僅 `super_admin`。
-- automation / ai_logs → `super_admin` + `finance`。
-
-**頁面**
-
-- `/finance` 升級為 Finance Hub（總覽 + 子分頁路由）
-- `/finance/transactions` 收支總帳（含新增、分類、付款方式）
-- `/finance/receivable` 應收帳款（自動串 `b2b_orders` + `account_statements`）
-- `/finance/payable` 應付帳款（自動串 `purchase_orders` + `vendors`）
-- `/finance/bank-accounts` 銀行帳戶管理
-
-**Hooks / Services**
-
-```text
-src/hooks/use-finance-transactions.tsx
-src/hooks/use-receivables.tsx
-src/hooks/use-payables.tsx
-src/services/finance.service.ts   ← repository 層，集中 supabase 查詢
-```
+### 前端
+- 新增 `useCurrentCompany()` hook，從 profiles 讀取/寫入 `current_company_id`。
+- AppHeader 加上「公司切換器」下拉，列出該使用者所屬公司，切換時 update profiles 並 `queryClient.invalidateQueries()` 重整資料。
+- 登入後若使用者無任何 company_members，顯示「等待管理員邀請加入公司」提示頁。
+- super_admin 新增「平台 → 公司管理」頁面，可建立公司、指派初始管理員、停用公司。
 
 ---
 
-## Stage 2 — 發票 + 財務報表 + KPI
+## 階段 2：業務資料表加上 company_id（分批進行）
 
-- `/finance/invoices` 發票列表 + 開立 Dialog（預留台灣電子發票 API 介面 `src/services/einvoice.service.ts`）
-- `/finance/reports` 財務報表中心
-  - 損益表 / 現金流量表 / 銷售報表 / 採購報表 / 庫存報表 / 客戶分析
-  - PDF 匯出（沿用既有 `src/lib/pdf-report.ts`）
-  - CSV 匯出
-  - 日期區間 + 公司篩選
-- `/dashboard` 升級加上 **KPI Bar**：月營收、毛利率、庫存週轉、回購率、客單價、客戶成長率
+每個業務表都要：(1) 加 `company_id uuid NOT NULL`、(2) 改寫 RLS、(3) backfill 既有資料、(4) 前端寫入時帶入。
 
----
+**第一批（核心交易）**：
+- products / product_images / categories / price_tiers / moq_rules
+- sales_orders / sales_order_items / payments / invoices
+- customers / customer_addresses
 
-## Stage 3 — AI 智能分析 + 智能客服
+**第二批（庫存與採購）**：
+- warehouses / inventory_logs / inventory_transactions
+- purchase_orders / goods_receiving / vendors / suppliers
 
-採用 **Lovable AI Gateway**（`google/gemini-3-flash-preview`，免額外 API Key），全部走 `createServerFn`：
+**第三批（財務與 B2B）**：
+- bank_accounts / finance_transactions / accounts_receivable / accounts_payable
+- business_accounts / b2b_orders / b2b_order_items / account_statements / dealers
 
-```text
-src/lib/ai-gateway.ts                    provider helper
-src/lib/ai-analytics.functions.ts        AI 分析 server fn（餵入彙總後的 SQL 統計，回傳結構化見解）
-src/lib/ai-chat.functions.ts             AI 客服 streamText
-```
+**第四批（輔助）**：
+- coupons / notifications / notification_rules / automation_workflows / automation_runs / ai_logs
 
-- `/ai/analytics` AI Dashboard — Summary Cards（如「本月保健食品銷量成長 23%」）、商品推薦、庫存預測、客戶分群
-- `/ai/assistant` AI 客服全頁 + 全站懸浮 **ChatWidget**（商城與後台共用）
-  - 工具：`lookup_order` / `lookup_product` / `lookup_inventory`（讓 AI 可查真實資料）
-  - 訊息渲染走 `useChat` + `message.parts`（含 markdown + 工具卡片）
-- 所有 AI 結果寫入 `ai_logs` 供回顧
+> 既有資料 backfill：建立一個「預設公司」，把所有現存資料的 company_id 都指向它，並把所有現有非 super_admin 使用者加入該公司，確保不會掉資料、不會炸權限。
 
 ---
 
-## Stage 4 — BI / 自動化 / 多公司 / API / 設定
+## 階段 3：前端整合
 
-- `/bi` BI Dashboard：銷售趨勢（折線）、利潤分析（面積）、商品/客戶排行（橫條）、區域分析、庫存週轉率（Recharts，深色科技風）
-- `/automation` 工作流中心：規則列表 + Builder（Trigger × Action 表單式）
-  - Triggers: 低庫存 / 訂單建立 / 月結到期 / 異常金額
-  - Actions: 站內通知 / Email（預留）/ Webhook
-  - 由 `pg_cron` + 一支 `/api/public/automation/tick` server route 排程觸發
-- `/admin/companies` 多公司管理 + Header 公司切換器（公司 context 寫入 localStorage）
-- `/admin/api-keys` API 金鑰管理（建立時一次性顯示，僅儲存 hash）
-- `/admin/webhooks` Webhook 設定
-- `/settings` 升級：公司設定 / 稅率 / 金流 / 物流 / Email / 通知
-- 升級 `/notifications` 為 Smart Notification Center（接 AI 異常、庫存、財務、高風險客戶、熱銷預測）
+- 所有 list / insert / update 的 Supabase query 預設依賴 RLS（不需手動加 `.eq('company_id', ...)`），但 insert 時需明確帶入 `company_id`。
+- 共用一個 `withCompanyId(payload)` helper，自動把目前 company_id 塞進新建紀錄。
+- Header 顯示當前公司名稱與 logo（從 companies 讀），切換公司時 toast 通知。
+- 前端路由 guard：未選公司且非 super_admin → 強制導到「選擇公司」畫面。
 
 ---
 
-## 共用技術約束
+## 技術細節（給開發者）
 
-- **架構**：repository (`/services`) → hooks → routes，每個模組 self-contained。
-- **設計**：沿用既有 `oklch` design tokens 與 `src/styles.css`，所有新元件用語義色（`bg-card`、`text-primary` …），維持深色科技風。
-- **圖表**：使用既有的 `recharts`，封裝為 `src/components/charts/*` 可重用元件。
-- **響應式**：手機 / 平板 / 桌面三斷點都驗證；手機版用底部 sheet + 抽屜。
-- **假資料**：每個 Stage 結束會用 supabase--insert 灌入展示資料，讓 Dashboard / 報表 / AI 有東西可看。
-- **權限**：所有新 route 走 `_authenticated/` 子樹；財務/API/Companies 在 UI 層額外用 `useAuth().role` 做角色守門。
+- `current_company_id` 從 profiles 讀取，不放 JWT claim，避免 token 失效問題。
+- 切換公司 = `UPDATE profiles SET current_company_id = ?`，前端 `invalidateQueries` 即可。
+- 為避免「使用者把 current_company_id 改成自己沒加入的公司」造成資料外洩：
+  - profiles UPDATE policy 限制：新 current_company_id 必須是 `is_company_member(...)` 才允許。
+  - 或在 `private.current_company_id()` 內檢查，若 user 不是該 company member 則回傳 NULL（RLS 自然會擋）。後者較穩健，採此做法。
+- super_admin 在 UI 上可選擇「以某公司身分檢視」或「全部公司」，後者繞過 company_id 過濾。
+- 既有 `has_role` / `user_roles` 表的全域角色（super_admin / finance / sales / warehouse / member）繼續作為「平台層」角色；公司內角色用 `company_members.role`。
 
 ---
 
-## 確認事項
+## 風險與注意事項
 
-1. **是否照此分 4 Stage 推進？** 我會從 **Stage 1（財務核心 + Schema migration）** 開始；migration 會用一張 migration 一次建好全部新表 + RLS，避免後續來回。
-2. AI 模組可直接使用 **Lovable AI Gateway**（無需用戶提供 API Key），這是最佳實踐選擇 — 預設用此方案。
-3. 多公司架構先做 **UI + companies 表 + 切換器**，現有資料表不立即加 `company_id`（避免大規模 schema 改動破壞既有功能）；待用戶確認真的要全面 SaaS 化再做第二輪 backfill。
+1. **資料規模**：本系統已有大量業務表與 RLS 政策；階段 2 會是大量 migration，建議分多次提交、每批驗證後再進下一批。
+2. **既有資料相容性**：必須先建立「預設公司」並 backfill，否則上線當下所有舊資料因 company_id 為 NULL 會被 RLS 全部擋掉。
+3. **編輯訂單 / 列印 PDF 等既有功能**：在加 company_id 後不需改前端 query（RLS 處理），但要確認 insert 路徑都有帶 company_id。
+4. **本次先實作階段 1**，階段 2、3 待你確認後再分批進行——避免一次 migration 太大失敗難 rollback。
 
-回覆「開始」即從 Stage 1 動工；若有想調整的範圍/優先順序也請直接說。
+---
+
+## 本次（第一個 PR）只做：
+
+✅ 階段 1 全部：
+- profiles 加 `current_company_id` 欄位 + RLS 限制
+- 三個 SECURITY DEFINER function
+- 「預設公司」backfill：建立一家公司、把所有既有使用者加入、設為他們的 current_company_id
+- 前端：useCurrentCompany hook、AppHeader 公司切換器
+- super_admin 的「平台 → 公司管理」頁（建立公司 / 列出成員 / 邀請使用者加入）
+
+階段 2（業務表加 company_id）等你確認階段 1 正常運作後，再分批進行。
