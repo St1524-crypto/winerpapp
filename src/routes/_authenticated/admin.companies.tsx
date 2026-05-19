@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,7 +71,12 @@ function AdminCompaniesPage() {
             建立租戶公司、指派成員。每家公司的業務資料相互隔離。
           </p>
         </div>
-        <CreateCompanyDialog />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/admin/companies/new"><Plus className="h-4 w-4 mr-1" />開啟新增頁</Link>
+          </Button>
+          <CreateCompanyDialog />
+        </div>
       </div>
 
       <Card>
