@@ -155,6 +155,41 @@ function Dashboard() {
         </div>
       </div>
 
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground tracking-wider uppercase mb-3 flex items-center gap-2">
+          <Truck className="h-4 w-4" /> 採購進貨指標
+        </h2>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <StatCard title="今日進貨金額" value={`NT$ ${proc.todayInAmount.toLocaleString()}`} icon={DollarSign} accent="success" />
+          <StatCard title="待收貨採購單" value={String(proc.pendingPO)} icon={PackageCheck} accent="primary" />
+          <StatCard title="低庫存商品" value={String(proc.lowCount)} icon={AlertTriangle} accent="warning" />
+          <StatCard title="供應商總數" value={String(proc.vendorCount)} icon={Factory} accent="chart-2" />
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-4 w-4" /> 採購趨勢（近 7 日）</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={240}>
+            <AreaChart data={purchaseTrend}>
+              <defs>
+                <linearGradient id="gPo" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="oklch(0.70 0.20 280)" stopOpacity={0.6} />
+                  <stop offset="100%" stopColor="oklch(0.70 0.20 280)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.5} />
+              <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={12} />
+              <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
+              <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} formatter={(v: any) => `NT$ ${Number(v).toLocaleString()}`} />
+              <Area type="monotone" dataKey="amount" stroke="oklch(0.70 0.20 280)" strokeWidth={2} fill="url(#gPo)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
