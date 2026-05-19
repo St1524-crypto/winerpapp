@@ -113,11 +113,36 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         .update({ current_company_id: companyId })
         .eq("id", user.id);
       if (error) throw error;
+
+      // Audit log: 記錄公司切換事件（失敗不阻擋切換）
+      try {
+        const from = currentCompanyId;
+        const to = companyId;
+        const fromName = companies.find((c) => c.id === from)?.company_name ?? null;
+        const toName = companies.find((c) => c.id === to)?.company_name ?? null;
+        await supabase.from("audit_logs").insert({
+          user_id: user.id,
+          action: "company.switch",
+          entity: "companies",
+          entity_id: to,
+          metadata: {
+            from_company_id: from,
+            to_company_id: to,
+            from_company_name: fromName,
+            to_company_name: toName,
+            switched_at: new Date().toISOString(),
+            user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+          },
+        });
+      } catch (e) {
+        console.warn("[use-current-company] audit log failed:", e);
+      }
+
       setCurrentCompanyId(companyId);
       // Invalidate all data queries so the new company's data loads
       qc.invalidateQueries();
     },
-    [user, currentCompanyId, qc],
+    [user, currentCompanyId, companies, qc],
   );
 
   const current = companies.find((c) => c.id === currentCompanyId) ?? null;
