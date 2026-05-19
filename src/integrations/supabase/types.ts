@@ -1491,6 +1491,7 @@ export type Database = {
         Args: { _account_id: string; _user_id: string }
         Returns: boolean
       }
+      set_default_address: { Args: { _address_id: string }; Returns: undefined }
     }
     Enums: {
       app_role:

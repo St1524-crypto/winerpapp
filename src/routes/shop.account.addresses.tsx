@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { MapPin, Plus, Pencil, Trash2, Star } from "lucide-react";
+import { MapPin, Plus, Pencil, Trash2, Loader2, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { useAddresses } from "@/hooks/use-addresses";
 import type { CustomerAddress } from "@/types/shop";
 
 export const Route = createFileRoute("/shop/account/addresses")({ component: AddressesPage });
@@ -19,25 +21,18 @@ const empty = { receiver_name: "", phone: "", city: "", postal_code: "", address
 
 function AddressesPage() {
   const { user } = useAuth();
-  const [list, setList] = useState<CustomerAddress[]>([]);
+  const { addresses, loading, refresh, setDefault } = useAddresses();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CustomerAddress | null>(null);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
+  const [pendingDefaultId, setPendingDefaultId] = useState<string | null>(null);
 
-  async function load() {
-    if (!user) return;
-    const { data } = await supabase
-      .from("customer_addresses")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("is_default", { ascending: false })
-      .order("created_at", { ascending: false });
-    setList((data ?? []) as CustomerAddress[]);
+  function openNew() {
+    setEditing(null);
+    setForm({ ...empty, is_default: addresses.length === 0 });
+    setOpen(true);
   }
-  useEffect(() => { load(); }, [user]);
-
-  function openNew() { setEditing(null); setForm(empty); setOpen(true); }
   function openEdit(a: CustomerAddress) {
     setEditing(a);
     setForm({
@@ -55,74 +50,120 @@ function AddressesPage() {
     }
     setSaving(true);
     try {
-      if (form.is_default) {
-        await supabase.from("customer_addresses").update({ is_default: false }).eq("user_id", user.id);
+      const payload = {
+        receiver_name: form.receiver_name, phone: form.phone, city: form.city || null,
+        postal_code: form.postal_code || null, address: form.address, user_id: user.id,
+      };
+      if (editing) {
+        const { error } = await supabase.from("customer_addresses").update(payload).eq("id", editing.id);
+        if (error) throw error;
+        if (form.is_default && !editing.is_default) {
+          await supabase.rpc("set_default_address", { _address_id: editing.id });
+        }
+      } else {
+        const { data: created, error } = await supabase.from("customer_addresses").insert(payload).select("id").single();
+        if (error) throw error;
+        if (form.is_default && created) {
+          await supabase.rpc("set_default_address", { _address_id: created.id });
+        }
       }
-      const payload = { ...form, user_id: user.id };
-      const { error } = editing
-        ? await supabase.from("customer_addresses").update(payload).eq("id", editing.id)
-        : await supabase.from("customer_addresses").insert(payload);
-      if (error) throw error;
       toast.success(editing ? "已更新地址" : "已新增地址");
       setOpen(false);
-      load();
+      refresh();
     } catch (e: any) {
       toast.error(e.message ?? "儲存失敗");
     } finally { setSaving(false); }
   }
 
-  async function remove(id: string) {
-    if (!confirm("確定要刪除此地址？")) return;
-    const { error } = await supabase.from("customer_addresses").delete().eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("已刪除"); load(); }
+  async function remove(a: CustomerAddress) {
+    if (!confirm(`確定要刪除「${a.receiver_name}」的地址？`)) return;
+    const { error } = await supabase.from("customer_addresses").delete().eq("id", a.id);
+    if (error) toast.error(error.message);
+    else { toast.success("已刪除"); refresh(); }
   }
 
-  async function setDefault(id: string) {
-    if (!user) return;
-    await supabase.from("customer_addresses").update({ is_default: false }).eq("user_id", user.id);
-    await supabase.from("customer_addresses").update({ is_default: true }).eq("id", id);
-    load();
+  async function handleSetDefault(id: string) {
+    setPendingDefaultId(id);
+    try {
+      await setDefault(id);
+      toast.success("已設為預設地址，結帳時將自動套用");
+    } catch (e: any) {
+      toast.error(e.message ?? "設定失敗");
+    } finally {
+      setPendingDefaultId(null);
+    }
   }
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base">收件地址</CardTitle>
+        <div>
+          <CardTitle className="text-base">收件地址</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">預設地址將在結帳時自動帶入</p>
+        </div>
         <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />新增地址</Button>
       </CardHeader>
       <CardContent>
-        {list.length === 0 ? (
+        {loading ? (
+          <div className="grid sm:grid-cols-2 gap-3">
+            {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-32" />)}
+          </div>
+        ) : addresses.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">尚未新增收件地址</div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
-            {list.map((a) => (
-              <div key={a.id} className="p-4 rounded-lg border border-border/60 hover:border-primary/50 transition">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-sm">{a.receiver_name}</span>
-                    {a.is_default && <Badge className="text-[10px] px-1.5 py-0">預設</Badge>}
+            {addresses.map((a) => {
+              const isPending = pendingDefaultId === a.id;
+              return (
+                <div
+                  key={a.id}
+                  className={`p-4 rounded-lg border transition relative ${
+                    a.is_default
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                      : "border-border/60 hover:border-primary/50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <MapPin className={`h-4 w-4 ${a.is_default ? "text-primary" : "text-muted-foreground"}`} />
+                      <span className="font-medium text-sm">{a.receiver_name}</span>
+                      {a.is_default && (
+                        <Badge className="text-[10px] px-1.5 py-0 gap-1">
+                          <Check className="h-2.5 w-2.5" />預設
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-0.5 mb-3">
+                    <div>{a.phone}</div>
+                    <div>{[a.postal_code, a.city, a.address].filter(Boolean).join(" ")}</div>
+                  </div>
+                  <div className="flex gap-1 flex-wrap">
+                    {!a.is_default && (
+                      <Button
+                        size="sm" variant="outline"
+                        className="h-7 px-2 text-xs"
+                        disabled={isPending}
+                        onClick={() => handleSetDefault(a.id)}
+                      >
+                        {isPending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Check className="h-3 w-3 mr-1" />}
+                        設為預設
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => openEdit(a)}>
+                      <Pencil className="h-3 w-3 mr-1" />編輯
+                    </Button>
+                    <Button
+                      size="sm" variant="ghost"
+                      className="h-7 px-2 text-xs text-destructive hover:text-destructive ml-auto"
+                      onClick={() => remove(a)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground space-y-0.5 mb-3">
-                  <div>{a.phone}</div>
-                  <div>{[a.postal_code, a.city, a.address].filter(Boolean).join(" ")}</div>
-                </div>
-                <div className="flex gap-1">
-                  {!a.is_default && (
-                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setDefault(a.id)}>
-                      <Star className="h-3 w-3 mr-1" />設為預設
-                    </Button>
-                  )}
-                  <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => openEdit(a)}>
-                    <Pencil className="h-3 w-3 mr-1" />編輯
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => remove(a.id)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
@@ -157,12 +198,14 @@ function AddressesPage() {
             </div>
             <label className="flex items-center gap-2 pt-2 cursor-pointer">
               <Checkbox checked={form.is_default} onCheckedChange={(v) => setForm({ ...form, is_default: !!v })} />
-              <span className="text-sm">設為預設地址</span>
+              <span className="text-sm">設為預設地址（結帳時自動帶入）</span>
             </label>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>取消</Button>
-            <Button onClick={save} disabled={saving}>儲存</Button>
+            <Button onClick={save} disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}儲存
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

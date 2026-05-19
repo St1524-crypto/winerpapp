@@ -79,9 +79,8 @@ export function CartDrawer() {
               <span className="text-primary tabular-nums">NT$ {total.toLocaleString()}</span>
             </div>
             <Button className="w-full mt-2" size="lg" onClick={() => setOpen(false)} asChild>
-              <Link to="/login">前往結帳</Link>
+              <Link to="/shop/checkout">前往結帳</Link>
             </Button>
-            <p className="text-[11px] text-center text-muted-foreground">結帳系統階段 2 開放，目前可登入會員預覽</p>
           </div>
         )}
       </SheetContent>

@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as ShopProductsRouteImport } from './routes/shop.products'
+import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
 import { Route as ShopAccountRouteImport } from './routes/shop.account'
 import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authenticated/warehouses'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
@@ -79,6 +80,11 @@ const ShopIndexRoute = ShopIndexRouteImport.update({
 const ShopProductsRoute = ShopProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => ShopRoute,
+} as any)
+const ShopCheckoutRoute = ShopCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => ShopRoute,
 } as any)
 const ShopAccountRoute = ShopAccountRouteImport.update({
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
+  '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
@@ -297,6 +304,7 @@ export interface FileRoutesByTo {
   '/user-roles': typeof AuthenticatedUserRolesRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
+  '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop': typeof ShopIndexRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
@@ -337,6 +345,7 @@ export interface FileRoutesById {
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/warehouses': typeof AuthenticatedWarehousesRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
+  '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
@@ -377,6 +386,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/warehouses'
     | '/shop/account'
+    | '/shop/checkout'
     | '/shop/products'
     | '/shop/'
     | '/b2b/accounts'
@@ -413,6 +423,7 @@ export interface FileRouteTypes {
     | '/user-roles'
     | '/vendors'
     | '/warehouses'
+    | '/shop/checkout'
     | '/shop/products'
     | '/shop'
     | '/b2b/accounts'
@@ -452,6 +463,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendors'
     | '/_authenticated/warehouses'
     | '/shop/account'
+    | '/shop/checkout'
     | '/shop/products'
     | '/shop/'
     | '/_authenticated/b2b/accounts'
@@ -523,6 +535,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/shop/products'
       preLoaderRoute: typeof ShopProductsRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/shop/checkout': {
+      id: '/shop/checkout'
+      path: '/checkout'
+      fullPath: '/shop/checkout'
+      preLoaderRoute: typeof ShopCheckoutRouteImport
       parentRoute: typeof ShopRoute
     }
     '/shop/account': {
@@ -846,6 +865,7 @@ const ShopAccountRouteWithChildren = ShopAccountRoute._addFileChildren(
 
 interface ShopRouteChildren {
   ShopAccountRoute: typeof ShopAccountRouteWithChildren
+  ShopCheckoutRoute: typeof ShopCheckoutRoute
   ShopProductsRoute: typeof ShopProductsRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ShopCategorySlugRoute: typeof ShopCategorySlugRoute
@@ -854,6 +874,7 @@ interface ShopRouteChildren {
 
 const ShopRouteChildren: ShopRouteChildren = {
   ShopAccountRoute: ShopAccountRouteWithChildren,
+  ShopCheckoutRoute: ShopCheckoutRoute,
   ShopProductsRoute: ShopProductsRoute,
   ShopIndexRoute: ShopIndexRoute,
   ShopCategorySlugRoute: ShopCategorySlugRoute,
