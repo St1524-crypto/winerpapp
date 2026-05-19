@@ -2118,6 +2118,41 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_sales_order_with_items: {
+        Args: { _items: Json; _order: Json; _payments?: Json }
+        Returns: {
+          coupon_code: string | null
+          created_at: string
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string
+          customer_phone: string | null
+          discount_amount: number
+          id: string
+          invoice_tax_id: string | null
+          invoice_type: string | null
+          notes: string | null
+          order_no: string
+          order_status: string
+          payment_status: string
+          receiver_name: string
+          receiver_phone: string
+          shipping_address: string
+          shipping_fee: number
+          shipping_method: string
+          shipping_status: string
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sales_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       generate_po_no: { Args: never; Returns: string }
       generate_receipt_no: { Args: never; Returns: string }
       generate_so_no: { Args: never; Returns: string }
