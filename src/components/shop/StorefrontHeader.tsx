@@ -48,12 +48,12 @@ export function StorefrontHeader() {
 
         <div className="flex items-center gap-1 ml-auto">
           <Button variant="ghost" size="icon" className="hidden md:flex" asChild>
-            <Link to={user ? "/dashboard" : "/login"}>
-              {user ? <User className="h-5 w-5" /> : <User className="h-5 w-5" />}
+            <Link to={user ? "/shop/account" : "/login"}>
+              <User className="h-5 w-5" />
             </Link>
           </Button>
           <Button variant="ghost" size="icon" className="hidden sm:flex" asChild>
-            <Link to={user ? "/dashboard" : "/login"}>
+            <Link to={user ? "/shop/account" : "/login"}>
               <Heart className="h-5 w-5" />
             </Link>
           </Button>
