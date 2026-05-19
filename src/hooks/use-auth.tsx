@@ -10,10 +10,13 @@ interface AuthCtx {
   roles: AppRole[];
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshRoles: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthCtx>({
-  user: null, session: null, roles: [], loading: true, signOut: async () => {},
+  user: null, session: null, roles: [], loading: true,
+  signOut: async () => {},
+  refreshRoles: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
