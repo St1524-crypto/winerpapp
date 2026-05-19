@@ -175,19 +175,29 @@ function CreateCompanyDialog() {
   const { user } = useAuth();
   const { refresh, setCurrent } = useCurrentCompany();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ company_name: "", tax_id: "", email: "", phone: "", address: "" });
+
+  const form = useForm<CompanyFormValues>({
+    resolver: zodResolver(companySchema),
+    mode: "onChange",
+    defaultValues: {
+      company_name: "",
+      tax_id: "",
+      email: "",
+      phone: "",
+      address: "",
+    },
+  });
 
   const m = useMutation({
-    mutationFn: async () => {
-      if (!form.company_name.trim()) throw new Error("請輸入公司名稱");
+    mutationFn: async (values: CompanyFormValues) => {
       const { data, error } = await supabase
         .from("companies")
         .insert({
-          company_name: form.company_name.trim(),
-          tax_id: form.tax_id || null,
-          email: form.email || null,
-          phone: form.phone || null,
-          address: form.address || null,
+          company_name: values.company_name,
+          tax_id: values.tax_id || null,
+          email: values.email || null,
+          phone: values.phone || null,
+          address: values.address || null,
           status: "active",
         })
         .select()
@@ -214,7 +224,7 @@ function CreateCompanyDialog() {
         try { await setCurrent(data.id); } catch {}
       }
       setOpen(false);
-      setForm({ company_name: "", tax_id: "", email: "", phone: "", address: "" });
+      form.reset();
     },
     onError: (e: any) => {
       toast.error("建立失敗", { description: e?.message ?? "發生未知錯誤" });
@@ -222,7 +232,7 @@ function CreateCompanyDialog() {
   });
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) form.reset(); setOpen(v); }}>
       <DialogTrigger asChild>
         <Button
           size="lg"
@@ -233,37 +243,84 @@ function CreateCompanyDialog() {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>新增公司</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>公司名稱 *</Label>
-            <Input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>統一編號</Label>
-              <Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit((v) => m.mutate(v))} className="space-y-3">
+            <FormField
+              control={form.control}
+              name="company_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>公司名稱 <span className="text-destructive">*</span></FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="tax_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>統一編號</FormLabel>
+                    <FormControl>
+                      <Input {...field} maxLength={8} inputMode="numeric" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>電話</FormLabel>
+                    <FormControl>
+                      <Input {...field} maxLength={30} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            <div>
-              <Label>電話</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            </div>
-          </div>
-          <div>
-            <Label>Email</Label>
-            <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          </div>
-          <div>
-            <Label>地址</Label>
-            <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>取消</Button>
-          <Button onClick={() => m.mutate()} disabled={m.isPending} className="bg-gradient-primary">
-            {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            建立
-          </Button>
-        </DialogFooter>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="email" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>地址</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setOpen(false); form.reset(); }}>取消</Button>
+              <Button type="submit" disabled={m.isPending || !form.formState.isValid} className="bg-gradient-primary">
+                {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                建立
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
