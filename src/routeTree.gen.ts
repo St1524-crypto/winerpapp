@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authenticated/warehouses'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRlsTestRouteImport } from './routes/_authenticated/rls-test'
@@ -47,6 +48,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedWarehousesRoute = AuthenticatedWarehousesRouteImport.update({
+  id: '/warehouses',
+  path: '/warehouses',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
   id: '/vendors',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/rls-test': typeof AuthenticatedRlsTestRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/vendors': typeof AuthenticatedVendorsRoute
+  '/warehouses': typeof AuthenticatedWarehousesRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
 }
 export interface FileRoutesByTo {
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/rls-test': typeof AuthenticatedRlsTestRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/vendors': typeof AuthenticatedVendorsRoute
+  '/warehouses': typeof AuthenticatedWarehousesRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
 }
 export interface FileRoutesById {
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/_authenticated/rls-test': typeof AuthenticatedRlsTestRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
+  '/_authenticated/warehouses': typeof AuthenticatedWarehousesRoute
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
 }
 export interface FileRouteTypes {
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/rls-test'
     | '/settings'
     | '/vendors'
+    | '/warehouses'
     | '/products/$productId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/rls-test'
     | '/settings'
     | '/vendors'
+    | '/warehouses'
     | '/products/$productId'
   id:
     | '__root__'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rls-test'
     | '/_authenticated/settings'
     | '/_authenticated/vendors'
+    | '/_authenticated/warehouses'
     | '/_authenticated/products/$productId'
   fileRoutesById: FileRoutesById
 }
@@ -287,6 +299,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/warehouses': {
+      id: '/_authenticated/warehouses'
+      path: '/warehouses'
+      fullPath: '/warehouses'
+      preLoaderRoute: typeof AuthenticatedWarehousesRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/vendors': {
       id: '/_authenticated/vendors'
@@ -424,6 +443,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRlsTestRoute: typeof AuthenticatedRlsTestRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
+  AuthenticatedWarehousesRoute: typeof AuthenticatedWarehousesRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -441,6 +461,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRlsTestRoute: AuthenticatedRlsTestRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
+  AuthenticatedWarehousesRoute: AuthenticatedWarehousesRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
