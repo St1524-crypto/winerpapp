@@ -480,9 +480,32 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (depositNum >= total && total > 0) paymentStatus = "paid";
       else if (depositNum > 0) paymentStatus = "partial";
 
-      const { data: orderRow, error } = await supabase
-        .from("sales_orders")
-        .insert({
+      // 組合付款紀錄（訂金已收、尾款待收）
+      const paymentsPayload: Array<{
+        amount: number;
+        payment_method: string;
+        payment_status: string;
+        paid_at?: string;
+      }> = [];
+      if (depositNum > 0) {
+        paymentsPayload.push({
+          amount: depositNum,
+          payment_method: depositMethod,
+          payment_status: "paid",
+          paid_at: new Date().toISOString(),
+        });
+      }
+      if (balanceNum > 0) {
+        paymentsPayload.push({
+          amount: balanceNum,
+          payment_method: depositMethod,
+          payment_status: "pending",
+        });
+      }
+
+      // 單一交易：訂單 + 商品明細 + 付款 一次寫入，任一失敗整筆回滾
+      const { data: orderRow, error } = await supabase.rpc("create_sales_order_with_items", {
+        _order: {
           order_no: genOrderNo(),
           customer_id: linkedCustomerId,
           customer_name: customer,
@@ -500,57 +523,22 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           order_status: "pending",
           shipping_status: "pending",
           payment_status: paymentStatus,
-        })
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
+        },
+        _items: items.map((it) => ({
+          product_id: it.product_id,
+          product_name: it.name,
+          sku: it.sku,
+          image: it.image,
+          unit_price: it.unit_price,
+          quantity: it.quantity,
+          subtotal: Number(it.unit_price) * Number(it.quantity),
+        })),
+        _payments: paymentsPayload,
+      });
+      if (error) throw new Error(`建立訂單失敗：${error.message}`);
 
-      // 寫入商品明細
-      const itemsPayload = items.map((it) => ({
-        sales_order_id: orderRow.id,
-        product_id: it.product_id,
-        product_name: it.name,
-        sku: it.sku,
-        image: it.image,
-        unit_price: it.unit_price,
-        quantity: it.quantity,
-        subtotal: Number(it.unit_price) * Number(it.quantity),
-      }));
-      const { error: itemsErr } = await supabase.from("sales_order_items").insert(itemsPayload);
-      if (itemsErr) throw new Error(`寫入商品明細失敗：${itemsErr.message}`);
+      return { createdNewCustomer, orderRow };
 
-      // 寫入訂金 / 尾款付款紀錄
-      type PaymentInsert = {
-        sales_order_id: string;
-        amount: number;
-        payment_method: string;
-        payment_status: string;
-        paid_at?: string;
-      };
-      const paymentsPayload: PaymentInsert[] = [];
-      if (depositNum > 0) {
-        paymentsPayload.push({
-          sales_order_id: orderRow.id,
-          amount: depositNum,
-          payment_method: depositMethod,
-          payment_status: "paid",
-          paid_at: new Date().toISOString(),
-        });
-      }
-      if (balanceNum > 0) {
-        paymentsPayload.push({
-          sales_order_id: orderRow.id,
-          amount: balanceNum,
-          payment_method: depositMethod,
-          payment_status: "pending",
-        });
-      }
-      if (paymentsPayload.length > 0) {
-        const { error: payErr } = await supabase.from("payments").insert(paymentsPayload);
-        if (payErr) throw new Error(`寫入付款紀錄失敗：${payErr.message}`);
-      }
-
-      return { createdNewCustomer };
     },
 
     onSuccess: (res) => {
