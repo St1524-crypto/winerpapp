@@ -142,7 +142,17 @@ export const batchUpdateRoles = createServerFn({ method: "POST" })
       }
     }
 
+    let added = 0;
+    let removed = 0;
+    const audits: Array<{
+      user_id: string;
+      entity: string;
+      entity_id: string;
+      action: string;
+      metadata: any;
+    }> = [];
 
+    for (const change of data.changes) {
       // Add roles (upsert ignores duplicates via unique constraint)
       if (change.add.length) {
         const rows = change.add.map((role) => ({ user_id: change.userId, role }));
