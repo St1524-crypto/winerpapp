@@ -1401,6 +1401,33 @@ function OrderDetailDialog({
         )}
 
         <DialogFooter>
+          {order && (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  setPrinting(true);
+                  await exportOrderPdf({
+                    order: order as any,
+                    items: items as any,
+                    payments: payments as any,
+                    logoUrl,
+                  });
+                  toast.success("PDF 已產生");
+                } catch (e: any) {
+                  toast.error(e?.message ?? "列印失敗");
+                } finally {
+                  setPrinting(false);
+                }
+              }}
+              disabled={printing}
+            >
+              {printing
+                ? <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                : <Printer className="h-4 w-4 mr-1" />}
+              列印 PDF
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose}>關閉</Button>
         </DialogFooter>
       </DialogContent>
