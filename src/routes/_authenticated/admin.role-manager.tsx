@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ShieldCheck, Search, Users, Save, RotateCw, Loader2, LogOut, Crown,
-  KeyRound, Filter, CheckCheck,
+  KeyRound, Filter, CheckCheck, AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -64,6 +64,7 @@ function RoleManagerPage() {
   const [roleFilter, setRoleFilter] = useState<AppRole | "__all">("__all");
   const [draft, setDraft] = useState<DraftMap>({});
   const [signOutTarget, setSignOutTarget] = useState<{ id: string; email: string | null } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const params = useMemo(
     () => ({
@@ -112,10 +113,27 @@ function RoleManagerPage() {
     onSuccess: (res) => {
       toast.success(`已套用：${res.affected} 名使用者（+${res.added} / −${res.removed}）`);
       setDraft({});
+      setConfirmOpen(false);
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (e: any) => toast.error(e.message ?? "套用失敗"),
   });
+
+  // Super admin impact analysis
+  const superAdminImpact = useMemo(() => {
+    const users = usersQ.data ?? [];
+    const before = users.filter((u) => u.roles.includes("super_admin")).length;
+    let after = before;
+    let selfDemoting = false;
+    for (const c of changes) {
+      if (c.add.includes("super_admin")) after += 1;
+      if (c.remove.includes("super_admin")) {
+        after -= 1;
+        if (c.userId === me?.id) selfDemoting = true;
+      }
+    }
+    return { before, after, selfDemoting, willBeZero: after <= 0 };
+  }, [changes, usersQ.data, me?.id]);
 
   const signOutMut = useMutation({
     mutationFn: (userId: string) => forceSignOutUser({ data: { userId } }),
@@ -154,7 +172,7 @@ function RoleManagerPage() {
           </Button>
           <Button
             className="bg-gradient-primary"
-            onClick={() => applyMut.mutate()}
+            onClick={() => setConfirmOpen(true)}
             disabled={pendingCount === 0 || applyMut.isPending}
           >
             {applyMut.isPending
@@ -325,6 +343,94 @@ function RoleManagerPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirm apply changes */}
+      <AlertDialog open={confirmOpen} onOpenChange={(o) => !applyMut.isPending && setConfirmOpen(o)}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CheckCheck className="h-5 w-5 text-primary" />
+              確認套用 {pendingCount} 項角色變更？
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              以下變更將一次性寫入資料庫並即時生效，被影響的使用者下次發送請求時即套用新權限。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {/* Super admin warning */}
+          {(superAdminImpact.willBeZero || superAdminImpact.selfDemoting) && (
+            <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm space-y-1">
+              <div className="flex items-center gap-2 font-medium text-destructive">
+                <AlertTriangle className="h-4 w-4" /> 超級管理員警告
+              </div>
+              {superAdminImpact.willBeZero && (
+                <p className="text-xs text-destructive/90">
+                  套用後系統將沒有任何「超級管理員」（{superAdminImpact.before} → {superAdminImpact.after}）。
+                  伺服器會擋下此次寫入以避免鎖死系統。
+                </p>
+              )}
+              {superAdminImpact.selfDemoting && !superAdminImpact.willBeZero && (
+                <p className="text-xs text-destructive/90">
+                  您正在移除自己的「超級管理員」權限，套用後將無法再進入此頁面。
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Change list */}
+          <div className="max-h-[40vh] overflow-y-auto space-y-2 border rounded-md p-2 bg-muted/30">
+            {changes.map((c) => {
+              const u = usersQ.data?.find((x) => x.id === c.userId);
+              return (
+                <div key={c.userId} className="flex items-start gap-3 p-2 rounded bg-background border">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium truncate">
+                      {u?.name ?? "—"}
+                      {u?.id === me?.id && <Badge variant="outline" className="ml-2 text-[10px]">我</Badge>}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">{u?.email}</div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 justify-end max-w-[60%]">
+                    {c.add.map((r) => (
+                      <Badge key={`a-${r}`} className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px]">
+                        +{ROLE_LABELS[r]}
+                      </Badge>
+                    ))}
+                    {c.remove.map((r) => (
+                      <Badge key={`r-${r}`} className="bg-rose-500/15 text-rose-400 border-rose-500/30 text-[10px]">
+                        −{ROLE_LABELS[r]}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="text-xs text-muted-foreground flex items-center justify-between">
+            <span>影響使用者：<span className="font-medium text-foreground">{pendingCount}</span></span>
+            <span>
+              超級管理員：<span className="font-medium text-foreground">{superAdminImpact.before}</span>
+              {" → "}
+              <span className={`font-medium ${superAdminImpact.willBeZero ? "text-destructive" : "text-foreground"}`}>
+                {superAdminImpact.after}
+              </span>
+            </span>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={applyMut.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); applyMut.mutate(); }}
+              disabled={applyMut.isPending || superAdminImpact.willBeZero}
+              className="bg-gradient-primary"
+            >
+              {applyMut.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              確認套用
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!signOutTarget} onOpenChange={(o) => !o && setSignOutTarget(null)}>
         <AlertDialogContent>
