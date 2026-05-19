@@ -90,8 +90,6 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-    setCurrentCompanyId(cur);
-    setLoading(false);
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
