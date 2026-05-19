@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Package, Boxes, ShoppingCart, Truck,
   Users, Wallet, UserCircle, Settings, ShieldCheck, Tag, Crown,
-  Store, Factory,
+  Store, Factory, Warehouse as WarehouseIcon, PackageCheck, ArrowRightLeft,
 } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 
@@ -20,6 +20,9 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "庫存管理", url: "/inventory", icon: Boxes, roles: ["super_admin", "warehouse"] },
   { title: "訂單管理", url: "/orders", icon: ShoppingCart, roles: ["super_admin", "sales", "finance"] },
   { title: "採購管理", url: "/purchases", icon: Truck, roles: ["super_admin", "warehouse", "vendor"] },
+  { title: "收貨管理", url: "/receiving", icon: PackageCheck, roles: ["super_admin", "warehouse"] },
+  { title: "倉庫管理", url: "/warehouses", icon: WarehouseIcon, roles: ["super_admin", "warehouse"] },
+  { title: "庫存異動", url: "/inventory-tx", icon: ArrowRightLeft, roles: ["super_admin", "warehouse"] },
   { title: "客戶管理", url: "/customers", icon: Users, roles: ["super_admin", "sales"] },
   { title: "經銷商管理", url: "/dealers", icon: Store, roles: ["super_admin", "sales", "finance"] },
   { title: "廠商管理", url: "/vendors", icon: Factory, roles: ["super_admin", "warehouse", "finance"] },

@@ -19,10 +19,11 @@ interface Vendor {
   id: string; code: string; name: string;
   contact: string | null; phone: string | null; email: string | null;
   tax_id: string | null; bank_account: string | null; payment_terms: string | null;
+  shipping_method: string | null;
   address: string | null; notes: string | null; status: string; created_at: string;
 }
 
-const empty = { code: "", name: "", contact: "", phone: "", email: "", tax_id: "", bank_account: "", payment_terms: "", address: "", notes: "", status: "active" };
+const empty = { code: "", name: "", contact: "", phone: "", email: "", tax_id: "", bank_account: "", payment_terms: "", shipping_method: "", address: "", notes: "", status: "active" };
 
 function Page() {
   const [list, setList] = useState<Vendor[]>([]);
@@ -51,7 +52,7 @@ function Page() {
   function openNew() { setEditing(null); setForm({ ...empty }); setOpen(true); }
   function openEdit(v: Vendor) {
     setEditing(v);
-    setForm({ code: v.code, name: v.name, contact: v.contact ?? "", phone: v.phone ?? "", email: v.email ?? "", tax_id: v.tax_id ?? "", bank_account: v.bank_account ?? "", payment_terms: v.payment_terms ?? "", address: v.address ?? "", notes: v.notes ?? "", status: v.status });
+    setForm({ code: v.code, name: v.name, contact: v.contact ?? "", phone: v.phone ?? "", email: v.email ?? "", tax_id: v.tax_id ?? "", bank_account: v.bank_account ?? "", payment_terms: v.payment_terms ?? "", shipping_method: v.shipping_method ?? "", address: v.address ?? "", notes: v.notes ?? "", status: v.status });
     setOpen(true);
   }
   async function save() {
@@ -142,6 +143,7 @@ function Page() {
             <div className="space-y-2"><Label>統一編號</Label><Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} className="font-mono" /></div>
             <div className="space-y-2"><Label>銀行帳號</Label><Input value={form.bank_account} onChange={(e) => setForm({ ...form, bank_account: e.target.value })} className="font-mono" /></div>
             <div className="space-y-2"><Label>付款條件</Label><Input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} placeholder="月結30天" /></div>
+            <div className="space-y-2"><Label>配送方式</Label><Input value={form.shipping_method} onChange={(e) => setForm({ ...form, shipping_method: e.target.value })} placeholder="貨運 / 自取" /></div>
             <div className="space-y-2"><Label>狀態</Label>
               <Select value={form.status} onValueChange={(s) => setForm({ ...form, status: s })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
