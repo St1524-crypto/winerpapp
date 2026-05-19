@@ -1505,6 +1505,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          current_company_id: string | null
           email: string | null
           id: string
           name: string | null
@@ -1512,6 +1513,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          current_company_id?: string | null
           email?: string | null
           id: string
           name?: string | null
@@ -1519,11 +1521,20 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          current_company_id?: string | null
           email?: string | null
           id?: string
           name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_current_company_id_fkey"
+            columns: ["current_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchase_order_items: {
         Row: {
@@ -2153,6 +2164,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      current_company_id: { Args: never; Returns: string }
       generate_po_no: { Args: never; Returns: string }
       generate_receipt_no: { Args: never; Returns: string }
       generate_so_no: { Args: never; Returns: string }
@@ -2161,6 +2173,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_company_member: {
+        Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
       set_default_address: { Args: { _address_id: string }; Returns: undefined }
