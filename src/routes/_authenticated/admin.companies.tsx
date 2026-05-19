@@ -56,7 +56,7 @@ function AdminCompaniesPage() {
     enabled: isSuperAdmin,
   });
 
-  if (!isSuperAdmin) return <ForbiddenScreen />;
+  if (!isSuperAdmin) return <ForbiddenScreen requiredRoles={["super_admin"]} />;
 
   return (
     <div className="space-y-6">
