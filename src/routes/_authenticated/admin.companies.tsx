@@ -197,8 +197,11 @@ function CreateCompanyDialog() {
       email: "",
       phone: "",
       address: "",
+      logo_url: "",
     },
   });
+
+  const logoUrl = form.watch("logo_url") ?? "";
 
   const m = useMutation({
     mutationFn: async (values: CompanyFormValues) => {
@@ -210,6 +213,7 @@ function CreateCompanyDialog() {
           email: values.email || null,
           phone: values.phone || null,
           address: values.address || null,
+          logo_url: values.logo_url || null,
           status: "active",
         })
         .select()
