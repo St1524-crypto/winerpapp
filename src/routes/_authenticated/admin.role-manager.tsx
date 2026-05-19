@@ -113,10 +113,27 @@ function RoleManagerPage() {
     onSuccess: (res) => {
       toast.success(`已套用：${res.affected} 名使用者（+${res.added} / −${res.removed}）`);
       setDraft({});
+      setConfirmOpen(false);
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (e: any) => toast.error(e.message ?? "套用失敗"),
   });
+
+  // Super admin impact analysis
+  const superAdminImpact = useMemo(() => {
+    const users = usersQ.data ?? [];
+    const before = users.filter((u) => u.roles.includes("super_admin")).length;
+    let after = before;
+    let selfDemoting = false;
+    for (const c of changes) {
+      if (c.add.includes("super_admin")) after += 1;
+      if (c.remove.includes("super_admin")) {
+        after -= 1;
+        if (c.userId === me?.id) selfDemoting = true;
+      }
+    }
+    return { before, after, selfDemoting, willBeZero: after <= 0 };
+  }, [changes, usersQ.data, me?.id]);
 
   const signOutMut = useMutation({
     mutationFn: (userId: string) => forceSignOutUser({ data: { userId } }),
