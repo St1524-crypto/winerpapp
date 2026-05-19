@@ -125,6 +125,15 @@ function OrdersPage() {
   const [printingId, setPrintingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchPrinting, setBatchPrinting] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{
+    current: number;
+    total: number;
+    orderNo: string;
+  } | null>(null);
+  const [batchFailures, setBatchFailures] = useState<
+    Array<{ orderNo: string; error: string }>
+  >([]);
+  const batchAbortRef = useRef<AbortController | null>(null);
   const { logoUrl } = useBranding();
 
   function toggleSelect(id: string) {
@@ -143,17 +152,28 @@ function OrdersPage() {
     });
   }
 
+  function cancelBatchPrint() {
+    batchAbortRef.current?.abort();
+  }
+
   async function handleBatchPrint() {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
+    const controller = new AbortController();
+    batchAbortRef.current = controller;
+    setBatchFailures([]);
+    setBatchProgress({ current: 0, total: ids.length, orderNo: "" });
+    setBatchPrinting(true);
+
     try {
-      setBatchPrinting(true);
       const [ordersRes, itemsRes, paymentsRes] = await Promise.all([
         supabase.from("sales_orders").select("*").in("id", ids),
         supabase.from("sales_order_items").select("*").in("sales_order_id", ids).order("created_at"),
         supabase.from("payments").select("*").in("sales_order_id", ids).order("created_at", { ascending: false }),
       ]);
       if (ordersRes.error) throw new Error(ordersRes.error.message);
+      if (controller.signal.aborted) return;
+
       const orderList = (ordersRes.data ?? []) as any[];
       const itemsByOrder = new Map<string, any[]>();
       (itemsRes.data ?? []).forEach((it: any) => {
@@ -167,7 +187,6 @@ function OrdersPage() {
         arr.push(p);
         paymentsByOrder.set(p.sales_order_id, arr);
       });
-      // 依使用者勾選順序輸出
       const orderMap = new Map(orderList.map((o) => [o.id, o]));
       const sorted = ids.map((id) => orderMap.get(id)).filter(Boolean);
       const payload = sorted.map((o: any) => ({
@@ -175,14 +194,38 @@ function OrdersPage() {
         items: itemsByOrder.get(o.id) ?? [],
         payments: paymentsByOrder.get(o.id) ?? [],
       }));
-      await exportOrdersPdf(payload, logoUrl);
-      toast.success(`已匯出 ${payload.length} 筆訂單 PDF`);
+
+      const res = await exportOrdersPdf(payload, logoUrl, {
+        signal: controller.signal,
+        onProgress: (current, total, orderNo) =>
+          setBatchProgress({ current, total, orderNo }),
+      });
+
+      setBatchFailures(res.failures);
+
+      if (res.cancelled) {
+        toast.warning(
+          `已取消，已輸出 ${res.success} 筆${res.failures.length ? `、失敗 ${res.failures.length} 筆` : ""}`,
+        );
+      } else if (res.failures.length === 0) {
+        toast.success(`已匯出 ${res.success} 筆訂單 PDF`);
+      } else {
+        toast.error(
+          `完成：成功 ${res.success} 筆、失敗 ${res.failures.length} 筆（${res.failures
+            .slice(0, 3)
+            .map((f) => f.orderNo)
+            .join("、")}${res.failures.length > 3 ? "..." : ""}）`,
+        );
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "批次列印失敗");
     } finally {
       setBatchPrinting(false);
+      setBatchProgress(null);
+      batchAbortRef.current = null;
     }
   }
+
 
   async function handlePrintOrder(orderId: string) {
     try {
