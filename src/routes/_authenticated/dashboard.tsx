@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
-import { ShoppingCart, DollarSign, Boxes, Users, FileDown, Package, AlertTriangle, Flame, Sparkles } from "lucide-react";
+import { ShoppingCart, DollarSign, Boxes, Users, FileDown, Package, AlertTriangle, Flame, Sparkles, Truck, PackageCheck, Factory, TrendingUp } from "lucide-react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
