@@ -30,6 +30,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
