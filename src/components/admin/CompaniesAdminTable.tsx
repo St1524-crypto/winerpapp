@@ -338,7 +338,7 @@ export function CompaniesAdminTable() {
                           <AlertDialogFooter>
                             <AlertDialogCancel>取消</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => deleteMut.mutate(row.id)}
+                              onClick={() => deleteMut.mutate(row)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               確認刪除
