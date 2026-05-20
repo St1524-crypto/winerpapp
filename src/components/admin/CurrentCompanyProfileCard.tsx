@@ -55,9 +55,6 @@ export function CurrentCompanyProfileCard() {
     },
     onError: (e: any) => toast.error("狀態更新失敗", { description: e?.message ?? "未知錯誤" }),
   });
-      toast.error("切換失敗", { description: e?.message ?? "未知錯誤" });
-    }
-  }
 
   const companyQ = useQuery({
     queryKey: ["settings-current-company", currentCompanyId],
