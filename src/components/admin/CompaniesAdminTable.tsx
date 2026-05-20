@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentCompany } from "@/hooks/use-current-company";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -53,11 +54,32 @@ function validateField(field: FieldKey, value: string): string | null {
 export function CompaniesAdminTable() {
   const qc = useQueryClient();
   const { refresh, currentCompanyId } = useCurrentCompany();
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [savingCell, setSavingCell] = useState<string | null>(null);
   const [errorCell, setErrorCell] = useState<Record<string, string>>({});
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
+
+  async function logAudit(action: string, row: Pick<CompanyRow, "id" | "company_name">, metadata: Record<string, any>) {
+    if (!user) return;
+    try {
+      await supabase.from("audit_logs").insert({
+        user_id: user.id,
+        action,
+        entity: "companies",
+        entity_id: row.id,
+        metadata: {
+          company_name: row.company_name,
+          occurred_at: new Date().toISOString(),
+          ...metadata,
+        },
+      });
+      qc.invalidateQueries({ queryKey: ["company-audit-history"] });
+    } catch (e) {
+      console.warn("[audit] company log failed:", e);
+    }
+  }
 
   const q = useQuery({
     queryKey: ["admin-companies-table"],
@@ -124,19 +146,28 @@ export function CompaniesAdminTable() {
       return;
     }
     toast.success(`已更新 ${FIELD_LABEL[field]}`);
+    await logAudit("company.update_field", row, {
+      field,
+      field_label: FIELD_LABEL[field],
+      old_value: original || null,
+      new_value: value || null,
+    });
     qc.invalidateQueries({ queryKey: ["admin-companies-table"] });
     qc.invalidateQueries({ queryKey: ["settings-current-company"] });
     refresh();
   }
 
   const statusMut = useMutation({
-    mutationFn: async ({ id, next }: { id: string; next: "active" | "inactive" }) => {
-      const { error } = await supabase.from("companies").update({ status: next }).eq("id", id);
+    mutationFn: async ({ row, next }: { row: CompanyRow; next: "active" | "inactive" }) => {
+      const { error } = await supabase.from("companies").update({ status: next }).eq("id", row.id);
       if (error) throw error;
-      return { id, next };
+      return { row, next };
     },
-    onSuccess: ({ next }) => {
+    onSuccess: async ({ row, next }) => {
       toast.success(next === "active" ? "已啟用公司" : "已停用公司");
+      await logAudit(next === "active" ? "company.activate" : "company.deactivate", row, {
+        old_status: row.status, new_status: next,
+      });
       qc.invalidateQueries({ queryKey: ["admin-companies-table"] });
       refresh();
     },
@@ -144,13 +175,18 @@ export function CompaniesAdminTable() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("companies").delete().eq("id", id);
+    mutationFn: async (row: CompanyRow) => {
+      const { error } = await supabase.from("companies").delete().eq("id", row.id);
       if (error) throw error;
-      return id;
+      return row;
     },
-    onSuccess: () => {
+    onSuccess: async (row) => {
       toast.success("已刪除公司");
+      await logAudit("company.delete", row, {
+        snapshot: {
+          tax_id: row.tax_id, email: row.email, phone: row.phone, address: row.address, status: row.status,
+        },
+      });
       qc.invalidateQueries({ queryKey: ["admin-companies-table"] });
       refresh();
     },
@@ -162,13 +198,18 @@ export function CompaniesAdminTable() {
     const err = validateField("company_name", name);
     if (err) { toast.error("無法新增", { description: err }); return; }
     setAdding(true);
-    const { error } = await supabase.from("companies").insert({ company_name: name, status: "active" });
+    const { data, error } = await supabase
+      .from("companies")
+      .insert({ company_name: name, status: "active" })
+      .select("id, company_name")
+      .single();
     setAdding(false);
     if (error) {
       toast.error("新增失敗", { description: error.message });
       return;
     }
     toast.success("已新增公司");
+    if (data) await logAudit("company.create", data as any, { initial_status: "active" });
     setNewName("");
     qc.invalidateQueries({ queryKey: ["admin-companies-table"] });
     refresh();
@@ -263,7 +304,7 @@ export function CompaniesAdminTable() {
                         <Switch
                           checked={row.status === "active"}
                           disabled={statusMut.isPending}
-                          onCheckedChange={(c) => statusMut.mutate({ id: row.id, next: c ? "active" : "inactive" })}
+                          onCheckedChange={(c) => statusMut.mutate({ row, next: c ? "active" : "inactive" })}
                           aria-label="切換啟用"
                         />
                         <Badge variant="outline" className={
@@ -297,7 +338,7 @@ export function CompaniesAdminTable() {
                           <AlertDialogFooter>
                             <AlertDialogCancel>取消</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => deleteMut.mutate(row.id)}
+                              onClick={() => deleteMut.mutate(row)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               確認刪除

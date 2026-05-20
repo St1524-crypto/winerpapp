@@ -11,6 +11,7 @@ import { Upload, Image as ImageIcon, Trash2, Loader2 } from "lucide-react";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CurrentCompanyProfileCard } from "@/components/admin/CurrentCompanyProfileCard";
 import { CompaniesAdminTable } from "@/components/admin/CompaniesAdminTable";
+import { CompanyAuditHistoryCard } from "@/components/admin/CompanyAuditHistoryCard";
 
 export const Route = createFileRoute("/_authenticated/settings")({ component: SettingsPage });
 
@@ -94,6 +95,8 @@ function SettingsPage() {
       <CurrentCompanyProfileCard />
 
       <CompaniesAdminTable />
+
+      <CompanyAuditHistoryCard />
 
       <Card className="bg-card/60 backdrop-blur border-border/60">
         <CardHeader>
