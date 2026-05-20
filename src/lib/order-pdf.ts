@@ -37,6 +37,13 @@ export interface OrderPdfData {
     amount: number | string;
   }>;
   logoUrl: string;
+  company?: {
+    name: string;
+    tax_id?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    email?: string | null;
+  } | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
