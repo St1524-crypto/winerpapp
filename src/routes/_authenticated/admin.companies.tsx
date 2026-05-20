@@ -29,12 +29,39 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil, ChevronDown } from "lucide-react";
+import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil, ChevronDown, Copy, Check } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
+
+function CopyButton({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      toast.success(`已複製${label}`);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("複製失敗");
+    }
+  };
+  return (
+    <Button
+      type="button"
+      size="icon"
+      variant="ghost"
+      className="h-6 w-6 shrink-0"
+      onClick={handleCopy}
+      aria-label={`複製${label}`}
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+    </Button>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/admin/companies")({
   head: () => ({ meta: [{ title: "公司管理 — 源倍力 ERP" }] }),
@@ -242,12 +269,21 @@ function AdminCompaniesPage() {
                   <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
                     <div className="px-3 pb-3 space-y-3">
                       <dl className="grid grid-cols-3 gap-y-2 gap-x-3 text-xs border-t border-border/60 pt-3">
-                        <dt className="text-muted-foreground">統一編號</dt>
-                        <dd className="col-span-2 font-medium">{c.tax_id ?? "—"}</dd>
-                        <dt className="text-muted-foreground">電話</dt>
-                        <dd className="col-span-2">{c.phone ?? "—"}</dd>
-                        <dt className="text-muted-foreground">Email</dt>
-                        <dd className="col-span-2 break-all">{c.email ?? "—"}</dd>
+                        <dt className="text-muted-foreground self-center">統一編號</dt>
+                        <dd className="col-span-2 font-medium flex items-center gap-1">
+                          <span className="flex-1">{c.tax_id ?? "—"}</span>
+                          {c.tax_id && <CopyButton value={c.tax_id} label="統編" />}
+                        </dd>
+                        <dt className="text-muted-foreground self-center">電話</dt>
+                        <dd className="col-span-2 flex items-center gap-1">
+                          <span className="flex-1">{c.phone ?? "—"}</span>
+                          {c.phone && <CopyButton value={c.phone} label="電話" />}
+                        </dd>
+                        <dt className="text-muted-foreground self-center">Email</dt>
+                        <dd className="col-span-2 break-all flex items-center gap-1">
+                          <span className="flex-1 break-all">{c.email ?? "—"}</span>
+                          {c.email && <CopyButton value={c.email} label="Email" />}
+                        </dd>
                         <dt className="text-muted-foreground">成員數</dt>
                         <dd className="col-span-2">{memberCountQ.data?.[c.id] ?? 0} 人</dd>
                         {c.address && (
