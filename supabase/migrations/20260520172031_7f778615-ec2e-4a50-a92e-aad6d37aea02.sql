@@ -1,0 +1,52 @@
+
+-- =========================================================
+-- 多租戶隔離：財務 + 採購 + 倉庫
+-- =========================================================
+DO $$
+DECLARE
+  v_company_id uuid;
+  t text;
+  tables text[] := ARRAY[
+    'accounts_payable','accounts_receivable','account_statements',
+    'finance_transactions','bank_accounts','invoices',
+    'purchase_orders','purchase_order_items','goods_receiving','shipments',
+    'warehouses','warehouse_inventory'
+  ];
+BEGIN
+  SELECT id INTO v_company_id FROM public.companies
+    WHERE status='active' ORDER BY created_at LIMIT 1;
+  IF v_company_id IS NULL THEN
+    RAISE EXCEPTION '找不到任何 active 公司，無法回填';
+  END IF;
+
+  FOREACH t IN ARRAY tables LOOP
+    -- 1) 加欄位
+    EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS company_id uuid REFERENCES public.companies(id) ON DELETE RESTRICT', t);
+
+    -- 2) 回填
+    EXECUTE format('UPDATE public.%I SET company_id = %L WHERE company_id IS NULL', t, v_company_id);
+
+    -- 3) NOT NULL + DEFAULT
+    EXECUTE format('ALTER TABLE public.%I ALTER COLUMN company_id SET NOT NULL', t);
+    EXECUTE format('ALTER TABLE public.%I ALTER COLUMN company_id SET DEFAULT private.current_company_id()', t);
+
+    -- 4) Index
+    EXECUTE format('CREATE INDEX IF NOT EXISTS idx_%I_company ON public.%I(company_id)', t, t);
+
+    -- 5) tenant_scope RLS（同 customers/products 既有模式）
+    EXECUTE format('DROP POLICY IF EXISTS tenant_scope ON public.%I', t);
+    EXECUTE format($f$
+      CREATE POLICY tenant_scope ON public.%I
+      AS RESTRICTIVE
+      FOR ALL TO authenticated
+      USING (
+        private.has_role(auth.uid(), 'super_admin'::app_role)
+        OR company_id = private.current_company_id()
+      )
+      WITH CHECK (
+        private.has_role(auth.uid(), 'super_admin'::app_role)
+        OR company_id = private.current_company_id()
+      )
+    $f$, t);
+  END LOOP;
+END $$;
