@@ -32,7 +32,7 @@ export function CompanyLogoUploader({ value, onChange, disabled }: Props) {
       if (error) {
         const msg = error.message || "";
         if (msg.toLowerCase().includes("row-level security") || msg.toLowerCase().includes("policy")) {
-          throw new Error("您沒有上傳 Logo 的權限（需 super_admin）");
+          throw new Error("您沒有上傳 Logo 的權限（需 super_admin 或 admin）");
         }
         throw error;
       }
