@@ -146,15 +146,49 @@ function LoginPage() {
 
           <form onSubmit={submit} className="space-y-4">
             {mode === "signup" && (
+              <>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setSignupType("email")}
+                    className={`flex-1 py-1.5 text-xs rounded-md border ${signupType === "email" ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground"}`}>Email 註冊</button>
+                  <button type="button" onClick={() => setSignupType("phone")}
+                    className={`flex-1 py-1.5 text-xs rounded-md border ${signupType === "phone" ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground"}`}>電話註冊</button>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">姓名</Label>
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="王小明" />
+                </div>
+              </>
+            )}
+
+            {mode === "signin" && (
               <div className="space-y-2">
-                <Label htmlFor="name">姓名</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="王小明" />
+                <Label htmlFor="identifier">Email / 電話 / 會員編號</Label>
+                <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder="admin@yuanjing.com 或 0912345678 或 M000001" />
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="admin@yuanjing.com" />
-            </div>
+
+            {mode === "signup" && signupType === "email" && (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
+              </div>
+            )}
+
+            {mode === "signup" && signupType === "phone" && (
+              <div className="space-y-2">
+                <Label htmlFor="phone">電話號碼</Label>
+                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="0912345678" />
+                <p className="text-[11px] text-muted-foreground">註冊後系統將自動產生會員編號 (M000001 起)，可使用電話號碼直接登入。</p>
+              </div>
+            )}
+
+            {mode === "forgot" && (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
+              </div>
+            )}
+
             {mode !== "forgot" && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -166,6 +200,7 @@ function LoginPage() {
                 <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
               </div>
             )}
+
             <Button type="submit" disabled={busy} className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
               {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {mode === "signin" ? "登入系統" : mode === "signup" ? "建立帳號" : "寄送重設信"}
