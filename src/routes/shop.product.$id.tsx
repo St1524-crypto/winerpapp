@@ -23,6 +23,7 @@ export const Route = createFileRoute("/shop/product/$id")({
 function ProductDetail() {
   const { id } = Route.useParams();
   const { addItem } = useCart();
+  const isDealer = useIsDealer();
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [related, setRelated] = useState<Product[]>([]);
@@ -72,6 +73,8 @@ function ProductDetail() {
 
   const gallery = [...(product.image ? [{ id: "main", image_url: product.image, product_id: id, sort_order: -1, created_at: "" }] : []), ...images];
   const outOfStock = product.stock <= 0;
+  const effPrice = getEffectivePrice(product, isDealer);
+  const showDealer = isDealer && product.wholesale_price > 0 && product.wholesale_price < product.price;
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-10">
