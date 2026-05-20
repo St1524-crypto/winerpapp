@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useBranding } from "@/hooks/use-branding";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
+import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
@@ -17,10 +18,14 @@ function LoginPage() {
   const { logoUrl } = useBranding();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
+  const [signupType, setSignupType] = useState<"email" | "phone">("email");
+  const [identifier, setIdentifier] = useState(""); // signin: email/phone/member_no
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+
 
   useEffect(() => {
     if (!loading && user) {
