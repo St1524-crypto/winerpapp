@@ -146,19 +146,28 @@ export function CompaniesAdminTable() {
       return;
     }
     toast.success(`已更新 ${FIELD_LABEL[field]}`);
+    await logAudit("company.update_field", row, {
+      field,
+      field_label: FIELD_LABEL[field],
+      old_value: original || null,
+      new_value: value || null,
+    });
     qc.invalidateQueries({ queryKey: ["admin-companies-table"] });
     qc.invalidateQueries({ queryKey: ["settings-current-company"] });
     refresh();
   }
 
   const statusMut = useMutation({
-    mutationFn: async ({ id, next }: { id: string; next: "active" | "inactive" }) => {
-      const { error } = await supabase.from("companies").update({ status: next }).eq("id", id);
+    mutationFn: async ({ row, next }: { row: CompanyRow; next: "active" | "inactive" }) => {
+      const { error } = await supabase.from("companies").update({ status: next }).eq("id", row.id);
       if (error) throw error;
-      return { id, next };
+      return { row, next };
     },
-    onSuccess: ({ next }) => {
+    onSuccess: async ({ row, next }) => {
       toast.success(next === "active" ? "已啟用公司" : "已停用公司");
+      await logAudit(next === "active" ? "company.activate" : "company.deactivate", row, {
+        old_status: row.status, new_status: next,
+      });
       qc.invalidateQueries({ queryKey: ["admin-companies-table"] });
       refresh();
     },
@@ -166,13 +175,18 @@ export function CompaniesAdminTable() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("companies").delete().eq("id", id);
+    mutationFn: async (row: CompanyRow) => {
+      const { error } = await supabase.from("companies").delete().eq("id", row.id);
       if (error) throw error;
-      return id;
+      return row;
     },
-    onSuccess: () => {
+    onSuccess: async (row) => {
       toast.success("已刪除公司");
+      await logAudit("company.delete", row, {
+        snapshot: {
+          tax_id: row.tax_id, email: row.email, phone: row.phone, address: row.address, status: row.status,
+        },
+      });
       qc.invalidateQueries({ queryKey: ["admin-companies-table"] });
       refresh();
     },
@@ -184,13 +198,18 @@ export function CompaniesAdminTable() {
     const err = validateField("company_name", name);
     if (err) { toast.error("無法新增", { description: err }); return; }
     setAdding(true);
-    const { error } = await supabase.from("companies").insert({ company_name: name, status: "active" });
+    const { data, error } = await supabase
+      .from("companies")
+      .insert({ company_name: name, status: "active" })
+      .select("id, company_name")
+      .single();
     setAdding(false);
     if (error) {
       toast.error("新增失敗", { description: error.message });
       return;
     }
     toast.success("已新增公司");
+    if (data) await logAudit("company.create", data as any, { initial_status: "active" });
     setNewName("");
     qc.invalidateQueries({ queryKey: ["admin-companies-table"] });
     refresh();
