@@ -1818,7 +1818,7 @@ function OrderDetailDialog({
                     order: order as any,
                     items: items as any,
                     payments: payments as any,
-                    logoUrl,
+                    logoUrl: pdfLogoUrl,
                     company: companyHeader,
                   });
                   toast.success("PDF 已產生");
