@@ -1482,6 +1482,7 @@ function OrderDetailDialog({
                 {items.length === 0 ? (
                   <div className="p-6 text-center text-sm text-muted-foreground">尚無品項</div>
                 ) : (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1517,6 +1518,7 @@ function OrderDetailDialog({
                       </TableRow>
                     </TableFooter>
                   </Table>
+                  </div>
 
                 )}
               </CardContent>
@@ -1543,6 +1545,7 @@ function OrderDetailDialog({
                 {payments.length === 0 ? (
                   <div className="p-6 text-center text-sm text-muted-foreground">尚無付款紀錄</div>
                 ) : (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1588,6 +1591,7 @@ function OrderDetailDialog({
                       </TableRow>
                     </TableFooter>
                   </Table>
+                  </div>
 
                 )}
               </CardContent>
@@ -1614,6 +1618,7 @@ function OrderDetailDialog({
                       <span className="text-xs text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
                     </summary>
                     <div className="border-t border-border">
+                      <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -1670,6 +1675,7 @@ function OrderDetailDialog({
                           </TableRow>
                         </TableFooter>
                       </Table>
+                      </div>
                     </div>
                   </details>
                 </CardContent>
