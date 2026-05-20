@@ -390,6 +390,16 @@ function CreateCompanyDialog() {
 
   const m = useMutation({
     mutationFn: async (values: CompanyFormValues) => {
+      // 1) 前端先查重，給即時欄位錯誤
+      const dup = await findDuplicateCompanyField({ tax_id: values.tax_id, email: values.email });
+      if (dup) {
+        form.setError(dup.field, {
+          type: "duplicate",
+          message: dup.field === "tax_id" ? "此統一編號已被其他公司使用" : "此 Email 已被其他公司使用",
+        });
+        throw new Error(dup.field === "tax_id" ? "此統一編號已被其他公司使用" : "此 Email 已被其他公司使用");
+      }
+
       const { data, error } = await supabase
         .from("companies")
         .insert({
@@ -403,7 +413,14 @@ function CreateCompanyDialog() {
         })
         .select()
         .single();
-      if (error) throw new Error(`公司建立失敗：${error.message}（${error.code || "unknown"}）`);
+      if (error) {
+        const parsed = parseDuplicateDbError(error);
+        if (parsed) {
+          form.setError(parsed.field, { type: "duplicate", message: parsed.message });
+          throw new Error(parsed.message);
+        }
+        throw new Error(`公司建立失敗：${error.message}（${error.code || "unknown"}）`);
+      }
 
       // Auto-add current user as admin member
       if (user) {
