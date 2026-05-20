@@ -167,13 +167,23 @@ function AdminCompaniesPage() {
                     </TableCell>
                     <TableCell>{memberCountQ.data?.[c.id] ?? 0}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={
-                        c.status === "active"
-                          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                          : "bg-muted text-muted-foreground"
-                      }>
-                        {c.status === "active" ? "啟用" : c.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={c.status === "active"}
+                          disabled={toggleStatus.isPending}
+                          onCheckedChange={(checked) =>
+                            toggleStatus.mutate({ id: c.id, next: checked ? "active" : "inactive" })
+                          }
+                          aria-label={c.status === "active" ? "停用此公司" : "啟用此公司"}
+                        />
+                        <Badge variant="outline" className={
+                          c.status === "active"
+                            ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                            : "bg-muted text-muted-foreground"
+                        }>
+                          {c.status === "active" ? "啟用" : "停用"}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
