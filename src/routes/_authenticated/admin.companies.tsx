@@ -73,18 +73,18 @@ function AdminCompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <Building2 className="h-6 w-6 text-primary" />
             公司管理
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             建立租戶公司、指派成員。每家公司的業務資料相互隔離。
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" asChild className="flex-1 sm:flex-none">
             <Link to="/admin/companies/new"><Plus className="h-4 w-4 mr-1" />開啟新增頁</Link>
           </Button>
           <CreateCompanyDialog />
