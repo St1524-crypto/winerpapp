@@ -1397,6 +1397,16 @@ function OrderDetailDialog({
 }) {
   const qc = useQueryClient();
   const { logoUrl } = useBranding();
+  const { current: currentCompany } = useCurrentCompany();
+  const companyHeader = currentCompany
+    ? {
+        name: currentCompany.company_name,
+        tax_id: currentCompany.tax_id,
+        phone: currentCompany.phone,
+        address: currentCompany.address,
+        email: currentCompany.email,
+      }
+    : null;
   const [printing, setPrinting] = useState(false);
   const [editing, setEditing] = useState(false);
   const detailQ = useQuery({
