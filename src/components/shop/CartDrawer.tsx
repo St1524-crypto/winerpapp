@@ -2,6 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { Link } from "@tanstack/react-router";
 
 const SHIPPING_THRESHOLD = 2000;
@@ -9,6 +10,7 @@ const SHIPPING_FEE = 150;
 
 export function CartDrawer() {
   const { open, setOpen, items, count, subtotal, updateQty, removeItem } = useCart();
+  const isDealer = useIsDealer();
   const shipping = subtotal >= SHIPPING_THRESHOLD || subtotal === 0 ? 0 : SHIPPING_FEE;
   const total = subtotal + shipping;
 
@@ -44,7 +46,7 @@ export function CartDrawer() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{it.product?.name ?? "商品"}</div>
                   <div className="text-xs text-muted-foreground">{it.product?.sku}</div>
-                  <div className="text-sm font-semibold text-primary mt-1">NT$ {(it.product?.price ?? 0).toLocaleString()}</div>
+                  <div className="text-sm font-semibold text-primary mt-1">NT$ {getEffectivePrice(it.product as any, isDealer).toLocaleString()}</div>
                 </div>
                 <div className="flex flex-col items-end justify-between">
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeItem(it.id)}>
