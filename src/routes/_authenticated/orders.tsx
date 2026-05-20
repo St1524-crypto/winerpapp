@@ -1399,6 +1399,7 @@ function OrderDetailDialog({
   const qc = useQueryClient();
   const { logoUrl } = useBranding();
   const { current: currentCompany } = useCurrentCompany();
+  const pdfLogoUrl = currentCompany?.logo_url || logoUrl;
   const companyHeader = currentCompany
     ? {
         name: currentCompany.company_name,
