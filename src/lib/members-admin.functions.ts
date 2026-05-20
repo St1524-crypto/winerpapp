@@ -82,7 +82,7 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
 
     const phone = data.phone !== undefined ? normalizePhone(data.phone) : undefined;
-    const profileUpdate: Record<string, unknown> = {};
+    const profileUpdate: { name?: string; email?: string | null; phone?: string | null } = {};
     if (data.name !== undefined) profileUpdate.name = data.name;
     if (data.email !== undefined) profileUpdate.email = data.email || null;
     if (phone !== undefined) profileUpdate.phone = phone;
@@ -92,6 +92,7 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
         .from("profiles")
         .update(profileUpdate)
         .eq("id", data.userId);
+
       if (error) throw new Error(error.message);
     }
 
