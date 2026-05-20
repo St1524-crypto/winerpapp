@@ -29,7 +29,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil, ChevronDown } from "lucide-react";
+import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil, ChevronDown, Copy, Check } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
