@@ -43,8 +43,38 @@ export const Route = createFileRoute("/_authenticated/admin/companies")({
 function AdminCompaniesPage() {
   const { roles } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
+  const qc = useQueryClient();
+  const { refresh: refreshCompanies } = useCurrentCompany();
   const [memberDialogCompany, setMemberDialogCompany] = useState<{ id: string; name: string } | null>(null);
   const [editCompany, setEditCompany] = useState<any | null>(null);
+
+  const toggleStatus = useMutation({
+    mutationFn: async ({ id, next }: { id: string; next: "active" | "inactive" }) => {
+      const { error } = await supabase
+        .from("companies")
+        .update({ status: next })
+        .eq("id", id);
+      if (error) throw error;
+      return { id, next };
+    },
+    onMutate: async ({ id, next }) => {
+      await qc.cancelQueries({ queryKey: ["admin-companies"] });
+      const prev = qc.getQueryData<any[]>(["admin-companies"]);
+      qc.setQueryData<any[]>(["admin-companies"], (old) =>
+        (old ?? []).map((c) => (c.id === id ? { ...c, status: next } : c)),
+      );
+      return { prev };
+    },
+    onError: (e: any, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["admin-companies"], ctx.prev);
+      toast.error("狀態更新失敗", { description: e?.message ?? "未知錯誤" });
+    },
+    onSuccess: ({ next }) => {
+      toast.success(next === "active" ? "已啟用公司" : "已停用公司");
+      qc.invalidateQueries({ queryKey: ["admin-companies"] });
+      refreshCompanies();
+    },
+  });
 
   const companiesQ = useQuery({
     queryKey: ["admin-companies"],
