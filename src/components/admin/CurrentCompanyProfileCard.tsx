@@ -133,7 +133,11 @@ export function CurrentCompanyProfileCard() {
           phone: (values.phone ?? "").trim() || null,
           address: (values.address ?? "").trim() || null,
           logo_url: (values.logo_url ?? "") || null,
-        })
+          invoice_title: (values.invoice_title ?? "").trim() || null,
+          invoice_title_mode: values.invoice_title_mode,
+          invoice_tax_id_format: values.invoice_tax_id_format,
+          invoice_show_tax_id: values.invoice_show_tax_id,
+        } as any)
         .eq("id", currentCompanyId);
       if (error) {
         if (error.code === "23505") {
