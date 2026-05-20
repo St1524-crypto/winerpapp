@@ -54,11 +54,32 @@ function validateField(field: FieldKey, value: string): string | null {
 export function CompaniesAdminTable() {
   const qc = useQueryClient();
   const { refresh, currentCompanyId } = useCurrentCompany();
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [savingCell, setSavingCell] = useState<string | null>(null);
   const [errorCell, setErrorCell] = useState<Record<string, string>>({});
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
+
+  async function logAudit(action: string, row: Pick<CompanyRow, "id" | "company_name">, metadata: Record<string, any>) {
+    if (!user) return;
+    try {
+      await supabase.from("audit_logs").insert({
+        user_id: user.id,
+        action,
+        entity: "companies",
+        entity_id: row.id,
+        metadata: {
+          company_name: row.company_name,
+          occurred_at: new Date().toISOString(),
+          ...metadata,
+        },
+      });
+      qc.invalidateQueries({ queryKey: ["company-audit-history"] });
+    } catch (e) {
+      console.warn("[audit] company log failed:", e);
+    }
+  }
 
   const q = useQuery({
     queryKey: ["admin-companies-table"],
