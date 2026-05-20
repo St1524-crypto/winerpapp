@@ -1835,6 +1835,7 @@ export type Database = {
           current_company_id: string | null
           email: string | null
           id: string
+          is_dealer: boolean
           member_no: string | null
           name: string | null
           phone: string | null
@@ -1845,6 +1846,7 @@ export type Database = {
           current_company_id?: string | null
           email?: string | null
           id: string
+          is_dealer?: boolean
           member_no?: string | null
           name?: string | null
           phone?: string | null
@@ -1855,6 +1857,7 @@ export type Database = {
           current_company_id?: string | null
           email?: string | null
           id?: string
+          is_dealer?: boolean
           member_no?: string | null
           name?: string | null
           phone?: string | null
