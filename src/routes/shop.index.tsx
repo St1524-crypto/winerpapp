@@ -65,18 +65,18 @@ function ShopHome() {
       {cats.length > 0 && (
         <section>
           <SectionHeader icon={Tag} title="商品分類" desc="找到你想要的類別" />
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
+          <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-3 mt-4">
             {cats.map((c) => (
               <Link
                 key={c.id}
                 to="/shop/category/$slug"
                 params={{ slug: c.id }}
-                className="aspect-square rounded-2xl border border-border/60 bg-gradient-to-br from-card to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 flex flex-col items-center justify-center gap-2 p-3 transition-all group"
+                className="aspect-square rounded-xl md:rounded-2xl border border-border/60 bg-gradient-to-br from-card to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 flex flex-col items-center justify-center gap-1.5 md:gap-2 p-2 md:p-3 transition-all group"
               >
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Tag className="h-5 w-5 text-primary" />
+                <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Tag className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 </div>
-                <span className="text-xs md:text-sm font-medium text-center line-clamp-1">{c.name}</span>
+                <span className="text-[11px] md:text-sm font-medium text-center line-clamp-1">{c.name}</span>
               </Link>
             ))}
           </div>
