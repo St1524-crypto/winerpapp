@@ -7,6 +7,7 @@ import { useBranding } from "@/hooks/use-branding";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { filterNav, ROLE_LABELS } from "@/lib/nav";
+import { Store } from "lucide-react";
 
 export function AppSidebar() {
   const { state } = useSidebar();
@@ -54,6 +55,21 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="回首頁">
+                  <Link to="/shop" className="flex items-center gap-3 text-muted-foreground hover:text-foreground">
+                    <Store className="h-4 w-4 shrink-0" />
+                    <span>回首頁</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
