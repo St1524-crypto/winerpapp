@@ -43,3 +43,14 @@ bunx playwright show-report                # 開啟最後一次報告
 - 若 `刪除公司` 步驟因 RLS／外鍵未刪除完成，請手動到後台清理；或在
   `admin.companies.tsx` 上加上 `data-testid` 後微調 selector。
 - 因為 Sonner toast 文字會閃過，部分 assertion 設了 10~15s timeout。
+
+## 自動清除
+
+測試結束後（無論成功或失敗），`e2e/global-teardown.ts` 會用 service role：
+1. 找出所有 `company_name` 以 `E2E-` 開頭的公司
+2. 刪除其子資料（`company_members`、`customers`、`inventory_logs`、`inventory_transactions`、`payments` 等）
+3. 移除 `branding` bucket 內對應的 logo 檔
+4. 刪除公司本體
+5. 清掉相關的 `audit_logs`
+
+若未設定 `SUPABASE_SERVICE_ROLE_KEY`，teardown 會跳過並印 warning（不會讓測試 fail）。
