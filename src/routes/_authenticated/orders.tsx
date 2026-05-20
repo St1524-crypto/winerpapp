@@ -375,94 +375,151 @@ function OrdersPage() {
               尚無訂單。點擊右上「新增訂單」開始建立。
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">
+            <>
+              {/* Mobile: card list */}
+              <div className="md:hidden divide-y divide-border">
+                {ordersQ.data.map((o) => (
+                  <div key={o.id} className="p-4 space-y-2 active:bg-muted/30">
+                    <div className="flex items-start gap-2">
                       <Checkbox
-                        checked={
-                          ordersQ.data.length > 0 &&
-                          ordersQ.data.every((o) => selected.has(o.id))
-                        }
-                        onCheckedChange={(c) =>
-                          toggleSelectAll(ordersQ.data!.map((o) => o.id), !!c)
-                        }
-                        aria-label="全選"
+                        checked={selected.has(o.id)}
+                        onCheckedChange={() => toggleSelect(o.id)}
+                        aria-label={`選取 ${o.order_no}`}
+                        className="mt-1"
                       />
-                    </TableHead>
-                    <TableHead>訂單號</TableHead>
-                    <TableHead>客戶</TableHead>
-                    <TableHead>建立日期</TableHead>
-                    <TableHead className="text-right">總金額</TableHead>
-                    <TableHead>訂單狀態</TableHead>
-                    <TableHead>出貨</TableHead>
-                    <TableHead>金流</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ordersQ.data.map((o) => (
-                    <TableRow key={o.id} className="hover:bg-muted/30" data-state={selected.has(o.id) ? "selected" : undefined}>
-                      <TableCell>
+                      <button
+                        onClick={() => setDetailId(o.id)}
+                        className="flex-1 text-left"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-xs text-muted-foreground">{o.order_no}</span>
+                          <span className="text-base font-semibold">{fmt(o.total_amount)}</span>
+                        </div>
+                        <div className="mt-1 font-medium text-sm truncate">{o.customer_name}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {o.customer_email ?? "—"} · {new Date(o.created_at).toLocaleDateString("zh-TW")}
+                        </div>
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="outline" className={ORDER_STATUS[o.order_status]?.tone}>
+                        {ORDER_STATUS[o.order_status]?.label ?? o.order_status}
+                      </Badge>
+                      <Badge variant="outline" className={SHIPPING_STATUS[o.shipping_status]?.tone}>
+                        {SHIPPING_STATUS[o.shipping_status]?.label ?? o.shipping_status}
+                      </Badge>
+                      <PaymentStatusCell orderId={o.id} value={o.payment_status} onChanged={refresh} />
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => setDetailId(o.id)}>
+                        <Eye className="h-3.5 w-3.5 mr-1" /> 詳情
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handlePrintOrder(o.id)}
+                        disabled={printingId === o.id}
+                      >
+                        {printingId === o.id
+                          ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                          : <Printer className="h-3.5 w-3.5 mr-1" />}
+                        列印
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
                         <Checkbox
-                          checked={selected.has(o.id)}
-                          onCheckedChange={() => toggleSelect(o.id)}
-                          aria-label={`選取 ${o.order_no}`}
+                          checked={
+                            ordersQ.data.length > 0 &&
+                            ordersQ.data.every((o) => selected.has(o.id))
+                          }
+                          onCheckedChange={(c) =>
+                            toggleSelectAll(ordersQ.data!.map((o) => o.id), !!c)
+                          }
+                          aria-label="全選"
                         />
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{o.order_no}</TableCell>
-                      <TableCell>
-                        <div className="font-medium text-sm">{o.customer_name}</div>
-                        <div className="text-xs text-muted-foreground truncate max-w-[180px]">
-                          {o.customer_email ?? "—"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {new Date(o.created_at).toLocaleDateString("zh-TW")}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={ORDER_STATUS[o.order_status]?.tone}>
-                          {ORDER_STATUS[o.order_status]?.label ?? o.order_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={SHIPPING_STATUS[o.shipping_status]?.tone}>
-                          {SHIPPING_STATUS[o.shipping_status]?.label ?? o.shipping_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <PaymentStatusCell
-                          orderId={o.id}
-                          value={o.payment_status}
-                          onChanged={refresh}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => setDetailId(o.id)}>
-                            <Eye className="h-3.5 w-3.5 mr-1" /> 詳情
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handlePrintOrder(o.id)}
-                            disabled={printingId === o.id}
-                            title="列印 PDF"
-                          >
-                            {printingId === o.id
-                              ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
-                              : <Printer className="h-3.5 w-3.5 mr-1" />}
-                            列印
-                          </Button>
-                        </div>
-                      </TableCell>
+                      </TableHead>
+                      <TableHead>訂單號</TableHead>
+                      <TableHead>客戶</TableHead>
+                      <TableHead>建立日期</TableHead>
+                      <TableHead className="text-right">總金額</TableHead>
+                      <TableHead>訂單狀態</TableHead>
+                      <TableHead>出貨</TableHead>
+                      <TableHead>金流</TableHead>
+                      <TableHead className="text-right">操作</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {ordersQ.data.map((o) => (
+                      <TableRow key={o.id} className="hover:bg-muted/30" data-state={selected.has(o.id) ? "selected" : undefined}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selected.has(o.id)}
+                            onCheckedChange={() => toggleSelect(o.id)}
+                            aria-label={`選取 ${o.order_no}`}
+                          />
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{o.order_no}</TableCell>
+                        <TableCell>
+                          <div className="font-medium text-sm">{o.customer_name}</div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[180px]">
+                            {o.customer_email ?? "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(o.created_at).toLocaleDateString("zh-TW")}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={ORDER_STATUS[o.order_status]?.tone}>
+                            {ORDER_STATUS[o.order_status]?.label ?? o.order_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={SHIPPING_STATUS[o.shipping_status]?.tone}>
+                            {SHIPPING_STATUS[o.shipping_status]?.label ?? o.shipping_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <PaymentStatusCell
+                            orderId={o.id}
+                            value={o.payment_status}
+                            onChanged={refresh}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => setDetailId(o.id)}>
+                              <Eye className="h-3.5 w-3.5 mr-1" /> 詳情
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handlePrintOrder(o.id)}
+                              disabled={printingId === o.id}
+                              title="列印 PDF"
+                            >
+                              {printingId === o.id
+                                ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                                : <Printer className="h-3.5 w-3.5 mr-1" />}
+                              列印
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
