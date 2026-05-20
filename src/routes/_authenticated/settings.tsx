@@ -80,7 +80,7 @@ function SettingsPage() {
   }
 
   if (!isAdmin) {
-    return <ForbiddenScreen requiredRoles={["super_admin"]} pageName="系統設定" />;
+    return <ForbiddenScreen requiredRoles={["super_admin", "admin"]} pageName="系統設定" />;
   }
 
   return (
