@@ -29,8 +29,9 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil } from "lucide-react";
+import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil, ChevronDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
@@ -208,8 +209,11 @@ function AdminCompaniesPage() {
             {/* Mobile cards */}
             <div className="md:hidden space-y-3">
               {companiesQ.data.map((c) => (
-                <div key={c.id} className="rounded-lg border border-border/60 bg-card p-3 space-y-3">
-                  <div className="flex items-start gap-3">
+                <Collapsible
+                  key={c.id}
+                  className="rounded-lg border border-border/60 bg-card overflow-hidden group/card data-[state=open]:ring-1 data-[state=open]:ring-primary/30"
+                >
+                  <CollapsibleTrigger className="w-full text-left p-3 flex items-center gap-3">
                     <div className="h-12 w-12 shrink-0 rounded-md bg-white ring-1 ring-border flex items-center justify-center overflow-hidden">
                       {c.logo_url ? (
                         <img src={c.logo_url} alt={c.company_name} className="h-full w-full object-contain" />
@@ -229,39 +233,59 @@ function AdminCompaniesPage() {
                         </Badge>
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        統編：{c.tax_id ?? "—"} · 成員 {memberCountQ.data?.[c.id] ?? 0}
+                        成員 {memberCountQ.data?.[c.id] ?? 0} 人 · 點擊展開詳情
                       </div>
-                      <div className="text-xs mt-1 break-all">{c.email ?? "—"}</div>
-                      {c.phone && <div className="text-xs text-muted-foreground">{c.phone}</div>}
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
-                    <label className="flex items-center gap-2 text-xs text-muted-foreground select-none">
-                      <Switch
-                        checked={c.status === "active"}
-                        disabled={toggleStatus.isPending}
-                        onCheckedChange={(checked) =>
-                          toggleStatus.mutate({ id: c.id, next: checked ? "active" : "inactive" })
-                        }
-                      />
-                      {c.status === "active" ? "啟用中" : "已停用"}
-                    </label>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm" variant="outline"
-                        onClick={() => setEditCompany(c)}
-                      >
-                        <Pencil className="h-3.5 w-3.5 mr-1" /> 編輯
-                      </Button>
-                      <Button
-                        size="sm" variant="outline"
-                        onClick={() => setMemberDialogCompany({ id: c.id, name: c.company_name })}
-                      >
-                        <Users className="h-3.5 w-3.5 mr-1" /> 成員
-                      </Button>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/card:rotate-180" />
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                    <div className="px-3 pb-3 space-y-3">
+                      <dl className="grid grid-cols-3 gap-y-2 gap-x-3 text-xs border-t border-border/60 pt-3">
+                        <dt className="text-muted-foreground">統一編號</dt>
+                        <dd className="col-span-2 font-medium">{c.tax_id ?? "—"}</dd>
+                        <dt className="text-muted-foreground">電話</dt>
+                        <dd className="col-span-2">{c.phone ?? "—"}</dd>
+                        <dt className="text-muted-foreground">Email</dt>
+                        <dd className="col-span-2 break-all">{c.email ?? "—"}</dd>
+                        <dt className="text-muted-foreground">成員數</dt>
+                        <dd className="col-span-2">{memberCountQ.data?.[c.id] ?? 0} 人</dd>
+                        {c.address && (
+                          <>
+                            <dt className="text-muted-foreground">地址</dt>
+                            <dd className="col-span-2 break-all">{c.address}</dd>
+                          </>
+                        )}
+                      </dl>
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+                        <label
+                          className="flex items-center gap-2 text-xs text-muted-foreground select-none"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Switch
+                            checked={c.status === "active"}
+                            disabled={toggleStatus.isPending}
+                            onCheckedChange={(checked) =>
+                              toggleStatus.mutate({ id: c.id, next: checked ? "active" : "inactive" })
+                            }
+                          />
+                          {c.status === "active" ? "啟用中" : "已停用"}
+                        </label>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setEditCompany(c)}>
+                            <Pencil className="h-3.5 w-3.5 mr-1" /> 編輯
+                          </Button>
+                          <Button
+                            size="sm" variant="outline"
+                            onClick={() => setMemberDialogCompany({ id: c.id, name: c.company_name })}
+                          >
+                            <Users className="h-3.5 w-3.5 mr-1" /> 成員
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </CollapsibleContent>
+                </Collapsible>
               ))}
             </div>
             </>
