@@ -1570,11 +1570,14 @@ function OrderDetailDialog({
                             <TableRow key={p.id}>
                               <TableCell className="text-sm">待入帳付款</TableCell>
                               <TableCell>
-                                <Badge variant="outline" className="bg-amber-500/15 text-amber-400 border-amber-500/30">
-                                  {p.payment_status === "pending" ? "待處理"
-                                    : p.payment_status === "failed" ? "失敗"
-                                    : p.payment_status}
-                                </Badge>
+                                <PaymentRecordStatusCell
+                                  paymentId={p.id}
+                                  value={p.payment_status}
+                                  onChanged={() => {
+                                    qc.invalidateQueries({ queryKey: ["sales-order-detail", orderId] });
+                                    onChanged();
+                                  }}
+                                />
                               </TableCell>
                               <TableCell className="text-sm">
                                 {PAYMENT_METHOD_LABEL[p.payment_method] ?? p.payment_method}
