@@ -242,6 +242,19 @@ export function CurrentCompanyProfileCard() {
               <dd className="break-all">{c.address || "—"}</dd>
               <dt className="text-muted-foreground">狀態</dt>
               <dd>{c.status === "active" ? "啟用" : "停用"}</dd>
+              <dt className="text-muted-foreground">訂單抬頭</dt>
+              <dd>
+                <div className="font-medium">{resolveInvoiceTitle(c as any)}</div>
+                <div className="text-xs text-muted-foreground">
+                  模式：{INVOICE_TITLE_MODE_LABEL[((c as any).invoice_title_mode ?? "company") as InvoiceTitleMode]}
+                </div>
+              </dd>
+              <dt className="text-muted-foreground">統編顯示</dt>
+              <dd>
+                {(c as any).invoice_show_tax_id === false
+                  ? <span className="text-muted-foreground">不顯示</span>
+                  : (formatInvoiceTaxId(c.tax_id, ((c as any).invoice_tax_id_format ?? "prefixed") as InvoiceTaxIdFormat) || "—")}
+              </dd>
             </dl>
           </div>
         ) : (
