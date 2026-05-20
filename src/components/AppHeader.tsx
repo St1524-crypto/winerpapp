@@ -47,6 +47,12 @@ export function AppHeader() {
       </div>
       <div className="flex-1 md:hidden" />
       <CompanySwitcher />
+      <Button variant="outline" size="sm" asChild className="gap-2 hidden md:inline-flex">
+        <Link to="/shop">
+          <Store className="h-4 w-4" />
+          <span>回首頁</span>
+        </Link>
+      </Button>
       {isSuperAdmin && (
         <Button
           variant={inAdmin ? "default" : "outline"}
