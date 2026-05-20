@@ -49,12 +49,19 @@ export function CopyButton({
     }
   };
 
+  const sizeClasses: Record<NonNullable<CopyButtonProps["size"]>, string> = {
+    sm: "h-7 w-7",
+    default: "h-8 w-8",
+    icon: "h-9 w-9",
+    lg: "h-10 w-10",
+  };
+
   return (
     <Button
       type="button"
       size={size}
       variant="ghost"
-      className={cn("h-6 w-6 shrink-0", className)}
+      className={cn("shrink-0 p-0", sizeClasses[size], className)}
       onClick={handleCopy}
       aria-label={label ? `複製${label}` : "複製"}
     >
