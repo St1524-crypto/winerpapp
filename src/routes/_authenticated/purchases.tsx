@@ -406,7 +406,6 @@ function Page() {
                     ))}
                   </TableBody>
                 </Table>
-                </div>
               </div>
             </div>
 
@@ -462,6 +461,7 @@ function Page() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 </CardContent></Card>
                 <div className="space-y-2">
                   <Label>狀態流轉</Label>
