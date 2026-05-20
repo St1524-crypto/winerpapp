@@ -6,10 +6,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, LogOut, User, Shield, LayoutDashboard } from "lucide-react";
+import { Search, LogOut, User, Shield, LayoutDashboard, Store } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { CompanySwitcher } from "@/components/CompanySwitcher";
 import { NotificationsBell } from "@/components/NotificationsBell";
