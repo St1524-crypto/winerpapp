@@ -235,19 +235,31 @@ function AdminCompaniesPage() {
                       {c.phone && <div className="text-xs text-muted-foreground">{c.phone}</div>}
                     </div>
                   </div>
-                  <div className="flex gap-2 pt-2 border-t border-border/60">
-                    <Button
-                      size="sm" variant="outline" className="flex-1"
-                      onClick={() => setEditCompany(c)}
-                    >
-                      <Pencil className="h-3.5 w-3.5 mr-1" /> 編輯
-                    </Button>
-                    <Button
-                      size="sm" variant="outline" className="flex-1"
-                      onClick={() => setMemberDialogCompany({ id: c.id, name: c.company_name })}
-                    >
-                      <Users className="h-3.5 w-3.5 mr-1" /> 成員
-                    </Button>
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground select-none">
+                      <Switch
+                        checked={c.status === "active"}
+                        disabled={toggleStatus.isPending}
+                        onCheckedChange={(checked) =>
+                          toggleStatus.mutate({ id: c.id, next: checked ? "active" : "inactive" })
+                        }
+                      />
+                      {c.status === "active" ? "啟用中" : "已停用"}
+                    </label>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm" variant="outline"
+                        onClick={() => setEditCompany(c)}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1" /> 編輯
+                      </Button>
+                      <Button
+                        size="sm" variant="outline"
+                        onClick={() => setMemberDialogCompany({ id: c.id, name: c.company_name })}
+                      >
+                        <Users className="h-3.5 w-3.5 mr-1" /> 成員
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
