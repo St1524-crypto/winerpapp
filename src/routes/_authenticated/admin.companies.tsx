@@ -759,6 +759,17 @@ function EditCompanyDialog({
 
   const m = useMutation({
     mutationFn: async (values: CompanyFormValues) => {
+      // 前端先查重（排除自己）
+      const dup = await findDuplicateCompanyField(
+        { tax_id: values.tax_id, email: values.email },
+        company.id,
+      );
+      if (dup) {
+        const message = dup.field === "tax_id" ? "此統一編號已被其他公司使用" : "此 Email 已被其他公司使用";
+        form.setError(dup.field, { type: "duplicate", message });
+        throw new Error(message);
+      }
+
       const patch = {
         company_name: values.company_name.trim(),
         tax_id: values.tax_id || null,
@@ -772,7 +783,14 @@ function EditCompanyDialog({
         .from("companies")
         .update(patch)
         .eq("id", company.id);
-      if (error) throw new Error(`更新失敗：${error.message}（${error.code || "unknown"}）`);
+      if (error) {
+        const parsed = parseDuplicateDbError(error);
+        if (parsed) {
+          form.setError(parsed.field, { type: "duplicate", message: parsed.message });
+          throw new Error(parsed.message);
+        }
+        throw new Error(`更新失敗：${error.message}（${error.code || "unknown"}）`);
+      }
 
       // Audit log（失敗不阻擋更新）
       try {
