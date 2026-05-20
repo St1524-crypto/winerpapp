@@ -43,6 +43,49 @@ export const Route = createFileRoute("/_authenticated/admin/companies")({
   component: AdminCompaniesPage,
 });
 
+/**
+ * 檢查公司統編 / Email 是否已被其他公司使用。
+ * 回傳第一個重複欄位（若有），供前端 setError 使用。
+ */
+async function findDuplicateCompanyField(
+  values: { tax_id?: string | null; email?: string | null },
+  excludeId?: string,
+): Promise<{ field: "tax_id" | "email"; value: string } | null> {
+  const taxId = (values.tax_id ?? "").trim();
+  const email = (values.email ?? "").trim().toLowerCase();
+  if (!taxId && !email) return null;
+
+  let q = supabase.from("companies").select("id, tax_id, email");
+  if (excludeId) q = q.neq("id", excludeId);
+  // 縮小查詢範圍：只撈可能衝突的列
+  const ors: string[] = [];
+  if (taxId) ors.push(`tax_id.eq.${taxId}`);
+  if (email) ors.push(`email.ilike.${email}`);
+  if (ors.length) q = q.or(ors.join(","));
+  const { data, error } = await q.limit(5);
+  if (error) return null; // 查詢失敗就讓後端把關
+
+  for (const row of data ?? []) {
+    if (taxId && row.tax_id && row.tax_id.trim() === taxId) {
+      return { field: "tax_id", value: taxId };
+    }
+    if (email && row.email && row.email.trim().toLowerCase() === email) {
+      return { field: "email", value: email };
+    }
+  }
+  return null;
+}
+
+/** 把後端 23505（unique violation）翻譯成欄位級錯誤訊息 */
+function parseDuplicateDbError(err: any): { field: "tax_id" | "email"; message: string } | null {
+  const code = err?.code;
+  const msg = (err?.message ?? "").toLowerCase();
+  if (code !== "23505" && !msg.includes("duplicate")) return null;
+  if (msg.includes("tax_id")) return { field: "tax_id", message: "此統一編號已被其他公司使用" };
+  if (msg.includes("email")) return { field: "email", message: "此 Email 已被其他公司使用" };
+  return { field: "tax_id", message: "資料重複，請檢查統編／Email" };
+}
+
 function AdminCompaniesPage() {
   const { roles } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
