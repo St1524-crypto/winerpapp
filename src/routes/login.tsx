@@ -42,18 +42,25 @@ function LoginPage() {
     setBusy(true);
     try {
       if (mode === "signin") {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        // Allow login with email / phone / member_no
+        let loginEmail = identifier.trim();
+        if (!loginEmail.includes("@")) {
+          const res = await resolveLoginEmail({ data: { identifier: loginEmail } }).catch(() => ({ email: null }));
+          if (!res.email) throw new Error("找不到對應帳號，請確認電話號碼 / 會員編號 / Email");
+          loginEmail = res.email;
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) {
-          await recordLoginAttempt({ data: { email, success: false, failureReason: error.message } }).catch(() => {});
+          await recordLoginAttempt({ data: { email: loginEmail, success: false, failureReason: error.message } }).catch(() => {});
           throw error;
         }
         const session = data.session;
         const uid = data.user?.id;
 
-        await recordLoginAttempt({ data: { email, success: true, userId: uid } }).catch(() => {});
+        await recordLoginAttempt({ data: { email: loginEmail, success: true, userId: uid } }).catch(() => {});
 
         if (session && uid) {
-          // Register this session row (server-side decides if 2FA verification is required)
           await recordSession({
             data: {
               sessionToken: session.access_token,
@@ -72,12 +79,32 @@ function LoginPage() {
 
         toast.success("登入成功");
       } else if (mode === "signup") {
+        // Phone-based signup creates a synthetic email <phone>@phone.local
+        // so we can keep email+password as the auth primitive while letting
+        // members log in by phone (resolved via profiles.phone -> email).
+        let signupEmail = email.trim();
+        const cleanPhone = phone.trim().replace(/[\s-]/g, "");
+        if (signupType === "phone") {
+          if (!/^\+?\d{8,15}$/.test(cleanPhone)) throw new Error("請輸入有效的電話號碼");
+          signupEmail = `${cleanPhone.replace(/^\+/, "")}@phone.local`;
+        }
         const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: `${window.location.origin}/dashboard`, data: { name } },
+          email: signupEmail,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`,
+            data: {
+              name,
+              phone: signupType === "phone" ? cleanPhone : undefined,
+            },
+          },
         });
         if (error) throw error;
-        toast.success("註冊成功，請查收驗證信");
+        toast.success(
+          signupType === "phone"
+            ? "註冊成功，您的會員編號已建立，可使用電話號碼登入"
+            : "註冊成功，請查收驗證信",
+        );
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -92,6 +119,7 @@ function LoginPage() {
       setBusy(false);
     }
   }
+
 
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
