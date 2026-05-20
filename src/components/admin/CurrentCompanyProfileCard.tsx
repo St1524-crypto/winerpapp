@@ -14,6 +14,8 @@ import {
 import { Building2, Pencil, Loader2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -34,6 +36,25 @@ export function CurrentCompanyProfileCard() {
       toast.error("切換失敗", { description: e?.message ?? "未知錯誤" });
     }
   }
+
+  const statusMut = useMutation({
+    mutationFn: async (next: "active" | "inactive") => {
+      if (!currentCompanyId) throw new Error("尚未選擇公司");
+      const { error } = await supabase
+        .from("companies")
+        .update({ status: next })
+        .eq("id", currentCompanyId);
+      if (error) throw error;
+      return next;
+    },
+    onSuccess: (next) => {
+      toast.success(next === "active" ? "已啟用公司" : "已停用公司");
+      qc.invalidateQueries({ queryKey: ["settings-current-company", currentCompanyId] });
+      qc.invalidateQueries({ queryKey: ["admin-companies"] });
+      refresh();
+    },
+    onError: (e: any) => toast.error("狀態更新失敗", { description: e?.message ?? "未知錯誤" }),
+  });
 
   const companyQ = useQuery({
     queryKey: ["settings-current-company", currentCompanyId],
@@ -261,6 +282,27 @@ export function CurrentCompanyProfileCard() {
                   <FormMessage />
                 </FormItem>
               )} />
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium">公司狀態</span>
+                  <Badge variant="outline" className={
+                    c?.status === "active"
+                      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                      : "bg-muted text-muted-foreground"
+                  }>
+                    {c?.status === "active" ? "啟用中" : "已停用"}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  {statusMut.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                  <Switch
+                    checked={c?.status === "active"}
+                    disabled={statusMut.isPending}
+                    onCheckedChange={(checked) => statusMut.mutate(checked ? "active" : "inactive")}
+                    aria-label="切換公司啟用狀態"
+                  />
+                </div>
+              </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => { setEditing(false); form.reset(); }} disabled={m.isPending}>
                   <X className="h-4 w-4 mr-1" /> 取消
