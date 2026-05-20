@@ -233,6 +233,7 @@ function OrdersPage() {
         order: o,
         items: itemsByOrder.get(o.id) ?? [],
         payments: paymentsByOrder.get(o.id) ?? [],
+        company: companyHeader,
       }));
 
       const res = await exportOrdersPdf(payload, logoUrl, {
