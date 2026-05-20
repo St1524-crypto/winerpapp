@@ -37,6 +37,28 @@ export function CurrentCompanyProfileCard() {
     }
   }
 
+  const statusMut = useMutation({
+    mutationFn: async (next: "active" | "inactive") => {
+      if (!currentCompanyId) throw new Error("尚未選擇公司");
+      const { error } = await supabase
+        .from("companies")
+        .update({ status: next })
+        .eq("id", currentCompanyId);
+      if (error) throw error;
+      return next;
+    },
+    onSuccess: (next) => {
+      toast.success(next === "active" ? "已啟用公司" : "已停用公司");
+      qc.invalidateQueries({ queryKey: ["settings-current-company", currentCompanyId] });
+      qc.invalidateQueries({ queryKey: ["admin-companies"] });
+      refresh();
+    },
+    onError: (e: any) => toast.error("狀態更新失敗", { description: e?.message ?? "未知錯誤" }),
+  });
+      toast.error("切換失敗", { description: e?.message ?? "未知錯誤" });
+    }
+  }
+
   const companyQ = useQuery({
     queryKey: ["settings-current-company", currentCompanyId],
     enabled: !!currentCompanyId,
