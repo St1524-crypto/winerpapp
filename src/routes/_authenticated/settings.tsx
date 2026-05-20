@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/settings")({ component: Se
 interface BrandItem { name: string; url: string; }
 
 function SettingsPage() {
-  const { roles } = useAuth();
+  const { roles, loading: authLoading } = useAuth();
   const isAdmin = roles.includes("super_admin") || roles.includes("admin");
   const { logoUrl, setLogoUrl } = useBranding();
   const [items, setItems] = useState<BrandItem[]>([]);
@@ -79,6 +79,14 @@ function SettingsPage() {
   async function resetDefault() {
     await setLogoUrl(null);
     toast.success("已還原預設 Logo");
+  }
+
+  if (authLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[40vh]">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   if (!isAdmin) {
