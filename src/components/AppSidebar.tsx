@@ -24,11 +24,11 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-glow overflow-hidden ring-1 ring-primary/30">
-            <img src={logoUrl} alt="源倍力" className="h-full w-full object-contain" />
+          <img src={logoUrl} alt={brandName} className="h-full w-full object-contain" />
           </div>
           {!collapsed && (
             <div className="flex-1 overflow-hidden">
-              <div className="font-bold text-sm leading-tight">源倍力 ERP</div>
+              <div className="font-bold text-sm leading-tight truncate" title={brandName}>{brandName}</div>
               <div className="text-[10px] text-muted-foreground tracking-wider uppercase">Enterprise Platform</div>
             </div>
           )}
