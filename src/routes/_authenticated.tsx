@@ -74,6 +74,26 @@ function AuthLayout() {
         description: "請聯絡系統管理員啟用公司後再試。",
       });
       (async () => {
+        // 寫入稽核紀錄：因公司停用而被拒絕進入後台
+        try {
+          await supabase.from("audit_logs").insert({
+            user_id: user.id,
+            action: "blocked_inactive_company",
+            entity: "companies",
+            entity_id: companies[0]?.id ?? null,
+            metadata: {
+              reason: "all_companies_inactive",
+              email: user.email ?? null,
+              path: pathname,
+              company_ids: companies.map((c) => c.id),
+              company_names: companies.map((c) => c.company_name),
+              user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+              occurred_at: new Date().toISOString(),
+            },
+          });
+        } catch {
+          // 紀錄失敗不阻擋登出
+        }
         await signOut();
         navigate({ to: "/login" });
       })();
@@ -83,6 +103,25 @@ function AuthLayout() {
     if (current && current.status !== "active") {
       const next = activeCompanies[0];
       toast.warning(`公司「${current.company_name}」已停用，已切換至「${next.company_name}」`);
+      // 寫入稽核紀錄：目前公司停用，自動切換
+      supabase
+        .from("audit_logs")
+        .insert({
+          user_id: user.id,
+          action: "auto_switched_inactive_company",
+          entity: "companies",
+          entity_id: current.id,
+          metadata: {
+            reason: "current_company_inactive",
+            email: user.email ?? null,
+            from_company_id: current.id,
+            from_company_name: current.company_name,
+            to_company_id: next.id,
+            to_company_name: next.company_name,
+            occurred_at: new Date().toISOString(),
+          },
+        })
+        .then(() => {});
       setCurrent(next.id).catch(() => {});
       return;
     }
