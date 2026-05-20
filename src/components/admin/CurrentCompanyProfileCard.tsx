@@ -14,6 +14,8 @@ import {
 import { Building2, Pencil, Loader2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
