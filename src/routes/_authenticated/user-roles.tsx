@@ -28,9 +28,10 @@ export const Route = createFileRoute("/_authenticated/user-roles")({
   component: Page,
 });
 
-const ALL_ROLES: AppRole[] = ["super_admin", "finance", "warehouse", "sales", "vendor", "member"];
+const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
 const ROLE_COLORS: Record<AppRole, string> = {
   super_admin: "bg-red-500/20 text-red-400 border-red-500/30",
+  admin: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
   finance: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
   warehouse: "bg-amber-500/20 text-amber-400 border-amber-500/30",
   sales: "bg-blue-500/20 text-blue-400 border-blue-500/30",
