@@ -109,6 +109,7 @@ function BusinessAccountsPage() {
           ) : data.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm">無 B2B 廠商資料</div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -163,6 +164,7 @@ function BusinessAccountsPage() {
                 })}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

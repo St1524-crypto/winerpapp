@@ -303,6 +303,7 @@ function Page() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -337,6 +338,7 @@ function Page() {
               })}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -404,6 +406,7 @@ function Page() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               </div>
             </div>
 
@@ -444,6 +447,7 @@ function Page() {
                   <div className="col-span-2"><div className="text-muted-foreground text-xs">總金額</div><div className="text-xl font-bold text-primary">NT$ {viewing.total_amount?.toLocaleString()}</div></div>
                 </div>
                 <Card><CardContent className="p-0">
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader><TableRow><TableHead>SKU</TableHead><TableHead>商品</TableHead><TableHead className="text-right">數量</TableHead><TableHead className="text-right">已到貨</TableHead><TableHead className="text-right">單價</TableHead></TableRow></TableHeader>
                     <TableBody>
