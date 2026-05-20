@@ -88,8 +88,9 @@ function parseDuplicateDbError(err: any): { field: "tax_id" | "email"; message: 
 }
 
 function AdminCompaniesPage() {
-  const { roles } = useAuth();
+  const { roles, user } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
+  const canCreate = isSuperAdmin && canCreateCompany(user?.email);
   const qc = useQueryClient();
   const { refresh: refreshCompanies } = useCurrentCompany();
   const [memberDialogCompany, setMemberDialogCompany] = useState<{ id: string; name: string } | null>(null);
