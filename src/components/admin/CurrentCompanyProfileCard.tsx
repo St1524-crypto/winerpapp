@@ -62,7 +62,7 @@ export function CurrentCompanyProfileCard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("id, company_name, tax_id, email, phone, address, logo_url, status")
+        .select("id, company_name, tax_id, email, phone, address, logo_url, status, invoice_title, invoice_title_mode, invoice_tax_id_format, invoice_show_tax_id")
         .eq("id", currentCompanyId!)
         .maybeSingle();
       if (error) throw error;
@@ -75,18 +75,24 @@ export function CurrentCompanyProfileCard() {
     mode: "onChange",
     defaultValues: {
       company_name: "", tax_id: "", email: "", phone: "", address: "", logo_url: "",
+      invoice_title: "", invoice_title_mode: "company", invoice_tax_id_format: "prefixed", invoice_show_tax_id: true,
     },
   });
 
   useEffect(() => {
     if (companyQ.data) {
+      const d = companyQ.data as any;
       form.reset({
-        company_name: companyQ.data.company_name ?? "",
-        tax_id: companyQ.data.tax_id ?? "",
-        email: companyQ.data.email ?? "",
-        phone: companyQ.data.phone ?? "",
-        address: companyQ.data.address ?? "",
-        logo_url: companyQ.data.logo_url ?? "",
+        company_name: d.company_name ?? "",
+        tax_id: d.tax_id ?? "",
+        email: d.email ?? "",
+        phone: d.phone ?? "",
+        address: d.address ?? "",
+        logo_url: d.logo_url ?? "",
+        invoice_title: d.invoice_title ?? "",
+        invoice_title_mode: d.invoice_title_mode ?? "company",
+        invoice_tax_id_format: d.invoice_tax_id_format ?? "prefixed",
+        invoice_show_tax_id: d.invoice_show_tax_id ?? true,
       });
     }
   }, [companyQ.data, form]);
