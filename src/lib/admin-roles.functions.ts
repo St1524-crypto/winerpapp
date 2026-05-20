@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const APP_ROLES = [
   "super_admin",
+  "admin",
   "finance",
   "warehouse",
   "sales",
