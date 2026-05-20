@@ -2178,3 +2178,72 @@ function PaymentStatusCell({
     </DropdownMenu>
   );
 }
+
+// =================== Inline 付款紀錄狀態快速修改 ===================
+const PAYMENT_RECORD_STATUS: Record<string, { label: string; tone: string }> = {
+  pending:   { label: "待處理", tone: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+  completed: { label: "已完成", tone: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  paid:      { label: "已付款", tone: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  failed:    { label: "失敗",   tone: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
+  refunded:  { label: "已退款", tone: "bg-slate-500/15 text-slate-300 border-slate-500/30" },
+};
+
+function PaymentRecordStatusCell({
+  paymentId,
+  value,
+  onChanged,
+}: {
+  paymentId: string;
+  value: string;
+  onChanged: () => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const current = PAYMENT_RECORD_STATUS[value] ?? { label: value, tone: "bg-muted text-muted-foreground" };
+  const options: Array<keyof typeof PAYMENT_RECORD_STATUS> = ["pending", "completed", "failed", "refunded"];
+
+  async function update(next: string) {
+    if (next === value) return;
+    setPending(true);
+    const { error } = await supabase
+      .from("payments")
+      .update({ payment_status: next, paid_at: next === "completed" ? new Date().toISOString() : null })
+      .eq("id", paymentId);
+    setPending(false);
+    if (error) {
+      toast.error("更新付款狀態失敗", { description: error.message });
+      return;
+    }
+    toast.success(`付款狀態已更新為「${PAYMENT_RECORD_STATUS[next]?.label ?? next}」`);
+    onChanged();
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          disabled={pending}
+          className="inline-flex items-center gap-1 disabled:opacity-60"
+          title="點擊修改付款狀態"
+        >
+          <Badge variant="outline" className={`${current.tone} cursor-pointer hover:opacity-80`}>
+            {pending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            {current.label}
+          </Badge>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[140px]">
+        {options.map((k) => (
+          <DropdownMenuItem
+            key={k}
+            onClick={() => update(k)}
+            className="flex items-center justify-between gap-2"
+          >
+            <span>{PAYMENT_RECORD_STATUS[k].label}</span>
+            {k === value && <Check className="h-3.5 w-3.5 text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
