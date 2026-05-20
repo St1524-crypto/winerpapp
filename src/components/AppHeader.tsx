@@ -58,10 +58,7 @@ export function AppHeader() {
           <span className="hidden sm:inline">{inAdmin ? "營運模式" : "管理員模式"}</span>
         </Button>
       )}
-      <Button variant="ghost" size="icon" className="relative">
-        <Bell className="h-4 w-4" />
-        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary shadow-glow" />
-      </Button>
+      <NotificationsBell />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-accent transition-colors">
