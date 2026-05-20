@@ -81,6 +81,14 @@ function SettingsPage() {
     toast.success("已還原預設 Logo");
   }
 
+  if (authLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[40vh]">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   if (!isAdmin) {
     return <ForbiddenScreen requiredRoles={["super_admin", "admin"]} pageName="系統設定" />;
   }
