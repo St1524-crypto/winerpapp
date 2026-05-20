@@ -577,6 +577,38 @@ function OrdersPage() {
         onChanged={refresh}
       />
 
+      {/* 刪除訂單確認 */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleteMut.isPending && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-destructive" />
+              刪除訂單
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              即將永久刪除訂單 <span className="font-mono font-semibold">{deleteTarget?.order_no}</span>
+              （客戶：{deleteTarget?.customer_name}，金額 {fmt(deleteTarget?.total_amount ?? 0)}），
+              同時移除其明細與付款紀錄。此操作無法復原，僅超級管理員可執行。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMut.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMut.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteTarget) deleteMut.mutate(deleteTarget.id);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              確認刪除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
       {/* 批次匯出進度 */}
       <Dialog
         open={batchPrinting}
