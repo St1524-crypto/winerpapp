@@ -132,7 +132,7 @@ function AuthLayout() {
     }
 
     setCompanyChecked(true);
-  }, [user, loading, companyLoading, companies, current, currentCompanyId, roles, signOut, setCurrent, navigate]);
+  }, [user, loading, companyLoading, companies, current, currentCompanyId, roles, signOut, setCurrent, navigate, pathname]);
 
   if (loading || !user || !mfaChecked || !companyChecked) {
     return (
