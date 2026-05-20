@@ -282,6 +282,7 @@ function OrdersPage() {
         items: (itemsRes.data ?? []) as any,
         payments: (paymentsRes.data ?? []) as any,
         logoUrl,
+        company: companyHeader,
       });
       toast.success("PDF 已產生");
     } catch (e: any) {
