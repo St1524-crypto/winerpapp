@@ -101,7 +101,9 @@ function AdminCompaniesPage() {
           ) : !companiesQ.data?.length ? (
             <div className="py-12 text-center text-sm text-muted-foreground">尚無公司</div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* Desktop table */}
+            <div className="overflow-x-auto hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -161,6 +163,55 @@ function AdminCompaniesPage() {
               </TableBody>
             </Table>
             </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+              {companiesQ.data.map((c) => (
+                <div key={c.id} className="rounded-lg border border-border/60 bg-card p-3 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-12 w-12 shrink-0 rounded-md bg-white ring-1 ring-border flex items-center justify-center overflow-hidden">
+                      {c.logo_url ? (
+                        <img src={c.logo_url} alt={c.company_name} className="h-full w-full object-contain" />
+                      ) : (
+                        <Building2 className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium truncate">{c.company_name}</span>
+                        <Badge variant="outline" className={
+                          c.status === "active"
+                            ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                            : "bg-muted text-muted-foreground"
+                        }>
+                          {c.status === "active" ? "啟用" : c.status}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        統編：{c.tax_id ?? "—"} · 成員 {memberCountQ.data?.[c.id] ?? 0}
+                      </div>
+                      <div className="text-xs mt-1 break-all">{c.email ?? "—"}</div>
+                      {c.phone && <div className="text-xs text-muted-foreground">{c.phone}</div>}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2 border-t border-border/60">
+                    <Button
+                      size="sm" variant="outline" className="flex-1"
+                      onClick={() => setEditCompany(c)}
+                    >
+                      <Pencil className="h-3.5 w-3.5 mr-1" /> 編輯
+                    </Button>
+                    <Button
+                      size="sm" variant="outline" className="flex-1"
+                      onClick={() => setMemberDialogCompany({ id: c.id, name: c.company_name })}
+                    >
+                      <Users className="h-3.5 w-3.5 mr-1" /> 成員
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>
