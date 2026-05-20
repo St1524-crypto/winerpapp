@@ -38,23 +38,23 @@ function ShopHome() {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-10 space-y-12">
+    <div className="container mx-auto px-3 md:px-4 py-4 md:py-10 space-y-8 md:space-y-12">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-primary/5 to-background border border-primary/20 p-8 md:p-16">
+      <section className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-primary/20 via-primary/5 to-background border border-primary/20 p-5 md:p-16">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--primary)_/_10%,_transparent_60%)] opacity-50" />
-        <div className="relative max-w-2xl space-y-4">
+        <div className="relative max-w-2xl space-y-3 md:space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary">
             <Sparkles className="h-3 w-3" /> 2026 春季新品上市
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold leading-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+          <h1 className="text-2xl md:text-5xl font-bold leading-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
             高端品質<br />從源頭嚴選
           </h1>
-          <p className="text-muted-foreground text-sm md:text-base">企業級供應鏈直送 · 全站滿 NT$2,000 免運 · 14 天無痛退換</p>
-          <div className="flex gap-3 pt-2">
-            <Button size="lg" asChild>
+          <p className="text-muted-foreground text-xs md:text-base">企業級供應鏈直送 · 滿 NT$2,000 免運 · 14 天退換</p>
+          <div className="flex gap-2 md:gap-3 pt-1 md:pt-2">
+            <Button size="sm" className="md:h-11 md:px-8 md:text-base" asChild>
               <Link to="/shop/products">立即選購 <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button size="sm" variant="outline" className="md:h-11 md:px-8 md:text-base" asChild>
               <Link to="/shop/products">查看熱銷</Link>
             </Button>
           </div>
