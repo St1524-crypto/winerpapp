@@ -30,6 +30,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
@@ -42,8 +43,38 @@ export const Route = createFileRoute("/_authenticated/admin/companies")({
 function AdminCompaniesPage() {
   const { roles } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
+  const qc = useQueryClient();
+  const { refresh: refreshCompanies } = useCurrentCompany();
   const [memberDialogCompany, setMemberDialogCompany] = useState<{ id: string; name: string } | null>(null);
   const [editCompany, setEditCompany] = useState<any | null>(null);
+
+  const toggleStatus = useMutation({
+    mutationFn: async ({ id, next }: { id: string; next: "active" | "inactive" }) => {
+      const { error } = await supabase
+        .from("companies")
+        .update({ status: next })
+        .eq("id", id);
+      if (error) throw error;
+      return { id, next };
+    },
+    onMutate: async ({ id, next }) => {
+      await qc.cancelQueries({ queryKey: ["admin-companies"] });
+      const prev = qc.getQueryData<any[]>(["admin-companies"]);
+      qc.setQueryData<any[]>(["admin-companies"], (old) =>
+        (old ?? []).map((c) => (c.id === id ? { ...c, status: next } : c)),
+      );
+      return { prev };
+    },
+    onError: (e: any, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["admin-companies"], ctx.prev);
+      toast.error("狀態更新失敗", { description: e?.message ?? "未知錯誤" });
+    },
+    onSuccess: ({ next }) => {
+      toast.success(next === "active" ? "已啟用公司" : "已停用公司");
+      qc.invalidateQueries({ queryKey: ["admin-companies"] });
+      refreshCompanies();
+    },
+  });
 
   const companiesQ = useQuery({
     queryKey: ["admin-companies"],
@@ -136,13 +167,23 @@ function AdminCompaniesPage() {
                     </TableCell>
                     <TableCell>{memberCountQ.data?.[c.id] ?? 0}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={
-                        c.status === "active"
-                          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                          : "bg-muted text-muted-foreground"
-                      }>
-                        {c.status === "active" ? "啟用" : c.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={c.status === "active"}
+                          disabled={toggleStatus.isPending}
+                          onCheckedChange={(checked) =>
+                            toggleStatus.mutate({ id: c.id, next: checked ? "active" : "inactive" })
+                          }
+                          aria-label={c.status === "active" ? "停用此公司" : "啟用此公司"}
+                        />
+                        <Badge variant="outline" className={
+                          c.status === "active"
+                            ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                            : "bg-muted text-muted-foreground"
+                        }>
+                          {c.status === "active" ? "啟用" : "停用"}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
@@ -184,7 +225,7 @@ function AdminCompaniesPage() {
                             ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
                             : "bg-muted text-muted-foreground"
                         }>
-                          {c.status === "active" ? "啟用" : c.status}
+                          {c.status === "active" ? "啟用" : "停用"}
                         </Badge>
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
@@ -194,19 +235,31 @@ function AdminCompaniesPage() {
                       {c.phone && <div className="text-xs text-muted-foreground">{c.phone}</div>}
                     </div>
                   </div>
-                  <div className="flex gap-2 pt-2 border-t border-border/60">
-                    <Button
-                      size="sm" variant="outline" className="flex-1"
-                      onClick={() => setEditCompany(c)}
-                    >
-                      <Pencil className="h-3.5 w-3.5 mr-1" /> 編輯
-                    </Button>
-                    <Button
-                      size="sm" variant="outline" className="flex-1"
-                      onClick={() => setMemberDialogCompany({ id: c.id, name: c.company_name })}
-                    >
-                      <Users className="h-3.5 w-3.5 mr-1" /> 成員
-                    </Button>
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground select-none">
+                      <Switch
+                        checked={c.status === "active"}
+                        disabled={toggleStatus.isPending}
+                        onCheckedChange={(checked) =>
+                          toggleStatus.mutate({ id: c.id, next: checked ? "active" : "inactive" })
+                        }
+                      />
+                      {c.status === "active" ? "啟用中" : "已停用"}
+                    </label>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm" variant="outline"
+                        onClick={() => setEditCompany(c)}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1" /> 編輯
+                      </Button>
+                      <Button
+                        size="sm" variant="outline"
+                        onClick={() => setMemberDialogCompany({ id: c.id, name: c.company_name })}
+                      >
+                        <Users className="h-3.5 w-3.5 mr-1" /> 成員
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
