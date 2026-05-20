@@ -15,10 +15,25 @@ import { Building2, Pencil, Loader2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
 
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+
 export function CurrentCompanyProfileCard() {
-  const { currentCompanyId, refresh } = useCurrentCompany();
+  const { currentCompanyId, companies, setCurrent, refresh } = useCurrentCompany();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
+
+  async function handleSwitch(id: string) {
+    if (id === currentCompanyId) return;
+    setEditing(false);
+    try {
+      await setCurrent(id);
+      toast.success("已切換公司");
+    } catch (e: any) {
+      toast.error("切換失敗", { description: e?.message ?? "未知錯誤" });
+    }
+  }
 
   const companyQ = useQuery({
     queryKey: ["settings-current-company", currentCompanyId],
@@ -137,15 +152,34 @@ export function CurrentCompanyProfileCard() {
 
   return (
     <Card className="bg-card/60 backdrop-blur border-border/60">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 space-y-0">
         <CardTitle className="text-base flex items-center gap-2">
           <Building2 className="h-4 w-4 text-primary" /> 公司資料
         </CardTitle>
-        {!editing && c && (
-          <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-            <Pencil className="h-3.5 w-3.5 mr-1" /> 編輯
-          </Button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={currentCompanyId ?? undefined} onValueChange={handleSwitch}>
+            <SelectTrigger className="h-9 w-full sm:w-[220px]">
+              <SelectValue placeholder="切換公司" />
+            </SelectTrigger>
+            <SelectContent>
+              {companies.map((co) => (
+                <SelectItem key={co.id} value={co.id}>
+                  <span className="flex items-center gap-2">
+                    {co.company_name}
+                    {co.status !== "active" && (
+                      <span className="text-[10px] text-muted-foreground">(停用)</span>
+                    )}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {!editing && c && (
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+              <Pencil className="h-3.5 w-3.5 mr-1" /> 編輯
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {companyQ.isLoading || !c ? (
