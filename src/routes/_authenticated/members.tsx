@@ -12,11 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, Shield, UserCircle } from "lucide-react";
+import { Search, Shield, UserCircle, UserPlus, Pencil } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
+import { useAuth } from "@/hooks/use-auth";
+import { adminCreateMember, adminUpdateMember } from "@/lib/members-admin.functions";
 
-interface Profile { id: string; name: string | null; email: string | null; avatar_url: string | null; created_at: string; }
+interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; }
 interface Member extends Profile { roles: AppRole[]; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
@@ -31,22 +33,29 @@ const ROLE_COLORS: Record<AppRole, string> = {
 };
 
 function Page() {
+  const { roles: myRoles } = useAuth();
+  const isAdmin = myRoles.includes("super_admin") || myRoles.includes("admin");
+
   const [list, setList] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [editing, setEditing] = useState<Member | null>(null);
+  const [editingRoles, setEditingRoles] = useState<Member | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<AppRole[]>([]);
   const [saving, setSaving] = useState(false);
 
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editProfile, setEditProfile] = useState<Member | null>(null);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
+
   async function load() {
     setLoading(true);
-    const [{ data: profiles, error: e1 }, { data: roles, error: e2 }] = await Promise.all([
-      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+    const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }] = await Promise.all([
+      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (e1 || e2) { toast.error(e1?.message ?? e2?.message ?? "載入失敗"); setLoading(false); return; }
     const rolesMap = new Map<string, AppRole[]>();
-    (roles ?? []).forEach((r: any) => {
+    (rolesData ?? []).forEach((r: any) => {
       const arr = rolesMap.get(r.user_id) ?? [];
       arr.push(r.role as AppRole);
       rolesMap.set(r.user_id, arr);
@@ -59,33 +68,74 @@ function Page() {
   const filtered = useMemo(() => list.filter((m) => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return (m.name ?? "").toLowerCase().includes(q) || (m.email ?? "").toLowerCase().includes(q);
+    return (m.name ?? "").toLowerCase().includes(q)
+      || (m.email ?? "").toLowerCase().includes(q)
+      || (m.phone ?? "").toLowerCase().includes(q)
+      || (m.member_no ?? "").toLowerCase().includes(q);
   }), [list, search]);
 
-  function openEdit(m: Member) { setEditing(m); setSelectedRoles([...m.roles]); }
+  function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
+  function openCreate() {
+    setForm({ name: "", email: "", phone: "", password: "" });
+    setCreateOpen(true);
+  }
+  function openEditProfile(m: Member) {
+    setEditProfile(m);
+    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "" });
+  }
+
+  async function submitCreate() {
+    setSaving(true);
+    try {
+      await adminCreateMember({ data: form });
+      toast.success("會員已建立");
+      setCreateOpen(false);
+      load();
+    } catch (e: any) { toast.error(e.message ?? "建立失敗"); }
+    finally { setSaving(false); }
+  }
+
+  async function submitEditProfile() {
+    if (!editProfile) return;
+    setSaving(true);
+    try {
+      await adminUpdateMember({
+        data: {
+          userId: editProfile.id,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          password: form.password || undefined,
+        },
+      });
+      toast.success("資料已更新");
+      setEditProfile(null);
+      load();
+    } catch (e: any) { toast.error(e.message ?? "更新失敗"); }
+    finally { setSaving(false); }
+  }
 
   async function saveRoles() {
-    if (!editing) return;
+    if (!editingRoles) return;
     setSaving(true);
-    const current = new Set(editing.roles);
+    const current = new Set(editingRoles.roles);
     const next = new Set(selectedRoles);
     const toAdd = [...next].filter((r) => !current.has(r));
     const toRemove = [...current].filter((r) => !next.has(r));
     try {
       if (toRemove.length) {
-        const { error } = await supabase.from("user_roles").delete().eq("user_id", editing.id).in("role", toRemove);
+        const { error } = await supabase.from("user_roles").delete().eq("user_id", editingRoles.id).in("role", toRemove);
         if (error) throw error;
       }
       if (toAdd.length) {
-        const { error } = await supabase.from("user_roles").insert(toAdd.map((r) => ({ user_id: editing.id, role: r })));
+        const { error } = await supabase.from("user_roles").insert(toAdd.map((r) => ({ user_id: editingRoles.id, role: r })));
         if (error) throw error;
       }
       toast.success("角色已更新");
-      setEditing(null);
+      setEditingRoles(null);
       load();
-    } catch (e: any) {
-      toast.error(e.message ?? "儲存失敗");
-    } finally { setSaving(false); }
+    } catch (e: any) { toast.error(e.message ?? "儲存失敗"); }
+    finally { setSaving(false); }
   }
 
   function toggleRole(r: AppRole) {
@@ -94,31 +144,43 @@ function Page() {
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><UserCircle className="h-6 w-6 text-primary" />會員管理</h1>
-        <p className="text-sm text-muted-foreground mt-1">管理會員帳號與角色權限指派</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><UserCircle className="h-6 w-6 text-primary" />會員管理</h1>
+          <p className="text-sm text-muted-foreground mt-1">管理會員帳號、基本資料與角色權限</p>
+        </div>
+        {isAdmin && (
+          <Button onClick={openCreate} className="bg-gradient-primary">
+            <UserPlus className="h-4 w-4 mr-2" />新增會員
+          </Button>
+        )}
       </div>
 
       <Card>
         <CardHeader className="pb-3">
           <div className="relative max-w-md">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="搜尋名稱或 Email..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="搜尋姓名 / Email / 電話 / 會員編號..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>會員</TableHead><TableHead>Email</TableHead><TableHead>角色</TableHead>
-                <TableHead>建立日期</TableHead><TableHead className="text-right">操作</TableHead>
+                <TableHead>會員</TableHead>
+                <TableHead>會員編號</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>電話</TableHead>
+                <TableHead>角色</TableHead>
+                <TableHead>建立日期</TableHead>
+                <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}><TableCell colSpan={5}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
+                <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
               )) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-10">尚無會員</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-10">尚無會員</TableCell></TableRow>
               ) : filtered.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell>
@@ -130,7 +192,9 @@ function Page() {
                       <div className="font-medium">{m.name ?? "—"}</div>
                     </div>
                   </TableCell>
+                  <TableCell className="font-mono text-xs">{m.member_no ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{m.email ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{m.phone ?? "—"}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {m.roles.length === 0 ? <span className="text-xs text-muted-foreground">無</span>
@@ -141,7 +205,12 @@ function Page() {
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{new Date(m.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(m)}><Shield className="h-4 w-4 mr-1" />管理角色</Button>
+                    <div className="flex justify-end gap-1">
+                      {isAdmin && (
+                        <Button size="sm" variant="ghost" onClick={() => openEditProfile(m)}><Pencil className="h-4 w-4 mr-1" />編輯</Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => openEditRoles(m)}><Shield className="h-4 w-4 mr-1" />角色</Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -150,19 +219,58 @@ function Page() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
+      {/* Create member */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>新增會員</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1"><Label>姓名 *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="王小明" /></div>
+            <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@example.com" /></div>
+            <div className="space-y-1"><Label>電話號碼</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="0912345678" /></div>
+            <div className="space-y-1"><Label>初始密碼 *</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="至少 6 碼" /></div>
+            <p className="text-[11px] text-muted-foreground">Email 與電話至少需填一項；系統會自動產生會員編號（M 開頭 6 位數字）。</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)}>取消</Button>
+            <Button onClick={submitCreate} disabled={saving || !form.name || !form.password} className="bg-gradient-primary">建立</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit profile */}
+      <Dialog open={!!editProfile} onOpenChange={(v) => !v && setEditProfile(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>編輯會員資料</DialogTitle></DialogHeader>
+          {editProfile && (
+            <div className="space-y-3 py-2">
+              <div className="text-xs text-muted-foreground">會員編號：<span className="font-mono">{editProfile.member_no ?? "—"}</span></div>
+              <div className="space-y-1"><Label>姓名</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+              <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div className="space-y-1"><Label>電話號碼</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+              <div className="space-y-1"><Label>重設密碼 (留空則不變更)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" /></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditProfile(null)}>取消</Button>
+            <Button onClick={submitEditProfile} disabled={saving} className="bg-gradient-primary">儲存</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Roles */}
+      <Dialog open={!!editingRoles} onOpenChange={(v) => !v && setEditingRoles(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>管理角色權限</DialogTitle></DialogHeader>
-          {editing && (
+          {editingRoles && (
             <div className="space-y-4 py-2">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/40">
                 <Avatar className="h-10 w-10">
-                  {editing.avatar_url && <AvatarImage src={editing.avatar_url} />}
-                  <AvatarFallback>{(editing.name ?? editing.email ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
+                  {editingRoles.avatar_url && <AvatarImage src={editingRoles.avatar_url} />}
+                  <AvatarFallback>{(editingRoles.name ?? editingRoles.email ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium">{editing.name ?? "—"}</div>
-                  <div className="text-xs text-muted-foreground">{editing.email}</div>
+                  <div className="font-medium">{editingRoles.name ?? "—"}</div>
+                  <div className="text-xs text-muted-foreground">{editingRoles.email}</div>
                 </div>
               </div>
               <div className="space-y-2">
@@ -179,7 +287,7 @@ function Page() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditing(null)}>取消</Button>
+            <Button variant="ghost" onClick={() => setEditingRoles(null)}>取消</Button>
             <Button onClick={saveRoles} disabled={saving} className="bg-gradient-primary">儲存</Button>
           </DialogFooter>
         </DialogContent>
