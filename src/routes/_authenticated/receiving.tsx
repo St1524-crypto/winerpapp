@@ -46,6 +46,9 @@ function Page() {
   const [editNotes, setEditNotes] = useState("");
   const [editWarehouseId, setEditWarehouseId] = useState<string>("");
   const [delGr, setDelGr] = useState<GR | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerPOs, setPickerPOs] = useState<PO[]>([]);
+  const [pickerSearch, setPickerSearch] = useState("");
 
   async function load() {
     setLoading(true);
