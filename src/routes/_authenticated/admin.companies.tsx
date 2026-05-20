@@ -225,7 +225,7 @@ function AdminCompaniesPage() {
                             ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
                             : "bg-muted text-muted-foreground"
                         }>
-                          {c.status === "active" ? "啟用" : c.status}
+                          {c.status === "active" ? "啟用" : "停用"}
                         </Badge>
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
