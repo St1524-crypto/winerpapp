@@ -54,32 +54,53 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const { data: mems, error: memErr } = await supabase
-        .from("company_members")
-        .select("role, company_id, companies:company_id(id, company_name, status, logo_url, tax_id, phone, address, email)")
-        .eq("user_id", user.id);
-      if (memErr) {
-        console.error("[use-current-company] load members error:", memErr);
-        throw memErr;
-      }
+      let list: CompanyOption[] = [];
 
-      const list: CompanyOption[] = (mems ?? [])
-        .map((m: any) => {
-          const c = Array.isArray(m.companies) ? m.companies[0] : m.companies;
-          if (!c) return null;
-          return {
-            id: c.id,
-            company_name: c.company_name,
-            status: c.status,
-            logo_url: c.logo_url ?? null,
-            role: m.role,
-            tax_id: c.tax_id ?? null,
-            phone: c.phone ?? null,
-            address: c.address ?? null,
-            email: c.email ?? null,
-          };
-        })
-        .filter(Boolean) as CompanyOption[];
+      if (isSuperAdmin) {
+        // super_admin 可看見所有公司，不受 company_members 限制
+        const { data: allCos, error: coErr } = await supabase
+          .from("companies")
+          .select("id, company_name, status, logo_url, tax_id, phone, address, email")
+          .order("created_at", { ascending: true });
+        if (coErr) throw coErr;
+        list = (allCos ?? []).map((c: any) => ({
+          id: c.id,
+          company_name: c.company_name,
+          status: c.status,
+          logo_url: c.logo_url ?? null,
+          role: "super_admin",
+          tax_id: c.tax_id ?? null,
+          phone: c.phone ?? null,
+          address: c.address ?? null,
+          email: c.email ?? null,
+        }));
+      } else {
+        const { data: mems, error: memErr } = await supabase
+          .from("company_members")
+          .select("role, company_id, companies:company_id(id, company_name, status, logo_url, tax_id, phone, address, email)")
+          .eq("user_id", user.id);
+        if (memErr) {
+          console.error("[use-current-company] load members error:", memErr);
+          throw memErr;
+        }
+        list = (mems ?? [])
+          .map((m: any) => {
+            const c = Array.isArray(m.companies) ? m.companies[0] : m.companies;
+            if (!c) return null;
+            return {
+              id: c.id,
+              company_name: c.company_name,
+              status: c.status,
+              logo_url: c.logo_url ?? null,
+              role: m.role,
+              tax_id: c.tax_id ?? null,
+              phone: c.phone ?? null,
+              address: c.address ?? null,
+              email: c.email ?? null,
+            };
+          })
+          .filter(Boolean) as CompanyOption[];
+      }
 
       setCompanies(list);
 
