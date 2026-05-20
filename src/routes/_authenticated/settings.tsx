@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/settings")({ component: Se
 interface BrandItem { name: string; url: string; }
 
 function SettingsPage() {
-  const { roles } = useAuth();
+  const { roles, loading: authLoading } = useAuth();
   const isAdmin = roles.includes("super_admin") || roles.includes("admin");
   const { logoUrl, setLogoUrl } = useBranding();
   const [items, setItems] = useState<BrandItem[]>([]);
