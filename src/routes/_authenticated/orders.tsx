@@ -1504,13 +1504,14 @@ function OrderDetailDialog({
                           <TableCell className="text-sm">{PAYMENT_METHOD_LABEL[p.payment_method] ?? p.payment_method}</TableCell>
                           <TableCell className="font-mono text-xs">{p.transaction_id ?? "—"}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={
-                              p.payment_status === "completed"
-                                ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                                : "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                            }>
-                              {p.payment_status === "completed" ? "已完成" : p.payment_status}
-                            </Badge>
+                            <PaymentRecordStatusCell
+                              paymentId={p.id}
+                              value={p.payment_status}
+                              onChanged={() => {
+                                qc.invalidateQueries({ queryKey: ["sales-order-detail", orderId] });
+                                onChanged();
+                              }}
+                            />
                           </TableCell>
                           <TableCell className="text-right font-medium">{fmt(p.amount)}</TableCell>
                         </TableRow>
