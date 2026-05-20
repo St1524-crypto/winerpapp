@@ -304,7 +304,7 @@ export function CompaniesAdminTable() {
                         <Switch
                           checked={row.status === "active"}
                           disabled={statusMut.isPending}
-                          onCheckedChange={(c) => statusMut.mutate({ id: row.id, next: c ? "active" : "inactive" })}
+                          onCheckedChange={(c) => statusMut.mutate({ row, next: c ? "active" : "inactive" })}
                           aria-label="切換啟用"
                         />
                         <Badge variant="outline" className={
