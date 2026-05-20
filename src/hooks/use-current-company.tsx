@@ -55,7 +55,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     try {
       const { data: mems, error: memErr } = await supabase
         .from("company_members")
-        .select("role, company_id, companies:company_id(id, company_name, status, logo_url)")
+        .select("role, company_id, companies:company_id(id, company_name, status, logo_url, tax_id, phone, address, email)")
         .eq("user_id", user.id);
       if (memErr) {
         console.error("[use-current-company] load members error:", memErr);
@@ -72,6 +72,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
             status: c.status,
             logo_url: c.logo_url ?? null,
             role: m.role,
+            tax_id: c.tax_id ?? null,
+            phone: c.phone ?? null,
+            address: c.address ?? null,
+            email: c.email ?? null,
           };
         })
         .filter(Boolean) as CompanyOption[];
