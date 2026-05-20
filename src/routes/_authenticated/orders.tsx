@@ -147,6 +147,16 @@ function OrdersPage() {
   >([]);
   const batchAbortRef = useRef<AbortController | null>(null);
   const { logoUrl } = useBranding();
+  const { current: currentCompany } = useCurrentCompany();
+  const companyHeader = currentCompany
+    ? {
+        name: currentCompany.company_name,
+        tax_id: currentCompany.tax_id,
+        phone: currentCompany.phone,
+        address: currentCompany.address,
+        email: currentCompany.email,
+      }
+    : null;
   const { roles } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
   const [deleteTarget, setDeleteTarget] = useState<OrderRow | null>(null);
