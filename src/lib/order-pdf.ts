@@ -130,8 +130,9 @@ function buildOrderHtml(data: Omit<OrderPdfData, "logoUrl">, logoData: string): 
           <img src="${logoData}" style="width:100%;height:100%;object-fit:contain" crossorigin="anonymous" />
         </div>
         <div style="flex:1">
-          <div style="font-size:18px;font-weight:700;letter-spacing:0.02em">源倍力 ERP 管理系統</div>
+          <div style="font-size:18px;font-weight:700;letter-spacing:0.02em">${esc(brandName)}</div>
           <div style="font-size:11px;color:#64748b;letter-spacing:0.18em;text-transform:uppercase;margin-top:2px">Sales Order</div>
+          ${companyMetaHtml}
         </div>
         <div style="text-align:right;font-size:11px;color:#64748b">
           <div>列印時間</div>
