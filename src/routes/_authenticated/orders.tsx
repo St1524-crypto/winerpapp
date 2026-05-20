@@ -147,6 +147,24 @@ function OrdersPage() {
   >([]);
   const batchAbortRef = useRef<AbortController | null>(null);
   const { logoUrl } = useBranding();
+  const { roles } = useAuth();
+  const isSuperAdmin = roles.includes("super_admin");
+  const [deleteTarget, setDeleteTarget] = useState<OrderRow | null>(null);
+  const deleteFn = useServerFn(deleteSalesOrder);
+  const deleteMut = useMutation({
+    mutationFn: (orderId: string) => deleteFn({ data: { orderId } }),
+    onSuccess: () => {
+      toast.success(`已刪除訂單 ${deleteTarget?.order_no ?? ""}`);
+      setDeleteTarget(null);
+      setSelected((s) => {
+        const n = new Set(s);
+        if (deleteTarget) n.delete(deleteTarget.id);
+        return n;
+      });
+      qc.invalidateQueries({ queryKey: ["sales-orders"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "刪除失敗"),
+  });
 
   function toggleSelect(id: string) {
     setSelected((s) => {
