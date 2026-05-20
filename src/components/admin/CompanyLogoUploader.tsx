@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Building2, Upload, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { uploadBrandingLogo } from "@/lib/branding.functions";
 
 interface Props {
   value: string | null | undefined;
@@ -14,6 +15,7 @@ interface Props {
 export function CompanyLogoUploader({ value, onChange, disabled }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const uploadLogo = useServerFn(uploadBrandingLogo);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -22,21 +24,10 @@ export function CompanyLogoUploader({ value, onChange, disabled }: Props) {
     if (!file.type.startsWith("image/")) { toast.error("僅支援圖片檔"); return; }
     setBusy(true);
     try {
-      const safeName = file.name.toLowerCase().replace(/[^a-z0-9.\-_]/g, "_");
-      const ext = safeName.split(".").pop() || "png";
-      const rand = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
-      const path = `companies/${rand}.${ext}`;
-      const { error } = await supabase.storage
-        .from("branding")
-        .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
-      if (error) {
-        const msg = error.message || "";
-        if (msg.toLowerCase().includes("row-level security") || msg.toLowerCase().includes("policy")) {
-          throw new Error("您沒有上傳 Logo 的權限（需 super_admin 或 admin）");
-        }
-        throw error;
-      }
-      const { data } = supabase.storage.from("branding").getPublicUrl(path);
+      const base64 = await fileToBase64(file);
+      const data = await uploadLogo({
+        data: { fileName: file.name, contentType: file.type, base64, folder: "companies" },
+      });
       onChange(data.publicUrl);
       toast.success("Logo 已上傳");
     } catch (err: any) {
@@ -86,4 +77,16 @@ export function CompanyLogoUploader({ value, onChange, disabled }: Props) {
       </div>
     </div>
   );
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result ?? "");
+      resolve(result.includes(",") ? result.split(",")[1] : result);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("讀取檔案失敗"));
+    reader.readAsDataURL(file);
+  });
 }
