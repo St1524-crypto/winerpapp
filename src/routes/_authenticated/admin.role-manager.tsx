@@ -37,6 +37,7 @@ export const Route = createFileRoute("/_authenticated/admin/role-manager")({
 
 const ROLE_LABELS: Record<AppRole, string> = {
   super_admin: "超級管理員",
+  admin: "管理員",
   finance: "財務",
   warehouse: "倉儲",
   sales: "業務",
@@ -46,6 +47,7 @@ const ROLE_LABELS: Record<AppRole, string> = {
 
 const ROLE_TONES: Record<AppRole, string> = {
   super_admin: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+  admin: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
   finance: "bg-amber-500/15 text-amber-400 border-amber-500/30",
   warehouse: "bg-sky-500/15 text-sky-400 border-sky-500/30",
   sales: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
