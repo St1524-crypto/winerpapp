@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { useCart } from "@/hooks/use-cart";
+import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw, Minus, Plus, ChevronRight } from "lucide-react";
 import type { Product, ProductImage } from "@/types/product";
 
@@ -118,9 +119,12 @@ function ProductDetail() {
           {product.short_description && <p className="text-sm text-muted-foreground leading-relaxed">{product.short_description}</p>}
 
           <div className="flex items-baseline gap-3 py-2 border-y border-border/60">
-            <span className="text-3xl md:text-4xl font-bold text-primary tabular-nums">NT$ {product.price.toLocaleString()}</span>
-            {product.wholesale_price > 0 && product.wholesale_price < product.price && (
-              <span className="text-sm text-muted-foreground line-through tabular-nums">NT$ {product.wholesale_price.toLocaleString()}</span>
+            <span className="text-3xl md:text-4xl font-bold text-primary tabular-nums">NT$ {effPrice.toLocaleString()}</span>
+            {showDealer && (
+              <>
+                <span className="text-sm text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</span>
+                <Badge variant="outline" className="border-emerald-500 text-emerald-600">經銷價</Badge>
+              </>
             )}
           </div>
 
