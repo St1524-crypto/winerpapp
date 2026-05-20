@@ -858,6 +858,7 @@ function EditCompanyDialog({
                 value={logoUrl}
                 onChange={(url) => form.setValue("logo_url", url ?? "", { shouldDirty: true })}
                 disabled={m.isPending}
+                companyId={company.id}
               />
             </FormItem>
             <FormField

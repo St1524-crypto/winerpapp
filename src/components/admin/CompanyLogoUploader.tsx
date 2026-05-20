@@ -10,9 +10,11 @@ interface Props {
   value: string | null | undefined;
   onChange: (url: string | null) => void;
   disabled?: boolean;
+  /** 若已知公司 ID，Logo 會上傳到該公司專屬資料夾並啟用跨租戶隔離檢查 */
+  companyId?: string | null;
 }
 
-export function CompanyLogoUploader({ value, onChange, disabled }: Props) {
+export function CompanyLogoUploader({ value, onChange, disabled, companyId }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const uploadLogo = useServerFn(uploadBrandingLogo);
@@ -26,7 +28,12 @@ export function CompanyLogoUploader({ value, onChange, disabled }: Props) {
     try {
       const base64 = await fileToBase64(file);
       const data = await uploadLogo({
-        data: { fileName: file.name, contentType: file.type, base64, folder: "companies" },
+        data: {
+          fileName: file.name,
+          contentType: file.type,
+          base64,
+          ...(companyId ? { companyId } : {}),
+        },
       });
       onChange(data.publicUrl);
       toast.success("Logo 已上傳");
