@@ -269,12 +269,21 @@ function AdminCompaniesPage() {
                   <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
                     <div className="px-3 pb-3 space-y-3">
                       <dl className="grid grid-cols-3 gap-y-2 gap-x-3 text-xs border-t border-border/60 pt-3">
-                        <dt className="text-muted-foreground">統一編號</dt>
-                        <dd className="col-span-2 font-medium">{c.tax_id ?? "—"}</dd>
-                        <dt className="text-muted-foreground">電話</dt>
-                        <dd className="col-span-2">{c.phone ?? "—"}</dd>
-                        <dt className="text-muted-foreground">Email</dt>
-                        <dd className="col-span-2 break-all">{c.email ?? "—"}</dd>
+                        <dt className="text-muted-foreground self-center">統一編號</dt>
+                        <dd className="col-span-2 font-medium flex items-center gap-1">
+                          <span className="flex-1">{c.tax_id ?? "—"}</span>
+                          {c.tax_id && <CopyButton value={c.tax_id} label="統編" />}
+                        </dd>
+                        <dt className="text-muted-foreground self-center">電話</dt>
+                        <dd className="col-span-2 flex items-center gap-1">
+                          <span className="flex-1">{c.phone ?? "—"}</span>
+                          {c.phone && <CopyButton value={c.phone} label="電話" />}
+                        </dd>
+                        <dt className="text-muted-foreground self-center">Email</dt>
+                        <dd className="col-span-2 break-all flex items-center gap-1">
+                          <span className="flex-1 break-all">{c.email ?? "—"}</span>
+                          {c.email && <CopyButton value={c.email} label="Email" />}
+                        </dd>
                         <dt className="text-muted-foreground">成員數</dt>
                         <dd className="col-span-2">{memberCountQ.data?.[c.id] ?? 0} 人</dd>
                         {c.address && (
