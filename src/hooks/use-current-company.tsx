@@ -36,7 +36,8 @@ const Ctx = createContext<CompanyCtx>({
 });
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const isSuperAdmin = roles.includes("super_admin");
   const qc = useQueryClient();
   const [currentCompanyId, setCurrentCompanyId] = useState<string | null>(null);
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
