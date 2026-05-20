@@ -12,13 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, Shield, UserCircle, UserPlus, Pencil } from "lucide-react";
+import { Search, Shield, UserCircle, UserPlus, Pencil, Handshake } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember } from "@/lib/members-admin.functions";
 
-interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; }
+interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; }
 interface Member extends Profile { roles: AppRole[]; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
@@ -50,7 +50,7 @@ function Page() {
   async function load() {
     setLoading(true);
     const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (e1 || e2) { toast.error(e1?.message ?? e2?.message ?? "載入失敗"); setLoading(false); return; }
@@ -142,6 +142,14 @@ function Page() {
     setSelectedRoles((s) => s.includes(r) ? s.filter((x) => x !== r) : [...s, r]);
   }
 
+  async function toggleDealer(m: Member) {
+    const next = !m.is_dealer;
+    const { error } = await supabase.from("profiles").update({ is_dealer: next } as any).eq("id", m.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? `已將 ${m.name ?? "會員"} 設為經銷商` : `已取消 ${m.name ?? "會員"} 的經銷商身份`);
+    setList((ls) => ls.map((x) => x.id === m.id ? { ...x, is_dealer: next } : x));
+  }
+
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -172,15 +180,16 @@ function Page() {
                 <TableHead>Email</TableHead>
                 <TableHead>電話</TableHead>
                 <TableHead>角色</TableHead>
+                <TableHead>經銷商</TableHead>
                 <TableHead>建立日期</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
+                <TableRow key={i}><TableCell colSpan={8}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
               )) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-10">尚無會員</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-10">尚無會員</TableCell></TableRow>
               ) : filtered.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell>
@@ -203,11 +212,22 @@ function Page() {
                         ))}
                     </div>
                   </TableCell>
+                  <TableCell>
+                    {m.is_dealer
+                      ? <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30" variant="outline">經銷商</Badge>
+                      : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{new Date(m.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       {isAdmin && (
-                        <Button size="sm" variant="ghost" onClick={() => openEditProfile(m)}><Pencil className="h-4 w-4 mr-1" />編輯</Button>
+                        <>
+                          <Button size="sm" variant="ghost" onClick={() => toggleDealer(m)} title="切換經銷商">
+                            <Handshake className={`h-4 w-4 mr-1 ${m.is_dealer ? "text-emerald-600" : ""}`} />
+                            {m.is_dealer ? "取消經銷" : "設為經銷"}
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => openEditProfile(m)}><Pencil className="h-4 w-4 mr-1" />編輯</Button>
+                        </>
                       )}
                       <Button size="sm" variant="ghost" onClick={() => openEditRoles(m)}><Shield className="h-4 w-4 mr-1" />角色</Button>
                     </div>

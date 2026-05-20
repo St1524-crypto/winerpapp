@@ -9,6 +9,7 @@ export interface CartItem {
     name: string;
     sku: string;
     price: number;
+    wholesale_price?: number;
     image: string | null;
     stock: number;
     status: string;

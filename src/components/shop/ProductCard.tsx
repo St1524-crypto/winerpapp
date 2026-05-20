@@ -3,10 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
+import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import type { Product } from "@/types/product";
 
 export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const isDealer = useIsDealer();
+  const price = getEffectivePrice(product, isDealer);
+  const showDealer = isDealer && product.wholesale_price > 0 && product.wholesale_price < product.price;
   const outOfStock = product.stock <= 0;
 
   return (
@@ -33,7 +37,10 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="text-[11px] text-muted-foreground">{product.sku}</div>
         <div className="flex items-end justify-between pt-1">
           <div>
-            <div className="text-lg font-bold text-primary tabular-nums">NT$ {product.price.toLocaleString()}</div>
+            <div className="text-lg font-bold text-primary tabular-nums">NT$ {price.toLocaleString()}</div>
+            {showDealer && (
+              <div className="text-[11px] text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</div>
+            )}
           </div>
           <Button
             size="icon"

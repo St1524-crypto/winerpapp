@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { useAddresses } from "@/hooks/use-addresses";
+import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { buildShippingSnapshot } from "@/lib/order-snapshot";
 
 export const Route = createFileRoute("/shop/checkout")({
@@ -27,6 +28,7 @@ const FREE_SHIPPING = 2000;
 function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
   const { items, subtotal, clear } = useCart();
+  const isDealer = useIsDealer();
   const { addresses, defaultAddress, loading: addrLoading } = useAddresses();
   const navigate = useNavigate();
 
@@ -111,17 +113,20 @@ function CheckoutPage() {
       if (oErr) throw oErr;
 
       const prodCompanyMap = new Map(prodRows?.map((p: any) => [p.id, p.company_id]) ?? []);
-      const rows = items.map((it) => ({
-        sales_order_id: order.id,
-        company_id: (prodCompanyMap.get(it.product_id) as string) ?? companyId,
-        product_id: it.product_id,
-        product_name: it.product?.name ?? "",
-        sku: it.product?.sku ?? null,
-        image: it.product?.image ?? null,
-        unit_price: it.product?.price ?? 0,
-        quantity: it.quantity,
-        subtotal: (it.product?.price ?? 0) * it.quantity,
-      }));
+      const rows = items.map((it) => {
+        const unit = getEffectivePrice(it.product as any, isDealer);
+        return {
+          sales_order_id: order.id,
+          company_id: (prodCompanyMap.get(it.product_id) as string) ?? companyId,
+          product_id: it.product_id,
+          product_name: it.product?.name ?? "",
+          sku: it.product?.sku ?? null,
+          image: it.product?.image ?? null,
+          unit_price: unit,
+          quantity: it.quantity,
+          subtotal: unit * it.quantity,
+        };
+      });
       const { error: iErr } = await supabase.from("sales_order_items").insert(rows);
       if (iErr) throw iErr;
 
@@ -223,7 +228,7 @@ function CheckoutPage() {
                     <div className="truncate text-xs">{it.product?.name}</div>
                     <div className="text-[11px] text-muted-foreground">× {it.quantity}</div>
                   </div>
-                  <div className="tabular-nums text-xs">NT$ {((it.product?.price ?? 0) * it.quantity).toLocaleString()}</div>
+                  <div className="tabular-nums text-xs">NT$ {(getEffectivePrice(it.product as any, isDealer) * it.quantity).toLocaleString()}</div>
                 </div>
               ))}
               {items.length === 0 && <div className="text-muted-foreground text-center py-4">購物車為空</div>}

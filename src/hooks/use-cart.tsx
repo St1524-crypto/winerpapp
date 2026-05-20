@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import type { CartItem } from "@/types/shop";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ const CartContext = createContext<CartCtx>({
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const isDealer = useIsDealer();
   const [cartId, setCartId] = useState<string | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +86,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setCartId(id);
       const { data } = await supabase
         .from("cart_items")
-        .select("*, product:products(id, name, sku, price, image, stock, status)")
+        .select("*, product:products(id, name, sku, price, wholesale_price, image, stock, status)")
         .eq("cart_id", id)
         .order("created_at", { ascending: false });
       setItems((data ?? []) as unknown as CartItem[]);
@@ -129,7 +131,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const count = items.reduce((s, i) => s + i.quantity, 0);
-  const subtotal = items.reduce((s, i) => s + (i.product?.price ?? 0) * i.quantity, 0);
+  const subtotal = items.reduce((s, i) => s + getEffectivePrice(i.product as any, isDealer) * i.quantity, 0);
 
   return (
     <CartContext.Provider value={{ cartId, items, loading, count, subtotal, open, setOpen, addItem, updateQty, removeItem, clear, refresh }}>

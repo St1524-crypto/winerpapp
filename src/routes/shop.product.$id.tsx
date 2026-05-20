@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { useCart } from "@/hooks/use-cart";
+import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw, Minus, Plus, ChevronRight } from "lucide-react";
 import type { Product, ProductImage } from "@/types/product";
 
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/shop/product/$id")({
 function ProductDetail() {
   const { id } = Route.useParams();
   const { addItem } = useCart();
+  const isDealer = useIsDealer();
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [related, setRelated] = useState<Product[]>([]);
@@ -71,6 +73,8 @@ function ProductDetail() {
 
   const gallery = [...(product.image ? [{ id: "main", image_url: product.image, product_id: id, sort_order: -1, created_at: "" }] : []), ...images];
   const outOfStock = product.stock <= 0;
+  const effPrice = getEffectivePrice(product, isDealer);
+  const showDealer = isDealer && product.wholesale_price > 0 && product.wholesale_price < product.price;
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-10">
@@ -118,9 +122,12 @@ function ProductDetail() {
           {product.short_description && <p className="text-sm text-muted-foreground leading-relaxed">{product.short_description}</p>}
 
           <div className="flex items-baseline gap-3 py-2 border-y border-border/60">
-            <span className="text-3xl md:text-4xl font-bold text-primary tabular-nums">NT$ {product.price.toLocaleString()}</span>
-            {product.wholesale_price > 0 && product.wholesale_price < product.price && (
-              <span className="text-sm text-muted-foreground line-through tabular-nums">NT$ {product.wholesale_price.toLocaleString()}</span>
+            <span className="text-3xl md:text-4xl font-bold text-primary tabular-nums">NT$ {effPrice.toLocaleString()}</span>
+            {showDealer && (
+              <>
+                <span className="text-sm text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</span>
+                <Badge variant="outline" className="border-emerald-500 text-emerald-600">經銷價</Badge>
+              </>
             )}
           </div>
 
