@@ -56,6 +56,7 @@ import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 
@@ -305,6 +306,12 @@ const ShopAccountOrdersIdRoute = ShopAccountOrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ShopAccountOrdersRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedB2bAccountsIdRoute =
   AuthenticatedB2bAccountsIdRouteImport.update({
     id: '/$id',
@@ -366,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
 export interface FileRoutesByTo {
@@ -413,6 +421,7 @@ export interface FileRoutesByTo {
   '/shop/account': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
 export interface FileRoutesById {
@@ -465,6 +474,7 @@ export interface FileRoutesById {
   '/shop/account/': typeof ShopAccountIndexRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
 export interface FileRouteTypes {
@@ -517,6 +527,7 @@ export interface FileRouteTypes {
     | '/shop/account/'
     | '/admin/companies/new'
     | '/b2b/accounts/$id'
+    | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -564,6 +575,7 @@ export interface FileRouteTypes {
     | '/shop/account'
     | '/admin/companies/new'
     | '/b2b/accounts/$id'
+    | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
   id:
     | '__root__'
@@ -615,6 +627,7 @@ export interface FileRouteTypes {
     | '/shop/account/'
     | '/_authenticated/admin/companies/new'
     | '/_authenticated/b2b/accounts/$id'
+    | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
   fileRoutesById: FileRoutesById
 }
@@ -625,6 +638,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRouteWithChildren
   TwoFactorRoute: typeof TwoFactorRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -958,6 +972,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopAccountOrdersIdRouteImport
       parentRoute: typeof ShopAccountOrdersRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/b2b/accounts/$id': {
       id: '/_authenticated/b2b/accounts/$id'
       path: '/$id'
@@ -1159,6 +1180,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRouteWithChildren,
   TwoFactorRoute: TwoFactorRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
