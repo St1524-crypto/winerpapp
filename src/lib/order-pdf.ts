@@ -76,7 +76,17 @@ async function urlToDataUrl(url: string): Promise<string> {
 }
 
 function buildOrderHtml(data: Omit<OrderPdfData, "logoUrl">, logoData: string): string {
-  const { order, items, payments } = data;
+  const { order, items, payments, company } = data;
+  const brandName = company?.name?.trim() || "源倍力 ERP 管理系統";
+  const companyMetaParts = [
+    company?.tax_id ? `統編：${esc(company.tax_id)}` : null,
+    company?.phone ? `電話：${esc(company.phone)}` : null,
+    company?.email ? `Email：${esc(company.email)}` : null,
+    company?.address ? `地址：${esc(company.address)}` : null,
+  ].filter(Boolean);
+  const companyMetaHtml = companyMetaParts.length
+    ? `<div style="font-size:11px;color:#475569;margin-top:4px;line-height:1.55">${companyMetaParts.join(" ｜ ")}</div>`
+    : "";
   const now = new Date().toLocaleString("zh-TW", { hour12: false });
   const created = new Date(order.created_at).toLocaleString("zh-TW", { hour12: false });
 
