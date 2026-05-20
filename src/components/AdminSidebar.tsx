@@ -4,6 +4,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { useBranding } from "@/hooks/use-branding";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import { useAuth } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import {
