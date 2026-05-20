@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
 import { CopyButton } from "@/components/CopyButton";
+import { AUTHORIZED_COMPANY_CREATOR_EMAIL, canCreateCompany } from "@/lib/company-creator";
 
 
 export const Route = createFileRoute("/_authenticated/admin/companies")({
