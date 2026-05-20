@@ -240,6 +240,7 @@ export function CurrentCompanyProfileCard() {
                       value={logoUrl}
                       onChange={(url) => form.setValue("logo_url", url ?? "", { shouldDirty: true })}
                       disabled={m.isPending}
+                      companyId={c.id}
                     />
                   </FormControl>
                   <FormMessage />
