@@ -139,6 +139,7 @@ function Page() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -173,6 +174,7 @@ function Page() {
               })}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

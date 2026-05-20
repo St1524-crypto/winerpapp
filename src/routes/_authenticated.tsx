@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/
 import { useEffect, useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { AdminMobileNav } from "@/components/AdminMobileNav";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/hooks/use-auth";
@@ -63,9 +64,10 @@ function AuthLayout() {
         {inAdmin ? <AdminSidebar /> : <AppSidebar />}
         <div className="flex-1 flex flex-col min-w-0">
           <AppHeader />
-          <main className="flex-1 p-4 md:p-6 lg:p-8 animate-in fade-in duration-300">
+          <main className="flex-1 p-4 md:p-6 lg:p-8 pb-20 md:pb-8 animate-in fade-in duration-300">
             <Outlet />
           </main>
+          <AdminMobileNav />
         </div>
       </div>
     </SidebarProvider>

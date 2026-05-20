@@ -141,6 +141,7 @@ function Page() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -169,6 +170,7 @@ function Page() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -186,6 +188,7 @@ function Page() {
               </div>
             </div>
             <div className="border rounded-lg">
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -215,6 +218,7 @@ function Page() {
                   })}
                 </TableBody>
               </Table>
+              </div>
             </div>
             <div className="space-y-2"><Label>備註</Label><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           </div>

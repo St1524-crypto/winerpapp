@@ -101,6 +101,7 @@ function AdminCompaniesPage() {
           ) : !companiesQ.data?.length ? (
             <div className="py-12 text-center text-sm text-muted-foreground">尚無公司</div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -159,6 +160,7 @@ function AdminCompaniesPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -492,6 +494,7 @@ function CompanyMembersDialog({
           ) : !membersQ.data?.length ? (
             <div className="py-8 text-center text-sm text-muted-foreground">尚無成員</div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -523,6 +526,7 @@ function CompanyMembersDialog({
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </div>
       </DialogContent>

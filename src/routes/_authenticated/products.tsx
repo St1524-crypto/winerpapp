@@ -126,6 +126,7 @@ function ProductsPage() {
           </div>
 
           <div className="rounded-lg border border-border overflow-hidden">
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
@@ -194,6 +195,7 @@ function ProductsPage() {
                 })}
               </TableBody>
             </Table>
+            </div>
           </div>
 
           <div className="flex items-center justify-between text-sm text-muted-foreground">
