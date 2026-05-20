@@ -450,6 +450,17 @@ function OrdersPage() {
                           : <Printer className="h-3.5 w-3.5 mr-1" />}
                         列印
                       </Button>
+                      {isSuperAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeleteTarget(o)}
+                          className="text-destructive border-destructive/40 hover:bg-destructive/10"
+                          title="刪除訂單"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
