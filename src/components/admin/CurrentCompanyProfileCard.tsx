@@ -4,7 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentCompany } from "@/hooks/use-current-company";
-import { companySchema, type CompanyFormValues } from "@/lib/company-schema";
+import {
+  companySchema, type CompanyFormValues,
+  INVOICE_TITLE_MODES, INVOICE_TAX_ID_FORMATS,
+  INVOICE_TITLE_MODE_LABEL, INVOICE_TAX_ID_FORMAT_LABEL,
+  formatInvoiceTaxId, resolveInvoiceTitle, type InvoiceTitleMode, type InvoiceTaxIdFormat,
+} from "@/lib/company-schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,7 +67,7 @@ export function CurrentCompanyProfileCard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("id, company_name, tax_id, email, phone, address, logo_url, status")
+        .select("id, company_name, tax_id, email, phone, address, logo_url, status, invoice_title, invoice_title_mode, invoice_tax_id_format, invoice_show_tax_id")
         .eq("id", currentCompanyId!)
         .maybeSingle();
       if (error) throw error;
@@ -75,18 +80,24 @@ export function CurrentCompanyProfileCard() {
     mode: "onChange",
     defaultValues: {
       company_name: "", tax_id: "", email: "", phone: "", address: "", logo_url: "",
+      invoice_title: "", invoice_title_mode: "company", invoice_tax_id_format: "prefixed", invoice_show_tax_id: true,
     },
   });
 
   useEffect(() => {
     if (companyQ.data) {
+      const d = companyQ.data as any;
       form.reset({
-        company_name: companyQ.data.company_name ?? "",
-        tax_id: companyQ.data.tax_id ?? "",
-        email: companyQ.data.email ?? "",
-        phone: companyQ.data.phone ?? "",
-        address: companyQ.data.address ?? "",
-        logo_url: companyQ.data.logo_url ?? "",
+        company_name: d.company_name ?? "",
+        tax_id: d.tax_id ?? "",
+        email: d.email ?? "",
+        phone: d.phone ?? "",
+        address: d.address ?? "",
+        logo_url: d.logo_url ?? "",
+        invoice_title: d.invoice_title ?? "",
+        invoice_title_mode: d.invoice_title_mode ?? "company",
+        invoice_tax_id_format: d.invoice_tax_id_format ?? "prefixed",
+        invoice_show_tax_id: d.invoice_show_tax_id ?? true,
       });
     }
   }, [companyQ.data, form]);
@@ -127,7 +138,11 @@ export function CurrentCompanyProfileCard() {
           phone: (values.phone ?? "").trim() || null,
           address: (values.address ?? "").trim() || null,
           logo_url: (values.logo_url ?? "") || null,
-        })
+          invoice_title: (values.invoice_title ?? "").trim() || null,
+          invoice_title_mode: values.invoice_title_mode,
+          invoice_tax_id_format: values.invoice_tax_id_format,
+          invoice_show_tax_id: values.invoice_show_tax_id,
+        } as any)
         .eq("id", currentCompanyId);
       if (error) {
         if (error.code === "23505") {
@@ -227,6 +242,19 @@ export function CurrentCompanyProfileCard() {
               <dd className="break-all">{c.address || "—"}</dd>
               <dt className="text-muted-foreground">狀態</dt>
               <dd>{c.status === "active" ? "啟用" : "停用"}</dd>
+              <dt className="text-muted-foreground">訂單抬頭</dt>
+              <dd>
+                <div className="font-medium">{resolveInvoiceTitle(c as any)}</div>
+                <div className="text-xs text-muted-foreground">
+                  模式：{INVOICE_TITLE_MODE_LABEL[((c as any).invoice_title_mode ?? "company") as InvoiceTitleMode]}
+                </div>
+              </dd>
+              <dt className="text-muted-foreground">統編顯示</dt>
+              <dd>
+                {(c as any).invoice_show_tax_id === false
+                  ? <span className="text-muted-foreground">不顯示</span>
+                  : (formatInvoiceTaxId(c.tax_id, ((c as any).invoice_tax_id_format ?? "prefixed") as InvoiceTaxIdFormat) || "—")}
+              </dd>
             </dl>
           </div>
         ) : (
@@ -283,6 +311,88 @@ export function CurrentCompanyProfileCard() {
                   <FormMessage />
                 </FormItem>
               )} />
+
+              {/* 訂單抬頭設定 */}
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-3">
+                <div className="text-sm font-medium">訂單抬頭設定</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <FormField name="invoice_title_mode" control={form.control} render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>抬頭模式</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange} disabled={m.isPending}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {INVOICE_TITLE_MODES.map((mode) => (
+                            <SelectItem key={mode} value={mode}>{INVOICE_TITLE_MODE_LABEL[mode]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField name="invoice_tax_id_format" control={form.control} render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>統編格式</FormLabel>
+                      <Select value={field.value} onValueChange={field.onChange} disabled={m.isPending}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {INVOICE_TAX_ID_FORMATS.map((fmt) => (
+                            <SelectItem key={fmt} value={fmt}>{INVOICE_TAX_ID_FORMAT_LABEL[fmt]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                {form.watch("invoice_title_mode") === "custom" && (
+                  <FormField name="invoice_title" control={form.control} render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>自訂抬頭名稱</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          value={field.value ?? ""}
+                          disabled={m.isPending}
+                          placeholder="例如：王小明 或 某某有限公司"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                )}
+                <FormField name="invoice_show_tax_id" control={form.control} render={({ field }) => (
+                  <FormItem className="flex items-center justify-between rounded-md border border-border/50 bg-background/40 px-3 py-2">
+                    <div>
+                      <FormLabel className="text-sm">於訂單顯示統一編號</FormLabel>
+                      <div className="text-xs text-muted-foreground">關閉則不於訂單/發票顯示統編</div>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} disabled={m.isPending} />
+                    </FormControl>
+                  </FormItem>
+                )} />
+                <div className="rounded-md border border-dashed border-border/60 bg-background/50 px-3 py-2 text-xs">
+                  <div className="text-muted-foreground mb-1">預覽</div>
+                  <div className="font-medium text-sm">
+                    {resolveInvoiceTitle({
+                      company_name: form.watch("company_name") || "（公司名稱）",
+                      invoice_title: form.watch("invoice_title"),
+                      invoice_title_mode: form.watch("invoice_title_mode"),
+                    })}
+                  </div>
+                  {form.watch("invoice_show_tax_id") && (
+                    <div className="text-muted-foreground">
+                      {formatInvoiceTaxId(form.watch("tax_id"), form.watch("invoice_tax_id_format")) || "（未填統一編號）"}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
                 <div className="flex items-center gap-2 text-sm">
                   <span className="font-medium">公司狀態</span>

@@ -763,6 +763,10 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          invoice_show_tax_id: boolean
+          invoice_tax_id_format: string
+          invoice_title: string | null
+          invoice_title_mode: string
           logo_url: string | null
           phone: string | null
           status: string
@@ -775,6 +779,10 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          invoice_show_tax_id?: boolean
+          invoice_tax_id_format?: string
+          invoice_title?: string | null
+          invoice_title_mode?: string
           logo_url?: string | null
           phone?: string | null
           status?: string
@@ -787,6 +795,10 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          invoice_show_tax_id?: boolean
+          invoice_tax_id_format?: string
+          invoice_title?: string | null
+          invoice_title_mode?: string
           logo_url?: string | null
           phone?: string | null
           status?: string
