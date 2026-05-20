@@ -38,23 +38,23 @@ function ShopHome() {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-10 space-y-12">
+    <div className="container mx-auto px-3 md:px-4 py-4 md:py-10 space-y-8 md:space-y-12">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-primary/5 to-background border border-primary/20 p-8 md:p-16">
+      <section className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-primary/20 via-primary/5 to-background border border-primary/20 p-5 md:p-16">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--primary)_/_10%,_transparent_60%)] opacity-50" />
-        <div className="relative max-w-2xl space-y-4">
+        <div className="relative max-w-2xl space-y-3 md:space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary">
             <Sparkles className="h-3 w-3" /> 2026 春季新品上市
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold leading-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+          <h1 className="text-2xl md:text-5xl font-bold leading-tight bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
             高端品質<br />從源頭嚴選
           </h1>
-          <p className="text-muted-foreground text-sm md:text-base">企業級供應鏈直送 · 全站滿 NT$2,000 免運 · 14 天無痛退換</p>
-          <div className="flex gap-3 pt-2">
-            <Button size="lg" asChild>
+          <p className="text-muted-foreground text-xs md:text-base">企業級供應鏈直送 · 滿 NT$2,000 免運 · 14 天退換</p>
+          <div className="flex gap-2 md:gap-3 pt-1 md:pt-2">
+            <Button size="sm" className="md:h-11 md:px-8 md:text-base" asChild>
               <Link to="/shop/products">立即選購 <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button size="sm" variant="outline" className="md:h-11 md:px-8 md:text-base" asChild>
               <Link to="/shop/products">查看熱銷</Link>
             </Button>
           </div>
@@ -65,18 +65,18 @@ function ShopHome() {
       {cats.length > 0 && (
         <section>
           <SectionHeader icon={Tag} title="商品分類" desc="找到你想要的類別" />
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mt-4">
+          <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-3 mt-4">
             {cats.map((c) => (
               <Link
                 key={c.id}
                 to="/shop/category/$slug"
                 params={{ slug: c.id }}
-                className="aspect-square rounded-2xl border border-border/60 bg-gradient-to-br from-card to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 flex flex-col items-center justify-center gap-2 p-3 transition-all group"
+                className="aspect-square rounded-xl md:rounded-2xl border border-border/60 bg-gradient-to-br from-card to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:border-primary/40 flex flex-col items-center justify-center gap-1.5 md:gap-2 p-2 md:p-3 transition-all group"
               >
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Tag className="h-5 w-5 text-primary" />
+                <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Tag className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 </div>
-                <span className="text-xs md:text-sm font-medium text-center line-clamp-1">{c.name}</span>
+                <span className="text-[11px] md:text-sm font-medium text-center line-clamp-1">{c.name}</span>
               </Link>
             ))}
           </div>
@@ -86,7 +86,7 @@ function ShopHome() {
       {/* Featured */}
       <section>
         <SectionHeader icon={Flame} title="熱銷商品" desc="人氣商品 · 限量供應" action={<Link to="/shop/products" className="text-sm text-primary hover:underline">查看全部 →</Link>} />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
           {loading ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[3/4]" />) :
             featured.length === 0 ? <p className="col-span-full text-sm text-muted-foreground py-8 text-center">尚未設定熱銷商品</p> :
             featured.map((p) => <ProductCard key={p.id} product={p} />)}
@@ -96,7 +96,7 @@ function ShopHome() {
       {/* Latest */}
       <section>
         <SectionHeader icon={Sparkles} title="最新上架" desc="搶先入手新鮮貨" action={<Link to="/shop/products" className="text-sm text-primary hover:underline">查看全部 →</Link>} />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
           {loading ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[3/4]" />) :
             latest.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
