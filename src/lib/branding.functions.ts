@@ -4,16 +4,16 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const uploadLogoSchema = z.object({
-  fileName: z.string().min(1).max(255),
-  contentType: z.string().regex(/^image\//),
-  base64: z.string().min(1).max(8_000_000),
-  folder: z.enum(["companies", "logos"]).default("companies"),
-});
-
 export const uploadBrandingLogo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => uploadLogoSchema.parse(input))
+  .inputValidator((input) =>
+    z.object({
+      fileName: z.string().min(1).max(255),
+      contentType: z.string().regex(/^image\//),
+      base64: z.string().min(1).max(8_000_000),
+      folder: z.enum(["companies", "logos"]).default("companies"),
+    }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { data: roles, error: roleError } = await supabaseAdmin
