@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Upload, Image as ImageIcon, Trash2, Loader2 } from "lucide-react";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CurrentCompanyProfileCard } from "@/components/admin/CurrentCompanyProfileCard";
+import { CompaniesAdminTable } from "@/components/admin/CompaniesAdminTable";
 
 export const Route = createFileRoute("/_authenticated/settings")({ component: SettingsPage });
 
@@ -91,6 +92,8 @@ function SettingsPage() {
       </div>
 
       <CurrentCompanyProfileCard />
+
+      <CompaniesAdminTable />
 
       <Card className="bg-card/60 backdrop-blur border-border/60">
         <CardHeader>
