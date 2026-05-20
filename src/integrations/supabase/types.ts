@@ -1835,7 +1835,9 @@ export type Database = {
           current_company_id: string | null
           email: string | null
           id: string
+          member_no: string | null
           name: string | null
+          phone: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1843,7 +1845,9 @@ export type Database = {
           current_company_id?: string | null
           email?: string | null
           id: string
+          member_no?: string | null
           name?: string | null
+          phone?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1851,7 +1855,9 @@ export type Database = {
           current_company_id?: string | null
           email?: string | null
           id?: string
+          member_no?: string | null
           name?: string | null
+          phone?: string | null
         }
         Relationships: [
           {
@@ -2619,6 +2625,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      generate_member_no: { Args: never; Returns: string }
       generate_po_no: { Args: never; Returns: string }
       generate_receipt_no: { Args: never; Returns: string }
       generate_so_no: { Args: never; Returns: string }
