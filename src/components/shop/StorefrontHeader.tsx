@@ -3,6 +3,7 @@ import { ShoppingCart, Search, User, Menu, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { useState } from "react";
@@ -63,9 +64,24 @@ export function StorefrontHeader() {
               <Badge className="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full text-[10px] tabular-nums">{count}</Badge>
             )}
           </Button>
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="h-5 w-5" />
-          </Button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72">
+              <SheetHeader>
+                <SheetTitle>選單</SheetTitle>
+              </SheetHeader>
+              <nav className="mt-6 flex flex-col gap-1 text-sm">
+                <Link to="/shop" className="px-3 py-2 rounded-md hover:bg-accent">首頁</Link>
+                <Link to="/shop/products" className="px-3 py-2 rounded-md hover:bg-accent">全部商品</Link>
+                <Link to={user ? "/shop/account" : "/login"} className="px-3 py-2 rounded-md hover:bg-accent">會員中心</Link>
+                <Link to={user ? "/shop/account/orders" : "/login"} className="px-3 py-2 rounded-md hover:bg-accent">我的訂單</Link>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
       <div className="md:hidden border-t border-border/60 px-4 py-2">
