@@ -148,6 +148,7 @@ function OrdersPage() {
   const batchAbortRef = useRef<AbortController | null>(null);
   const { logoUrl } = useBranding();
   const { current: currentCompany } = useCurrentCompany();
+  const pdfLogoUrl = currentCompany?.logo_url || logoUrl;
   const companyHeader = currentCompany
     ? {
         name: currentCompany.company_name,
@@ -236,7 +237,7 @@ function OrdersPage() {
         company: companyHeader,
       }));
 
-      const res = await exportOrdersPdf(payload, logoUrl, {
+      const res = await exportOrdersPdf(payload, pdfLogoUrl, {
         signal: controller.signal,
         onProgress: (current, total, orderNo) =>
           setBatchProgress({ current, total, orderNo }),
@@ -281,7 +282,7 @@ function OrdersPage() {
         order: orderRes.data as any,
         items: (itemsRes.data ?? []) as any,
         payments: (paymentsRes.data ?? []) as any,
-        logoUrl,
+        logoUrl: pdfLogoUrl,
         company: companyHeader,
       });
       toast.success("PDF 已產生");
@@ -1398,6 +1399,7 @@ function OrderDetailDialog({
   const qc = useQueryClient();
   const { logoUrl } = useBranding();
   const { current: currentCompany } = useCurrentCompany();
+  const pdfLogoUrl = currentCompany?.logo_url || logoUrl;
   const companyHeader = currentCompany
     ? {
         name: currentCompany.company_name,
@@ -1816,7 +1818,7 @@ function OrderDetailDialog({
                     order: order as any,
                     items: items as any,
                     payments: payments as any,
-                    logoUrl,
+                    logoUrl: pdfLogoUrl,
                     company: companyHeader,
                   });
                   toast.success("PDF 已產生");
