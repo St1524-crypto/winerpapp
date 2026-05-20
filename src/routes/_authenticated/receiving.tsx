@@ -379,7 +379,45 @@ function Page() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>選擇採購單以建立進貨單</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="搜尋採購單號、供應商..." className="pl-9" value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} />
+            </div>
+            <div className="border rounded-lg max-h-[55vh] overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>採購單號</TableHead><TableHead>供應商</TableHead>
+                    <TableHead>狀態</TableHead><TableHead className="text-right">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pickerPOs.filter((p) => !pickerSearch || [p.po_no, p.vendor_name].some((x) => x?.toLowerCase().includes(pickerSearch.toLowerCase()))).map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-mono text-xs">{p.po_no}</TableCell>
+                      <TableCell>{p.vendor_name}</TableCell>
+                      <TableCell><Badge variant="outline">{p.status}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" onClick={() => { setPickerOpen(false); open(p); }}>選擇</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {pickerPOs.length === 0 && (
+                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-10">尚無採購單，請先至「採購管理」建立</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
 
