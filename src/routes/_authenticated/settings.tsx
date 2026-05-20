@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Upload, Image as ImageIcon, Trash2, Loader2 } from "lucide-react";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
+import { CurrentCompanyProfileCard } from "@/components/admin/CurrentCompanyProfileCard";
 
 export const Route = createFileRoute("/_authenticated/settings")({ component: SettingsPage });
 
@@ -88,6 +89,8 @@ function SettingsPage() {
         <h1 className="text-2xl font-bold tracking-tight">系統設定</h1>
         <p className="text-sm text-muted-foreground mt-1">管理品牌資產與全站介面參數。</p>
       </div>
+
+      <CurrentCompanyProfileCard />
 
       <Card className="bg-card/60 backdrop-blur border-border/60">
         <CardHeader>
