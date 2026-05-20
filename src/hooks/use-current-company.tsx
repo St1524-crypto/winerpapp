@@ -38,6 +38,8 @@ const Ctx = createContext<CompanyCtx>({
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const { user, roles } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
+  const isAdmin = roles.includes("admin");
+  const canSeeAllCompanies = isSuperAdmin || isAdmin;
   const qc = useQueryClient();
   const [currentCompanyId, setCurrentCompanyId] = useState<string | null>(null);
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
@@ -56,8 +58,8 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     try {
       let list: CompanyOption[] = [];
 
-      if (isSuperAdmin) {
-        // super_admin 可看見所有公司，不受 company_members 限制
+      if (canSeeAllCompanies) {
+        // super_admin / admin 可看見所有公司，不受 company_members 限制
         const { data: allCos, error: coErr } = await supabase
           .from("companies")
           .select("id, company_name, status, logo_url, tax_id, phone, address, email")
@@ -68,7 +70,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
           company_name: c.company_name,
           status: c.status,
           logo_url: c.logo_url ?? null,
-          role: "super_admin",
+          role: isSuperAdmin ? "super_admin" : "admin",
           tax_id: c.tax_id ?? null,
           phone: c.phone ?? null,
           address: c.address ?? null,
@@ -131,7 +133,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [user, isSuperAdmin]);
+  }, [user, isSuperAdmin, canSeeAllCompanies]);
 
   useEffect(() => { load(); }, [load]);
 
