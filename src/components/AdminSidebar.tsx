@@ -116,10 +116,10 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="返回主應用">
-                  <Link to="/dashboard" className="flex items-center gap-3 text-muted-foreground hover:text-foreground">
-                    <ArrowLeft className="h-4 w-4 shrink-0" />
-                    <span>返回主應用</span>
+                <SidebarMenuButton asChild tooltip="回首頁">
+                  <Link to="/shop" className="flex items-center gap-3 text-muted-foreground hover:text-foreground">
+                    <Store className="h-4 w-4 shrink-0" />
+                    <span>回首頁</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
