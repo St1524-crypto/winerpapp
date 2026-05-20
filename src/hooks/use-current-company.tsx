@@ -9,6 +9,10 @@ export interface CompanyOption {
   status: string;
   logo_url: string | null;
   role: string;
+  tax_id: string | null;
+  phone: string | null;
+  address: string | null;
+  email: string | null;
 }
 
 interface CompanyCtx {
