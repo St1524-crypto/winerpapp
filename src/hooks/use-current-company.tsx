@@ -131,7 +131,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isSuperAdmin]);
 
   useEffect(() => { load(); }, [load]);
 
