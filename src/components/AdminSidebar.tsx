@@ -64,13 +64,14 @@ export function AdminSidebar() {
   const { current } = useCurrentCompany();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const brandName = current?.company_name ?? "ERP 管理系統";
+  const brandLogo = current?.logo_url || logoUrl;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border bg-gradient-to-br from-primary/10 via-transparent to-transparent">
         <div className="flex items-center gap-3 px-2 py-3">
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-glow overflow-hidden ring-1 ring-primary/40">
-            <img src={logoUrl} alt={brandName} className="h-full w-full object-contain" />
+            <img src={brandLogo} alt={brandName} className="h-full w-full object-contain" />
             <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gradient-primary ring-1 ring-background">
               <Crown className="h-2 w-2 text-primary-foreground" />
             </span>
