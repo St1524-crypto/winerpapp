@@ -148,6 +148,7 @@ function OrdersPage() {
   const batchAbortRef = useRef<AbortController | null>(null);
   const { logoUrl } = useBranding();
   const { current: currentCompany } = useCurrentCompany();
+  const pdfLogoUrl = currentCompany?.logo_url || logoUrl;
   const companyHeader = currentCompany
     ? {
         name: currentCompany.company_name,
