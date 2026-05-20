@@ -60,9 +60,9 @@ export const companySchema = z.object({
   address: z.string().trim().max(255, "地址過長").optional(),
   logo_url: z.union([z.literal(""), z.string().url("Logo 連結格式不正確")]).optional().nullable(),
   invoice_title: z.string().trim().max(100, "抬頭最多 100 字").optional().nullable(),
-  invoice_title_mode: z.enum(INVOICE_TITLE_MODES).default("company"),
-  invoice_tax_id_format: z.enum(INVOICE_TAX_ID_FORMATS).default("prefixed"),
-  invoice_show_tax_id: z.boolean().default(true),
+  invoice_title_mode: z.enum(INVOICE_TITLE_MODES),
+  invoice_tax_id_format: z.enum(INVOICE_TAX_ID_FORMATS),
+  invoice_show_tax_id: z.boolean(),
 });
 
 export type CompanyFormValues = z.infer<typeof companySchema>;
