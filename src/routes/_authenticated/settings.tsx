@@ -17,7 +17,7 @@ interface BrandItem { name: string; url: string; }
 
 function SettingsPage() {
   const { roles } = useAuth();
-  const isAdmin = roles.includes("super_admin");
+  const isAdmin = roles.includes("super_admin") || roles.includes("admin");
   const { logoUrl, setLogoUrl } = useBranding();
   const [items, setItems] = useState<BrandItem[]>([]);
   const [busy, setBusy] = useState(false);
