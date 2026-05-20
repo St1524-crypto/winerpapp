@@ -6,17 +6,27 @@ import { AdminMobileNav } from "@/components/AdminMobileNav";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/hooks/use-auth";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentSessionStatus } from "@/lib/security.functions";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated")({ component: AuthLayout });
 
 function AuthLayout() {
-  const { user, loading, roles } = useAuth();
+  const { user, loading, roles, signOut } = useAuth();
+  const {
+    companies,
+    current,
+    currentCompanyId,
+    loading: companyLoading,
+    setCurrent,
+  } = useCurrentCompany();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [mfaChecked, setMfaChecked] = useState(false);
+  const [companyChecked, setCompanyChecked] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
