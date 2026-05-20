@@ -22,6 +22,7 @@ import { Building2, Plus, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
+import { AUTHORIZED_COMPANY_CREATOR_EMAIL, canCreateCompany } from "@/lib/company-creator";
 
 export const Route = createFileRoute("/_authenticated/admin/companies/new")({
   head: () => ({ meta: [{ title: "新增公司 — 源倍力 ERP" }] }),
@@ -102,6 +103,24 @@ function NewCompanyPage() {
   });
 
   if (!isSuperAdmin) return <ForbiddenScreen requiredRoles={["super_admin"]} />;
+  if (!canCreateCompany(user?.email)) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base text-destructive">無權限新增公司</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>只有授權帳號 <span className="font-mono">{AUTHORIZED_COMPANY_CREATOR_EMAIL}</span> 可以新增公司。</p>
+            <p>請以該帳號登入，或聯繫系統管理者授權。</p>
+            <Button variant="outline" asChild className="mt-2">
+              <Link to="/admin/companies"><ArrowLeft className="h-4 w-4 mr-1" />返回列表</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

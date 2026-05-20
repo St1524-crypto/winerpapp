@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
 import { CopyButton } from "@/components/CopyButton";
+import { AUTHORIZED_COMPANY_CREATOR_EMAIL, canCreateCompany } from "@/lib/company-creator";
 
 
 export const Route = createFileRoute("/_authenticated/admin/companies")({
@@ -87,8 +88,9 @@ function parseDuplicateDbError(err: any): { field: "tax_id" | "email"; message: 
 }
 
 function AdminCompaniesPage() {
-  const { roles } = useAuth();
+  const { roles, user } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
+  const canCreate = isSuperAdmin && canCreateCompany(user?.email);
   const qc = useQueryClient();
   const { refresh: refreshCompanies } = useCurrentCompany();
   const [memberDialogCompany, setMemberDialogCompany] = useState<{ id: string; name: string } | null>(null);
@@ -160,12 +162,18 @@ function AdminCompaniesPage() {
             建立租戶公司、指派成員。每家公司的業務資料相互隔離。
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" asChild className="flex-1 sm:flex-none">
-            <Link to="/admin/companies/new"><Plus className="h-4 w-4 mr-1" />開啟新增頁</Link>
-          </Button>
-          <CreateCompanyDialog />
-        </div>
+        {canCreate ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" asChild className="flex-1 sm:flex-none">
+              <Link to="/admin/companies/new"><Plus className="h-4 w-4 mr-1" />開啟新增頁</Link>
+            </Button>
+            <CreateCompanyDialog />
+          </div>
+        ) : (
+          <div className="text-xs text-muted-foreground bg-muted/50 border rounded-md px-3 py-2">
+            只有授權帳號 <span className="font-mono">{AUTHORIZED_COMPANY_CREATOR_EMAIL}</span> 可新增公司
+          </div>
+        )}
       </div>
 
       <Card>
