@@ -22,6 +22,7 @@ import { Building2, Plus, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
+import { AUTHORIZED_COMPANY_CREATOR_EMAIL, canCreateCompany } from "@/lib/company-creator";
 
 export const Route = createFileRoute("/_authenticated/admin/companies/new")({
   head: () => ({ meta: [{ title: "新增公司 — 源倍力 ERP" }] }),
