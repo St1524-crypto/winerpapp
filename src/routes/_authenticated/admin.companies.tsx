@@ -29,39 +29,14 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil, ChevronDown, Copy, Check } from "lucide-react";
+import { Building2, Plus, Loader2, Users, Trash2, UserPlus, Pencil, ChevronDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { CompanyLogoUploader } from "@/components/admin/CompanyLogoUploader";
+import { CopyButton } from "@/components/CopyButton";
 
-function CopyButton({ value, label }: { value: string; label: string }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      toast.success(`已複製${label}`);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      toast.error("複製失敗");
-    }
-  };
-  return (
-    <Button
-      type="button"
-      size="icon"
-      variant="ghost"
-      className="h-6 w-6 shrink-0"
-      onClick={handleCopy}
-      aria-label={`複製${label}`}
-    >
-      {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-    </Button>
-  );
-}
 
 export const Route = createFileRoute("/_authenticated/admin/companies")({
   head: () => ({ meta: [{ title: "公司管理 — 源倍力 ERP" }] }),
