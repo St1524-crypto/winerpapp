@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   ShoppingCart, Search, Plus, Loader2, Eye, Truck, CreditCard,
@@ -10,6 +11,8 @@ import {
 import { exportOrderPdf, exportOrdersPdf } from "@/lib/order-pdf";
 import { useBranding } from "@/hooks/use-branding";
 import { useCurrentCompany } from "@/hooks/use-current-company";
+import { useAuth } from "@/hooks/use-auth";
+import { deleteSalesOrder } from "@/lib/orders-admin.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +22,10 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -140,6 +147,24 @@ function OrdersPage() {
   >([]);
   const batchAbortRef = useRef<AbortController | null>(null);
   const { logoUrl } = useBranding();
+  const { roles } = useAuth();
+  const isSuperAdmin = roles.includes("super_admin");
+  const [deleteTarget, setDeleteTarget] = useState<OrderRow | null>(null);
+  const deleteFn = useServerFn(deleteSalesOrder);
+  const deleteMut = useMutation({
+    mutationFn: (orderId: string) => deleteFn({ data: { orderId } }),
+    onSuccess: () => {
+      toast.success(`已刪除訂單 ${deleteTarget?.order_no ?? ""}`);
+      setDeleteTarget(null);
+      setSelected((s) => {
+        const n = new Set(s);
+        if (deleteTarget) n.delete(deleteTarget.id);
+        return n;
+      });
+      qc.invalidateQueries({ queryKey: ["sales-orders"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "刪除失敗"),
+  });
 
   function toggleSelect(id: string) {
     setSelected((s) => {
@@ -425,6 +450,17 @@ function OrdersPage() {
                           : <Printer className="h-3.5 w-3.5 mr-1" />}
                         列印
                       </Button>
+                      {isSuperAdmin && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeleteTarget(o)}
+                          className="text-destructive border-destructive/40 hover:bg-destructive/10"
+                          title="刪除訂單"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -512,6 +548,17 @@ function OrdersPage() {
                                 : <Printer className="h-3.5 w-3.5 mr-1" />}
                               列印
                             </Button>
+                            {isSuperAdmin && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setDeleteTarget(o)}
+                                title="刪除訂單（僅超級管理員）"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-1" /> 刪除
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -529,6 +576,38 @@ function OrdersPage() {
         onClose={() => setDetailId(null)}
         onChanged={refresh}
       />
+
+      {/* 刪除訂單確認 */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleteMut.isPending && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-destructive" />
+              刪除訂單
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              即將永久刪除訂單 <span className="font-mono font-semibold">{deleteTarget?.order_no}</span>
+              （客戶：{deleteTarget?.customer_name}，金額 {fmt(deleteTarget?.total_amount ?? 0)}），
+              同時移除其明細與付款紀錄。此操作無法復原，僅超級管理員可執行。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMut.isPending}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMut.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteTarget) deleteMut.mutate(deleteTarget.id);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              確認刪除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* 批次匯出進度 */}
       <Dialog
