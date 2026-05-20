@@ -46,6 +46,9 @@ function Page() {
   const [editNotes, setEditNotes] = useState("");
   const [editWarehouseId, setEditWarehouseId] = useState<string>("");
   const [delGr, setDelGr] = useState<GR | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerPOs, setPickerPOs] = useState<PO[]>([]);
+  const [pickerSearch, setPickerSearch] = useState("");
 
   async function load() {
     setLoading(true);
@@ -178,12 +181,23 @@ function Page() {
     setDelGr(null); loadGR();
   }
 
+  async function openNewByPicker() {
+    // Load all POs (not only pending) so user can pick any
+    const { data } = await sb.from("purchase_orders").select("id, po_no, vendor_name, status, expected_at, total_amount").order("created_at", { ascending: false }).limit(200);
+    setPickerPOs(data ?? []);
+    setPickerOpen(true);
+  }
+
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><PackageCheck className="h-6 w-6 text-primary" />進貨管理</h1>
-        <p className="text-sm text-muted-foreground mt-1">新增進貨單、確認到貨數量並自動更新庫存</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><PackageCheck className="h-6 w-6 text-primary" />進貨管理</h1>
+          <p className="text-sm text-muted-foreground mt-1">新增進貨單、確認到貨數量並自動更新庫存</p>
+        </div>
+        <Button onClick={openNewByPicker} className="bg-gradient-primary"><Plus className="h-4 w-4 mr-1" />新增進貨單</Button>
       </div>
+
 
       <Card>
         <CardHeader className="pb-3">
@@ -365,7 +379,45 @@ function Page() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>選擇採購單以建立進貨單</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="搜尋採購單號、供應商..." className="pl-9" value={pickerSearch} onChange={(e) => setPickerSearch(e.target.value)} />
+            </div>
+            <div className="border rounded-lg max-h-[55vh] overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>採購單號</TableHead><TableHead>供應商</TableHead>
+                    <TableHead>狀態</TableHead><TableHead className="text-right">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pickerPOs.filter((p) => !pickerSearch || [p.po_no, p.vendor_name].some((x) => x?.toLowerCase().includes(pickerSearch.toLowerCase()))).map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-mono text-xs">{p.po_no}</TableCell>
+                      <TableCell>{p.vendor_name}</TableCell>
+                      <TableCell><Badge variant="outline">{p.status}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" onClick={() => { setPickerOpen(false); open(p); }}>選擇</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {pickerPOs.length === 0 && (
+                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-10">尚無採購單，請先至「採購管理」建立</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
 
