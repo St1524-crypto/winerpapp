@@ -58,7 +58,44 @@ function AuthLayout() {
     return () => { cancelled = true; };
   }, [user, navigate]);
 
-  if (loading || !user || !mfaChecked) {
+  // 公司啟用狀態守門：若使用者所有公司都被停用 → 強制登出。
+  // 若目前公司被停用但仍有其他啟用中的公司 → 自動切換到第一個啟用中的。
+  // super_admin 不受此限制。
+  useEffect(() => {
+    if (!user || loading || companyLoading) return;
+    const isSuperAdmin = roles.includes("super_admin");
+    if (isSuperAdmin) { setCompanyChecked(true); return; }
+    // 沒有任何公司歸屬：保留現況（讓使用者進入有限頁面）
+    if (companies.length === 0) { setCompanyChecked(true); return; }
+
+    const activeCompanies = companies.filter((c) => c.status === "active");
+    if (activeCompanies.length === 0) {
+      toast.error("您所屬的公司已被停用，無法登入", {
+        description: "請聯絡系統管理員啟用公司後再試。",
+      });
+      (async () => {
+        await signOut();
+        navigate({ to: "/login" });
+      })();
+      return;
+    }
+
+    if (current && current.status !== "active") {
+      const next = activeCompanies[0];
+      toast.warning(`公司「${current.company_name}」已停用，已切換至「${next.company_name}」`);
+      setCurrent(next.id).catch(() => {});
+      return;
+    }
+
+    if (!currentCompanyId && activeCompanies.length > 0) {
+      setCurrent(activeCompanies[0].id).catch(() => {});
+      return;
+    }
+
+    setCompanyChecked(true);
+  }, [user, loading, companyLoading, companies, current, currentCompanyId, roles, signOut, setCurrent, navigate]);
+
+  if (loading || !user || !mfaChecked || !companyChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
