@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useBranding } from "@/hooks/use-branding";
+import { uploadBrandingLogo } from "@/lib/branding.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,7 @@ function SettingsPage() {
   const [items, setItems] = useState<BrandItem[]>([]);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const uploadLogo = useServerFn(uploadBrandingLogo);
 
   async function loadList() {
     const { data, error } = await supabase.storage.from("branding").list("logos", { limit: 50, sortBy: { column: "created_at", order: "desc" } });
@@ -46,12 +49,9 @@ function SettingsPage() {
     if (!file.type.startsWith("image/")) { toast.error("僅支援圖片檔"); return; }
     setBusy(true);
     try {
-      const ext = file.name.split(".").pop() || "png";
-      const path = `logos/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("branding").upload(path, file, { upsert: false, contentType: file.type });
-      if (error) throw error;
-      const { data: pub } = supabase.storage.from("branding").getPublicUrl(path);
-      await setLogoUrl(pub.publicUrl);
+      const base64 = await fileToBase64(file);
+      const data = await uploadLogo({ data: { fileName: file.name, contentType: file.type, base64, folder: "logos" } });
+      await setLogoUrl(data.publicUrl);
       toast.success("Logo 已更新並套用");
       await loadList();
     } catch (err: any) {
@@ -163,4 +163,16 @@ function SettingsPage() {
       </Card>
     </div>
   );
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result ?? "");
+      resolve(result.includes(",") ? result.split(",")[1] : result);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("讀取檔案失敗"));
+    reader.readAsDataURL(file);
+  });
 }
