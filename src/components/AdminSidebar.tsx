@@ -4,6 +4,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { useBranding } from "@/hooks/use-branding";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import { useAuth } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import {
@@ -60,14 +61,16 @@ export function AdminSidebar() {
   const collapsed = state === "collapsed";
   const { user, roles } = useAuth();
   const { logoUrl } = useBranding();
+  const { current } = useCurrentCompany();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const brandName = current?.company_name ?? "ERP 管理系統";
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border bg-gradient-to-br from-primary/10 via-transparent to-transparent">
         <div className="flex items-center gap-3 px-2 py-3">
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-glow overflow-hidden ring-1 ring-primary/40">
-            <img src={logoUrl} alt="源倍力" className="h-full w-full object-contain" />
+            <img src={logoUrl} alt={brandName} className="h-full w-full object-contain" />
             <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-gradient-primary ring-1 ring-background">
               <Crown className="h-2 w-2 text-primary-foreground" />
             </span>
@@ -75,8 +78,8 @@ export function AdminSidebar() {
           {!collapsed && (
             <div className="flex-1 overflow-hidden">
               <div className="font-bold text-sm leading-tight flex items-center gap-1.5">
-                源倍力 ERP
-                <span className="rounded-sm bg-primary/20 text-primary text-[9px] px-1 py-0.5 font-bold tracking-wider">ADMIN</span>
+                <span className="truncate" title={brandName}>{brandName}</span>
+                <span className="rounded-sm bg-primary/20 text-primary text-[9px] px-1 py-0.5 font-bold tracking-wider shrink-0">ADMIN</span>
               </div>
               <div className="text-[10px] text-muted-foreground tracking-wider uppercase">Super Admin Console</div>
             </div>

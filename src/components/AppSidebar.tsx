@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useBranding } from "@/hooks/use-branding";
 import { useAuth } from "@/hooks/use-auth";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import { filterNav, ROLE_LABELS } from "@/lib/nav";
 
 export function AppSidebar() {
@@ -12,20 +13,22 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { roles, user } = useAuth();
   const { logoUrl } = useBranding();
+  const { current } = useCurrentCompany();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const items = filterNav(roles);
   const primaryRole = roles[0];
+  const brandName = current?.company_name ?? "ERP 管理系統";
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-glow overflow-hidden ring-1 ring-primary/30">
-            <img src={logoUrl} alt="源倍力" className="h-full w-full object-contain" />
+          <img src={logoUrl} alt={brandName} className="h-full w-full object-contain" />
           </div>
           {!collapsed && (
             <div className="flex-1 overflow-hidden">
-              <div className="font-bold text-sm leading-tight">源倍力 ERP</div>
+              <div className="font-bold text-sm leading-tight truncate" title={brandName}>{brandName}</div>
               <div className="text-[10px] text-muted-foreground tracking-wider uppercase">Enterprise Platform</div>
             </div>
           )}

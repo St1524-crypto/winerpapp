@@ -37,6 +37,13 @@ export interface OrderPdfData {
     amount: number | string;
   }>;
   logoUrl: string;
+  company?: {
+    name: string;
+    tax_id?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    email?: string | null;
+  } | null;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -69,7 +76,17 @@ async function urlToDataUrl(url: string): Promise<string> {
 }
 
 function buildOrderHtml(data: Omit<OrderPdfData, "logoUrl">, logoData: string): string {
-  const { order, items, payments } = data;
+  const { order, items, payments, company } = data;
+  const brandName = company?.name?.trim() || "源倍力 ERP 管理系統";
+  const companyMetaParts = [
+    company?.tax_id ? `統編：${esc(company.tax_id)}` : null,
+    company?.phone ? `電話：${esc(company.phone)}` : null,
+    company?.email ? `Email：${esc(company.email)}` : null,
+    company?.address ? `地址：${esc(company.address)}` : null,
+  ].filter(Boolean);
+  const companyMetaHtml = companyMetaParts.length
+    ? `<div style="font-size:11px;color:#475569;margin-top:4px;line-height:1.55">${companyMetaParts.join(" ｜ ")}</div>`
+    : "";
   const now = new Date().toLocaleString("zh-TW", { hour12: false });
   const created = new Date(order.created_at).toLocaleString("zh-TW", { hour12: false });
 
@@ -113,8 +130,9 @@ function buildOrderHtml(data: Omit<OrderPdfData, "logoUrl">, logoData: string): 
           <img src="${logoData}" style="width:100%;height:100%;object-fit:contain" crossorigin="anonymous" />
         </div>
         <div style="flex:1">
-          <div style="font-size:18px;font-weight:700;letter-spacing:0.02em">源倍力 ERP 管理系統</div>
+          <div style="font-size:18px;font-weight:700;letter-spacing:0.02em">${esc(brandName)}</div>
           <div style="font-size:11px;color:#64748b;letter-spacing:0.18em;text-transform:uppercase;margin-top:2px">Sales Order</div>
+          ${companyMetaHtml}
         </div>
         <div style="text-align:right;font-size:11px;color:#64748b">
           <div>列印時間</div>

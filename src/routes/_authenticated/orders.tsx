@@ -147,6 +147,16 @@ function OrdersPage() {
   >([]);
   const batchAbortRef = useRef<AbortController | null>(null);
   const { logoUrl } = useBranding();
+  const { current: currentCompany } = useCurrentCompany();
+  const companyHeader = currentCompany
+    ? {
+        name: currentCompany.company_name,
+        tax_id: currentCompany.tax_id,
+        phone: currentCompany.phone,
+        address: currentCompany.address,
+        email: currentCompany.email,
+      }
+    : null;
   const { roles } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
   const [deleteTarget, setDeleteTarget] = useState<OrderRow | null>(null);
@@ -223,6 +233,7 @@ function OrdersPage() {
         order: o,
         items: itemsByOrder.get(o.id) ?? [],
         payments: paymentsByOrder.get(o.id) ?? [],
+        company: companyHeader,
       }));
 
       const res = await exportOrdersPdf(payload, logoUrl, {
@@ -271,6 +282,7 @@ function OrdersPage() {
         items: (itemsRes.data ?? []) as any,
         payments: (paymentsRes.data ?? []) as any,
         logoUrl,
+        company: companyHeader,
       });
       toast.success("PDF 已產生");
     } catch (e: any) {
@@ -1385,6 +1397,16 @@ function OrderDetailDialog({
 }) {
   const qc = useQueryClient();
   const { logoUrl } = useBranding();
+  const { current: currentCompany } = useCurrentCompany();
+  const companyHeader = currentCompany
+    ? {
+        name: currentCompany.company_name,
+        tax_id: currentCompany.tax_id,
+        phone: currentCompany.phone,
+        address: currentCompany.address,
+        email: currentCompany.email,
+      }
+    : null;
   const [printing, setPrinting] = useState(false);
   const [editing, setEditing] = useState(false);
   const detailQ = useQuery({
@@ -1795,6 +1817,7 @@ function OrderDetailDialog({
                     items: items as any,
                     payments: payments as any,
                     logoUrl,
+                    company: companyHeader,
                   });
                   toast.success("PDF 已產生");
                 } catch (e: any) {
