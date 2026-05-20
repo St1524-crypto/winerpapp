@@ -58,6 +58,21 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="回首頁">
+                  <Link to="/shop" className="flex items-center gap-3 text-muted-foreground hover:text-foreground">
+                    <Store className="h-4 w-4 shrink-0" />
+                    <span>回首頁</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       {!collapsed && (
