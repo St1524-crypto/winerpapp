@@ -4,7 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentCompany } from "@/hooks/use-current-company";
-import { companySchema, type CompanyFormValues } from "@/lib/company-schema";
+import {
+  companySchema, type CompanyFormValues,
+  INVOICE_TITLE_MODES, INVOICE_TAX_ID_FORMATS,
+  INVOICE_TITLE_MODE_LABEL, INVOICE_TAX_ID_FORMAT_LABEL,
+  formatInvoiceTaxId, resolveInvoiceTitle, type InvoiceTitleMode, type InvoiceTaxIdFormat,
+} from "@/lib/company-schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
