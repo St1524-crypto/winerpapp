@@ -13,11 +13,14 @@
    bunx playwright install chromium
    ```
 
-2. 設定環境變數（建議放在 `.env.e2e`，並用 `dotenv` 或 shell 載入）：
+2. 設定環境變數（建議放在 `.env.e2e`）：
    ```bash
    export E2E_BASE_URL=http://localhost:5173
    export E2E_SUPER_ADMIN_EMAIL=win889999@gmail.com
    export E2E_SUPER_ADMIN_PASSWORD=********
+   # 自動清除測試資料用（service role，繞過 RLS）
+   export SUPABASE_URL=https://<project-ref>.supabase.co
+   export SUPABASE_SERVICE_ROLE_KEY=********
    ```
 
 3. 另一個 terminal 啟動 dev server：
