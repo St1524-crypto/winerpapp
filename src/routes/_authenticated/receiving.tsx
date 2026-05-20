@@ -178,12 +178,23 @@ function Page() {
     setDelGr(null); loadGR();
   }
 
+  async function openNewByPicker() {
+    // Load all POs (not only pending) so user can pick any
+    const { data } = await sb.from("purchase_orders").select("id, po_no, vendor_name, status, expected_at, total_amount").order("created_at", { ascending: false }).limit(200);
+    setPickerPOs(data ?? []);
+    setPickerOpen(true);
+  }
+
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><PackageCheck className="h-6 w-6 text-primary" />進貨管理</h1>
-        <p className="text-sm text-muted-foreground mt-1">新增進貨單、確認到貨數量並自動更新庫存</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><PackageCheck className="h-6 w-6 text-primary" />進貨管理</h1>
+          <p className="text-sm text-muted-foreground mt-1">新增進貨單、確認到貨數量並自動更新庫存</p>
+        </div>
+        <Button onClick={openNewByPicker} className="bg-gradient-primary"><Plus className="h-4 w-4 mr-1" />新增進貨單</Button>
       </div>
+
 
       <Card>
         <CardHeader className="pb-3">
