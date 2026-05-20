@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useBranding } from "@/hooks/use-branding";
 import { useAuth } from "@/hooks/use-auth";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import { filterNav, ROLE_LABELS } from "@/lib/nav";
 
 export function AppSidebar() {
@@ -12,9 +13,11 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { roles, user } = useAuth();
   const { logoUrl } = useBranding();
+  const { current } = useCurrentCompany();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const items = filterNav(roles);
   const primaryRole = roles[0];
+  const brandName = current?.company_name ?? "ERP 管理系統";
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
