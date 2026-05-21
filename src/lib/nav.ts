@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Package, Boxes, ShoppingCart, Truck,
   Users, Wallet, UserCircle, Settings, ShieldCheck, Tag, Crown,
   Store, Factory, Warehouse as WarehouseIcon, PackageCheck, ArrowRightLeft,
-  Building2, UserCog, Briefcase, ShoppingBag, Megaphone,
+  Building2, UserCog, Briefcase, ShoppingBag, Megaphone, Coins,
 } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 
