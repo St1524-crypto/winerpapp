@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as ShopVipRouteImport } from './routes/shop.vip'
 import { Route as ShopProductsRouteImport } from './routes/shop.products'
 import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
 import { Route as ShopAccountRouteImport } from './routes/shop.account'
@@ -44,6 +45,7 @@ import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authent
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
+import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
 import { Route as ShopAccountOrdersRouteImport } from './routes/shop.account.orders'
 import { Route as ShopAccountAddressesRouteImport } from './routes/shop.account.addresses'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
@@ -93,6 +95,11 @@ const IndexRoute = IndexRouteImport.update({
 const ShopIndexRoute = ShopIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => ShopRoute,
+} as any)
+const ShopVipRoute = ShopVipRouteImport.update({
+  id: '/vip',
+  path: '/vip',
   getParentRoute: () => ShopRoute,
 } as any)
 const ShopProductsRoute = ShopProductsRouteImport.update({
@@ -238,6 +245,11 @@ const ShopAccountProfileRoute = ShopAccountProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => ShopAccountRoute,
 } as any)
+const ShopAccountPointsRoute = ShopAccountPointsRouteImport.update({
+  id: '/points',
+  path: '/points',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
 const ShopAccountOrdersRoute = ShopAccountOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -361,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
+  '/shop/vip': typeof ShopVipRoute
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
@@ -374,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
+  '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -410,6 +424,7 @@ export interface FileRoutesByTo {
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
+  '/shop/vip': typeof ShopVipRoute
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
@@ -423,6 +438,7 @@ export interface FileRoutesByTo {
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
+  '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -464,6 +480,7 @@ export interface FileRoutesById {
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
+  '/shop/vip': typeof ShopVipRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
@@ -477,6 +494,7 @@ export interface FileRoutesById {
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
+  '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -518,6 +536,7 @@ export interface FileRouteTypes {
     | '/shop/account'
     | '/shop/checkout'
     | '/shop/products'
+    | '/shop/vip'
     | '/shop/'
     | '/admin/audit-logs'
     | '/admin/companies'
@@ -531,6 +550,7 @@ export interface FileRouteTypes {
     | '/products/$productId'
     | '/shop/account/addresses'
     | '/shop/account/orders'
+    | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -567,6 +587,7 @@ export interface FileRouteTypes {
     | '/warehouses'
     | '/shop/checkout'
     | '/shop/products'
+    | '/shop/vip'
     | '/shop'
     | '/admin/audit-logs'
     | '/admin/companies'
@@ -580,6 +601,7 @@ export interface FileRouteTypes {
     | '/products/$productId'
     | '/shop/account/addresses'
     | '/shop/account/orders'
+    | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -620,6 +642,7 @@ export interface FileRouteTypes {
     | '/shop/account'
     | '/shop/checkout'
     | '/shop/products'
+    | '/shop/vip'
     | '/shop/'
     | '/_authenticated/admin/audit-logs'
     | '/_authenticated/admin/companies'
@@ -633,6 +656,7 @@ export interface FileRouteTypes {
     | '/_authenticated/products/$productId'
     | '/shop/account/addresses'
     | '/shop/account/orders'
+    | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -703,6 +727,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/shop/'
       preLoaderRoute: typeof ShopIndexRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/shop/vip': {
+      id: '/shop/vip'
+      path: '/vip'
+      fullPath: '/shop/vip'
+      preLoaderRoute: typeof ShopVipRouteImport
       parentRoute: typeof ShopRoute
     }
     '/shop/products': {
@@ -899,6 +930,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/shop/account/profile'
       preLoaderRoute: typeof ShopAccountProfileRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
+    '/shop/account/points': {
+      id: '/shop/account/points'
+      path: '/points'
+      fullPath: '/shop/account/points'
+      preLoaderRoute: typeof ShopAccountPointsRouteImport
       parentRoute: typeof ShopAccountRoute
     }
     '/shop/account/orders': {
@@ -1161,6 +1199,7 @@ const ShopAccountOrdersRouteWithChildren =
 interface ShopAccountRouteChildren {
   ShopAccountAddressesRoute: typeof ShopAccountAddressesRoute
   ShopAccountOrdersRoute: typeof ShopAccountOrdersRouteWithChildren
+  ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
 }
@@ -1168,6 +1207,7 @@ interface ShopAccountRouteChildren {
 const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountAddressesRoute: ShopAccountAddressesRoute,
   ShopAccountOrdersRoute: ShopAccountOrdersRouteWithChildren,
+  ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
 }
@@ -1180,6 +1220,7 @@ interface ShopRouteChildren {
   ShopAccountRoute: typeof ShopAccountRouteWithChildren
   ShopCheckoutRoute: typeof ShopCheckoutRoute
   ShopProductsRoute: typeof ShopProductsRoute
+  ShopVipRoute: typeof ShopVipRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ShopCategorySlugRoute: typeof ShopCategorySlugRoute
   ShopProductIdRoute: typeof ShopProductIdRoute
@@ -1189,6 +1230,7 @@ const ShopRouteChildren: ShopRouteChildren = {
   ShopAccountRoute: ShopAccountRouteWithChildren,
   ShopCheckoutRoute: ShopCheckoutRoute,
   ShopProductsRoute: ShopProductsRoute,
+  ShopVipRoute: ShopVipRoute,
   ShopIndexRoute: ShopIndexRoute,
   ShopCategorySlugRoute: ShopCategorySlugRoute,
   ShopProductIdRoute: ShopProductIdRoute,
@@ -1208,3 +1250,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
