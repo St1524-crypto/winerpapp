@@ -1477,6 +1477,30 @@ export type Database = {
         }
         Relationships: []
       }
+      member_points_wallet: {
+        Row: {
+          discount_points: number
+          reward_points: number
+          shopping_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          discount_points?: number
+          reward_points?: number
+          shopping_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          discount_points?: number
+          reward_points?: number
+          shopping_points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       moq_rules: {
         Row: {
           carton_quantity: number
@@ -1670,6 +1694,45 @@ export type Database = {
           },
         ]
       }
+      point_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          point_type: string
+          reference_id: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          point_type: string
+          reference_id?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          point_type?: string
+          reference_id?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       price_tiers: {
         Row: {
           account_level: string
@@ -1758,11 +1821,13 @@ export type Database = {
           cost_price: number
           created_at: string
           description: string | null
+          discount_points_max: number
           featured: boolean
           id: string
           image: string | null
           name: string
           price: number
+          reward_points: number
           safe_stock: number
           short_description: string | null
           sku: string
@@ -1778,11 +1843,13 @@ export type Database = {
           cost_price?: number
           created_at?: string
           description?: string | null
+          discount_points_max?: number
           featured?: boolean
           id?: string
           image?: string | null
           name: string
           price?: number
+          reward_points?: number
           safe_stock?: number
           short_description?: string | null
           sku: string
@@ -1798,11 +1865,13 @@ export type Database = {
           cost_price?: number
           created_at?: string
           description?: string | null
+          discount_points_max?: number
           featured?: boolean
           id?: string
           image?: string | null
           name?: string
           price?: number
+          reward_points?: number
           safe_stock?: number
           short_description?: string | null
           sku?: string
@@ -1836,9 +1905,13 @@ export type Database = {
           email: string | null
           id: string
           is_dealer: boolean
+          is_vip: boolean
           member_no: string | null
           name: string | null
           phone: string | null
+          referral_code: string | null
+          referred_by: string | null
+          vip_expires_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1847,9 +1920,13 @@ export type Database = {
           email?: string | null
           id: string
           is_dealer?: boolean
+          is_vip?: boolean
           member_no?: string | null
           name?: string | null
           phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          vip_expires_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1858,9 +1935,13 @@ export type Database = {
           email?: string | null
           id?: string
           is_dealer?: boolean
+          is_vip?: boolean
           member_no?: string | null
           name?: string | null
           phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          vip_expires_at?: string | null
         }
         Relationships: [
           {
@@ -1868,6 +1949,13 @@ export type Database = {
             columns: ["current_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1997,6 +2085,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referred_user_id: string
+          referrer_id: string
+          signup_reward_points: number
+          signup_rewarded_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_user_id: string
+          referrer_id: string
+          signup_reward_points?: number
+          signup_rewarded_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_user_id?: string
+          referrer_id?: string
+          signup_reward_points?: number
+          signup_rewarded_at?: string | null
+        }
+        Relationships: []
       }
       sales_order_items: {
         Row: {
@@ -2574,6 +2692,89 @@ export type Database = {
           },
         ]
       }
+      vip_memberships: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          expires_at: string
+          id: string
+          notes: string | null
+          plan_id: string | null
+          source: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          notes?: string | null
+          plan_id?: string | null
+          source?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          notes?: string | null
+          plan_id?: string | null
+          source?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_memberships_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "vip_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vip_plans: {
+        Row: {
+          bonus_points: number
+          created_at: string
+          description: string | null
+          duration_days: number
+          id: string
+          name: string
+          price: number
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bonus_points?: number
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          id?: string
+          name: string
+          price?: number
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bonus_points?: number
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       warehouse_inventory: {
         Row: {
           company_id: string
@@ -2741,6 +2942,7 @@ export type Database = {
       generate_member_no: { Args: never; Returns: string }
       generate_po_no: { Args: never; Returns: string }
       generate_receipt_no: { Args: never; Returns: string }
+      generate_referral_code: { Args: never; Returns: string }
       generate_so_no: { Args: never; Returns: string }
       has_role: {
         Args: {
