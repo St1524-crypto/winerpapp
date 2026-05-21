@@ -251,37 +251,6 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
           <p className="text-xs text-muted-foreground mt-1 font-mono">/login/{selectedCompany.slug}</p>
         </div>
 
-        {/* 切換公司 */}
-        <div className="mb-4 flex items-center gap-2">
-          <Select
-            value={selectedSlug}
-            onValueChange={(v) => {
-              if (pathSlug) navigate({ to: "/login/$slug", params: { slug: v } });
-              else setSelectedSlug(v);
-            }}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {companies.map((c) => (
-                <SelectItem key={c.id} value={c.slug}>{c.company_name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              if (pathSlug) navigate({ to: "/login" });
-              else setSelectedSlug("");
-            }}
-            title="重新選擇公司"
-          >
-            <ArrowLeftRight className="h-4 w-4" />
-          </Button>
-        </div>
 
         <div className="rounded-2xl border bg-card/80 backdrop-blur-xl shadow-elegant p-8">
           <div className="flex gap-2 mb-6">
