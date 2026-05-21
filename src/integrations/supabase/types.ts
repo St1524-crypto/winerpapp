@@ -769,7 +769,7 @@ export type Database = {
           invoice_title_mode: string
           logo_url: string | null
           phone: string | null
-          slug: string
+          slug: string | null
           status: string
           tax_id: string | null
           updated_at: string
@@ -786,7 +786,7 @@ export type Database = {
           invoice_title_mode?: string
           logo_url?: string | null
           phone?: string | null
-          slug: string
+          slug?: string | null
           status?: string
           tax_id?: string | null
           updated_at?: string
@@ -803,7 +803,7 @@ export type Database = {
           invoice_title_mode?: string
           logo_url?: string | null
           phone?: string | null
-          slug?: string
+          slug?: string | null
           status?: string
           tax_id?: string | null
           updated_at?: string
