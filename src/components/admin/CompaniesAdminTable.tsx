@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Loader2, Plus, Trash2, Search, CheckCircle2 } from "lucide-react";
+import { Building2, Loader2, Plus, Trash2, Search, CheckCircle2, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { companySchema } from "@/lib/company-schema";
 import {
@@ -22,6 +22,7 @@ import {
 type CompanyRow = {
   id: string;
   company_name: string;
+  slug: string | null;
   tax_id: string | null;
   email: string | null;
   phone: string | null;
@@ -86,7 +87,7 @@ export function CompaniesAdminTable() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("id, company_name, tax_id, email, phone, address, status")
+        .select("id, company_name, slug, tax_id, email, phone, address, status")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as CompanyRow[];
@@ -263,6 +264,7 @@ export function CompaniesAdminTable() {
                   <TableHead className="min-w-[130px]">電話</TableHead>
                   <TableHead className="min-w-[220px]">地址</TableHead>
                   <TableHead className="min-w-[120px]">狀態</TableHead>
+                  <TableHead className="min-w-[220px]">專屬入口</TableHead>
                   <TableHead className="w-[60px] text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -320,6 +322,39 @@ export function CompaniesAdminTable() {
                           </span>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell className="align-top">
+                      {row.slug ? (
+                        <div className="flex items-center gap-1">
+                          <code className="text-[11px] px-1.5 py-1 rounded bg-muted font-mono truncate max-w-[160px]" title={`${window.location.origin}/c/${row.slug}`}>
+                            /c/{row.slug}
+                          </code>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            title="複製完整網址"
+                            onClick={() => {
+                              const url = `${window.location.origin}/c/${row.slug}`;
+                              navigator.clipboard.writeText(url);
+                              toast.success("已複製公司入口網址", { description: url });
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            title="開啟入口"
+                            onClick={() => window.open(`/c/${row.slug}`, "_blank")}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">尚未生成</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right align-top">
                       <AlertDialog>

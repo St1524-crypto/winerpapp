@@ -20,6 +20,7 @@ import { Route as ShopVipRouteImport } from './routes/shop.vip'
 import { Route as ShopProductsRouteImport } from './routes/shop.products'
 import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
 import { Route as ShopAccountRouteImport } from './routes/shop.account'
+import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authenticated/warehouses'
 import { Route as AuthenticatedVipPlansRouteImport } from './routes/_authenticated/vip-plans'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
@@ -118,6 +119,11 @@ const ShopAccountRoute = ShopAccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => ShopRoute,
+} as any)
+const CSlugRoute = CSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWarehousesRoute = AuthenticatedWarehousesRouteImport.update({
   id: '/warehouses',
@@ -385,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
+  '/c/$slug': typeof CSlugRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
@@ -439,6 +446,7 @@ export interface FileRoutesByTo {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
+  '/c/$slug': typeof CSlugRoute
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
@@ -496,6 +504,7 @@ export interface FileRoutesById {
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/vip-plans': typeof AuthenticatedVipPlansRoute
   '/_authenticated/warehouses': typeof AuthenticatedWarehousesRoute
+  '/c/$slug': typeof CSlugRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
@@ -554,6 +563,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/vip-plans'
     | '/warehouses'
+    | '/c/$slug'
     | '/shop/account'
     | '/shop/checkout'
     | '/shop/products'
@@ -608,6 +618,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/vip-plans'
     | '/warehouses'
+    | '/c/$slug'
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/vip'
@@ -664,6 +675,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendors'
     | '/_authenticated/vip-plans'
     | '/_authenticated/warehouses'
+    | '/c/$slug'
     | '/shop/account'
     | '/shop/checkout'
     | '/shop/products'
@@ -700,6 +712,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRouteWithChildren
   TwoFactorRoute: typeof TwoFactorRoute
+  CSlugRoute: typeof CSlugRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -781,6 +794,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/account'
       preLoaderRoute: typeof ShopAccountRouteImport
       parentRoute: typeof ShopRoute
+    }
+    '/c/$slug': {
+      id: '/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof CSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/warehouses': {
       id: '/_authenticated/warehouses'
@@ -1288,6 +1308,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRouteWithChildren,
   TwoFactorRoute: TwoFactorRoute,
+  CSlugRoute: CSlugRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
