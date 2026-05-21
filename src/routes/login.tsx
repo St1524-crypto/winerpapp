@@ -13,7 +13,7 @@ import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/sec
 import { resolveLoginEmail, getUserCompany } from "@/lib/auth-lookup.functions";
 import { handleReferralSignup } from "@/lib/points.functions";
 
-export const Route = createFileRoute("/login")({ component: LoginPage });
+export const Route = createFileRoute("/login")({ component: () => <LoginPage /> });
 
 type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
 
