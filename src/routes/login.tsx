@@ -248,7 +248,7 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
             />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">{selectedCompany.company_name}</h1>
-          <p className="text-xs text-muted-foreground mt-1">公司專屬登入入口 · /{selectedCompany.slug}</p>
+          <p className="text-xs text-muted-foreground mt-1 font-mono">/login/{selectedCompany.slug}</p>
         </div>
 
         {/* 切換公司 */}
