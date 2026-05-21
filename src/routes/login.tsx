@@ -1,18 +1,21 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Building2, ArrowLeftRight } from "lucide-react";
 import { useBranding } from "@/hooks/use-branding";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
-import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
+import { resolveLoginEmail, getUserCompany } from "@/lib/auth-lookup.functions";
 import { handleReferralSignup } from "@/lib/points.functions";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
+
+type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
 
 function LoginPage() {
   const { user, loading, roles } = useAuth();
@@ -28,14 +31,44 @@ function LoginPage() {
   const [refCode, setRefCode] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const [companies, setCompanies] = useState<PublicCompany[]>([]);
+  const [selectedSlug, setSelectedSlug] = useState<string>("");
+
+  const selectedCompany = useMemo(
+    () => companies.find((c) => c.slug === selectedSlug) ?? null,
+    [companies, selectedSlug],
+  );
+
+  // 載入公司清單 + 解析 URL ?company=slug
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const r = params.get("ref");
-    if (r) { setRefCode(r.toUpperCase()); setMode("signup"); }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.rpc("get_public_companies");
+      if (cancelled) return;
+      const list = (data ?? []) as PublicCompany[];
+      setCompanies(list);
+
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get("company");
+      const ref = params.get("ref");
+      if (ref) { setRefCode(ref.toUpperCase()); setMode("signup"); }
+      if (slug && list.some((c) => c.slug === slug)) {
+        setSelectedSlug(slug);
+      } else if (list.length === 1) {
+        setSelectedSlug(list[0].slug);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
-
+  // 將選擇的公司同步到網址，方便分享
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (selectedSlug) url.searchParams.set("company", selectedSlug);
+    else url.searchParams.delete("company");
+    window.history.replaceState({}, "", url.toString());
+  }, [selectedSlug]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -49,14 +82,19 @@ function LoginPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!selectedCompany && mode !== "forgot") {
+      toast.error("請先選擇公司入口");
+      return;
+    }
     setBusy(true);
     try {
       if (mode === "signin") {
-        // Allow login with email / phone / member_no
         let loginEmail = identifier.trim();
         if (!loginEmail.includes("@")) {
-          const res = await resolveLoginEmail({ data: { identifier: loginEmail } }).catch(() => ({ email: null }));
-          if (!res.email) throw new Error("找不到對應帳號，請確認電話號碼 / 會員編號 / Email");
+          const res = await resolveLoginEmail({
+            data: { identifier: loginEmail, companyId: selectedCompany!.id },
+          }).catch(() => ({ email: null }));
+          if (!res.email) throw new Error(`此公司入口 (${selectedCompany!.company_name}) 找不到對應帳號`);
           loginEmail = res.email;
         }
 
@@ -69,6 +107,21 @@ function LoginPage() {
         const uid = data.user?.id;
 
         await recordLoginAttempt({ data: { email: loginEmail, success: true, userId: uid } }).catch(() => {});
+
+        // 驗證使用者是否屬於此公司（super_admin 例外可跨公司）
+        if (uid) {
+          const userMeta = data.user?.app_metadata ?? {};
+          const isSuper = Array.isArray((userMeta as any).roles)
+            ? (userMeta as any).roles.includes("super_admin")
+            : false;
+          if (!isSuper) {
+            const { companyId } = await getUserCompany({ data: { userId: uid } }).catch(() => ({ companyId: null }));
+            if (companyId && companyId !== selectedCompany!.id) {
+              await supabase.auth.signOut();
+              throw new Error(`此帳號不屬於 ${selectedCompany!.company_name}，請選擇正確的公司入口`);
+            }
+          }
+        }
 
         if (session && uid) {
           await recordSession({
@@ -87,11 +140,8 @@ function LoginPage() {
           }
         }
 
-        toast.success("登入成功");
+        toast.success(`已登入 ${selectedCompany!.company_name}`);
       } else if (mode === "signup") {
-        // Phone-based signup creates a synthetic email <phone>@phone.local
-        // so we can keep email+password as the auth primitive while letting
-        // members log in by phone (resolved via profiles.phone -> email).
         let signupEmail = email.trim();
         const cleanPhone = phone.trim().replace(/[\s-]/g, "");
         if (signupType === "phone") {
@@ -102,23 +152,19 @@ function LoginPage() {
           email: signupEmail,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/dashboard?company=${selectedCompany!.slug}`,
             data: {
               name,
               phone: signupType === "phone" ? cleanPhone : undefined,
+              company_slug: selectedCompany!.slug,
             },
           },
         });
         if (error) throw error;
-        // 推薦碼註冊獎勵（若有 session，未驗證信箱情境會略過）
         if (refCode && signUpData.session) {
           await handleReferralSignup({ data: { referralCode: refCode } }).catch(() => {});
         }
-        toast.success(
-          signupType === "phone"
-            ? "註冊成功，您的會員編號已建立，可使用電話號碼登入"
-            : "註冊成功，請查收驗證信",
-        );
+        toast.success(`已於 ${selectedCompany!.company_name} 完成註冊` + (signupType === "phone" ? "，可使用電話號碼登入" : "，請查收驗證信"));
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -134,7 +180,52 @@ function LoginPage() {
     }
   }
 
+  // ===== 未選擇公司 → 顯示公司入口選單 =====
+  if (!selectedCompany) {
+    return (
+      <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
+        <div className="relative w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-glow mb-4 overflow-hidden ring-1 ring-primary/30">
+              <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">選擇公司入口</h1>
+            <p className="text-sm text-muted-foreground mt-1">請選擇您所屬的公司以繼續登入或註冊</p>
+          </div>
+          <div className="rounded-2xl border bg-card/80 backdrop-blur-xl shadow-elegant p-4 space-y-2">
+            {companies.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">尚無可用的公司入口</p>
+            )}
+            {companies.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedSlug(c.slug)}
+                className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-primary/40 transition-colors text-left"
+              >
+                <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                  {c.logo_url ? (
+                    <img src={c.logo_url} alt={c.company_name} className="h-full w-full object-contain" />
+                  ) : (
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{c.company_name}</div>
+                  <div className="text-xs text-muted-foreground">/{c.slug}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="text-center mt-4">
+            <Link to="/shop" className="text-sm text-primary hover:underline">回首頁</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
+  // ===== 已選擇公司 → 顯示登入/註冊表單 =====
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
@@ -142,12 +233,39 @@ function LoginPage() {
         style={{ backgroundImage: "linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
 
       <div className="relative w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-glow mb-4 overflow-hidden ring-1 ring-primary/30">
-            <img src={logoUrl} alt="源倍力 Logo" className="h-full w-full object-contain" />
+            <img
+              src={selectedCompany.logo_url || logoUrl}
+              alt={selectedCompany.company_name}
+              className="h-full w-full object-contain"
+            />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">源倍力 ERP</h1>
-          <p className="text-sm text-muted-foreground mt-1">Enterprise Resource Platform</p>
+          <h1 className="text-2xl font-bold tracking-tight">{selectedCompany.company_name}</h1>
+          <p className="text-xs text-muted-foreground mt-1">公司專屬登入入口 · /{selectedCompany.slug}</p>
+        </div>
+
+        {/* 切換公司 */}
+        <div className="mb-4 flex items-center gap-2">
+          <Select value={selectedSlug} onValueChange={setSelectedSlug}>
+            <SelectTrigger className="flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {companies.map((c) => (
+                <SelectItem key={c.id} value={c.slug}>{c.company_name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedSlug("")}
+            title="重新選擇公司"
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="rounded-2xl border bg-card/80 backdrop-blur-xl shadow-elegant p-8">
@@ -161,6 +279,9 @@ function LoginPage() {
           <form onSubmit={submit} className="space-y-4">
             {mode === "signup" && (
               <>
+                <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2 text-xs text-foreground">
+                  您將在 <span className="font-semibold">{selectedCompany.company_name}</span> 公司入口註冊新帳號
+                </div>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => setSignupType("email")}
                     className={`flex-1 py-1.5 text-xs rounded-md border ${signupType === "email" ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground"}`}>Email 註冊</button>
@@ -181,7 +302,7 @@ function LoginPage() {
             {mode === "signin" && (
               <div className="space-y-2">
                 <Label htmlFor="identifier">Email / 電話 / 會員編號</Label>
-                <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder="admin@yuanjing.com 或 0912345678 或 M000001" />
+                <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder="僅限本公司帳號" />
               </div>
             )}
 
@@ -196,7 +317,7 @@ function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="phone">電話號碼</Label>
                 <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="0912345678" />
-                <p className="text-[11px] text-muted-foreground">註冊後系統將自動產生會員編號 (M000001 起)，可使用電話號碼直接登入。</p>
+                <p className="text-[11px] text-muted-foreground">註冊後系統將自動產生會員編號，可使用電話號碼直接登入。</p>
               </div>
             )}
 
@@ -221,7 +342,7 @@ function LoginPage() {
 
             <Button type="submit" disabled={busy} className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
               {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {mode === "signin" ? "登入系統" : mode === "signup" ? "建立帳號" : "寄送重設信"}
+              {mode === "signin" ? `登入 ${selectedCompany.company_name}` : mode === "signup" ? "建立帳號" : "寄送重設信"}
             </Button>
             {mode === "forgot" && (
               <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("signin")}>返回登入</Button>
@@ -234,7 +355,7 @@ function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-4">
-          © {new Date().getFullYear()} 源晶科技 · 企業級 ERP 平台
+          © {new Date().getFullYear()} {selectedCompany.company_name} · 企業級 ERP 平台
         </p>
       </div>
     </div>

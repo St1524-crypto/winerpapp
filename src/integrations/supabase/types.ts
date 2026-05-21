@@ -769,6 +769,7 @@ export type Database = {
           invoice_title_mode: string
           logo_url: string | null
           phone: string | null
+          slug: string | null
           status: string
           tax_id: string | null
           updated_at: string
@@ -785,6 +786,7 @@ export type Database = {
           invoice_title_mode?: string
           logo_url?: string | null
           phone?: string | null
+          slug?: string | null
           status?: string
           tax_id?: string | null
           updated_at?: string
@@ -801,6 +803,7 @@ export type Database = {
           invoice_title_mode?: string
           logo_url?: string | null
           phone?: string | null
+          slug?: string | null
           status?: string
           tax_id?: string | null
           updated_at?: string
@@ -2944,6 +2947,24 @@ export type Database = {
       generate_receipt_no: { Args: never; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
       generate_so_no: { Args: never; Returns: string }
+      get_company_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          company_name: string
+          id: string
+          logo_url: string
+          slug: string
+        }[]
+      }
+      get_public_companies: {
+        Args: never
+        Returns: {
+          company_name: string
+          id: string
+          logo_url: string
+          slug: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
