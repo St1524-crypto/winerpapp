@@ -191,42 +191,49 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
   }
 
 
-  // ===== 未選擇公司 → 顯示公司入口選單 =====
+  // ===== 無公司入口 → 顯示通用登入表單 =====
   if (!selectedCompany) {
     return (
       <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
         <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
         <div className="relative w-full max-w-md">
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-glow mb-4 overflow-hidden ring-1 ring-primary/30">
               <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">選擇公司入口</h1>
-            <p className="text-sm text-muted-foreground mt-1">請選擇您所屬的公司以繼續登入或註冊</p>
+            <h1 className="text-2xl font-bold tracking-tight">登入 WinERP</h1>
           </div>
-          <div className="rounded-2xl border bg-card/80 backdrop-blur-xl shadow-elegant p-4 space-y-2">
-            {companies.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">尚無可用的公司入口</p>
-            )}
-            {companies.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => navigate({ to: "/login/$slug", params: { slug: c.slug } })}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-primary/40 transition-colors text-left"
-              >
-                <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                  {c.logo_url ? (
-                    <img src={c.logo_url} alt={c.company_name} className="h-full w-full object-contain" />
-                  ) : (
-                    <Building2 className="h-5 w-5 text-muted-foreground" />
-                  )}
+          <div className="rounded-2xl border bg-card/80 backdrop-blur-xl shadow-elegant p-8">
+            <form onSubmit={submit} className="space-y-4">
+              {mode === "signin" && (
+                <div className="space-y-2">
+                  <Label htmlFor="identifier">Email / 電話 / 會員編號</Label>
+                  <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{c.company_name}</div>
-                  <div className="text-xs text-muted-foreground">/{c.slug}</div>
+              )}
+              {mode === "forgot" && (
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
-              </button>
-            ))}
+              )}
+              {mode === "signin" && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">密碼</Label>
+                    <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
+                  </div>
+                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                </div>
+              )}
+              <Button type="submit" disabled={busy} className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
+                {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {mode === "signin" ? "登入" : "寄送重設信"}
+              </Button>
+              {mode === "forgot" && (
+                <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("signin")}>返回登入</Button>
+              )}
+            </form>
           </div>
           <div className="text-center mt-4">
             <Link to="/shop" className="text-sm text-primary hover:underline">回首頁</Link>
@@ -235,6 +242,7 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
       </div>
     );
   }
+
 
   // ===== 已選擇公司 → 顯示登入/註冊表單 =====
   return (
