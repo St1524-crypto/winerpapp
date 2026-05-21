@@ -22,6 +22,7 @@ import {
 type CompanyRow = {
   id: string;
   company_name: string;
+  slug: string | null;
   tax_id: string | null;
   email: string | null;
   phone: string | null;
