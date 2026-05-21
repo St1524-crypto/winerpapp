@@ -98,7 +98,7 @@ function LoginPage() {
           if (!/^\+?\d{8,15}$/.test(cleanPhone)) throw new Error("請輸入有效的電話號碼");
           signupEmail = `${cleanPhone.replace(/^\+/, "")}@phone.local`;
         }
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: signupEmail,
           password,
           options: {
@@ -110,6 +110,10 @@ function LoginPage() {
           },
         });
         if (error) throw error;
+        // 推薦碼註冊獎勵（若有 session，未驗證信箱情境會略過）
+        if (refCode && signUpData.session) {
+          await handleReferralSignup({ data: { referralCode: refCode } }).catch(() => {});
+        }
         toast.success(
           signupType === "phone"
             ? "註冊成功，您的會員編號已建立，可使用電話號碼登入"
