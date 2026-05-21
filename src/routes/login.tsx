@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useBranding } from "@/hooks/use-branding";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
 import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
+import { handleReferralSignup } from "@/lib/points.functions";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
@@ -19,12 +20,21 @@ function LoginPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [signupType, setSignupType] = useState<"email" | "phone">("email");
-  const [identifier, setIdentifier] = useState(""); // signin: email/phone/member_no
+  const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [refCode, setRefCode] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get("ref");
+    if (r) { setRefCode(r.toUpperCase()); setMode("signup"); }
+  }, []);
+
 
 
   useEffect(() => {
@@ -88,7 +98,7 @@ function LoginPage() {
           if (!/^\+?\d{8,15}$/.test(cleanPhone)) throw new Error("請輸入有效的電話號碼");
           signupEmail = `${cleanPhone.replace(/^\+/, "")}@phone.local`;
         }
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: signupEmail,
           password,
           options: {
@@ -100,6 +110,10 @@ function LoginPage() {
           },
         });
         if (error) throw error;
+        // 推薦碼註冊獎勵（若有 session，未驗證信箱情境會略過）
+        if (refCode && signUpData.session) {
+          await handleReferralSignup({ data: { referralCode: refCode } }).catch(() => {});
+        }
         toast.success(
           signupType === "phone"
             ? "註冊成功，您的會員編號已建立，可使用電話號碼登入"
@@ -156,6 +170,10 @@ function LoginPage() {
                 <div className="space-y-2">
                   <Label htmlFor="name">姓名</Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="王小明" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="refCode">推薦碼（選填）</Label>
+                  <Input id="refCode" value={refCode} onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="例：A1B2C3D4" className="font-mono" />
                 </div>
               </>
             )}
