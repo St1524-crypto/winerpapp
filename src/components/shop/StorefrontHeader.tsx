@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import { useState } from "react";
 
 export function StorefrontHeader() {
   const { count, setOpen } = useCart();
   const { user } = useAuth();
+  const { current } = useCurrentCompany();
   const [q, setQ] = useState("");
   const navigate = useNavigate();
 
@@ -19,15 +21,24 @@ export function StorefrontHeader() {
     navigate({ to: "/shop/products", search: { q } as any });
   };
 
+  const brandName = current?.company_name ?? "源晶商城";
+  const brandInitial = brandName.charAt(0);
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center gap-4 px-4">
         <Link to="/shop" className="flex items-center gap-2 shrink-0">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/30">
-            <span className="text-primary-foreground font-bold">源</span>
+          <div className="h-9 w-9 rounded-xl bg-white flex items-center justify-center shadow-lg shadow-primary/20 overflow-hidden ring-1 ring-primary/30">
+            {current?.logo_url ? (
+              <img src={current.logo_url} alt={brandName} className="h-full w-full object-contain" />
+            ) : (
+              <div className="h-full w-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                <span className="text-primary-foreground font-bold">{brandInitial}</span>
+              </div>
+            )}
           </div>
           <div className="hidden sm:block">
-            <div className="text-sm font-semibold leading-tight">源晶商城</div>
+            <div className="text-sm font-semibold leading-tight">{brandName}</div>
             <div className="text-[10px] text-muted-foreground leading-tight">YJ Store</div>
           </div>
         </Link>
