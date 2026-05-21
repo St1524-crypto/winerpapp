@@ -211,7 +211,11 @@ function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
+        <div className="text-center mt-4">
+          <Link to="/shop" className="text-sm text-primary hover:underline">回首頁</Link>
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground mt-4">
           © {new Date().getFullYear()} 源晶科技 · 企業級 ERP 平台
         </p>
       </div>
