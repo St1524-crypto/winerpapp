@@ -85,7 +85,7 @@ function CompanyPortal() {
         <div className="rounded-2xl border bg-card/80 backdrop-blur-xl shadow-elegant p-6 space-y-3">
           <Button
             className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow h-12"
-            onClick={() => navigate({ to: "/login", search: { company: company.slug } as any })}
+            onClick={() => navigate({ to: "/login/$slug", params: { slug: company.slug } })}
           >
             <LogIn className="h-4 w-4 mr-2" />
             登入 {company.company_name}
@@ -94,8 +94,7 @@ function CompanyPortal() {
             variant="outline"
             className="w-full h-12"
             onClick={() => {
-              const url = new URL(window.location.origin + "/login");
-              url.searchParams.set("company", company.slug);
+              const url = new URL(window.location.origin + `/login/${encodeURIComponent(company.slug)}`);
               url.searchParams.set("mode", "signup");
               window.location.href = url.toString();
             }}
