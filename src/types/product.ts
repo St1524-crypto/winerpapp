@@ -24,6 +24,8 @@ export interface Product {
   status: string;
   featured: boolean;
   image: string | null;
+  reward_points: number;
+  discount_points_max: number;
   created_at: string;
   updated_at: string;
 }
