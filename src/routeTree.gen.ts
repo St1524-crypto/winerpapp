@@ -21,6 +21,7 @@ import { Route as ShopProductsRouteImport } from './routes/shop.products'
 import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
 import { Route as ShopAccountRouteImport } from './routes/shop.account'
 import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authenticated/warehouses'
+import { Route as AuthenticatedVipPlansRouteImport } from './routes/_authenticated/vip-plans'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedUserRolesRouteImport } from './routes/_authenticated/user-roles'
 import { Route as AuthenticatedSupportAnnouncementsRouteImport } from './routes/_authenticated/support-announcements'
@@ -30,6 +31,7 @@ import { Route as AuthenticatedRlsTestRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReceivingRouteImport } from './routes/_authenticated/receiving'
 import { Route as AuthenticatedPurchasesRouteImport } from './routes/_authenticated/purchases'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
+import { Route as AuthenticatedPointsAdminRouteImport } from './routes/_authenticated/points-admin'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
 import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
 import { Route as AuthenticatedInventoryTxRouteImport } from './routes/_authenticated/inventory-tx'
@@ -122,6 +124,11 @@ const AuthenticatedWarehousesRoute = AuthenticatedWarehousesRouteImport.update({
   path: '/warehouses',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedVipPlansRoute = AuthenticatedVipPlansRouteImport.update({
+  id: '/vip-plans',
+  path: '/vip-plans',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
@@ -168,6 +175,12 @@ const AuthenticatedProductsRoute = AuthenticatedProductsRouteImport.update({
   path: '/products',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPointsAdminRoute =
+  AuthenticatedPointsAdminRouteImport.update({
+    id: '/points-admin',
+    path: '/points-admin',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -360,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/members': typeof AuthenticatedMembersRoute
   '/orders': typeof AuthenticatedOrdersRoute
+  '/points-admin': typeof AuthenticatedPointsAdminRoute
   '/products': typeof AuthenticatedProductsRouteWithChildren
   '/purchases': typeof AuthenticatedPurchasesRoute
   '/receiving': typeof AuthenticatedReceivingRoute
@@ -369,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/support-announcements': typeof AuthenticatedSupportAnnouncementsRoute
   '/user-roles': typeof AuthenticatedUserRolesRoute
   '/vendors': typeof AuthenticatedVendorsRoute
+  '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
@@ -412,6 +427,7 @@ export interface FileRoutesByTo {
   '/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/members': typeof AuthenticatedMembersRoute
   '/orders': typeof AuthenticatedOrdersRoute
+  '/points-admin': typeof AuthenticatedPointsAdminRoute
   '/products': typeof AuthenticatedProductsRouteWithChildren
   '/purchases': typeof AuthenticatedPurchasesRoute
   '/receiving': typeof AuthenticatedReceivingRoute
@@ -421,6 +437,7 @@ export interface FileRoutesByTo {
   '/support-announcements': typeof AuthenticatedSupportAnnouncementsRoute
   '/user-roles': typeof AuthenticatedUserRolesRoute
   '/vendors': typeof AuthenticatedVendorsRoute
+  '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
@@ -467,6 +484,7 @@ export interface FileRoutesById {
   '/_authenticated/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
+  '/_authenticated/points-admin': typeof AuthenticatedPointsAdminRoute
   '/_authenticated/products': typeof AuthenticatedProductsRouteWithChildren
   '/_authenticated/purchases': typeof AuthenticatedPurchasesRoute
   '/_authenticated/receiving': typeof AuthenticatedReceivingRoute
@@ -476,6 +494,7 @@ export interface FileRoutesById {
   '/_authenticated/support-announcements': typeof AuthenticatedSupportAnnouncementsRoute
   '/_authenticated/user-roles': typeof AuthenticatedUserRolesRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
+  '/_authenticated/vip-plans': typeof AuthenticatedVipPlansRoute
   '/_authenticated/warehouses': typeof AuthenticatedWarehousesRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
@@ -523,6 +542,7 @@ export interface FileRouteTypes {
     | '/inventory-tx'
     | '/members'
     | '/orders'
+    | '/points-admin'
     | '/products'
     | '/purchases'
     | '/receiving'
@@ -532,6 +552,7 @@ export interface FileRouteTypes {
     | '/support-announcements'
     | '/user-roles'
     | '/vendors'
+    | '/vip-plans'
     | '/warehouses'
     | '/shop/account'
     | '/shop/checkout'
@@ -575,6 +596,7 @@ export interface FileRouteTypes {
     | '/inventory-tx'
     | '/members'
     | '/orders'
+    | '/points-admin'
     | '/products'
     | '/purchases'
     | '/receiving'
@@ -584,6 +606,7 @@ export interface FileRouteTypes {
     | '/support-announcements'
     | '/user-roles'
     | '/vendors'
+    | '/vip-plans'
     | '/warehouses'
     | '/shop/checkout'
     | '/shop/products'
@@ -629,6 +652,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inventory-tx'
     | '/_authenticated/members'
     | '/_authenticated/orders'
+    | '/_authenticated/points-admin'
     | '/_authenticated/products'
     | '/_authenticated/purchases'
     | '/_authenticated/receiving'
@@ -638,6 +662,7 @@ export interface FileRouteTypes {
     | '/_authenticated/support-announcements'
     | '/_authenticated/user-roles'
     | '/_authenticated/vendors'
+    | '/_authenticated/vip-plans'
     | '/_authenticated/warehouses'
     | '/shop/account'
     | '/shop/checkout'
@@ -764,6 +789,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWarehousesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/vip-plans': {
+      id: '/_authenticated/vip-plans'
+      path: '/vip-plans'
+      fullPath: '/vip-plans'
+      preLoaderRoute: typeof AuthenticatedVipPlansRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/vendors': {
       id: '/_authenticated/vendors'
       path: '/vendors'
@@ -825,6 +857,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof AuthenticatedProductsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/points-admin': {
+      id: '/_authenticated/points-admin'
+      path: '/points-admin'
+      fullPath: '/points-admin'
+      preLoaderRoute: typeof AuthenticatedPointsAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/orders': {
@@ -1143,6 +1182,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInventoryTxRoute: typeof AuthenticatedInventoryTxRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
+  AuthenticatedPointsAdminRoute: typeof AuthenticatedPointsAdminRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRouteWithChildren
   AuthenticatedPurchasesRoute: typeof AuthenticatedPurchasesRoute
   AuthenticatedReceivingRoute: typeof AuthenticatedReceivingRoute
@@ -1152,6 +1192,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSupportAnnouncementsRoute: typeof AuthenticatedSupportAnnouncementsRoute
   AuthenticatedUserRolesRoute: typeof AuthenticatedUserRolesRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
+  AuthenticatedVipPlansRoute: typeof AuthenticatedVipPlansRoute
   AuthenticatedWarehousesRoute: typeof AuthenticatedWarehousesRoute
   AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
 }
@@ -1167,6 +1208,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInventoryTxRoute: AuthenticatedInventoryTxRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
+  AuthenticatedPointsAdminRoute: AuthenticatedPointsAdminRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRouteWithChildren,
   AuthenticatedPurchasesRoute: AuthenticatedPurchasesRoute,
   AuthenticatedReceivingRoute: AuthenticatedReceivingRoute,
@@ -1177,6 +1219,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedSupportAnnouncementsRoute,
   AuthenticatedUserRolesRoute: AuthenticatedUserRolesRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
+  AuthenticatedVipPlansRoute: AuthenticatedVipPlansRoute,
   AuthenticatedWarehousesRoute: AuthenticatedWarehousesRoute,
   AuthenticatedB2bAccountsRoute: AuthenticatedB2bAccountsRouteWithChildren,
 }
@@ -1250,3 +1293,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
