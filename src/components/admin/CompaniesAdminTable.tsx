@@ -87,7 +87,7 @@ export function CompaniesAdminTable() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("id, company_name, tax_id, email, phone, address, status")
+        .select("id, company_name, slug, tax_id, email, phone, address, status")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as CompanyRow[];
