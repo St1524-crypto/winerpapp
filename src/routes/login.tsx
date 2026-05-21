@@ -51,7 +51,9 @@ function LoginPage() {
       const params = new URLSearchParams(window.location.search);
       const slug = params.get("company");
       const ref = params.get("ref");
+      const m = params.get("mode");
       if (ref) { setRefCode(ref.toUpperCase()); setMode("signup"); }
+      if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
       if (slug && list.some((c) => c.slug === slug)) {
         setSelectedSlug(slug);
       } else if (list.length === 1) {
