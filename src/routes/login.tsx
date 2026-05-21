@@ -206,7 +206,7 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
             {companies.map((c) => (
               <button
                 key={c.id}
-                onClick={() => setSelectedSlug(c.slug)}
+                onClick={() => navigate({ to: "/login/$slug", params: { slug: c.slug } })}
                 className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-primary/40 transition-colors text-left"
               >
                 <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center overflow-hidden shrink-0">
