@@ -49,6 +49,8 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         price: Number(product.price), wholesale_price: Number(product.wholesale_price),
         cost_price: Number(product.cost_price),
         stock: product.stock, safe_stock: product.safe_stock,
+        reward_points: Number((product as any).reward_points ?? 0),
+        discount_points_max: Number((product as any).discount_points_max ?? 0),
         status: product.status, featured: product.featured,
       });
       supabase.from("product_images").select("*").eq("product_id", product.id).order("sort_order")
