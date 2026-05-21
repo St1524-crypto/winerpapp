@@ -88,8 +88,8 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedCompany && mode !== "forgot") {
-      toast.error("請先選擇公司入口");
+    if (mode === "signup" && !selectedCompany) {
+      toast.error("註冊請使用公司專屬入口 /login/{公司名}");
       return;
     }
     setBusy(true);
@@ -98,9 +98,13 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
         let loginEmail = identifier.trim();
         if (!loginEmail.includes("@")) {
           const res = await resolveLoginEmail({
-            data: { identifier: loginEmail, companyId: selectedCompany!.id },
+            data: { identifier: loginEmail, companyId: selectedCompany?.id },
           }).catch(() => ({ email: null }));
-          if (!res.email) throw new Error(`此公司入口 (${selectedCompany!.company_name}) 找不到對應帳號`);
+          if (!res.email) throw new Error(
+            selectedCompany
+              ? `此公司入口 (${selectedCompany.company_name}) 找不到對應帳號`
+              : "找不到對應帳號",
+          );
           loginEmail = res.email;
         }
 
@@ -114,17 +118,17 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
 
         await recordLoginAttempt({ data: { email: loginEmail, success: true, userId: uid } }).catch(() => {});
 
-        // 驗證使用者是否屬於此公司（super_admin 例外可跨公司）
-        if (uid) {
+        // 若由公司入口進入，驗證使用者是否屬於該公司（super_admin 例外）
+        if (uid && selectedCompany) {
           const userMeta = data.user?.app_metadata ?? {};
           const isSuper = Array.isArray((userMeta as any).roles)
             ? (userMeta as any).roles.includes("super_admin")
             : false;
           if (!isSuper) {
             const { companyId } = await getUserCompany({ data: { userId: uid } }).catch(() => ({ companyId: null }));
-            if (companyId && companyId !== selectedCompany!.id) {
+            if (companyId && companyId !== selectedCompany.id) {
               await supabase.auth.signOut();
-              throw new Error(`此帳號不屬於 ${selectedCompany!.company_name}，請選擇正確的公司入口`);
+              throw new Error(`此帳號不屬於 ${selectedCompany.company_name}，請使用正確的公司入口`);
             }
           }
         }
@@ -146,8 +150,8 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
           }
         }
 
-        toast.success(`已登入 ${selectedCompany!.company_name}`);
-      } else if (mode === "signup") {
+        toast.success(selectedCompany ? `已登入 ${selectedCompany.company_name}` : "登入成功");
+      } else if (mode === "signup" && selectedCompany) {
         let signupEmail = email.trim();
         const cleanPhone = phone.trim().replace(/[\s-]/g, "");
         if (signupType === "phone") {
@@ -158,11 +162,11 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
           email: signupEmail,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard?company=${selectedCompany!.slug}`,
+            emailRedirectTo: `${window.location.origin}/dashboard?company=${selectedCompany.slug}`,
             data: {
               name,
               phone: signupType === "phone" ? cleanPhone : undefined,
-              company_slug: selectedCompany!.slug,
+              company_slug: selectedCompany.slug,
             },
           },
         });
@@ -170,7 +174,7 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
         if (refCode && signUpData.session) {
           await handleReferralSignup({ data: { referralCode: refCode } }).catch(() => {});
         }
-        toast.success(`已於 ${selectedCompany!.company_name} 完成註冊` + (signupType === "phone" ? "，可使用電話號碼登入" : "，請查收驗證信"));
+        toast.success(`已於 ${selectedCompany.company_name} 完成註冊` + (signupType === "phone" ? "，可使用電話號碼登入" : "，請查收驗證信"));
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -185,6 +189,7 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
       setBusy(false);
     }
   }
+
 
   // ===== 未選擇公司 → 顯示公司入口選單 =====
   if (!selectedCompany) {
