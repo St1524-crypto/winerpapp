@@ -171,6 +171,10 @@ function LoginPage() {
                   <Label htmlFor="name">姓名</Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="王小明" />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="refCode">推薦碼（選填）</Label>
+                  <Input id="refCode" value={refCode} onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="例：A1B2C3D4" className="font-mono" />
+                </div>
               </>
             )}
 
