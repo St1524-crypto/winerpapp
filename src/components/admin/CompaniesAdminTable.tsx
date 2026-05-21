@@ -326,18 +326,18 @@ export function CompaniesAdminTable() {
                     <TableCell className="align-top">
                       {row.slug ? (
                         <div className="flex items-center gap-1">
-                          <code className="text-[11px] px-1.5 py-1 rounded bg-muted font-mono truncate max-w-[160px]" title={`${window.location.origin}/c/${row.slug}`}>
-                            /c/{row.slug}
+                          <code className="text-[11px] px-1.5 py-1 rounded bg-muted font-mono truncate max-w-[180px]" title={`${window.location.origin}/login/${row.slug}`}>
+                            /login/{row.slug}
                           </code>
                           <Button
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7"
-                            title="複製完整網址"
+                            title="複製登入網址"
                             onClick={() => {
-                              const url = `${window.location.origin}/c/${row.slug}`;
+                              const url = `${window.location.origin}/login/${encodeURIComponent(row.slug!)}`;
                               navigator.clipboard.writeText(url);
-                              toast.success("已複製公司入口網址", { description: url });
+                              toast.success("已複製公司登入網址", { description: url });
                             }}
                           >
                             <Copy className="h-3.5 w-3.5" />
@@ -346,8 +346,8 @@ export function CompaniesAdminTable() {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7"
-                            title="開啟入口"
-                            onClick={() => window.open(`/c/${row.slug}`, "_blank")}
+                            title="開啟登入入口"
+                            onClick={() => window.open(`/login/${encodeURIComponent(row.slug!)}`, "_blank")}
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                           </Button>

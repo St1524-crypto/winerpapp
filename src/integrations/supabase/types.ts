@@ -2994,6 +2994,7 @@ export type Database = {
         }[]
       }
       set_default_address: { Args: { _address_id: string }; Returns: undefined }
+      slugify_company_name: { Args: { _name: string }; Returns: string }
     }
     Enums: {
       app_role:

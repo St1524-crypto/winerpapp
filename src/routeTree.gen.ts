@@ -20,6 +20,7 @@ import { Route as ShopVipRouteImport } from './routes/shop.vip'
 import { Route as ShopProductsRouteImport } from './routes/shop.products'
 import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
 import { Route as ShopAccountRouteImport } from './routes/shop.account'
+import { Route as LoginSlugRouteImport } from './routes/login.$slug'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authenticated/warehouses'
 import { Route as AuthenticatedVipPlansRouteImport } from './routes/_authenticated/vip-plans'
@@ -119,6 +120,11 @@ const ShopAccountRoute = ShopAccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => ShopRoute,
+} as any)
+const LoginSlugRoute = LoginSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => LoginRoute,
 } as any)
 const CSlugRoute = CSlugRouteImport.update({
   id: '/c/$slug',
@@ -365,7 +371,7 @@ const AuthenticatedAdminCompaniesNewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
@@ -392,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/c/$slug': typeof CSlugRoute
+  '/login/$slug': typeof LoginSlugRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
@@ -422,7 +429,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/two-factor': typeof TwoFactorRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -447,6 +454,7 @@ export interface FileRoutesByTo {
   '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/c/$slug': typeof CSlugRoute
+  '/login/$slug': typeof LoginSlugRoute
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
@@ -478,7 +486,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
@@ -505,6 +513,7 @@ export interface FileRoutesById {
   '/_authenticated/vip-plans': typeof AuthenticatedVipPlansRoute
   '/_authenticated/warehouses': typeof AuthenticatedWarehousesRoute
   '/c/$slug': typeof CSlugRoute
+  '/login/$slug': typeof LoginSlugRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
@@ -564,6 +573,7 @@ export interface FileRouteTypes {
     | '/vip-plans'
     | '/warehouses'
     | '/c/$slug'
+    | '/login/$slug'
     | '/shop/account'
     | '/shop/checkout'
     | '/shop/products'
@@ -619,6 +629,7 @@ export interface FileRouteTypes {
     | '/vip-plans'
     | '/warehouses'
     | '/c/$slug'
+    | '/login/$slug'
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/vip'
@@ -676,6 +687,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vip-plans'
     | '/_authenticated/warehouses'
     | '/c/$slug'
+    | '/login/$slug'
     | '/shop/account'
     | '/shop/checkout'
     | '/shop/products'
@@ -708,7 +720,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  LoginRoute: typeof LoginRoute
+  LoginRoute: typeof LoginRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRouteWithChildren
   TwoFactorRoute: typeof TwoFactorRoute
@@ -794,6 +806,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/account'
       preLoaderRoute: typeof ShopAccountRouteImport
       parentRoute: typeof ShopRoute
+    }
+    '/login/$slug': {
+      id: '/login/$slug'
+      path: '/$slug'
+      fullPath: '/login/$slug'
+      preLoaderRoute: typeof LoginSlugRouteImport
+      parentRoute: typeof LoginRoute
     }
     '/c/$slug': {
       id: '/c/$slug'
@@ -1248,6 +1267,16 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface LoginRouteChildren {
+  LoginSlugRoute: typeof LoginSlugRoute
+}
+
+const LoginRouteChildren: LoginRouteChildren = {
+  LoginSlugRoute: LoginSlugRoute,
+}
+
+const LoginRouteWithChildren = LoginRoute._addFileChildren(LoginRouteChildren)
+
 interface ShopAccountOrdersRouteChildren {
   ShopAccountOrdersIdRoute: typeof ShopAccountOrdersIdRoute
 }
@@ -1304,7 +1333,7 @@ const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  LoginRoute: LoginRoute,
+  LoginRoute: LoginRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRouteWithChildren,
   TwoFactorRoute: TwoFactorRoute,

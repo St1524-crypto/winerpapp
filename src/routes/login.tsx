@@ -13,11 +13,11 @@ import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/sec
 import { resolveLoginEmail, getUserCompany } from "@/lib/auth-lookup.functions";
 import { handleReferralSignup } from "@/lib/points.functions";
 
-export const Route = createFileRoute("/login")({ component: LoginPage });
+export const Route = createFileRoute("/login")({ component: () => <LoginPage /> });
 
 type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
 
-function LoginPage() {
+export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
   const { user, loading, roles } = useAuth();
   const { logoUrl } = useBranding();
   const navigate = useNavigate();
@@ -39,7 +39,7 @@ function LoginPage() {
     [companies, selectedSlug],
   );
 
-  // 載入公司清單 + 解析 URL ?company=slug
+  // 載入公司清單 + 解析 URL ?company=slug 或路徑 /login/:slug
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -49,28 +49,32 @@ function LoginPage() {
       setCompanies(list);
 
       const params = new URLSearchParams(window.location.search);
-      const slug = params.get("company");
+      const slugFromQuery = params.get("company");
       const ref = params.get("ref");
       const m = params.get("mode");
       if (ref) { setRefCode(ref.toUpperCase()); setMode("signup"); }
       if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
-      if (slug && list.some((c) => c.slug === slug)) {
-        setSelectedSlug(slug);
+
+      const targetSlug = pathSlug || slugFromQuery || "";
+      if (targetSlug && list.some((c) => c.slug === targetSlug)) {
+        setSelectedSlug(targetSlug);
       } else if (list.length === 1) {
         setSelectedSlug(list[0].slug);
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [pathSlug]);
 
   // 將選擇的公司同步到網址，方便分享
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // 若是透過路徑進入 (/login/:slug)，由路由本身決定網址，不再覆寫
+    if (pathSlug) return;
     const url = new URL(window.location.href);
     if (selectedSlug) url.searchParams.set("company", selectedSlug);
     else url.searchParams.delete("company");
     window.history.replaceState({}, "", url.toString());
-  }, [selectedSlug]);
+  }, [selectedSlug, pathSlug]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -202,7 +206,7 @@ function LoginPage() {
             {companies.map((c) => (
               <button
                 key={c.id}
-                onClick={() => setSelectedSlug(c.slug)}
+                onClick={() => navigate({ to: "/login/$slug", params: { slug: c.slug } })}
                 className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-primary/40 transition-colors text-left"
               >
                 <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center overflow-hidden shrink-0">
@@ -244,12 +248,18 @@ function LoginPage() {
             />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">{selectedCompany.company_name}</h1>
-          <p className="text-xs text-muted-foreground mt-1">公司專屬登入入口 · /{selectedCompany.slug}</p>
+          <p className="text-xs text-muted-foreground mt-1 font-mono">/login/{selectedCompany.slug}</p>
         </div>
 
         {/* 切換公司 */}
         <div className="mb-4 flex items-center gap-2">
-          <Select value={selectedSlug} onValueChange={setSelectedSlug}>
+          <Select
+            value={selectedSlug}
+            onValueChange={(v) => {
+              if (pathSlug) navigate({ to: "/login/$slug", params: { slug: v } });
+              else setSelectedSlug(v);
+            }}
+          >
             <SelectTrigger className="flex-1">
               <SelectValue />
             </SelectTrigger>
@@ -263,7 +273,10 @@ function LoginPage() {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => setSelectedSlug("")}
+            onClick={() => {
+              if (pathSlug) navigate({ to: "/login" });
+              else setSelectedSlug("");
+            }}
             title="重新選擇公司"
           >
             <ArrowLeftRight className="h-4 w-4" />
