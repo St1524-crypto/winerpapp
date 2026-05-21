@@ -39,7 +39,7 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
     [companies, selectedSlug],
   );
 
-  // 載入公司清單 + 解析 URL ?company=slug
+  // 載入公司清單 + 解析 URL ?company=slug 或路徑 /login/:slug
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -49,28 +49,32 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
       setCompanies(list);
 
       const params = new URLSearchParams(window.location.search);
-      const slug = params.get("company");
+      const slugFromQuery = params.get("company");
       const ref = params.get("ref");
       const m = params.get("mode");
       if (ref) { setRefCode(ref.toUpperCase()); setMode("signup"); }
       if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
-      if (slug && list.some((c) => c.slug === slug)) {
-        setSelectedSlug(slug);
+
+      const targetSlug = pathSlug || slugFromQuery || "";
+      if (targetSlug && list.some((c) => c.slug === targetSlug)) {
+        setSelectedSlug(targetSlug);
       } else if (list.length === 1) {
         setSelectedSlug(list[0].slug);
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [pathSlug]);
 
   // 將選擇的公司同步到網址，方便分享
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // 若是透過路徑進入 (/login/:slug)，由路由本身決定網址，不再覆寫
+    if (pathSlug) return;
     const url = new URL(window.location.href);
     if (selectedSlug) url.searchParams.set("company", selectedSlug);
     else url.searchParams.delete("company");
     window.history.replaceState({}, "", url.toString());
-  }, [selectedSlug]);
+  }, [selectedSlug, pathSlug]);
 
   useEffect(() => {
     if (!loading && user) {
