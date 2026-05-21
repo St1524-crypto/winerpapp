@@ -55,8 +55,19 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
       if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
 
       const targetSlug = pathSlug || slugFromQuery || "";
-      if (targetSlug && list.some((c) => c.slug === targetSlug)) {
-        setSelectedSlug(targetSlug);
+      if (targetSlug) {
+        const exact = list.find((c) => c.slug === targetSlug);
+        const fuzzy =
+          exact ||
+          list.find(
+            (c) =>
+              c.slug.includes(targetSlug) ||
+              targetSlug.includes(c.slug) ||
+              c.company_name.includes(targetSlug) ||
+              targetSlug.includes(c.company_name),
+          );
+        if (fuzzy) setSelectedSlug(fuzzy.slug);
+        else if (list.length === 1) setSelectedSlug(list[0].slug);
       } else if (list.length === 1) {
         setSelectedSlug(list[0].slug);
       }
