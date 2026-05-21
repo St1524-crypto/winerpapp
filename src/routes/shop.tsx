@@ -4,6 +4,7 @@ import { StorefrontHeader } from "@/components/shop/StorefrontHeader";
 import { StorefrontFooter } from "@/components/shop/StorefrontFooter";
 import { MobileBottomNav } from "@/components/shop/MobileBottomNav";
 import { CartDrawer } from "@/components/shop/CartDrawer";
+import { SupportChatWidget } from "@/components/shop/SupportChatWidget";
 
 export const Route = createFileRoute("/shop")({
   component: ShopLayout,
@@ -28,6 +29,7 @@ function ShopLayout() {
         <StorefrontFooter />
         <MobileBottomNav />
         <CartDrawer />
+        <SupportChatWidget />
       </div>
     </CartProvider>
   );
