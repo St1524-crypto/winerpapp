@@ -264,6 +264,7 @@ export function CompaniesAdminTable() {
                   <TableHead className="min-w-[130px]">電話</TableHead>
                   <TableHead className="min-w-[220px]">地址</TableHead>
                   <TableHead className="min-w-[120px]">狀態</TableHead>
+                  <TableHead className="min-w-[220px]">專屬入口</TableHead>
                   <TableHead className="w-[60px] text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
