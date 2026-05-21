@@ -20,12 +20,21 @@ function LoginPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [signupType, setSignupType] = useState<"email" | "phone">("email");
-  const [identifier, setIdentifier] = useState(""); // signin: email/phone/member_no
+  const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [refCode, setRefCode] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get("ref");
+    if (r) { setRefCode(r.toUpperCase()); setMode("signup"); }
+  }, []);
+
 
 
   useEffect(() => {
