@@ -253,7 +253,13 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
 
         {/* 切換公司 */}
         <div className="mb-4 flex items-center gap-2">
-          <Select value={selectedSlug} onValueChange={setSelectedSlug}>
+          <Select
+            value={selectedSlug}
+            onValueChange={(v) => {
+              if (pathSlug) navigate({ to: "/login/$slug", params: { slug: v } });
+              else setSelectedSlug(v);
+            }}
+          >
             <SelectTrigger className="flex-1">
               <SelectValue />
             </SelectTrigger>
@@ -267,7 +273,10 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => setSelectedSlug("")}
+            onClick={() => {
+              if (pathSlug) navigate({ to: "/login" });
+              else setSelectedSlug("");
+            }}
             title="重新選擇公司"
           >
             <ArrowLeftRight className="h-4 w-4" />
