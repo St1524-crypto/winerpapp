@@ -186,8 +186,18 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
               <div className="space-y-2"><Label>成本價</Label><Input type="number" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: +e.target.value })} /></div>
               <div className="space-y-2"><Label>初始/目前庫存</Label><Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: +e.target.value })} /></div>
               <div className="space-y-2"><Label>安全庫存</Label><Input type="number" value={form.safe_stock} onChange={(e) => setForm({ ...form, safe_stock: +e.target.value })} /></div>
+              <div className="space-y-2">
+                <Label>獎勵點 <span className="text-xs text-muted-foreground">(購買回饋)</span></Label>
+                <Input type="number" min={0} value={form.reward_points} onChange={(e) => setForm({ ...form, reward_points: +e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>折扣點上限 <span className="text-xs text-muted-foreground">(0=不限)</span></Label>
+                <Input type="number" min={0} value={form.discount_points_max} onChange={(e) => setForm({ ...form, discount_points_max: +e.target.value })} />
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground">獎勵點：客戶購買此商品後自動入帳。折扣點上限：此商品最多可被折扣點折抵的點數（每點 1 元）。</p>
           </TabsContent>
+
 
           <TabsContent value="images" className="pt-4">
             <ImageUploader images={images} onChange={setImages} />
