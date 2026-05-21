@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Loader2, Plus, Trash2, Search, CheckCircle2 } from "lucide-react";
+import { Building2, Loader2, Plus, Trash2, Search, CheckCircle2, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { companySchema } from "@/lib/company-schema";
 import {
