@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useBranding } from "@/hooks/use-branding";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
 import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
+import { handleReferralSignup } from "@/lib/points.functions";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
