@@ -311,8 +311,11 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
             {mode === "signin" && (
               <div className="space-y-2">
-                <Label htmlFor="identifier">Email / 電話 / 會員編號</Label>
-                <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder="僅限本公司帳號" />
+                <Label htmlFor="identifier">{memberMode ? "行動電話 / 會員編號" : "Email / 電話 / 會員編號"}</Label>
+                <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder={memberMode ? "例：0912345678" : "僅限本公司帳號"} inputMode={memberMode ? "tel" : undefined} />
+                {memberMode && (
+                  <p className="text-[11px] text-muted-foreground">會員可使用註冊時的行動電話或系統會員編號 (M 開頭) 登入。</p>
+                )}
               </div>
             )}
 
