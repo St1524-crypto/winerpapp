@@ -47,25 +47,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
+  // Pick the right Supabase client: authenticated users use the regular
+  // client (RLS scopes by auth.uid()); guests use a client that injects the
+  // `x-cart-session` header so RLS can match the cart row by session token.
+  const getDb = useCallback(() => {
+    if (user) return supabase;
+    const token = getOrCreateSessionToken();
+    return getCartClient(token);
+  }, [user]);
+
   const ensureCart = useCallback(async () => {
     const token = getOrCreateSessionToken();
     if (user) {
       // find user cart
       const { data: userCart } = await supabase.from("carts").select("*").eq("user_id", user.id).maybeSingle();
       if (userCart) {
-        // merge guest cart if any
-        const { data: guestCart } = await supabase.from("carts").select("id").eq("session_token", token).is("user_id", null).maybeSingle();
+        // merge guest cart if any — use the guest client so RLS lets us read it
+        const guestDb = getCartClient(token);
+        const { data: guestCart } = await guestDb.from("carts").select("id").eq("session_token", token).is("user_id", null).maybeSingle();
         if (guestCart && guestCart.id !== userCart.id) {
-          const { data: guestItems } = await supabase.from("cart_items").select("*").eq("cart_id", guestCart.id);
+          const { data: guestItems } = await guestDb.from("cart_items").select("*").eq("cart_id", guestCart.id);
           for (const gi of guestItems ?? []) {
             await supabase.from("cart_items").insert({ cart_id: userCart.id, product_id: gi.product_id, quantity: gi.quantity });
           }
-          await supabase.from("carts").delete().eq("id", guestCart.id);
+          await guestDb.from("carts").delete().eq("id", guestCart.id);
         }
         return userCart.id;
       }
       // promote guest cart to user cart, or create new
-      const { data: guestCart } = await supabase.from("carts").select("id").eq("session_token", token).is("user_id", null).maybeSingle();
+      const guestDb = getCartClient(token);
+      const { data: guestCart } = await guestDb.from("carts").select("id").eq("session_token", token).is("user_id", null).maybeSingle();
       if (guestCart) {
         await supabase.from("carts").update({ user_id: user.id, session_token: null }).eq("id", guestCart.id);
         return guestCart.id;
@@ -73,9 +84,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const { data: created } = await supabase.from("carts").insert({ user_id: user.id }).select("id").single();
       return created!.id;
     } else {
-      const { data: guestCart } = await supabase.from("carts").select("id").eq("session_token", token).maybeSingle();
+      const db = getCartClient(token);
+      const { data: guestCart } = await db.from("carts").select("id").eq("session_token", token).maybeSingle();
       if (guestCart) return guestCart.id;
-      const { data: created } = await supabase.from("carts").insert({ session_token: token }).select("id").single();
+      const { data: created } = await db.from("carts").insert({ session_token: token }).select("id").single();
       return created!.id;
     }
   }, [user]);
@@ -85,7 +97,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const id = await ensureCart();
       setCartId(id);
-      const { data } = await supabase
+      const db = getDb();
+      const { data } = await db
         .from("cart_items")
         .select("*, product:products(id, name, sku, price, wholesale_price, image, stock, status)")
         .eq("cart_id", id)
@@ -96,18 +109,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [ensureCart]);
+  }, [ensureCart, getDb]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
   const addItem = async (productId: string, qty = 1) => {
     const id = cartId ?? (await ensureCart());
     if (!cartId) setCartId(id);
+    const db = getDb();
     const existing = items.find((i) => i.product_id === productId);
     if (existing) {
-      await supabase.from("cart_items").update({ quantity: existing.quantity + qty }).eq("id", existing.id);
+      await db.from("cart_items").update({ quantity: existing.quantity + qty }).eq("id", existing.id);
     } else {
-      await supabase.from("cart_items").insert({ cart_id: id, product_id: productId, quantity: qty });
+      await db.from("cart_items").insert({ cart_id: id, product_id: productId, quantity: qty });
     }
     toast.success("已加入購物車");
     await refresh();
@@ -116,18 +130,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQty = async (itemId: string, qty: number) => {
     if (qty <= 0) return removeItem(itemId);
-    await supabase.from("cart_items").update({ quantity: qty }).eq("id", itemId);
+    await getDb().from("cart_items").update({ quantity: qty }).eq("id", itemId);
     await refresh();
   };
 
   const removeItem = async (itemId: string) => {
-    await supabase.from("cart_items").delete().eq("id", itemId);
+    await getDb().from("cart_items").delete().eq("id", itemId);
     await refresh();
   };
 
   const clear = async () => {
     if (!cartId) return;
-    await supabase.from("cart_items").delete().eq("cart_id", cartId);
+    await getDb().from("cart_items").delete().eq("cart_id", cartId);
     await refresh();
   };
 
