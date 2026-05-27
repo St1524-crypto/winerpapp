@@ -138,8 +138,10 @@ function DealerTiersAdmin() {
                   </ul>
                 </>
               )}
-
+            </CardContent>
+          </Card>
         ))}
+
       </div>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
