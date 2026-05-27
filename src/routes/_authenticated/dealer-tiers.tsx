@@ -118,12 +118,27 @@ function DealerTiersAdmin() {
               </ul>
               {t.maintenance_window_days > 0 && (
                 <>
-                  <div className="text-xs font-semibold text-muted-foreground pt-2">續領</div>
-                  <p className="text-xs">每 {t.maintenance_window_days} 天需新增 ≥ {t.maintenance_required_vip} 位 VIP</p>
+                  <div className="text-xs font-semibold text-muted-foreground pt-2">續領（每 {t.maintenance_window_days} 天）</div>
+                  <ul className="text-xs space-y-1 ml-1">
+                    {t.maintenance_required_vip > 0 && <li>• 新增 ≥ {t.maintenance_required_vip} 位 VIP</li>}
+                    {t.maintenance_required_new_e_store > 0 && <li>• 輔導 ≥ {t.maintenance_required_new_e_store} 位新 E 店</li>}
+                  </ul>
                 </>
               )}
-            </CardContent>
-          </Card>
+              {(t.monthly_points_required > 0 || t.global_bonus_rate > 0) && (
+                <>
+                  <div className="text-xs font-semibold text-muted-foreground pt-2">月度規則</div>
+                  <ul className="text-xs space-y-1 ml-1">
+                    {t.freeze_when_points_below && t.monthly_points_required > 0 && (
+                      <li>• 月個人點數 &lt; {t.monthly_points_required} → 凍結領取</li>
+                    )}
+                    {t.global_bonus_rate > 0 && (
+                      <li className="text-primary">★ 月收 &lt; NT$ {t.global_bonus_income_threshold.toLocaleString()} → 全球分紅 {t.global_bonus_rate}%</li>
+                    )}
+                  </ul>
+                </>
+              )}
+
         ))}
       </div>
 
