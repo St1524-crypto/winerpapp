@@ -17,7 +17,7 @@ export const Route = createFileRoute("/login")({ component: () => <LoginPage /> 
 
 type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
 
-export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
+export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string; memberMode?: boolean } = {}) {
   const { user, loading, roles } = useAuth();
   const { logoUrl } = useBranding();
   const navigate = useNavigate();
