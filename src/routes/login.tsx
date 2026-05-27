@@ -273,8 +273,8 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
               className="shadow-glow ring-1 ring-primary/30 bg-white"
             />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">{selectedCompany.company_name}</h1>
-          <p className="text-xs text-muted-foreground mt-1 font-mono">/login/{selectedCompany.slug}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{selectedCompany.company_name}{memberMode ? " · 會員入口" : ""}</h1>
+          <p className="text-xs text-muted-foreground mt-1 font-mono">{memberMode ? `/m/${selectedCompany.slug}` : `/login/${selectedCompany.slug}`}</p>
         </div>
 
 
