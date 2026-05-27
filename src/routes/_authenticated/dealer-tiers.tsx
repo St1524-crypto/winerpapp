@@ -195,7 +195,25 @@ function DealerTiersAdmin() {
               <div className="grid grid-cols-2 gap-3">
                 <Field label="考核窗口期（天）"><Input type="number" value={editing.maintenance_window_days} onChange={(e) => setEditing({ ...editing, maintenance_window_days: +e.target.value })} /></Field>
                 <Field label="期內需新增 VIP 數"><Input type="number" value={editing.maintenance_required_vip} onChange={(e) => setEditing({ ...editing, maintenance_required_vip: +e.target.value })} /></Field>
+                <Field label="期內需輔導新 E 店"><Input type="number" value={editing.maintenance_required_new_e_store} onChange={(e) => setEditing({ ...editing, maintenance_required_new_e_store: +e.target.value })} /></Field>
               </div>
+
+              <div className="text-sm font-semibold pt-2">月度規則（星級代理店）</div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="月個人責任額點數門檻"><Input type="number" value={editing.monthly_points_required} onChange={(e) => setEditing({ ...editing, monthly_points_required: +e.target.value })} /></Field>
+                <Field label="低於門檻凍結領取">
+                  <Select value={editing.freeze_when_points_below ? "yes" : "no"} onValueChange={(v) => setEditing({ ...editing, freeze_when_points_below: v === "yes" })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">是</SelectItem>
+                      <SelectItem value="no">否</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="全球分紅 %"><Input type="number" step="0.01" value={editing.global_bonus_rate} onChange={(e) => setEditing({ ...editing, global_bonus_rate: +e.target.value })} /></Field>
+                <Field label="全球分紅月收入門檻"><Input type="number" value={editing.global_bonus_income_threshold} onChange={(e) => setEditing({ ...editing, global_bonus_income_threshold: +e.target.value })} /></Field>
+              </div>
+
             </div>
           )}
           <DialogFooter>
