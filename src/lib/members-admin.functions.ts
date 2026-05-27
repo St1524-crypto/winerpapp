@@ -121,3 +121,99 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+// ============== Reset / generate password / impersonate ==============
+function generateTempPassword(len = 12): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const symbols = "!@#$%^&*";
+  const all = upper + lower + digits + symbols;
+  const pickFrom = (s: string) => s[Math.floor(Math.random() * s.length)];
+  const base = [pickFrom(upper), pickFrom(lower), pickFrom(digits), pickFrom(symbols)];
+  for (let i = base.length; i < len; i++) base.push(pickFrom(all));
+  return base.sort(() => Math.random() - 0.5).join("");
+}
+
+const ResetSchema = z.object({
+  userId: z.string().uuid(),
+  password: z.string().min(6).max(72).optional(),
+  generateTemp: z.boolean().optional(),
+  forceChangeOnNextLogin: z.boolean().optional(),
+});
+
+export const adminResetMemberPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ResetSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+
+    const password = data.password && data.password.length >= 6
+      ? data.password
+      : data.generateTemp
+        ? generateTempPassword(12)
+        : null;
+    if (!password) throw new Error("請提供新密碼或選擇產生臨時密碼");
+
+    const { data: updated, error } = await supabaseAdmin.auth.admin.updateUserById(
+      data.userId,
+      {
+        password,
+        user_metadata: data.forceChangeOnNextLogin
+          ? { must_change_password: true, password_reset_at: new Date().toISOString() }
+          : { password_reset_at: new Date().toISOString() },
+      },
+    );
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin.from("audit_logs").insert({
+      user_id: context.userId,
+      entity: "profiles",
+      entity_id: data.userId,
+      action: "admin_reset_password",
+      metadata: {
+        temp: !!data.generateTemp,
+        force_change: !!data.forceChangeOnNextLogin,
+        target_email: updated.user?.email,
+      },
+    });
+
+    return { ok: true, password, email: updated.user?.email ?? null };
+  });
+
+const ImpersonateSchema = z.object({ userId: z.string().uuid() });
+
+export const adminImpersonateMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ImpersonateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+
+    const { data: target } = await supabaseAdmin
+      .from("profiles")
+      .select("email, name")
+      .eq("id", data.userId)
+      .maybeSingle();
+    if (!target?.email) throw new Error("會員缺少 Email，無法產生代登入連結");
+
+    const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({
+      type: "magiclink",
+      email: target.email,
+    });
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin.from("audit_logs").insert({
+      user_id: context.userId,
+      entity: "profiles",
+      entity_id: data.userId,
+      action: "admin_impersonate_member",
+      metadata: { target_email: target.email, target_name: target.name },
+    });
+
+    return {
+      ok: true,
+      actionLink: link.properties?.action_link ?? null,
+      email: target.email,
+      expiresInMinutes: 60,
+    };
+  });
