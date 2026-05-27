@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Package, Boxes, ShoppingCart, Truck,
-  Users, Wallet, UserCircle, Settings, ShieldCheck, Tag, Crown,
+  Users, Wallet, UserCircle, Settings, Settings2, ShieldCheck, Tag, Crown,
   Store, Factory, Warehouse as WarehouseIcon, PackageCheck, ArrowRightLeft,
   Building2, UserCog, Briefcase, ShoppingBag, Megaphone, Coins,
 } from "lucide-react";
