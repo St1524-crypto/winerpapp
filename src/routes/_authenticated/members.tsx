@@ -12,11 +12,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, Shield, UserCircle, UserPlus, Pencil, Handshake } from "lucide-react";
+import { Search, Shield, UserCircle, UserPlus, Pencil, Handshake, KeyRound, Copy, LogIn, Sparkles } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
-import { adminCreateMember, adminUpdateMember } from "@/lib/members-admin.functions";
+import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
 interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; }
 interface Member extends Profile { roles: AppRole[]; }
@@ -46,6 +46,13 @@ function Page() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
+
+  // Password tools dialog state
+  const [pwTarget, setPwTarget] = useState<Member | null>(null);
+  const [pwNew, setPwNew] = useState("");
+  const [pwForceChange, setPwForceChange] = useState(true);
+  const [pwResult, setPwResult] = useState<{ password?: string; email?: string | null; actionLink?: string | null } | null>(null);
+  const [pwBusy, setPwBusy] = useState<null | "reset" | "temp" | "impersonate">(null);
 
   async function load() {
     setLoading(true);
@@ -150,6 +157,52 @@ function Page() {
     setList((ls) => ls.map((x) => x.id === m.id ? { ...x, is_dealer: next } : x));
   }
 
+  function openPasswordTools(m: Member) {
+    setPwTarget(m);
+    setPwNew("");
+    setPwForceChange(true);
+    setPwResult(null);
+  }
+
+  async function doResetPassword(useTemp: boolean) {
+    if (!pwTarget) return;
+    setPwBusy(useTemp ? "temp" : "reset");
+    setPwResult(null);
+    try {
+      const res = await adminResetMemberPassword({
+        data: {
+          userId: pwTarget.id,
+          password: useTemp ? undefined : pwNew,
+          generateTemp: useTemp,
+          forceChangeOnNextLogin: pwForceChange,
+        },
+      });
+      setPwResult({ password: res.password, email: res.email });
+      toast.success(useTemp ? "已產生臨時密碼" : "密碼已重設");
+    } catch (e: any) { toast.error(e.message ?? "操作失敗"); }
+    finally { setPwBusy(null); }
+  }
+
+  async function doImpersonate() {
+    if (!pwTarget) return;
+    setPwBusy("impersonate");
+    setPwResult(null);
+    try {
+      const res = await adminImpersonateMember({ data: { userId: pwTarget.id } });
+      setPwResult({ actionLink: res.actionLink, email: res.email });
+      toast.success("已產生一次性代登入連結（60 分鐘內有效）");
+    } catch (e: any) { toast.error(e.message ?? "產生失敗"); }
+    finally { setPwBusy(null); }
+  }
+
+  async function copyText(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} 已複製`);
+    } catch { toast.error("複製失敗"); }
+  }
+
+
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -227,6 +280,7 @@ function Page() {
                             {m.is_dealer ? "取消經銷" : "設為經銷"}
                           </Button>
                           <Button size="sm" variant="ghost" onClick={() => openEditProfile(m)}><Pencil className="h-4 w-4 mr-1" />編輯</Button>
+                          <Button size="sm" variant="ghost" onClick={() => openPasswordTools(m)} title="密碼 / 代登入"><KeyRound className="h-4 w-4 mr-1" />密碼</Button>
                         </>
                       )}
                       <Button size="sm" variant="ghost" onClick={() => openEditRoles(m)}><Shield className="h-4 w-4 mr-1" />角色</Button>
@@ -309,6 +363,71 @@ function Page() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setEditingRoles(null)}>取消</Button>
             <Button onClick={saveRoles} disabled={saving} className="bg-gradient-primary">儲存</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password tools */}
+      <Dialog open={!!pwTarget} onOpenChange={(v) => { if (!v) { setPwTarget(null); setPwResult(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5 text-primary" />密碼工具 · {pwTarget?.name ?? pwTarget?.email}</DialogTitle></DialogHeader>
+          {pwTarget && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-md bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                基於資安原則，系統無法查詢原始密碼（單向雜湊儲存）。您可以重設、產生臨時密碼，或以一次性連結代登入。
+              </div>
+
+              <div className="space-y-2">
+                <Label>方式一：直接指定新密碼</Label>
+                <div className="flex gap-2">
+                  <Input type="text" value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder="至少 6 碼" />
+                  <Button onClick={() => doResetPassword(false)} disabled={pwBusy !== null || pwNew.length < 6} className="bg-gradient-primary shrink-0">重設</Button>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox checked={pwForceChange} onCheckedChange={(v) => setPwForceChange(!!v)} />
+                  下次登入時要求會員自行變更密碼
+                </label>
+              </div>
+
+              <div className="space-y-2">
+                <Label>方式二：產生一次性臨時密碼</Label>
+                <Button variant="outline" onClick={() => doResetPassword(true)} disabled={pwBusy !== null} className="w-full">
+                  <Sparkles className="h-4 w-4 mr-2" />產生 12 碼強密碼
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label>方式三：代登入連結（Impersonate）</Label>
+                <Button variant="outline" onClick={doImpersonate} disabled={pwBusy !== null || !pwTarget.email} className="w-full">
+                  <LogIn className="h-4 w-4 mr-2" />產生一次性登入連結
+                </Button>
+                {!pwTarget.email && <p className="text-[11px] text-muted-foreground">會員缺少 Email，無法產生代登入連結</p>}
+              </div>
+
+              {pwResult?.password && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <div className="text-xs text-muted-foreground">新密碼（請立即複製並交付會員，僅顯示一次）</div>
+                  <div className="flex gap-2 items-center">
+                    <code className="flex-1 font-mono text-sm bg-background rounded px-2 py-1 border">{pwResult.password}</code>
+                    <Button size="sm" variant="ghost" onClick={() => copyText(pwResult.password!, "密碼")}><Copy className="h-4 w-4" /></Button>
+                  </div>
+                  {pwResult.email && <div className="text-[11px] text-muted-foreground">帳號：{pwResult.email}</div>}
+                </div>
+              )}
+
+              {pwResult?.actionLink && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <div className="text-xs text-muted-foreground">一次性代登入連結（60 分鐘內有效）</div>
+                  <div className="flex gap-2 items-center">
+                    <code className="flex-1 font-mono text-xs bg-background rounded px-2 py-1 border break-all">{pwResult.actionLink}</code>
+                    <Button size="sm" variant="ghost" onClick={() => copyText(pwResult.actionLink!, "連結")}><Copy className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setPwTarget(null); setPwResult(null); }}>關閉</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
