@@ -1047,6 +1047,158 @@ export type Database = {
         }
         Relationships: []
       }
+      dealer_tier_history: {
+        Row: {
+          change_type: string
+          created_at: string
+          from_tier: string | null
+          id: string
+          metadata: Json
+          reason: string | null
+          to_tier: string | null
+          triggered_by: string | null
+          user_id: string
+        }
+        Insert: {
+          change_type?: string
+          created_at?: string
+          from_tier?: string | null
+          id?: string
+          metadata?: Json
+          reason?: string | null
+          to_tier?: string | null
+          triggered_by?: string | null
+          user_id: string
+        }
+        Update: {
+          change_type?: string
+          created_at?: string
+          from_tier?: string | null
+          id?: string
+          metadata?: Json
+          reason?: string | null
+          to_tier?: string | null
+          triggered_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dealer_tier_status: {
+        Row: {
+          current_tier: string | null
+          maintenance_expires_at: string | null
+          maintenance_new_vip_count: number
+          maintenance_started_at: string | null
+          monthly_new_vip_count: number
+          promoted_at: string | null
+          special_bonus_active: boolean
+          special_bonus_month: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_tier?: string | null
+          maintenance_expires_at?: string | null
+          maintenance_new_vip_count?: number
+          maintenance_started_at?: string | null
+          monthly_new_vip_count?: number
+          promoted_at?: string | null
+          special_bonus_active?: boolean
+          special_bonus_month?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_tier?: string | null
+          maintenance_expires_at?: string | null
+          maintenance_new_vip_count?: number
+          maintenance_started_at?: string | null
+          monthly_new_vip_count?: number
+          promoted_at?: string | null
+          special_bonus_active?: boolean
+          special_bonus_month?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dealer_tier_status_current_tier_fkey"
+            columns: ["current_tier"]
+            isOneToOne: false
+            referencedRelation: "dealer_tiers"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      dealer_tiers: {
+        Row: {
+          code: string
+          condition_logic: string
+          description: string | null
+          maintenance_required_vip: number
+          maintenance_window_days: number
+          name: string
+          operating_bonus_rate: number
+          rebate_rate: number
+          required_direct_vip: number
+          required_mentor_count: number
+          required_mentor_tier: string | null
+          required_pv: number
+          sort_order: number
+          special_bonus_label: string | null
+          special_bonus_rate: number
+          special_bonus_trigger_count: number
+          status: string
+          tier_type: string
+          updated_at: string
+          upgrade_bonus_cap: number
+        }
+        Insert: {
+          code: string
+          condition_logic?: string
+          description?: string | null
+          maintenance_required_vip?: number
+          maintenance_window_days?: number
+          name: string
+          operating_bonus_rate?: number
+          rebate_rate?: number
+          required_direct_vip?: number
+          required_mentor_count?: number
+          required_mentor_tier?: string | null
+          required_pv?: number
+          sort_order?: number
+          special_bonus_label?: string | null
+          special_bonus_rate?: number
+          special_bonus_trigger_count?: number
+          status?: string
+          tier_type?: string
+          updated_at?: string
+          upgrade_bonus_cap?: number
+        }
+        Update: {
+          code?: string
+          condition_logic?: string
+          description?: string | null
+          maintenance_required_vip?: number
+          maintenance_window_days?: number
+          name?: string
+          operating_bonus_rate?: number
+          rebate_rate?: number
+          required_direct_vip?: number
+          required_mentor_count?: number
+          required_mentor_tier?: string | null
+          required_pv?: number
+          sort_order?: number
+          special_bonus_label?: string | null
+          special_bonus_rate?: number
+          special_bonus_trigger_count?: number
+          status?: string
+          tier_type?: string
+          updated_at?: string
+          upgrade_bonus_cap?: number
+        }
+        Relationships: []
+      }
       dealers: {
         Row: {
           address: string | null
