@@ -35,7 +35,13 @@ type Tier = {
   maintenance_required_vip: number;
   description: string | null;
   status: string;
+  monthly_points_required: number;
+  freeze_when_points_below: boolean;
+  global_bonus_rate: number;
+  global_bonus_income_threshold: number;
+  maintenance_required_new_e_store: number;
 };
+
 
 function DealerTiersAdmin() {
   const [tiers, setTiers] = useState<Tier[]>([]);
@@ -71,8 +77,9 @@ function DealerTiersAdmin() {
           <Crown className="h-6 w-6 text-primary" />經銷商階級管理
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          管理 V / S / T / E / A 階級的晉升條件與獎勵設定。所有條件可動態調整，系統會依此自動判定升階。
+          管理 V / S / T / E / A / V1–V8 階級的晉升條件與獎勵設定。所有條件可動態調整，系統會依此自動判定升階。
         </p>
+
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -81,9 +88,10 @@ function DealerTiersAdmin() {
             <CardHeader className="flex flex-row justify-between items-start pb-2">
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Badge variant={t.tier_type === "agent" ? "default" : "secondary"}>{t.code}</Badge>
+                  <Badge variant={t.tier_type === "agent" ? "default" : t.tier_type === "star" ? "outline" : t.tier_type === "director" ? "destructive" : "secondary"}>{t.code}</Badge>
                   {t.name}
                 </CardTitle>
+
                 <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
               </div>
               <Button size="icon" variant="ghost" onClick={() => setEditing(t)}>
@@ -110,13 +118,30 @@ function DealerTiersAdmin() {
               </ul>
               {t.maintenance_window_days > 0 && (
                 <>
-                  <div className="text-xs font-semibold text-muted-foreground pt-2">續領</div>
-                  <p className="text-xs">每 {t.maintenance_window_days} 天需新增 ≥ {t.maintenance_required_vip} 位 VIP</p>
+                  <div className="text-xs font-semibold text-muted-foreground pt-2">續領（每 {t.maintenance_window_days} 天）</div>
+                  <ul className="text-xs space-y-1 ml-1">
+                    {t.maintenance_required_vip > 0 && <li>• 新增 ≥ {t.maintenance_required_vip} 位 VIP</li>}
+                    {t.maintenance_required_new_e_store > 0 && <li>• 輔導 ≥ {t.maintenance_required_new_e_store} 位新 E 店</li>}
+                  </ul>
+                </>
+              )}
+              {(t.monthly_points_required > 0 || t.global_bonus_rate > 0) && (
+                <>
+                  <div className="text-xs font-semibold text-muted-foreground pt-2">月度規則</div>
+                  <ul className="text-xs space-y-1 ml-1">
+                    {t.freeze_when_points_below && t.monthly_points_required > 0 && (
+                      <li>• 月個人點數 &lt; {t.monthly_points_required} → 凍結領取</li>
+                    )}
+                    {t.global_bonus_rate > 0 && (
+                      <li className="text-primary">★ 月收 &lt; NT$ {t.global_bonus_income_threshold.toLocaleString()} → 全球分紅 {t.global_bonus_rate}%</li>
+                    )}
+                  </ul>
                 </>
               )}
             </CardContent>
           </Card>
         ))}
+
       </div>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
@@ -170,7 +195,25 @@ function DealerTiersAdmin() {
               <div className="grid grid-cols-2 gap-3">
                 <Field label="考核窗口期（天）"><Input type="number" value={editing.maintenance_window_days} onChange={(e) => setEditing({ ...editing, maintenance_window_days: +e.target.value })} /></Field>
                 <Field label="期內需新增 VIP 數"><Input type="number" value={editing.maintenance_required_vip} onChange={(e) => setEditing({ ...editing, maintenance_required_vip: +e.target.value })} /></Field>
+                <Field label="期內需輔導新 E 店"><Input type="number" value={editing.maintenance_required_new_e_store} onChange={(e) => setEditing({ ...editing, maintenance_required_new_e_store: +e.target.value })} /></Field>
               </div>
+
+              <div className="text-sm font-semibold pt-2">月度規則（星級代理店）</div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="月個人責任額點數門檻"><Input type="number" value={editing.monthly_points_required} onChange={(e) => setEditing({ ...editing, monthly_points_required: +e.target.value })} /></Field>
+                <Field label="低於門檻凍結領取">
+                  <Select value={editing.freeze_when_points_below ? "yes" : "no"} onValueChange={(v) => setEditing({ ...editing, freeze_when_points_below: v === "yes" })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">是</SelectItem>
+                      <SelectItem value="no">否</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="全球分紅 %"><Input type="number" step="0.01" value={editing.global_bonus_rate} onChange={(e) => setEditing({ ...editing, global_bonus_rate: +e.target.value })} /></Field>
+                <Field label="全球分紅月收入門檻"><Input type="number" value={editing.global_bonus_income_threshold} onChange={(e) => setEditing({ ...editing, global_bonus_income_threshold: +e.target.value })} /></Field>
+              </div>
+
             </div>
           )}
           <DialogFooter>
