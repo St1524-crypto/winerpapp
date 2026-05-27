@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentCompany } from "@/hooks/use-current-company";
+import { CompanyLogo } from "@/components/company-logo";
 import { useState } from "react";
 
 export function StorefrontHeader() {
