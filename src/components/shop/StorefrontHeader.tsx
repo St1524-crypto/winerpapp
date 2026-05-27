@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentCompany } from "@/hooks/use-current-company";
+import { CompanyLogo } from "@/components/company-logo";
 import { useState } from "react";
 
 export function StorefrontHeader() {
@@ -28,15 +29,13 @@ export function StorefrontHeader() {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center gap-4 px-4">
         <Link to="/shop" className="flex items-center gap-2 shrink-0">
-          <div className="h-9 w-9 rounded-xl bg-white flex items-center justify-center shadow-lg shadow-primary/20 overflow-hidden ring-1 ring-primary/30">
-            {current?.logo_url ? (
-              <img src={current.logo_url} alt={brandName} className="h-full w-full object-contain" />
-            ) : (
-              <div className="h-full w-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                <span className="text-primary-foreground font-bold">{brandInitial}</span>
-              </div>
-            )}
-          </div>
+          <CompanyLogo
+            src={current?.logo_url}
+            alt={brandName}
+            fallbackInitial={brandInitial}
+            size="md"
+            className="rounded-xl bg-white shadow-lg shadow-primary/20 ring-1 ring-primary/30"
+          />
           <div className="hidden sm:block">
             <div className="text-sm font-semibold leading-tight">{brandName}</div>
             <div className="text-[10px] text-muted-foreground leading-tight">YJ Store</div>
