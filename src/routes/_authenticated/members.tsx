@@ -47,6 +47,13 @@ function Page() {
   const [editProfile, setEditProfile] = useState<Member | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
 
+  // Password tools dialog state
+  const [pwTarget, setPwTarget] = useState<Member | null>(null);
+  const [pwNew, setPwNew] = useState("");
+  const [pwForceChange, setPwForceChange] = useState(true);
+  const [pwResult, setPwResult] = useState<{ password?: string; email?: string | null; actionLink?: string | null } | null>(null);
+  const [pwBusy, setPwBusy] = useState<null | "reset" | "temp" | "impersonate">(null);
+
   async function load() {
     setLoading(true);
     const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }] = await Promise.all([
