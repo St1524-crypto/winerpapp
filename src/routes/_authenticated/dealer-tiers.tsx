@@ -35,7 +35,13 @@ type Tier = {
   maintenance_required_vip: number;
   description: string | null;
   status: string;
+  monthly_points_required: number;
+  freeze_when_points_below: boolean;
+  global_bonus_rate: number;
+  global_bonus_income_threshold: number;
+  maintenance_required_new_e_store: number;
 };
+
 
 function DealerTiersAdmin() {
   const [tiers, setTiers] = useState<Tier[]>([]);
