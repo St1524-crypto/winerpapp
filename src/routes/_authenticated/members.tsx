@@ -366,6 +366,71 @@ function Page() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Password tools */}
+      <Dialog open={!!pwTarget} onOpenChange={(v) => { if (!v) { setPwTarget(null); setPwResult(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5 text-primary" />密碼工具 · {pwTarget?.name ?? pwTarget?.email}</DialogTitle></DialogHeader>
+          {pwTarget && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-md bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                基於資安原則，系統無法查詢原始密碼（單向雜湊儲存）。您可以重設、產生臨時密碼，或以一次性連結代登入。
+              </div>
+
+              <div className="space-y-2">
+                <Label>方式一：直接指定新密碼</Label>
+                <div className="flex gap-2">
+                  <Input type="text" value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder="至少 6 碼" />
+                  <Button onClick={() => doResetPassword(false)} disabled={pwBusy !== null || pwNew.length < 6} className="bg-gradient-primary shrink-0">重設</Button>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox checked={pwForceChange} onCheckedChange={(v) => setPwForceChange(!!v)} />
+                  下次登入時要求會員自行變更密碼
+                </label>
+              </div>
+
+              <div className="space-y-2">
+                <Label>方式二：產生一次性臨時密碼</Label>
+                <Button variant="outline" onClick={() => doResetPassword(true)} disabled={pwBusy !== null} className="w-full">
+                  <Sparkles className="h-4 w-4 mr-2" />產生 12 碼強密碼
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label>方式三：代登入連結（Impersonate）</Label>
+                <Button variant="outline" onClick={doImpersonate} disabled={pwBusy !== null || !pwTarget.email} className="w-full">
+                  <LogIn className="h-4 w-4 mr-2" />產生一次性登入連結
+                </Button>
+                {!pwTarget.email && <p className="text-[11px] text-muted-foreground">會員缺少 Email，無法產生代登入連結</p>}
+              </div>
+
+              {pwResult?.password && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <div className="text-xs text-muted-foreground">新密碼（請立即複製並交付會員，僅顯示一次）</div>
+                  <div className="flex gap-2 items-center">
+                    <code className="flex-1 font-mono text-sm bg-background rounded px-2 py-1 border">{pwResult.password}</code>
+                    <Button size="sm" variant="ghost" onClick={() => copyText(pwResult.password!, "密碼")}><Copy className="h-4 w-4" /></Button>
+                  </div>
+                  {pwResult.email && <div className="text-[11px] text-muted-foreground">帳號：{pwResult.email}</div>}
+                </div>
+              )}
+
+              {pwResult?.actionLink && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <div className="text-xs text-muted-foreground">一次性代登入連結（60 分鐘內有效）</div>
+                  <div className="flex gap-2 items-center">
+                    <code className="flex-1 font-mono text-xs bg-background rounded px-2 py-1 border break-all">{pwResult.actionLink}</code>
+                    <Button size="sm" variant="ghost" onClick={() => copyText(pwResult.actionLink!, "連結")}><Copy className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setPwTarget(null); setPwResult(null); }}>關閉</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
