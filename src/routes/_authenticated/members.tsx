@@ -280,6 +280,7 @@ function Page() {
                             {m.is_dealer ? "取消經銷" : "設為經銷"}
                           </Button>
                           <Button size="sm" variant="ghost" onClick={() => openEditProfile(m)}><Pencil className="h-4 w-4 mr-1" />編輯</Button>
+                          <Button size="sm" variant="ghost" onClick={() => openPasswordTools(m)} title="密碼 / 代登入"><KeyRound className="h-4 w-4 mr-1" />密碼</Button>
                         </>
                       )}
                       <Button size="sm" variant="ghost" onClick={() => openEditRoles(m)}><Shield className="h-4 w-4 mr-1" />角色</Button>
