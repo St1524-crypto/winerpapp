@@ -88,9 +88,10 @@ function DealerTiersAdmin() {
             <CardHeader className="flex flex-row justify-between items-start pb-2">
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Badge variant={t.tier_type === "agent" ? "default" : "secondary"}>{t.code}</Badge>
+                  <Badge variant={t.tier_type === "agent" ? "default" : t.tier_type === "star" ? "outline" : t.tier_type === "director" ? "destructive" : "secondary"}>{t.code}</Badge>
                   {t.name}
                 </CardTitle>
+
                 <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
               </div>
               <Button size="icon" variant="ghost" onClick={() => setEditing(t)}>
