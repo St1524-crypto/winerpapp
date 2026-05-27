@@ -1135,14 +1135,21 @@ export type Database = {
           code: string
           condition_logic: string
           description: string | null
+          freeze_when_points_below: boolean
+          global_bonus_income_threshold: number
+          global_bonus_rate: number
+          maintenance_required_new_e_store: number
           maintenance_required_vip: number
           maintenance_window_days: number
+          monthly_points_required: number
           name: string
           operating_bonus_rate: number
           rebate_rate: number
           required_direct_vip: number
           required_mentor_count: number
+          required_mentor_count_secondary: number
           required_mentor_tier: string | null
+          required_mentor_tier_secondary: string | null
           required_pv: number
           sort_order: number
           special_bonus_label: string | null
@@ -1157,14 +1164,21 @@ export type Database = {
           code: string
           condition_logic?: string
           description?: string | null
+          freeze_when_points_below?: boolean
+          global_bonus_income_threshold?: number
+          global_bonus_rate?: number
+          maintenance_required_new_e_store?: number
           maintenance_required_vip?: number
           maintenance_window_days?: number
+          monthly_points_required?: number
           name: string
           operating_bonus_rate?: number
           rebate_rate?: number
           required_direct_vip?: number
           required_mentor_count?: number
+          required_mentor_count_secondary?: number
           required_mentor_tier?: string | null
+          required_mentor_tier_secondary?: string | null
           required_pv?: number
           sort_order?: number
           special_bonus_label?: string | null
@@ -1179,14 +1193,21 @@ export type Database = {
           code?: string
           condition_logic?: string
           description?: string | null
+          freeze_when_points_below?: boolean
+          global_bonus_income_threshold?: number
+          global_bonus_rate?: number
+          maintenance_required_new_e_store?: number
           maintenance_required_vip?: number
           maintenance_window_days?: number
+          monthly_points_required?: number
           name?: string
           operating_bonus_rate?: number
           rebate_rate?: number
           required_direct_vip?: number
           required_mentor_count?: number
+          required_mentor_count_secondary?: number
           required_mentor_tier?: string | null
+          required_mentor_tier_secondary?: string | null
           required_pv?: number
           sort_order?: number
           special_bonus_label?: string | null
