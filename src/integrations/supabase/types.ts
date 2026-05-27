@@ -981,6 +981,72 @@ export type Database = {
           },
         ]
       }
+      dealer_metrics: {
+        Row: {
+          current_pv: number
+          direct_vip_count: number
+          maintenance_expires_at: string | null
+          maintenance_started_at: string | null
+          monthly_income: number
+          monthly_personal_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_pv?: number
+          direct_vip_count?: number
+          maintenance_expires_at?: string | null
+          maintenance_started_at?: string | null
+          monthly_income?: number
+          monthly_personal_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_pv?: number
+          direct_vip_count?: number
+          maintenance_expires_at?: string | null
+          maintenance_started_at?: string | null
+          monthly_income?: number
+          monthly_personal_points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dealer_program_settings: {
+        Row: {
+          category: string
+          description: string | null
+          key: string
+          label: string
+          unit: string | null
+          updated_at: string
+          updated_by: string | null
+          value: number
+        }
+        Insert: {
+          category?: string
+          description?: string | null
+          key: string
+          label: string
+          unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          value?: number
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          key?: string
+          label?: string
+          unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
       dealers: {
         Row: {
           address: string | null

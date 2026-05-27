@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Package, Boxes, ShoppingCart, Truck,
-  Users, Wallet, UserCircle, Settings, ShieldCheck, Tag, Crown,
+  Users, Wallet, UserCircle, Settings, Settings2, ShieldCheck, Tag, Crown,
   Store, Factory, Warehouse as WarehouseIcon, PackageCheck, ArrowRightLeft,
   Building2, UserCog, Briefcase, ShoppingBag, Megaphone, Coins,
 } from "lucide-react";
@@ -35,6 +35,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "使用者角色管理", url: "/user-roles", icon: UserCog, roles: ["super_admin"] },
   { title: "點數管理", url: "/points-admin", icon: Coins, roles: ["super_admin", "finance", "sales"] },
   { title: "VIP 方案管理", url: "/vip-plans", icon: Crown, roles: ["super_admin", "sales"] },
+  { title: "經銷商制度設定", url: "/dealer-program", icon: Settings2, roles: ["super_admin", "admin", "finance"] },
   { title: "客服重要通知", url: "/support-announcements", icon: Megaphone, roles: ["super_admin", "admin", "sales"] },
   { title: "系統設定", url: "/settings", icon: Settings, roles: ["super_admin", "admin"] },
   { title: "RLS 存取測試", url: "/rls-test", icon: ShieldCheck, roles: ["super_admin"] },
