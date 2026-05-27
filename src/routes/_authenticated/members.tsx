@@ -157,6 +157,52 @@ function Page() {
     setList((ls) => ls.map((x) => x.id === m.id ? { ...x, is_dealer: next } : x));
   }
 
+  function openPasswordTools(m: Member) {
+    setPwTarget(m);
+    setPwNew("");
+    setPwForceChange(true);
+    setPwResult(null);
+  }
+
+  async function doResetPassword(useTemp: boolean) {
+    if (!pwTarget) return;
+    setPwBusy(useTemp ? "temp" : "reset");
+    setPwResult(null);
+    try {
+      const res = await adminResetMemberPassword({
+        data: {
+          userId: pwTarget.id,
+          password: useTemp ? undefined : pwNew,
+          generateTemp: useTemp,
+          forceChangeOnNextLogin: pwForceChange,
+        },
+      });
+      setPwResult({ password: res.password, email: res.email });
+      toast.success(useTemp ? "已產生臨時密碼" : "密碼已重設");
+    } catch (e: any) { toast.error(e.message ?? "操作失敗"); }
+    finally { setPwBusy(null); }
+  }
+
+  async function doImpersonate() {
+    if (!pwTarget) return;
+    setPwBusy("impersonate");
+    setPwResult(null);
+    try {
+      const res = await adminImpersonateMember({ data: { userId: pwTarget.id } });
+      setPwResult({ actionLink: res.actionLink, email: res.email });
+      toast.success("已產生一次性代登入連結（60 分鐘內有效）");
+    } catch (e: any) { toast.error(e.message ?? "產生失敗"); }
+    finally { setPwBusy(null); }
+  }
+
+  async function copyText(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${label} 已複製`);
+    } catch { toast.error("複製失敗"); }
+  }
+
+
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
