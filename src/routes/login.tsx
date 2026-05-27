@@ -17,12 +17,12 @@ export const Route = createFileRoute("/login")({ component: () => <LoginPage /> 
 
 type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
 
-export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
+export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string; memberMode?: boolean } = {}) {
   const { user, loading, roles } = useAuth();
   const { logoUrl } = useBranding();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
-  const [signupType, setSignupType] = useState<"email" | "phone">("email");
+  const [signupType, setSignupType] = useState<"email" | "phone">(memberMode ? "phone" : "email");
   const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -273,8 +273,8 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
               className="shadow-glow ring-1 ring-primary/30 bg-white"
             />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">{selectedCompany.company_name}</h1>
-          <p className="text-xs text-muted-foreground mt-1 font-mono">/login/{selectedCompany.slug}</p>
+          <h1 className="text-2xl font-bold tracking-tight">{selectedCompany.company_name}{memberMode ? " · 會員入口" : ""}</h1>
+          <p className="text-xs text-muted-foreground mt-1 font-mono">{memberMode ? `/m/${selectedCompany.slug}` : `/login/${selectedCompany.slug}`}</p>
         </div>
 
 
@@ -311,8 +311,11 @@ export function LoginPage({ pathSlug }: { pathSlug?: string } = {}) {
 
             {mode === "signin" && (
               <div className="space-y-2">
-                <Label htmlFor="identifier">Email / 電話 / 會員編號</Label>
-                <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder="僅限本公司帳號" />
+                <Label htmlFor="identifier">{memberMode ? "行動電話 / 會員編號" : "Email / 電話 / 會員編號"}</Label>
+                <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder={memberMode ? "例：0912345678" : "僅限本公司帳號"} inputMode={memberMode ? "tel" : undefined} />
+                {memberMode && (
+                  <p className="text-[11px] text-muted-foreground">會員可使用註冊時的行動電話或系統會員編號 (M 開頭) 登入。</p>
+                )}
               </div>
             )}
 
