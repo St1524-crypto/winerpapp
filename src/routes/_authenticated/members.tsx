@@ -12,11 +12,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, Shield, UserCircle, UserPlus, Pencil, Handshake } from "lucide-react";
+import { Search, Shield, UserCircle, UserPlus, Pencil, Handshake, KeyRound, Copy, LogIn, Sparkles } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
-import { adminCreateMember, adminUpdateMember } from "@/lib/members-admin.functions";
+import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
 interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; }
 interface Member extends Profile { roles: AppRole[]; }
