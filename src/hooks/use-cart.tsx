@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCartClient } from "@/integrations/supabase/cart-client";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import type { CartItem } from "@/types/shop";
