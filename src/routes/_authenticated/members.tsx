@@ -272,6 +272,14 @@ function Page() {
                   <TableCell className="text-muted-foreground">{m.email ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{m.phone ?? "—"}</TableCell>
                   <TableCell>
+                    {m.referrer_member_no ? (
+                      <div className="text-xs leading-tight">
+                        <div className="font-mono">{m.referrer_member_no}</div>
+                        <div className="text-muted-foreground">{m.referrer_name ?? "—"}</div>
+                      </div>
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {m.roles.length === 0 ? <span className="text-xs text-muted-foreground">無</span>
                         : m.roles.map((r) => (
