@@ -92,12 +92,12 @@ function Page() {
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "" });
     setCreateOpen(true);
   }
   function openEditProfile(m: Member) {
     setEditProfile(m);
-    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "", referrerMemberNo: m.referrer_member_no ?? "" });
+    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "", referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? "" });
   }
 
   async function submitCreate() {
