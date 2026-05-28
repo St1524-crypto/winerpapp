@@ -45,7 +45,7 @@ function Page() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "" });
 
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
