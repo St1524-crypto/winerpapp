@@ -18,8 +18,8 @@ import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
-interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; }
-interface Member extends Profile { roles: AppRole[]; }
+interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; }
+interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
 const ROLE_COLORS: Record<AppRole, string> = {
@@ -45,7 +45,7 @@ function Page() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "" });
 
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
@@ -57,7 +57,7 @@ function Page() {
   async function load() {
     setLoading(true);
     const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (e1 || e2) { toast.error(e1?.message ?? e2?.message ?? "載入失敗"); setLoading(false); return; }
@@ -67,7 +67,16 @@ function Page() {
       arr.push(r.role as AppRole);
       rolesMap.set(r.user_id, arr);
     });
-    setList((profiles ?? []).map((p: any) => ({ ...p, roles: rolesMap.get(p.id) ?? [] })));
+    const byId = new Map<string, any>((profiles ?? []).map((p: any) => [p.id, p]));
+    setList((profiles ?? []).map((p: any) => {
+      const ref = p.referred_by ? byId.get(p.referred_by) : null;
+      return {
+        ...p,
+        roles: rolesMap.get(p.id) ?? [],
+        referrer_member_no: ref?.member_no ?? null,
+        referrer_name: ref?.name ?? null,
+      };
+    }));
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -83,12 +92,12 @@ function Page() {
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "" });
     setCreateOpen(true);
   }
   function openEditProfile(m: Member) {
     setEditProfile(m);
-    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "" });
+    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "", referrerMemberNo: m.referrer_member_no ?? "" });
   }
 
   async function submitCreate() {
@@ -106,6 +115,8 @@ function Page() {
     if (!editProfile) return;
     setSaving(true);
     try {
+      const trimmedRef = form.referrerMemberNo.trim();
+      const originalRef = editProfile.referrer_member_no ?? "";
       await adminUpdateMember({
         data: {
           userId: editProfile.id,
@@ -113,6 +124,8 @@ function Page() {
           email: form.email,
           phone: form.phone,
           password: form.password || undefined,
+          referrerMemberNo: trimmedRef || undefined,
+          clearReferrer: !trimmedRef && !!originalRef,
         },
       });
       toast.success("資料已更新");
