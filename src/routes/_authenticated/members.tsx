@@ -295,19 +295,20 @@ function Page() {
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{new Date(m.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      {m.phone && (
+                      {(m.marketing_slug || m.phone) && (
                         <Button
                           size="sm"
                           variant="ghost"
-                          title={`複製行銷網址 ${typeof window !== "undefined" ? window.location.origin : ""}/r/${m.phone}`}
+                          title={`複製行銷網址 ${typeof window !== "undefined" ? window.location.origin : ""}/r/${m.marketing_slug || m.phone}`}
                           onClick={() => {
-                            const url = `${window.location.origin}/r/${m.phone}`;
+                            const seg = m.marketing_slug || m.phone;
+                            const url = `${window.location.origin}/r/${seg}`;
                             copyText(url, "行銷網址");
                           }}
                         >
                           <Link2 className="h-4 w-4 mr-1" />行銷網址
                         </Button>
+                      )}
                       )}
                       {isAdmin && (
                         <>
