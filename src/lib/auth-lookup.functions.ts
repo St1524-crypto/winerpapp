@@ -60,17 +60,33 @@ export const getUserCompany = createServerFn({ method: "POST" })
  * with the referrer pre-filled.
  */
 export const resolveReferrerByPhone = createServerFn({ method: "POST" })
+export const resolveReferrerByPhone = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({ phone: z.string().trim().min(6).max(32) }).parse(d),
+    z.object({ phone: z.string().trim().min(3).max(64) }).parse(d),
   )
   .handler(async ({ data }) => {
-    const phone = data.phone.replace(/[\s-]/g, "");
-    const { data: prof } = await supabaseAdmin
-      .from("profiles")
-      .select("id, name, member_no, referral_code, current_company_id")
-      .in("phone", [phone, `+${phone.replace(/^\+/, "")}`])
-      .limit(1)
-      .maybeSingle();
+    const raw = data.phone.trim();
+    const phone = raw.replace(/[\s-]/g, "");
+    // 先嘗試以自訂行銷代稱 (marketing_slug) 比對；找不到再退回以電話比對
+    let prof: any = null;
+    if (/^[A-Za-z0-9_-]{3,32}$/.test(raw)) {
+      const { data: bySlug } = await supabaseAdmin
+        .from("profiles")
+        .select("id, name, member_no, referral_code, current_company_id")
+        .ilike("marketing_slug", raw)
+        .limit(1)
+        .maybeSingle();
+      prof = bySlug ?? null;
+    }
+    if (!prof) {
+      const { data: byPhone } = await supabaseAdmin
+        .from("profiles")
+        .select("id, name, member_no, referral_code, current_company_id")
+        .in("phone", [phone, `+${phone.replace(/^\+/, "")}`])
+        .limit(1)
+        .maybeSingle();
+      prof = byPhone ?? null;
+    }
     if (!prof) return { found: false as const };
 
     let companySlug: string | null = null;
