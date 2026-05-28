@@ -60,7 +60,7 @@ export const getUserCompany = createServerFn({ method: "POST" })
  * with the referrer pre-filled.
  */
 export const resolveReferrerByPhone = createServerFn({ method: "POST" })
-export const resolveReferrerByPhone = createServerFn({ method: "POST" })
+
   .inputValidator((d: unknown) =>
     z.object({ phone: z.string().trim().min(3).max(64) }).parse(d),
   )
