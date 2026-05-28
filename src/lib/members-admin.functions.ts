@@ -91,10 +91,13 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
 
     const phone = data.phone !== undefined ? normalizePhone(data.phone) : undefined;
-    const profileUpdate: { name?: string; email?: string | null; phone?: string | null; referred_by?: string | null } = {};
+    const profileUpdate: { name?: string; email?: string | null; phone?: string | null; referred_by?: string | null; marketing_slug?: string | null } = {};
     if (data.name !== undefined) profileUpdate.name = data.name;
     if (data.email !== undefined) profileUpdate.email = data.email || null;
     if (phone !== undefined) profileUpdate.phone = phone;
+    if (data.marketingSlug !== undefined) {
+      profileUpdate.marketing_slug = data.marketingSlug ? data.marketingSlug.trim() : null;
+    }
 
     if (data.clearReferrer) {
       profileUpdate.referred_by = null;
