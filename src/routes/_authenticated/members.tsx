@@ -126,6 +126,7 @@ function Page() {
           password: form.password || undefined,
           referrerMemberNo: trimmedRef || undefined,
           clearReferrer: !trimmedRef && !!originalRef,
+          marketingSlug: form.marketingSlug.trim() || "",
         },
       });
       toast.success("資料已更新");
