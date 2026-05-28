@@ -73,6 +73,8 @@ const UpdateSchema = z.object({
   email: z.string().trim().email().max(255).optional().or(z.literal("")),
   phone: z.string().trim().max(32).optional().or(z.literal("")),
   password: z.string().min(6).max(72).optional().or(z.literal("")),
+  referrerMemberNo: z.string().trim().max(32).optional().or(z.literal("")),
+  clearReferrer: z.boolean().optional(),
 });
 
 export const adminUpdateMember = createServerFn({ method: "POST" })
@@ -82,10 +84,25 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
 
     const phone = data.phone !== undefined ? normalizePhone(data.phone) : undefined;
-    const profileUpdate: { name?: string; email?: string | null; phone?: string | null } = {};
+    const profileUpdate: { name?: string; email?: string | null; phone?: string | null; referred_by?: string | null } = {};
     if (data.name !== undefined) profileUpdate.name = data.name;
     if (data.email !== undefined) profileUpdate.email = data.email || null;
     if (phone !== undefined) profileUpdate.phone = phone;
+
+    if (data.clearReferrer) {
+      profileUpdate.referred_by = null;
+    } else if (data.referrerMemberNo && data.referrerMemberNo.trim()) {
+      const code = data.referrerMemberNo.trim();
+      const { data: ref, error: refErr } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("member_no", code)
+        .maybeSingle();
+      if (refErr) throw new Error(refErr.message);
+      if (!ref?.id) throw new Error(`找不到推薦人會員編號：${code}`);
+      if (ref.id === data.userId) throw new Error("推薦人不能是會員本人");
+      profileUpdate.referred_by = ref.id;
+    }
 
     if (Object.keys(profileUpdate).length) {
       const { error } = await supabaseAdmin

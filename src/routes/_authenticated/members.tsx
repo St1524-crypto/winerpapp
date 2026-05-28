@@ -18,8 +18,8 @@ import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
-interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; }
-interface Member extends Profile { roles: AppRole[]; }
+interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; }
+interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
 const ROLE_COLORS: Record<AppRole, string> = {
@@ -45,7 +45,7 @@ function Page() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "" });
 
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
@@ -57,7 +57,7 @@ function Page() {
   async function load() {
     setLoading(true);
     const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (e1 || e2) { toast.error(e1?.message ?? e2?.message ?? "載入失敗"); setLoading(false); return; }
@@ -67,7 +67,16 @@ function Page() {
       arr.push(r.role as AppRole);
       rolesMap.set(r.user_id, arr);
     });
-    setList((profiles ?? []).map((p: any) => ({ ...p, roles: rolesMap.get(p.id) ?? [] })));
+    const byId = new Map<string, any>((profiles ?? []).map((p: any) => [p.id, p]));
+    setList((profiles ?? []).map((p: any) => {
+      const ref = p.referred_by ? byId.get(p.referred_by) : null;
+      return {
+        ...p,
+        roles: rolesMap.get(p.id) ?? [],
+        referrer_member_no: ref?.member_no ?? null,
+        referrer_name: ref?.name ?? null,
+      };
+    }));
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -83,12 +92,12 @@ function Page() {
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "" });
     setCreateOpen(true);
   }
   function openEditProfile(m: Member) {
     setEditProfile(m);
-    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "" });
+    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "", referrerMemberNo: m.referrer_member_no ?? "" });
   }
 
   async function submitCreate() {
@@ -106,6 +115,8 @@ function Page() {
     if (!editProfile) return;
     setSaving(true);
     try {
+      const trimmedRef = form.referrerMemberNo.trim();
+      const originalRef = editProfile.referrer_member_no ?? "";
       await adminUpdateMember({
         data: {
           userId: editProfile.id,
@@ -113,6 +124,8 @@ function Page() {
           email: form.email,
           phone: form.phone,
           password: form.password || undefined,
+          referrerMemberNo: trimmedRef || undefined,
+          clearReferrer: !trimmedRef && !!originalRef,
         },
       });
       toast.success("資料已更新");
@@ -232,6 +245,7 @@ function Page() {
                 <TableHead>會員編號</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>電話</TableHead>
+                <TableHead>推薦人</TableHead>
                 <TableHead>角色</TableHead>
                 <TableHead>經銷商</TableHead>
                 <TableHead>建立日期</TableHead>
@@ -240,9 +254,9 @@ function Page() {
             </TableHeader>
             <TableBody>
               {loading ? Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}><TableCell colSpan={8}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
+                <TableRow key={i}><TableCell colSpan={9}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
               )) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-10">尚無會員</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-10">尚無會員</TableCell></TableRow>
               ) : filtered.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell>
@@ -257,6 +271,14 @@ function Page() {
                   <TableCell className="font-mono text-xs">{m.member_no ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{m.email ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{m.phone ?? "—"}</TableCell>
+                  <TableCell>
+                    {m.referrer_member_no ? (
+                      <div className="text-xs leading-tight">
+                        <div className="font-mono">{m.referrer_member_no}</div>
+                        <div className="text-muted-foreground">{m.referrer_name ?? "—"}</div>
+                      </div>
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {m.roles.length === 0 ? <span className="text-xs text-muted-foreground">無</span>
@@ -321,6 +343,13 @@ function Page() {
               <div className="space-y-1"><Label>姓名</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
               <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
               <div className="space-y-1"><Label>電話號碼</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+              <div className="space-y-1">
+                <Label>推薦人會員編號（留空則清除）</Label>
+                <Input value={form.referrerMemberNo} onChange={(e) => setForm({ ...form, referrerMemberNo: e.target.value })} placeholder="例如 M000123" className="font-mono" />
+                {editProfile.referrer_name && (
+                  <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}</p>
+                )}
+              </div>
               <div className="space-y-1"><Label>重設密碼 (留空則不變更)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" /></div>
             </div>
           )}
