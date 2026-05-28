@@ -295,6 +295,19 @@ function Page() {
                   <TableCell className="text-muted-foreground text-sm">{new Date(m.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      {m.phone && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title={`複製行銷網址 ${typeof window !== "undefined" ? window.location.origin : ""}/r/${m.phone}`}
+                          onClick={() => {
+                            const url = `${window.location.origin}/r/${m.phone}`;
+                            copyText(url, "行銷網址");
+                          }}
+                        >
+                          <Link2 className="h-4 w-4 mr-1" />行銷網址
+                        </Button>
+                      )}
                       {isAdmin && (
                         <>
                           <Button size="sm" variant="ghost" onClick={() => toggleDealer(m)} title="切換經銷商">
@@ -308,6 +321,7 @@ function Page() {
                       <Button size="sm" variant="ghost" onClick={() => openEditRoles(m)}><Shield className="h-4 w-4 mr-1" />角色</Button>
                     </div>
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>
