@@ -335,7 +335,14 @@ function Page() {
 
       {/* Edit profile */}
       <Dialog open={!!editProfile} onOpenChange={(v) => !v && setEditProfile(null)}>
-        <DialogContent>
+              <div className="space-y-1">
+                <Label>推薦人會員編號（留空則清除）</Label>
+                <Input value={form.referrerMemberNo} onChange={(e) => setForm({ ...form, referrerMemberNo: e.target.value })} placeholder="例如 M000123" className="font-mono" />
+                {editProfile?.referrer_name && (
+                  <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}</p>
+                )}
+              </div>
+              <div className="space-y-1"><Label>重設密碼 (留空則不變更)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" /></div>
           <DialogHeader><DialogTitle>編輯會員資料</DialogTitle></DialogHeader>
           {editProfile && (
             <div className="space-y-3 py-2">
