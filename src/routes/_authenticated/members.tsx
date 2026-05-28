@@ -250,6 +250,7 @@ function Page() {
                 <TableHead>經銷商</TableHead>
                 <TableHead>建立日期</TableHead>
                 <TableHead className="text-right">操作</TableHead>
+              </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? Array.from({ length: 5 }).map((_, i) => (
