@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Search, Shield, UserCircle, UserPlus, Pencil, Handshake, KeyRound, Copy, LogIn, Sparkles } from "lucide-react";
+import { Search, Shield, UserCircle, UserPlus, Pencil, Handshake, KeyRound, Copy, LogIn, Sparkles, Link2 } from "lucide-react";
 import type { AppRole } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
@@ -295,6 +295,19 @@ function Page() {
                   <TableCell className="text-muted-foreground text-sm">{new Date(m.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      {m.phone && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title={`複製行銷網址 ${typeof window !== "undefined" ? window.location.origin : ""}/r/${m.phone}`}
+                          onClick={() => {
+                            const url = `${window.location.origin}/r/${m.phone}`;
+                            copyText(url, "行銷網址");
+                          }}
+                        >
+                          <Link2 className="h-4 w-4 mr-1" />行銷網址
+                        </Button>
+                      )}
                       {isAdmin && (
                         <>
                           <Button size="sm" variant="ghost" onClick={() => toggleDealer(m)} title="切換經銷商">
@@ -308,6 +321,7 @@ function Page() {
                       <Button size="sm" variant="ghost" onClick={() => openEditRoles(m)}><Shield className="h-4 w-4 mr-1" />角色</Button>
                     </div>
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>

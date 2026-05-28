@@ -20,6 +20,7 @@ import { Route as ShopVipRouteImport } from './routes/shop.vip'
 import { Route as ShopProductsRouteImport } from './routes/shop.products'
 import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
 import { Route as ShopAccountRouteImport } from './routes/shop.account'
+import { Route as RPhoneRouteImport } from './routes/r.$phone'
 import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as LoginSlugRouteImport } from './routes/login.$slug'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
@@ -123,6 +124,11 @@ const ShopAccountRoute = ShopAccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => ShopRoute,
+} as any)
+const RPhoneRoute = RPhoneRouteImport.update({
+  id: '/r/$phone',
+  path: '/r/$phone',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const MSlugRoute = MSlugRouteImport.update({
   id: '/m/$slug',
@@ -422,6 +428,7 @@ export interface FileRoutesByFullPath {
   '/c/$slug': typeof CSlugRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
+  '/r/$phone': typeof RPhoneRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
@@ -481,6 +488,7 @@ export interface FileRoutesByTo {
   '/c/$slug': typeof CSlugRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
+  '/r/$phone': typeof RPhoneRoute
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
@@ -543,6 +551,7 @@ export interface FileRoutesById {
   '/c/$slug': typeof CSlugRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
+  '/r/$phone': typeof RPhoneRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
@@ -606,6 +615,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/login/$slug'
     | '/m/$slug'
+    | '/r/$phone'
     | '/shop/account'
     | '/shop/checkout'
     | '/shop/products'
@@ -665,6 +675,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/login/$slug'
     | '/m/$slug'
+    | '/r/$phone'
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/vip'
@@ -726,6 +737,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/login/$slug'
     | '/m/$slug'
+    | '/r/$phone'
     | '/shop/account'
     | '/shop/checkout'
     | '/shop/products'
@@ -764,6 +776,7 @@ export interface RootRouteChildren {
   TwoFactorRoute: typeof TwoFactorRoute
   CSlugRoute: typeof CSlugRoute
   MSlugRoute: typeof MSlugRoute
+  RPhoneRoute: typeof RPhoneRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -845,6 +858,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/account'
       preLoaderRoute: typeof ShopAccountRouteImport
       parentRoute: typeof ShopRoute
+    }
+    '/r/$phone': {
+      id: '/r/$phone'
+      path: '/r/$phone'
+      fullPath: '/r/$phone'
+      preLoaderRoute: typeof RPhoneRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/m/$slug': {
       id: '/m/$slug'
@@ -1403,6 +1423,7 @@ const rootRouteChildren: RootRouteChildren = {
   TwoFactorRoute: TwoFactorRoute,
   CSlugRoute: CSlugRoute,
   MSlugRoute: MSlugRoute,
+  RPhoneRoute: RPhoneRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
