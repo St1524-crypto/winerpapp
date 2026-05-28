@@ -25,12 +25,8 @@ function ReferralLandingPage() {
       try {
         const res = await resolveReferrerByPhone({ data: { phone } });
         if (cancelled) return;
-        if (!res.found) {
-          setError(`找不到電話 ${phone} 對應的推薦人`);
-          return;
-        }
-        const ref = res.referralCode || res.memberNo || "";
-        const slug = res.companySlug;
+        const ref = res.found ? (res.referralCode || res.memberNo || "") : "";
+        const slug = res.found ? res.companySlug : null;
         if (slug) {
           const target = isMobileDevice() ? "/m/$slug" : "/login/$slug";
           navigate({
@@ -40,8 +36,9 @@ function ReferralLandingPage() {
             replace: true,
           });
         } else {
-          // Referrer has no company — fall back to generic login with ref
-          window.location.replace(`/login?ref=${encodeURIComponent(ref)}&mode=signup`);
+          // 找不到推薦人或推薦人沒有公司 — 仍讓使用者完成註冊，推薦人留空，管理員可後續補上
+          const qs = ref ? `?ref=${encodeURIComponent(ref)}&mode=signup` : `?mode=signup`;
+          window.location.replace(`/login${qs}`);
         }
       } catch (e: any) {
         if (!cancelled) setError(e?.message ?? "解析推薦連結失敗");
