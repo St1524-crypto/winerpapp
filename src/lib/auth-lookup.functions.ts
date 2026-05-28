@@ -53,3 +53,45 @@ export const getUserCompany = createServerFn({ method: "POST" })
       .maybeSingle();
     return { companyId: row?.current_company_id ?? null };
   });
+
+/**
+ * Resolve a marketing referral phone (e.g. /r/0912345678) into the referrer's
+ * company slug + referral code, so the visitor lands on the right signup page
+ * with the referrer pre-filled.
+ */
+export const resolveReferrerByPhone = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ phone: z.string().trim().min(6).max(32) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const phone = data.phone.replace(/[\s-]/g, "");
+    const { data: prof } = await supabaseAdmin
+      .from("profiles")
+      .select("id, name, member_no, referral_code, current_company_id")
+      .in("phone", [phone, `+${phone.replace(/^\+/, "")}`])
+      .limit(1)
+      .maybeSingle();
+    if (!prof) return { found: false as const };
+
+    let companySlug: string | null = null;
+    let companyName: string | null = null;
+    if (prof.current_company_id) {
+      const { data: co } = await supabaseAdmin
+        .from("companies")
+        .select("slug, company_name")
+        .eq("id", prof.current_company_id)
+        .maybeSingle();
+      companySlug = co?.slug ?? null;
+      companyName = co?.company_name ?? null;
+    }
+
+    return {
+      found: true as const,
+      referrerName: prof.name,
+      memberNo: prof.member_no,
+      referralCode: prof.referral_code,
+      companySlug,
+      companyName,
+    };
+  });
+
