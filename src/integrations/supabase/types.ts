@@ -2148,6 +2148,7 @@ export type Database = {
           id: string
           is_dealer: boolean
           is_vip: boolean
+          marketing_slug: string | null
           member_no: string | null
           name: string | null
           phone: string | null
@@ -2163,6 +2164,7 @@ export type Database = {
           id: string
           is_dealer?: boolean
           is_vip?: boolean
+          marketing_slug?: string | null
           member_no?: string | null
           name?: string | null
           phone?: string | null
@@ -2178,6 +2180,7 @@ export type Database = {
           id?: string
           is_dealer?: boolean
           is_vip?: boolean
+          marketing_slug?: string | null
           member_no?: string | null
           name?: string | null
           phone?: string | null
