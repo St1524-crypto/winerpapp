@@ -295,6 +295,7 @@ function Page() {
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{new Date(m.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
                       {(m.marketing_slug || m.phone) && (
                         <Button
                           size="sm"
@@ -308,7 +309,6 @@ function Page() {
                         >
                           <Link2 className="h-4 w-4 mr-1" />行銷網址
                         </Button>
-                      )}
                       )}
                       {isAdmin && (
                         <>
