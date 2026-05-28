@@ -363,6 +363,8 @@ function Page() {
                 <Label>推薦人會員編號（留空則清除）</Label>
                 <Input value={form.referrerMemberNo} onChange={(e) => setForm({ ...form, referrerMemberNo: e.target.value })} placeholder="例如 M000123" className="font-mono" />
                 {editProfile.referrer_name && (
+                  <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label>行銷網址代稱（marketing slug，3-32 字元，可含 A-Z a-z 0-9 _ -）</Label>
@@ -374,7 +376,6 @@ function Page() {
                 <p className="text-[11px] text-muted-foreground">
                   留空則使用會員電話作為行銷網址：/r/{form.marketingSlug.trim() || form.phone || "電話"}
                 </p>
-                )}
               </div>
               <div className="space-y-1"><Label>重設密碼 (留空則不變更)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" /></div>
             </div>
