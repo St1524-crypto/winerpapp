@@ -8,35 +8,66 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/shop/account/profile")({ component: ProfilePage });
+
+const SLUG_RE = /^[A-Za-z0-9_-]{3,32}$/;
 
 function ProfilePage() {
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [phone, setPhone] = useState<string | null>(null);
+  const [marketingSlug, setMarketingSlug] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      const { data } = await supabase
+        .from("profiles")
+        .select("name, avatar_url, phone, marketing_slug")
+        .eq("id", user.id)
+        .maybeSingle();
       setName(data?.name ?? "");
       setAvatarUrl(data?.avatar_url ?? "");
+      setPhone(data?.phone ?? null);
+      setMarketingSlug((data as any)?.marketing_slug ?? "");
       setLoading(false);
     })();
   }, [user]);
 
   async function save() {
     if (!user) return;
+    const slug = marketingSlug.trim();
+    if (slug && !SLUG_RE.test(slug)) {
+      toast.error("行銷代稱僅可含英數字、底線或連字號，長度 3-32");
+      return;
+    }
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ name, avatar_url: avatarUrl || null }).eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        name,
+        avatar_url: avatarUrl || null,
+        marketing_slug: slug || null,
+      } as any)
+      .eq("id", user.id);
     setSaving(false);
-    if (error) toast.error(error.message);
-    else toast.success("個人資料已更新");
+    if (error) {
+      if (/duplicate|unique/i.test(error.message)) {
+        toast.error("此行銷代稱已被使用，請更換");
+      } else {
+        toast.error(error.message);
+      }
+    } else toast.success("個人資料已更新");
   }
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const seg = marketingSlug.trim() || phone || "";
+  const marketingUrl = seg ? `${origin}/r/${seg}` : "";
 
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
@@ -64,6 +95,34 @@ function ProfilePage() {
           <Label>Email</Label>
           <Input value={user?.email ?? ""} disabled />
           <p className="text-xs text-muted-foreground">Email 無法修改</p>
+        </div>
+        <div className="space-y-2">
+          <Label>行銷網址代稱</Label>
+          <Input
+            value={marketingSlug}
+            onChange={(e) => setMarketingSlug(e.target.value)}
+            placeholder="例如 alice-wang"
+          />
+          <p className="text-xs text-muted-foreground">
+            3-32 字元，可含 A-Z a-z 0-9 _ -；留空則使用您的電話作為行銷網址。
+          </p>
+          {marketingUrl && (
+            <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
+              <code className="flex-1 text-xs break-all">{marketingUrl}</code>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(marketingUrl);
+                    toast.success("行銷網址已複製");
+                  } catch { toast.error("複製失敗"); }
+                }}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
         <div className="flex justify-end">
           <Button onClick={save} disabled={saving} className="bg-gradient-to-r from-primary to-primary/70">
