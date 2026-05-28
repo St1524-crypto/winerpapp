@@ -75,6 +75,13 @@ const UpdateSchema = z.object({
   password: z.string().min(6).max(72).optional().or(z.literal("")),
   referrerMemberNo: z.string().trim().max(32).optional().or(z.literal("")),
   clearReferrer: z.boolean().optional(),
+  marketingSlug: z
+    .string()
+    .trim()
+    .max(32)
+    .regex(/^[A-Za-z0-9_-]{3,32}$/u, "行銷代稱僅可含英數字、底線或連字號，長度 3-32")
+    .optional()
+    .or(z.literal("")),
 });
 
 export const adminUpdateMember = createServerFn({ method: "POST" })
@@ -84,10 +91,13 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
 
     const phone = data.phone !== undefined ? normalizePhone(data.phone) : undefined;
-    const profileUpdate: { name?: string; email?: string | null; phone?: string | null; referred_by?: string | null } = {};
+    const profileUpdate: { name?: string; email?: string | null; phone?: string | null; referred_by?: string | null; marketing_slug?: string | null } = {};
     if (data.name !== undefined) profileUpdate.name = data.name;
     if (data.email !== undefined) profileUpdate.email = data.email || null;
     if (phone !== undefined) profileUpdate.phone = phone;
+    if (data.marketingSlug !== undefined) {
+      profileUpdate.marketing_slug = data.marketingSlug ? data.marketingSlug.trim() : null;
+    }
 
     if (data.clearReferrer) {
       profileUpdate.referred_by = null;

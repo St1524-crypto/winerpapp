@@ -18,7 +18,7 @@ import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
-interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; }
+interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; }
 interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
@@ -45,7 +45,7 @@ function Page() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "" });
 
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
@@ -57,7 +57,7 @@ function Page() {
   async function load() {
     setLoading(true);
     const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
     ]);
     if (e1 || e2) { toast.error(e1?.message ?? e2?.message ?? "載入失敗"); setLoading(false); return; }
@@ -92,12 +92,12 @@ function Page() {
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "" });
     setCreateOpen(true);
   }
   function openEditProfile(m: Member) {
     setEditProfile(m);
-    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "", referrerMemberNo: m.referrer_member_no ?? "" });
+    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "", referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? "" });
   }
 
   async function submitCreate() {
@@ -126,6 +126,7 @@ function Page() {
           password: form.password || undefined,
           referrerMemberNo: trimmedRef || undefined,
           clearReferrer: !trimmedRef && !!originalRef,
+          marketingSlug: form.marketingSlug.trim() || "",
         },
       });
       toast.success("資料已更新");
@@ -295,13 +296,14 @@ function Page() {
                   <TableCell className="text-muted-foreground text-sm">{new Date(m.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      {m.phone && (
+                      {(m.marketing_slug || m.phone) && (
                         <Button
                           size="sm"
                           variant="ghost"
-                          title={`複製行銷網址 ${typeof window !== "undefined" ? window.location.origin : ""}/r/${m.phone}`}
+                          title={`複製行銷網址 ${typeof window !== "undefined" ? window.location.origin : ""}/r/${m.marketing_slug || m.phone}`}
                           onClick={() => {
-                            const url = `${window.location.origin}/r/${m.phone}`;
+                            const seg = m.marketing_slug || m.phone;
+                            const url = `${window.location.origin}/r/${seg}`;
                             copyText(url, "行銷網址");
                           }}
                         >
@@ -363,6 +365,17 @@ function Page() {
                 {editProfile.referrer_name && (
                   <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}</p>
                 )}
+              </div>
+              <div className="space-y-1">
+                <Label>行銷網址代稱（marketing slug，3-32 字元，可含 A-Z a-z 0-9 _ -）</Label>
+                <Input
+                  value={form.marketingSlug}
+                  onChange={(e) => setForm({ ...form, marketingSlug: e.target.value })}
+                  placeholder="例如 alice-wang"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  留空則使用會員電話作為行銷網址：/r/{form.marketingSlug.trim() || form.phone || "電話"}
+                </p>
               </div>
               <div className="space-y-1"><Label>重設密碼 (留空則不變更)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" /></div>
             </div>
