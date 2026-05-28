@@ -75,6 +75,13 @@ const UpdateSchema = z.object({
   password: z.string().min(6).max(72).optional().or(z.literal("")),
   referrerMemberNo: z.string().trim().max(32).optional().or(z.literal("")),
   clearReferrer: z.boolean().optional(),
+  marketingSlug: z
+    .string()
+    .trim()
+    .max(32)
+    .regex(/^[A-Za-z0-9_-]{3,32}$/u, "行銷代稱僅可含英數字、底線或連字號，長度 3-32")
+    .optional()
+    .or(z.literal("")),
 });
 
 export const adminUpdateMember = createServerFn({ method: "POST" })
