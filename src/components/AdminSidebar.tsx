@@ -10,6 +10,7 @@ import { ROLE_LABELS } from "@/lib/nav";
 import {
   Crown, LayoutDashboard, Users, ShieldCheck, Shield, Settings, Bell, FileClock,
   Package, Tag, Boxes, ShoppingCart, Truck, UserCircle, Wallet, ArrowLeft, Database, KeyRound, Building2, Store,
+  Share2, TrendingUp,
 } from "lucide-react";
 
 interface AdminNavItem { title: string; url: string; icon: any; }
@@ -44,6 +45,14 @@ const GROUPS: AdminNavGroup[] = [
       { title: "採購管理", url: "/purchases", icon: Truck },
       { title: "客戶管理", url: "/customers", icon: Users },
       { title: "財務管理", url: "/finance", icon: Wallet },
+    ],
+  },
+  {
+    label: "VIP 行銷推薦",
+    items: [
+      { title: "VIP 方案管理", url: "/vip-plans", icon: Crown },
+      { title: "推廣總覽 / 結算", url: "/admin/referrals", icon: TrendingUp },
+      { title: "我的推廣收益", url: "/my-referrals", icon: Share2 },
     ],
   },
   {
