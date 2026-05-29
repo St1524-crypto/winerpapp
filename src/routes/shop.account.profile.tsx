@@ -47,12 +47,21 @@ function ProfilePage() {
       return;
     }
     setSaving(true);
+    // Snapshot prior slug for audit diff
+    const { data: prior } = await supabase
+      .from("profiles")
+      .select("marketing_slug")
+      .eq("id", user.id)
+      .maybeSingle();
+    const prevSlug = ((prior as any)?.marketing_slug ?? null) as string | null;
+    const nextSlug = slug || null;
+
     const { error } = await supabase
       .from("profiles")
       .update({
         name,
         avatar_url: avatarUrl || null,
-        marketing_slug: slug || null,
+        marketing_slug: nextSlug,
       } as any)
       .eq("id", user.id);
     setSaving(false);
@@ -62,8 +71,29 @@ function ProfilePage() {
       } else {
         toast.error(error.message);
       }
-    } else toast.success("個人資料已更新");
+      return;
+    }
+    toast.success("個人資料已更新");
+
+    // Audit log: marketing_slug change by user themselves
+    if ((prevSlug ?? null) !== (nextSlug ?? null)) {
+      await supabase.from("audit_logs").insert({
+        user_id: user.id,
+        entity: "profiles.marketing_slug",
+        entity_id: user.id,
+        action: "marketing_slug_changed",
+        metadata: {
+          source: "self",
+          actor_id: user.id,
+          target_user_id: user.id,
+          before: prevSlug,
+          after: nextSlug,
+          changed_at: new Date().toISOString(),
+        },
+      } as any);
+    }
   }
+
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const seg = marketingSlug.trim() || phone || "";

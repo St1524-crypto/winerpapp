@@ -90,6 +90,14 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
+    // Snapshot current profile for audit diff (marketing_slug)
+    const { data: prior } = await supabaseAdmin
+      .from("profiles")
+      .select("marketing_slug")
+      .eq("id", data.userId)
+      .maybeSingle();
+    const prevSlug = (prior as any)?.marketing_slug ?? null;
+
     const phone = data.phone !== undefined ? normalizePhone(data.phone) : undefined;
     const profileUpdate: { name?: string; email?: string | null; phone?: string | null; referred_by?: string | null; marketing_slug?: string | null } = {};
     if (data.name !== undefined) profileUpdate.name = data.name;
@@ -146,8 +154,30 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
       },
     });
 
+    // Dedicated audit entry for marketing_slug change (before/after)
+    if (
+      profileUpdate.marketing_slug !== undefined &&
+      (profileUpdate.marketing_slug ?? null) !== (prevSlug ?? null)
+    ) {
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: context.userId,
+        entity: "profiles.marketing_slug",
+        entity_id: data.userId,
+        action: "marketing_slug_changed",
+        metadata: {
+          source: "admin",
+          actor_id: context.userId,
+          target_user_id: data.userId,
+          before: prevSlug,
+          after: profileUpdate.marketing_slug ?? null,
+          changed_at: new Date().toISOString(),
+        },
+      });
+    }
+
     return { ok: true };
   });
+
 
 // ============== Reset / generate password / impersonate ==============
 function generateTempPassword(len = 12): string {
