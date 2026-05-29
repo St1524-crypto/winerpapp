@@ -103,7 +103,7 @@ function ShopHome() {
           </div>
 
           {/* Feature cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mt-12 md:mt-16 max-w-5xl mx-auto">
+          <div className="flex md:grid md:grid-cols-5 gap-3 md:gap-4 mt-12 md:mt-16 max-w-5xl mx-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 px-1 scrollbar-hide">
             <FeatureCard icon={Gift} title="註冊送點數" desc="新會員即贈購物金" />
             <FeatureCard icon={Sparkles} title="新會員首購好禮" desc="首單專屬優惠" />
             <FeatureCard icon={Flame} title="6 人拼團" desc="團購主享 10% 分潤" />
