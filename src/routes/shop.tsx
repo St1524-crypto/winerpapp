@@ -45,10 +45,10 @@ function ShopLayout() {
           colorScheme: 'light',
           backgroundColor: 'oklch(0.97 0.015 60)',
           backgroundImage:
-            'radial-gradient(ellipse 70% 50% at 0% 0%, oklch(0.95 0.05 35 / 0.9), transparent 60%),' +
-            'radial-gradient(ellipse 60% 50% at 100% 10%, oklch(0.94 0.04 50 / 0.8), transparent 65%),' +
-            'radial-gradient(ellipse 80% 60% at 50% 100%, oklch(0.96 0.03 70 / 0.7), transparent 70%),' +
-            'linear-gradient(180deg, oklch(0.98 0.012 60) 0%, oklch(0.96 0.018 55) 100%)',
+            'radial-gradient(ellipse 70% 50% at 0% 0%, oklch(0.95 0.06 35 / 0.85), transparent 60%),' +
+            'radial-gradient(ellipse 60% 50% at 100% 10%, oklch(0.94 0.05 50 / 0.75), transparent 65%),' +
+            'radial-gradient(ellipse 80% 60% at 50% 100%, oklch(0.96 0.04 70 / 0.65), transparent 70%),' +
+            'linear-gradient(180deg, oklch(0.98 0.014 60) 0%, oklch(0.955 0.02 55) 100%)',
           backgroundAttachment: 'fixed',
         }}
       >
