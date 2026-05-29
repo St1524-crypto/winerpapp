@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/vip-plans")({
   component: VipPlansAdmin,
 });
 
-const empty = { id: "", name: "", description: "", price: 0, duration_days: 365, bonus_points: 0, sort_order: 0, status: "active" };
+const empty = { id: "", name: "", description: "", price: 0, duration_days: 365, bonus_points: 0, sort_order: 0, status: "active", referral_rate_percent: 0 };
 
 function VipPlansAdmin() {
   const [plans, setPlans] = useState<any[]>([]);
@@ -35,6 +35,7 @@ function VipPlansAdmin() {
       bonus_points: Math.max(0, Math.floor(Number(form.bonus_points) || 0)),
       sort_order: Math.floor(Number(form.sort_order) || 0),
       status: form.status,
+      referral_rate_percent: Math.max(0, Number(form.referral_rate_percent) || 0),
     };
     const q = form.id
       ? supabase.from("vip_plans" as any).update(payload).eq("id", form.id)
