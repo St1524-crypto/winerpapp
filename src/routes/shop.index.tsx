@@ -1,3 +1,4 @@
+import { createFileRoute } from '@tanstack/react-router'
 import { createFileRoute, Link } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
