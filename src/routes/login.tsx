@@ -208,6 +208,8 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
   // ===== 無公司入口 → 顯示通用登入/註冊表單 =====
   if (!selectedCompany) {
+    const title =
+      mode === "forgot" ? "重設密碼" : mode === "signup" ? "免費註冊 WinERP" : "登入 WinERP";
     return (
       <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
         <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
@@ -216,70 +218,84 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
             <div className="inline-flex items-center justify-center mb-4">
               <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="shadow-glow ring-1 ring-primary/30 bg-white" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">{mode === "forgot" ? "重設密碼" : "登入 WinERP"}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+            {mode === "signup" && (
+              <p className="text-sm text-muted-foreground mt-2">請選擇您要註冊的公司專屬入口</p>
+            )}
           </div>
           <div className="rounded-2xl border bg-card/80 backdrop-blur-xl shadow-elegant p-8">
-            <form onSubmit={submit} className="space-y-4">
-              {mode === "signin" && (
-                <div className="space-y-2">
-                  <Label htmlFor="identifier">Email / 電話 / 會員編號</Label>
-                  <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required />
-                </div>
-              )}
-              {mode === "forgot" && (
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-              )}
-              {mode !== "forgot" && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">密碼</Label>
-                    {mode === "signin" && (
-                      <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
-                    )}
-                  </div>
-                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
-                </div>
-              )}
-              <Button type="submit" disabled={busy} className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
-                {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {mode === "signin" ? "登入" : "寄送重設信"}
-              </Button>
-              {mode === "forgot" && (
-                <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("signin")}>返回登入</Button>
-              )}
-            </form>
+            {mode !== "forgot" && (
+              <div className="flex gap-2 mb-6">
+                <button type="button" onClick={() => setMode("signup")}
+                  className={`flex-1 py-2 text-sm rounded-lg transition-colors ${mode === "signup" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>免費註冊</button>
+                <button type="button" onClick={() => setMode("signin")}
+                  className={`flex-1 py-2 text-sm rounded-lg transition-colors ${mode === "signin" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>登入</button>
+              </div>
+            )}
 
-            {mode === "signin" && companies.length > 0 && (
-              <div className="mt-6 pt-6 border-t">
-                <p className="text-xs text-muted-foreground mb-3 text-center">
-                  想免費註冊？請前往公司專屬入口
-                </p>
-                <div className="grid gap-2 max-h-56 overflow-auto">
+            {mode === "signup" ? (
+              companies.length > 0 ? (
+                <div className="grid gap-2 max-h-[420px] overflow-auto">
                   {companies.map((c) => (
                     <Link
                       key={c.id}
                       to="/c/$slug"
                       params={{ slug: c.slug }}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg border hover:bg-accent transition-colors"
+                      className="flex items-center gap-3 px-3 py-3 rounded-lg border hover:bg-accent transition-colors"
                     >
-                      <div className="h-8 w-8 shrink-0 rounded bg-muted overflow-hidden flex items-center justify-center">
+                      <div className="h-10 w-10 shrink-0 rounded bg-muted overflow-hidden flex items-center justify-center">
                         {c.logo_url ? (
                           <img src={c.logo_url} alt="" className="h-full w-full object-contain" />
                         ) : (
-                          <span className="text-xs font-bold text-muted-foreground">
+                          <span className="text-sm font-bold text-muted-foreground">
                             {c.company_name.slice(0, 1)}
                           </span>
                         )}
                       </div>
-                      <span className="text-sm font-medium truncate flex-1">{c.company_name}</span>
-                      <span className="text-[10px] font-mono text-muted-foreground">/c/{c.slug}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{c.company_name}</div>
+                        <div className="text-[10px] font-mono text-muted-foreground truncate">/c/{c.slug}</div>
+                      </div>
+                      <span className="text-xs text-primary shrink-0">前往註冊 →</span>
                     </Link>
                   ))}
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">目前尚無開放註冊的公司</p>
+              )
+            ) : (
+              <form onSubmit={submit} className="space-y-4">
+                {mode === "signin" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="identifier">Email / 電話 / 會員編號</Label>
+                    <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required />
+                  </div>
+                )}
+                {mode === "forgot" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  </div>
+                )}
+                {mode !== "forgot" && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">密碼</Label>
+                      {mode === "signin" && (
+                        <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
+                      )}
+                    </div>
+                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
+                  </div>
+                )}
+                <Button type="submit" disabled={busy} className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
+                  {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  {mode === "signin" ? "登入" : "寄送重設信"}
+                </Button>
+                {mode === "forgot" && (
+                  <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("signin")}>返回登入</Button>
+                )}
+              </form>
             )}
           </div>
           <div className="text-center mt-4">
