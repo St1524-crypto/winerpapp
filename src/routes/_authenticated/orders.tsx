@@ -1464,12 +1464,16 @@ function OrderDetailDialog({
 
   const updateStatus = useMutation({
     mutationFn: async (patch: Partial<Pick<OrderRow, "order_status" | "shipping_status" | "payment_status">>) => {
-      if (!orderId) return;
+      if (!orderId) return patch;
       const { error } = await supabase.from("sales_orders").update(patch).eq("id", orderId);
       if (error) throw new Error(error.message);
+      return patch;
     },
-    onSuccess: () => {
+    onSuccess: async (patch) => {
       toast.success("狀態已更新");
+      if (orderId && patch?.payment_status) {
+        await autoSettleCommission(orderId, String(patch.payment_status));
+      }
       qc.invalidateQueries({ queryKey: ["sales-order-detail", orderId] });
       onChanged();
     },
