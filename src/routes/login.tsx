@@ -206,7 +206,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   }
 
 
-  // ===== 無公司入口 → 顯示通用登入表單 =====
+  // ===== 無公司入口 → 顯示通用登入/註冊表單 =====
   if (!selectedCompany) {
     return (
       <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
@@ -216,10 +216,64 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
             <div className="inline-flex items-center justify-center mb-4">
               <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="shadow-glow ring-1 ring-primary/30 bg-white" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">登入 WinERP</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{mode === "signup" ? "免費註冊 WinERP" : "登入 WinERP"}</h1>
           </div>
           <div className="rounded-2xl border bg-card/80 backdrop-blur-xl shadow-elegant p-8">
+            {mode !== "forgot" && (
+              <div className="flex gap-2 mb-6">
+                <button type="button" onClick={() => setMode("signin")}
+                  className={`flex-1 py-2 text-sm rounded-lg transition-colors ${mode === "signin" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>登入</button>
+                <button type="button" onClick={() => setMode("signup")}
+                  className={`flex-1 py-2 text-sm rounded-lg transition-colors ${mode === "signup" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>免費註冊</button>
+              </div>
+            )}
+
             <form onSubmit={submit} className="space-y-4">
+              {mode === "signup" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="company">選擇公司入口</Label>
+                    <select
+                      id="company"
+                      value={selectedSlug}
+                      onChange={(e) => setSelectedSlug(e.target.value)}
+                      required
+                      className="w-full h-10 px-3 rounded-md border bg-background text-sm"
+                    >
+                      <option value="">請選擇公司</option>
+                      {companies.map((c) => (
+                        <option key={c.id} value={c.slug}>{c.company_name}</option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">註冊免費！選擇您要加入的公司即可建立帳號。</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setSignupType("email")}
+                      className={`flex-1 py-1.5 text-xs rounded-md border ${signupType === "email" ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground"}`}>Email 註冊</button>
+                    <button type="button" onClick={() => setSignupType("phone")}
+                      className={`flex-1 py-1.5 text-xs rounded-md border ${signupType === "phone" ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground"}`}>電話註冊</button>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">姓名</Label>
+                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="王小明" />
+                  </div>
+                  {signupType === "email" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">電話號碼</Label>
+                      <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="0912345678" />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="refCode">推薦碼（選填）</Label>
+                    <Input id="refCode" value={refCode} onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="例：A1B2C3D4" className="font-mono" />
+                  </div>
+                </>
+              )}
               {mode === "signin" && (
                 <div className="space-y-2">
                   <Label htmlFor="identifier">Email / 電話 / 會員編號</Label>
@@ -232,18 +286,20 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                   <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
               )}
-              {mode === "signin" && (
+              {mode !== "forgot" && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">密碼</Label>
-                    <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
+                    {mode === "signin" && (
+                      <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
+                    )}
                   </div>
-                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                  <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
                 </div>
               )}
               <Button type="submit" disabled={busy} className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
                 {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {mode === "signin" ? "登入" : "寄送重設信"}
+                {mode === "signin" ? "登入" : mode === "signup" ? "免費建立帳號" : "寄送重設信"}
               </Button>
               {mode === "forgot" && (
                 <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("signin")}>返回登入</Button>
