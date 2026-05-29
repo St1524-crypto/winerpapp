@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { ShareProductButtons } from "@/components/shop/ShareProductButtons";
 import { useCart } from "@/hooks/use-cart";
 import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
-import { ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw, Minus, Plus, ChevronRight } from "lucide-react";
+import { setReferralCode } from "@/lib/referral-tracking";
+import { ShoppingCart, Heart, Truck, Shield, RotateCcw, Minus, Plus, ChevronRight } from "lucide-react";
 import type { Product, ProductImage } from "@/types/product";
 
 export const Route = createFileRoute("/shop/product/$id")({
@@ -32,6 +34,13 @@ function ProductDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // 捕捉分享連結中的 ?ref= 推薦碼（90 天 cookie）
+    if (typeof window !== "undefined") {
+      try {
+        const ref = new URLSearchParams(window.location.search).get("ref");
+        if (ref) setReferralCode(ref);
+      } catch {}
+    }
     (async () => {
       setLoading(true);
       const { data: p } = await supabase.from("products").select("*").eq("id", id).single();
@@ -148,7 +157,7 @@ function ProductDetail() {
                 立即購買
               </Button>
               <Button size="lg" variant="outline" className="px-3"><Heart className="h-4 w-4" /></Button>
-              <Button size="lg" variant="outline" className="px-3"><Share2 className="h-4 w-4" /></Button>
+              <ShareProductButtons productId={product.id} productName={product.name} />
             </div>
           </div>
 

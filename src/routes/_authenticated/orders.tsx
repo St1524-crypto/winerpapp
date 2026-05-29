@@ -13,6 +13,29 @@ import { useBranding } from "@/hooks/use-branding";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { useAuth } from "@/hooks/use-auth";
 import { deleteSalesOrder } from "@/lib/orders-admin.functions";
+import { processOrderCommission } from "@/lib/referral.functions";
+
+/** 訂單轉為 paid 時自動結算 VIP 推薦佣金（失敗不擋主流程） */
+async function autoSettleCommission(orderId: string, nextStatus: string) {
+  if (nextStatus !== "paid") return;
+  try {
+    const res = await processOrderCommission({ data: { orderId } });
+    if (res?.points && res.points > 0) {
+      toast.success(`已自動發放推薦獎勵 ${res.points} 點 (${res.rate}%)`);
+    }
+  } catch (e: any) {
+    const msg = String(e?.message ?? "");
+    // 無推薦人 / 已結算 / 推薦人非 VIP → 不顯示錯誤（屬於正常情境）
+    if (
+      msg.includes("無推薦人") ||
+      msg.includes("已結算") ||
+      msg.includes("非 VIP") ||
+      msg.includes("VIP 已過期") ||
+      msg.includes("尚未付款")
+    ) return;
+    toast.warning("推薦佣金自動結算失敗", { description: msg });
+  }
+}
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -1441,12 +1464,16 @@ function OrderDetailDialog({
 
   const updateStatus = useMutation({
     mutationFn: async (patch: Partial<Pick<OrderRow, "order_status" | "shipping_status" | "payment_status">>) => {
-      if (!orderId) return;
+      if (!orderId) return patch;
       const { error } = await supabase.from("sales_orders").update(patch).eq("id", orderId);
       if (error) throw new Error(error.message);
+      return patch;
     },
-    onSuccess: () => {
+    onSuccess: async (patch) => {
       toast.success("狀態已更新");
+      if (orderId && patch?.payment_status) {
+        await autoSettleCommission(orderId, String(patch.payment_status));
+      }
       qc.invalidateQueries({ queryKey: ["sales-order-detail", orderId] });
       onChanged();
     },
@@ -2232,8 +2259,9 @@ function RecordPaymentDialog({
 
       return { nextStatus };
     },
-    onSuccess: ({ nextStatus }) => {
+    onSuccess: async ({ nextStatus }) => {
       toast.success(`已記錄付款（訂單狀態：${PAYMENT_STATUS[nextStatus as keyof typeof PAYMENT_STATUS]?.label}）`);
+      await autoSettleCommission(orderId, nextStatus);
       setOpen(false);
       setAmount(String(unpaid));
       setTxId("");
@@ -2314,6 +2342,7 @@ function PaymentStatusCell({
       return;
     }
     toast.success(`付款狀態已更新為「${PAYMENT_STATUS[next].label}」`);
+    await autoSettleCommission(orderId, String(next));
     onChanged();
   }
 

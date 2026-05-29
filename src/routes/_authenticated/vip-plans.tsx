@@ -81,6 +81,7 @@ function VipPlansAdmin() {
             <CardContent className="text-sm space-y-1">
               <div>價格：<span className="font-medium">NT$ {Number(p.price).toLocaleString()}</span> / {p.duration_days} 天</div>
               <div>開通獎勵：{p.bonus_points} 點</div>
+              <div>推薦獎金：<span className="font-medium text-primary">{Number(p.referral_rate_percent ?? 0)}%</span></div>
               {p.description && <p className="text-xs text-muted-foreground pt-1">{p.description}</p>}
             </CardContent>
           </Card>
@@ -97,6 +98,20 @@ function VipPlansAdmin() {
               <div className="space-y-1.5"><Label>價格</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: +e.target.value })} /></div>
               <div className="space-y-1.5"><Label>天數</Label><Input type="number" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: +e.target.value })} /></div>
               <div className="space-y-1.5"><Label>開通獎勵點</Label><Input type="number" value={form.bonus_points} onChange={(e) => setForm({ ...form, bonus_points: +e.target.value })} /></div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>推薦獎金比例 (%)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min={0}
+                max={100}
+                value={form.referral_rate_percent ?? 0}
+                onChange={(e) => setForm({ ...form, referral_rate_percent: +e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                此等級 VIP 推薦下線消費後，可獲得訂單小計的 % 作為獎勵點（範例：5 表示 5%）
+              </p>
             </div>
             <div className="space-y-1.5"><Label>描述</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
             <div className="flex items-center gap-2"><Switch checked={form.status === "active"} onCheckedChange={(v) => setForm({ ...form, status: v ? "active" : "inactive" })} /><Label>啟用</Label></div>
