@@ -2331,6 +2331,67 @@ export type Database = {
           },
         ]
       }
+      referral_logs: {
+        Row: {
+          base_amount: number
+          buyer_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          order_id: string
+          points: number
+          rate_percent: number
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          base_amount?: number
+          buyer_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          order_id: string
+          points?: number
+          rate_percent?: number
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          base_amount?: number
+          buyer_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          order_id?: string
+          points?: number
+          rate_percent?: number
+          referrer_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_logs_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_logs_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referrals: {
         Row: {
           created_at: string
@@ -2437,6 +2498,7 @@ export type Database = {
           payment_status: string
           receiver_name: string
           receiver_phone: string
+          referrer_id: string | null
           shipping_address: string
           shipping_fee: number
           shipping_method: string
@@ -2464,6 +2526,7 @@ export type Database = {
           payment_status?: string
           receiver_name: string
           receiver_phone: string
+          referrer_id?: string | null
           shipping_address: string
           shipping_fee?: number
           shipping_method?: string
@@ -2491,6 +2554,7 @@ export type Database = {
           payment_status?: string
           receiver_name?: string
           receiver_phone?: string
+          referrer_id?: string | null
           shipping_address?: string
           shipping_fee?: number
           shipping_method?: string
@@ -2513,6 +2577,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2990,6 +3061,7 @@ export type Database = {
           id: string
           name: string
           price: number
+          referral_rate_percent: number
           sort_order: number
           status: string
           updated_at: string
@@ -3002,6 +3074,7 @@ export type Database = {
           id?: string
           name: string
           price?: number
+          referral_rate_percent?: number
           sort_order?: number
           status?: string
           updated_at?: string
@@ -3014,6 +3087,7 @@ export type Database = {
           id?: string
           name?: string
           price?: number
+          referral_rate_percent?: number
           sort_order?: number
           status?: string
           updated_at?: string
@@ -3159,6 +3233,7 @@ export type Database = {
           payment_status: string
           receiver_name: string
           receiver_phone: string
+          referrer_id: string | null
           shipping_address: string
           shipping_fee: number
           shipping_method: string
