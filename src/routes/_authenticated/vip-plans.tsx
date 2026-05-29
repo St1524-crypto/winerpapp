@@ -81,6 +81,7 @@ function VipPlansAdmin() {
             <CardContent className="text-sm space-y-1">
               <div>價格：<span className="font-medium">NT$ {Number(p.price).toLocaleString()}</span> / {p.duration_days} 天</div>
               <div>開通獎勵：{p.bonus_points} 點</div>
+              <div>推薦獎金：<span className="font-medium text-primary">{Number(p.referral_rate_percent ?? 0)}%</span></div>
               {p.description && <p className="text-xs text-muted-foreground pt-1">{p.description}</p>}
             </CardContent>
           </Card>
