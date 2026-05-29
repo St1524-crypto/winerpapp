@@ -12,6 +12,8 @@ import { CompanyLogo } from "@/components/company-logo";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
 import { resolveLoginEmail, getUserCompany } from "@/lib/auth-lookup.functions";
 import { handleReferralSignup } from "@/lib/points.functions";
+import { bindSponsorByCode } from "@/lib/referral.functions";
+import { getReferralCode, clearReferralCode } from "@/lib/referral-tracking";
 
 export const Route = createFileRoute("/login")({ component: () => <LoginPage /> });
 
@@ -50,9 +52,9 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
       const params = new URLSearchParams(window.location.search);
       const slugFromQuery = params.get("company");
-      const ref = params.get("ref");
+      const ref = params.get("ref") || getReferralCode(); // 優先網址，其次 cookie
       const m = params.get("mode");
-      if (ref) { setRefCode(ref.toUpperCase()); setMode("signup"); }
+      if (ref) { setRefCode(ref.toUpperCase()); }
       if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
 
       const targetSlug = pathSlug || slugFromQuery || "";
@@ -184,6 +186,8 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         if (error) throw error;
         if (refCode && signUpData.session) {
           await handleReferralSignup({ data: { referralCode: refCode } }).catch(() => {});
+          await bindSponsorByCode({ data: { code: refCode } }).catch(() => {});
+          clearReferralCode();
         }
         toast.success(`已於 ${selectedCompany.company_name} 完成註冊` + (signupType === "phone" ? "，可使用電話號碼登入" : "，請查收驗證信"));
       } else {

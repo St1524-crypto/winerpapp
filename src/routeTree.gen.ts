@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as UCodeRouteImport } from './routes/u.$code'
 import { Route as ShopVipRouteImport } from './routes/shop.vip'
 import { Route as ShopProductsRouteImport } from './routes/shop.products'
 import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
@@ -37,6 +38,7 @@ import { Route as AuthenticatedPurchasesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedPointsAdminRouteImport } from './routes/_authenticated/points-admin'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
+import { Route as AuthenticatedMyReferralsRouteImport } from './routes/_authenticated/my-referrals'
 import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
 import { Route as AuthenticatedInventoryTxRouteImport } from './routes/_authenticated/inventory-tx'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
@@ -64,6 +66,7 @@ import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
+import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
@@ -104,6 +107,11 @@ const ShopIndexRoute = ShopIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ShopRoute,
+} as any)
+const UCodeRoute = UCodeRouteImport.update({
+  id: '/u/$code',
+  path: '/u/$code',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ShopVipRoute = ShopVipRouteImport.update({
   id: '/vip',
@@ -212,6 +220,12 @@ const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMyReferralsRoute =
+  AuthenticatedMyReferralsRouteImport.update({
+    id: '/my-referrals',
+    path: '/my-referrals',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMembersRoute = AuthenticatedMembersRouteImport.update({
   id: '/members',
   path: '/members',
@@ -359,6 +373,12 @@ const AuthenticatedAdminRoleManagerRoute =
     path: '/role-manager',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminReferralsRoute =
+  AuthenticatedAdminReferralsRouteImport.update({
+    id: '/referrals',
+    path: '/referrals',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCompaniesRoute =
   AuthenticatedAdminCompaniesRouteImport.update({
     id: '/companies',
@@ -412,6 +432,7 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof AuthenticatedInventoryRoute
   '/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/members': typeof AuthenticatedMembersRoute
+  '/my-referrals': typeof AuthenticatedMyReferralsRoute
   '/orders': typeof AuthenticatedOrdersRoute
   '/points-admin': typeof AuthenticatedPointsAdminRoute
   '/products': typeof AuthenticatedProductsRouteWithChildren
@@ -433,9 +454,11 @@ export interface FileRoutesByFullPath {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
+  '/u/$code': typeof UCodeRoute
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
+  '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
@@ -472,6 +495,7 @@ export interface FileRoutesByTo {
   '/inventory': typeof AuthenticatedInventoryRoute
   '/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/members': typeof AuthenticatedMembersRoute
+  '/my-referrals': typeof AuthenticatedMyReferralsRoute
   '/orders': typeof AuthenticatedOrdersRoute
   '/points-admin': typeof AuthenticatedPointsAdminRoute
   '/products': typeof AuthenticatedProductsRouteWithChildren
@@ -492,9 +516,11 @@ export interface FileRoutesByTo {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
+  '/u/$code': typeof UCodeRoute
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
+  '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
@@ -535,6 +561,7 @@ export interface FileRoutesById {
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
+  '/_authenticated/my-referrals': typeof AuthenticatedMyReferralsRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
   '/_authenticated/points-admin': typeof AuthenticatedPointsAdminRoute
   '/_authenticated/products': typeof AuthenticatedProductsRouteWithChildren
@@ -556,9 +583,11 @@ export interface FileRoutesById {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
+  '/u/$code': typeof UCodeRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
+  '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
@@ -599,6 +628,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/inventory-tx'
     | '/members'
+    | '/my-referrals'
     | '/orders'
     | '/points-admin'
     | '/products'
@@ -620,9 +650,11 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/vip'
+    | '/u/$code'
     | '/shop/'
     | '/admin/audit-logs'
     | '/admin/companies'
+    | '/admin/referrals'
     | '/admin/role-manager'
     | '/admin/security'
     | '/b2b/accounts'
@@ -659,6 +691,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/inventory-tx'
     | '/members'
+    | '/my-referrals'
     | '/orders'
     | '/points-admin'
     | '/products'
@@ -679,9 +712,11 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/vip'
+    | '/u/$code'
     | '/shop'
     | '/admin/audit-logs'
     | '/admin/companies'
+    | '/admin/referrals'
     | '/admin/role-manager'
     | '/admin/security'
     | '/b2b/accounts'
@@ -721,6 +756,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inventory'
     | '/_authenticated/inventory-tx'
     | '/_authenticated/members'
+    | '/_authenticated/my-referrals'
     | '/_authenticated/orders'
     | '/_authenticated/points-admin'
     | '/_authenticated/products'
@@ -742,9 +778,11 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/vip'
+    | '/u/$code'
     | '/shop/'
     | '/_authenticated/admin/audit-logs'
     | '/_authenticated/admin/companies'
+    | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/role-manager'
     | '/_authenticated/admin/security'
     | '/_authenticated/b2b/accounts'
@@ -777,6 +815,7 @@ export interface RootRouteChildren {
   CSlugRoute: typeof CSlugRoute
   MSlugRoute: typeof MSlugRoute
   RPhoneRoute: typeof RPhoneRoute
+  UCodeRoute: typeof UCodeRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -830,6 +869,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/'
       preLoaderRoute: typeof ShopIndexRouteImport
       parentRoute: typeof ShopRoute
+    }
+    '/u/$code': {
+      id: '/u/$code'
+      path: '/u/$code'
+      fullPath: '/u/$code'
+      preLoaderRoute: typeof UCodeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/shop/vip': {
       id: '/shop/vip'
@@ -976,6 +1022,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof AuthenticatedOrdersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/my-referrals': {
+      id: '/_authenticated/my-referrals'
+      path: '/my-referrals'
+      fullPath: '/my-referrals'
+      preLoaderRoute: typeof AuthenticatedMyReferralsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/members': {
@@ -1167,6 +1220,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRoleManagerRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/referrals': {
+      id: '/_authenticated/admin/referrals'
+      path: '/referrals'
+      fullPath: '/admin/referrals'
+      preLoaderRoute: typeof AuthenticatedAdminReferralsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/companies': {
       id: '/_authenticated/admin/companies'
       path: '/companies'
@@ -1229,6 +1289,7 @@ const AuthenticatedAdminCompaniesRouteWithChildren =
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
+  AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
 }
@@ -1237,6 +1298,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
   AuthenticatedAdminCompaniesRoute:
     AuthenticatedAdminCompaniesRouteWithChildren,
+  AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
 }
@@ -1302,6 +1364,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedInventoryTxRoute: typeof AuthenticatedInventoryTxRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
+  AuthenticatedMyReferralsRoute: typeof AuthenticatedMyReferralsRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
   AuthenticatedPointsAdminRoute: typeof AuthenticatedPointsAdminRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRouteWithChildren
@@ -1330,6 +1393,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedInventoryTxRoute: AuthenticatedInventoryTxRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
+  AuthenticatedMyReferralsRoute: AuthenticatedMyReferralsRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
   AuthenticatedPointsAdminRoute: AuthenticatedPointsAdminRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRouteWithChildren,
@@ -1424,18 +1488,9 @@ const rootRouteChildren: RootRouteChildren = {
   CSlugRoute: CSlugRoute,
   MSlugRoute: MSlugRoute,
   RPhoneRoute: RPhoneRoute,
+  UCodeRoute: UCodeRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

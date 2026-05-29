@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { resolveReferrerByPhone } from "@/lib/auth-lookup.functions";
 import { isMobileDevice } from "@/lib/device";
+import { setReferralCode } from "@/lib/referral-tracking";
+
 
 export const Route = createFileRoute("/r/$phone")({
   component: ReferralLandingPage,
@@ -27,6 +29,8 @@ function ReferralLandingPage() {
         if (cancelled) return;
         const ref = res.found ? (res.referralCode || res.memberNo || "") : "";
         const slug = res.found ? res.companySlug : null;
+        // 寫入 cookie，90 天內任何頁面註冊都會自動綁定該推薦人
+        if (ref) setReferralCode(ref);
         if (slug) {
           const target = isMobileDevice() ? "/m/$slug" : "/login/$slug";
           navigate({

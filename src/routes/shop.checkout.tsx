@@ -90,6 +90,12 @@ function CheckoutPage() {
       if (pErr) throw pErr;
       const companyId = prodRows?.[0]?.company_id;
       if (!companyId) throw new Error("無法判斷商品所屬公司，請聯絡客服");
+      // 取出永久綁定的推薦人（profiles.referred_by），下單時快照到訂單
+      const { data: meProf } = await supabase
+        .from("profiles").select("referred_by").eq("id", user.id).maybeSingle();
+      const referrerId = (meProf as any)?.referred_by ?? null;
+      // 風控：禁止自己推薦自己
+      const safeReferrerId = referrerId && referrerId !== user.id ? referrerId : null;
 
       const { data: order, error: oErr } = await supabase
         .from("sales_orders")
@@ -107,6 +113,7 @@ function CheckoutPage() {
           subtotal,
           shipping_fee: shipping,
           total_amount: total,
+          referrer_id: safeReferrerId,
         })
         .select("id")
         .single();
