@@ -296,20 +296,28 @@ function Page() {
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{new Date(m.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-end gap-1 items-center">
                       {(m.marketing_slug || m.phone) && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          title={`複製行銷網址 ${typeof window !== "undefined" ? window.location.origin : ""}/r/${m.marketing_slug || m.phone}`}
-                          onClick={() => {
-                            const seg = m.marketing_slug || m.phone;
-                            const url = `${window.location.origin}/r/${seg}`;
-                            copyText(url, "行銷網址");
-                          }}
-                        >
-                          <Link2 className="h-4 w-4 mr-1" />行銷網址
-                        </Button>
+                        <>
+                          <a
+                            href={`/r/${m.marketing_slug || m.phone}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mr-1"
+                            title="預覽行銷網頁"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            預覽
+                          </a>
+                          <CopyButton
+                            value={`${typeof window !== "undefined" ? window.location.origin : ""}/r/${m.marketing_slug || m.phone}`}
+                            label="行銷網址"
+                            size="sm"
+                            iconSize={3.5}
+                            className="h-7 w-7 mr-1"
+                            stopPropagation={false}
+                          />
+                        </>
                       )}
                       {isAdmin && (
                         <>
