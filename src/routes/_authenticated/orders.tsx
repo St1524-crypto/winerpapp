@@ -2342,6 +2342,7 @@ function PaymentStatusCell({
       return;
     }
     toast.success(`付款狀態已更新為「${PAYMENT_STATUS[next].label}」`);
+    await autoSettleCommission(orderId, String(next));
     onChanged();
   }
 
