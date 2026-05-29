@@ -2259,8 +2259,9 @@ function RecordPaymentDialog({
 
       return { nextStatus };
     },
-    onSuccess: ({ nextStatus }) => {
+    onSuccess: async ({ nextStatus }) => {
       toast.success(`已記錄付款（訂單狀態：${PAYMENT_STATUS[nextStatus as keyof typeof PAYMENT_STATUS]?.label}）`);
+      await autoSettleCommission(orderId, nextStatus);
       setOpen(false);
       setAmount(String(unpaid));
       setTxId("");
