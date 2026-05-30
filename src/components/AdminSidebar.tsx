@@ -13,7 +13,7 @@ import {
   Share2, TrendingUp,
 } from "lucide-react";
 
-interface AdminNavItem { title: string; url: string; icon: any; }
+interface AdminNavItem { title: string; url: string; icon: any; roles?: string[]; }
 interface AdminNavGroup { label: string; items: AdminNavItem[]; }
 
 const GROUPS: AdminNavGroup[] = [
