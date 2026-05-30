@@ -64,6 +64,16 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
+              {is_vip && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === "/my-referrals"} tooltip="我的推廣收益">
+                    <Link to="/my-referrals" className="flex items-center gap-3">
+                      <Share2 className="h-4 w-4 shrink-0" />
+                      <span>我的推廣收益</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="回首頁">
                   <Link to="/shop" className="flex items-center gap-3 text-muted-foreground hover:text-foreground">
