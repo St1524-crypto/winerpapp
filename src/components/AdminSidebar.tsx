@@ -13,7 +13,7 @@ import {
   Share2, TrendingUp,
 } from "lucide-react";
 
-interface AdminNavItem { title: string; url: string; icon: any; }
+interface AdminNavItem { title: string; url: string; icon: any; roles?: string[]; }
 interface AdminNavGroup { label: string; items: AdminNavItem[]; }
 
 const GROUPS: AdminNavGroup[] = [
@@ -51,7 +51,7 @@ const GROUPS: AdminNavGroup[] = [
     label: "VIP 行銷推薦",
     items: [
       { title: "VIP 方案管理", url: "/vip-plans", icon: Crown },
-      { title: "推廣總覽 / 結算", url: "/admin/referrals", icon: TrendingUp },
+      { title: "推廣總覽 / 結算", url: "/admin/referrals", icon: TrendingUp, roles: ["super_admin", "admin", "finance", "sales"] },
       { title: "我的推廣收益", url: "/my-referrals", icon: Share2 },
     ],
   },
@@ -104,6 +104,7 @@ export function AdminSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
+                  if (item.roles && !item.roles.some((r) => roles.includes(r as any))) return null;
                   const active = pathname === item.url;
                   return (
                     <SidebarMenuItem key={`${group.label}-${item.title}`}>

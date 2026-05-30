@@ -11,10 +11,22 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth, type AppRole } from "@/hooks/use-auth";
+import { ForbiddenScreen } from "@/components/ForbiddenScreen";
+
+const REFERRAL_ADMIN_ROLES: AppRole[] = ["super_admin", "admin", "finance", "sales"];
 
 export const Route = createFileRoute("/_authenticated/admin/referrals")({
-  component: AdminReferralsPage,
+  component: AdminReferralsGuard,
 });
+
+function AdminReferralsGuard() {
+  const { roles } = useAuth();
+  if (!roles.some((r) => REFERRAL_ADMIN_ROLES.includes(r))) {
+    return <ForbiddenScreen requiredRoles={REFERRAL_ADMIN_ROLES} pageName="推廣總覽 / 結算" />;
+  }
+  return <AdminReferralsPage />;
+}
 
 function AdminReferralsPage() {
   const [data, setData] = useState<any>(null);
