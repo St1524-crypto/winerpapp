@@ -104,6 +104,7 @@ export function AdminSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
+                  if (item.roles && !item.roles.some((r) => roles.includes(r as any))) return null;
                   const active = pathname === item.url;
                   return (
                     <SidebarMenuItem key={`${group.label}-${item.title}`}>
