@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -15,11 +15,10 @@ import { handleReferralSignup } from "@/lib/points.functions";
 import { bindSponsorByCode } from "@/lib/referral.functions";
 import { getReferralCode, clearReferralCode } from "@/lib/referral-tracking";
 
-export const Route = createFileRoute("/login")({ component: () => <LoginPage /> });
-
 type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
 
 export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string; memberMode?: boolean } = {}) {
+
   const { user, loading, roles } = useAuth();
   const { logoUrl } = useBranding();
   const navigate = useNavigate();
