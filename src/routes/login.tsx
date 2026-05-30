@@ -206,101 +206,83 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   }
 
 
-  // ===== 無公司入口 → 顯示通用登入/註冊表單 =====
+  // ===== 無公司入口 → 左側合作廠商清單 + 右側引導 =====
   if (!selectedCompany) {
-    const title =
-      mode === "forgot" ? "重設密碼" : mode === "signup" ? "免費註冊 WinERP" : "登入 WinERP";
     return (
-      <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
+      <div className="relative min-h-screen overflow-hidden">
         <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
-        <div className="relative w-full max-w-md">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center mb-4">
-              <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="shadow-glow ring-1 ring-primary/30 bg-white" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-            {mode === "signup" && (
-              <p className="text-sm text-muted-foreground mt-2">請選擇您要註冊的公司專屬入口</p>
-            )}
-          </div>
-          <div className="rounded-2xl border bg-card/80 backdrop-blur-xl shadow-elegant p-8">
-            {mode !== "forgot" && (
-              <div className="flex gap-2 mb-6">
-                <button type="button" onClick={() => setMode("signup")}
-                  className={`flex-1 py-2 text-sm rounded-lg transition-colors ${mode === "signup" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>免費註冊</button>
-                <button type="button" onClick={() => setMode("signin")}
-                  className={`flex-1 py-2 text-sm rounded-lg transition-colors ${mode === "signin" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>登入</button>
+        <div className="relative grid md:grid-cols-[340px_1fr] min-h-screen">
+          {/* 左側：合作廠商 */}
+          <aside className="border-r bg-card/70 backdrop-blur-xl p-5 md:p-6 flex flex-col">
+            <div className="flex items-center gap-3 mb-5">
+              <CompanyLogo src={logoUrl} alt="WinERP" size="md" className="bg-white ring-1 ring-primary/30" />
+              <div>
+                <div className="text-sm font-bold leading-tight">WinERP</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">合作廠商入口</div>
               </div>
-            )}
-
-            {mode === "signup" ? (
-              companies.length > 0 ? (
-                <div className="grid gap-2 max-h-[420px] overflow-auto">
-                  {companies.map((c) => (
-                    <Link
-                      key={c.id}
-                      to="/c/$slug"
-                      params={{ slug: c.slug }}
-                      className="flex items-center gap-3 px-3 py-3 rounded-lg border hover:bg-accent transition-colors"
-                    >
-                      <div className="h-10 w-10 shrink-0 rounded bg-muted overflow-hidden flex items-center justify-center">
-                        {c.logo_url ? (
-                          <img src={c.logo_url} alt="" className="h-full w-full object-contain" />
-                        ) : (
-                          <span className="text-sm font-bold text-muted-foreground">
-                            {c.company_name.slice(0, 1)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">{c.company_name}</div>
-                        <div className="text-[10px] font-mono text-muted-foreground truncate">/c/{c.slug}</div>
-                      </div>
-                      <span className="text-xs text-primary shrink-0">前往註冊 →</span>
-                    </Link>
-                  ))}
-                </div>
+            </div>
+            <div className="text-xs font-semibold text-muted-foreground mb-3 px-1">合作廠商</div>
+            <div className="flex-1 overflow-auto -mx-1 px-1 space-y-1.5">
+              {companies.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">目前尚無合作廠商</p>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">目前尚無開放註冊的公司</p>
-              )
-            ) : (
-              <form onSubmit={submit} className="space-y-4">
-                {mode === "signin" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="identifier">Email / 電話 / 會員編號</Label>
-                    <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required />
-                  </div>
-                )}
-                {mode === "forgot" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                  </div>
-                )}
-                {mode !== "forgot" && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">密碼</Label>
-                      {mode === "signin" && (
-                        <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
+                companies.map((c) => (
+                  <Link
+                    key={c.id}
+                    to="/c/$slug"
+                    params={{ slug: c.slug }}
+                    className="flex items-center gap-3 px-2.5 py-2 rounded-lg border border-transparent hover:border-border hover:bg-accent transition-colors group"
+                  >
+                    <div className="h-9 w-9 shrink-0 rounded bg-muted overflow-hidden flex items-center justify-center">
+                      {c.logo_url ? (
+                        <img src={c.logo_url} alt="" className="h-full w-full object-contain" />
+                      ) : (
+                        <span className="text-sm font-bold text-muted-foreground">{c.company_name.slice(0, 1)}</span>
                       )}
                     </div>
-                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
-                  </div>
-                )}
-                <Button type="submit" disabled={busy} className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
-                  {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  {mode === "signin" ? "登入" : "寄送重設信"}
-                </Button>
-                {mode === "forgot" && (
-                  <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("signin")}>返回登入</Button>
-                )}
-              </form>
-            )}
-          </div>
-          <div className="text-center mt-4">
-            <Link to="/shop" className="text-sm text-primary hover:underline">回首頁</Link>
-          </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{c.company_name}</div>
+                      <div className="text-[10px] font-mono text-muted-foreground truncate">/c/{c.slug}</div>
+                    </div>
+                    <span className="text-[10px] text-primary opacity-0 group-hover:opacity-100 shrink-0">前往 →</span>
+                  </Link>
+                ))
+              )}
+            </div>
+            <Link to="/shop" className="mt-4 text-xs text-center text-muted-foreground hover:text-primary">回商城首頁</Link>
+          </aside>
+
+          {/* 右側：引導 */}
+          <main className="flex items-center justify-center p-6">
+            <div className="w-full max-w-md text-center">
+              <div className="inline-flex items-center justify-center mb-6">
+                <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="shadow-glow ring-1 ring-primary/30 bg-white" />
+              </div>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-3">歡迎使用 WinERP</h1>
+              <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
+                登入與註冊請從左側「合作廠商」選擇您的公司入口，
+                <br className="hidden md:block" />
+                前往公司專屬頁面後即可登入或免費註冊。
+              </p>
+              <div className="rounded-xl border bg-card/80 backdrop-blur-xl shadow-elegant p-5 text-left text-sm space-y-3">
+                <div className="flex gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">1</span>
+                  <span>於左側清單點選您所屬的合作廠商</span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">2</span>
+                  <span>進入該公司專屬首頁 <code className="font-mono text-xs">/c/&#123;slug&#125;</code></span>
+                </div>
+                <div className="flex gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">3</span>
+                  <span>選擇「登入」或「免費註冊」完成帳號操作</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-6">
+                若您是系統超級管理員，請直接以管理員帳號於任一公司入口登入。
+              </p>
+            </div>
+          </main>
         </div>
       </div>
     );
