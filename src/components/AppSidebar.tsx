@@ -16,6 +16,7 @@ export function AppSidebar() {
   const { roles, user } = useAuth();
   const { logoUrl } = useBranding();
   const { current } = useCurrentCompany();
+  const { is_vip } = useVipStatus();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const items = filterNav(roles);
   const primaryRole = roles[0];
