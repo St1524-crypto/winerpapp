@@ -7,7 +7,8 @@ import { useBranding } from "@/hooks/use-branding";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { filterNav, ROLE_LABELS } from "@/lib/nav";
-import { Store } from "lucide-react";
+import { Store, Share2 } from "lucide-react";
+import { useVipStatus } from "@/hooks/use-wallet";
 
 export function AppSidebar() {
   const { state } = useSidebar();
