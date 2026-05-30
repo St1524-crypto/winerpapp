@@ -12,10 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as UCodeRouteImport } from './routes/u.$code'
 import { Route as ShopVipRouteImport } from './routes/shop.vip'
 import { Route as ShopProductsRouteImport } from './routes/shop.products'
@@ -89,11 +89,6 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -107,6 +102,11 @@ const ShopIndexRoute = ShopIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ShopRoute,
+} as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const UCodeRoute = UCodeRouteImport.update({
   id: '/u/$code',
@@ -144,9 +144,9 @@ const MSlugRoute = MSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginSlugRoute = LoginSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => LoginRoute,
+  id: '/login/$slug',
+  path: '/login/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CSlugRoute = CSlugRouteImport.update({
   id: '/c/$slug',
@@ -417,7 +417,6 @@ const AuthenticatedAdminCompaniesNewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/login': typeof LoginRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
@@ -455,6 +454,7 @@ export interface FileRoutesByFullPath {
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
   '/u/$code': typeof UCodeRoute
+  '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
@@ -482,7 +482,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof LoginRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/two-factor': typeof TwoFactorRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -517,6 +516,7 @@ export interface FileRoutesByTo {
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
   '/u/$code': typeof UCodeRoute
+  '/login': typeof LoginIndexRoute
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
@@ -546,7 +546,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/login': typeof LoginRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
@@ -584,6 +583,7 @@ export interface FileRoutesById {
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
   '/u/$code': typeof UCodeRoute
+  '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
@@ -613,7 +613,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/login'
     | '/reset-password'
     | '/shop'
     | '/two-factor'
@@ -651,6 +650,7 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop/vip'
     | '/u/$code'
+    | '/login/'
     | '/shop/'
     | '/admin/audit-logs'
     | '/admin/companies'
@@ -678,7 +678,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/login'
     | '/reset-password'
     | '/two-factor'
     | '/admin'
@@ -713,6 +712,7 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop/vip'
     | '/u/$code'
+    | '/login'
     | '/shop'
     | '/admin/audit-logs'
     | '/admin/companies'
@@ -741,7 +741,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/login'
     | '/reset-password'
     | '/shop'
     | '/two-factor'
@@ -779,6 +778,7 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop/vip'
     | '/u/$code'
+    | '/login/'
     | '/shop/'
     | '/_authenticated/admin/audit-logs'
     | '/_authenticated/admin/companies'
@@ -808,14 +808,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  LoginRoute: typeof LoginRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRouteWithChildren
   TwoFactorRoute: typeof TwoFactorRoute
   CSlugRoute: typeof CSlugRoute
+  LoginSlugRoute: typeof LoginSlugRoute
   MSlugRoute: typeof MSlugRoute
   RPhoneRoute: typeof RPhoneRoute
   UCodeRoute: typeof UCodeRoute
+  LoginIndexRoute: typeof LoginIndexRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -842,13 +843,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -869,6 +863,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/'
       preLoaderRoute: typeof ShopIndexRouteImport
       parentRoute: typeof ShopRoute
+    }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/u/$code': {
       id: '/u/$code'
@@ -921,10 +922,10 @@ declare module '@tanstack/react-router' {
     }
     '/login/$slug': {
       id: '/login/$slug'
-      path: '/$slug'
+      path: '/login/$slug'
       fullPath: '/login/$slug'
       preLoaderRoute: typeof LoginSlugRouteImport
-      parentRoute: typeof LoginRoute
+      parentRoute: typeof rootRouteImport
     }
     '/c/$slug': {
       id: '/c/$slug'
@@ -1415,16 +1416,6 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
-interface LoginRouteChildren {
-  LoginSlugRoute: typeof LoginSlugRoute
-}
-
-const LoginRouteChildren: LoginRouteChildren = {
-  LoginSlugRoute: LoginSlugRoute,
-}
-
-const LoginRouteWithChildren = LoginRoute._addFileChildren(LoginRouteChildren)
-
 interface ShopAccountOrdersRouteChildren {
   ShopAccountOrdersIdRoute: typeof ShopAccountOrdersIdRoute
 }
@@ -1481,14 +1472,15 @@ const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  LoginRoute: LoginRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRouteWithChildren,
   TwoFactorRoute: TwoFactorRoute,
   CSlugRoute: CSlugRoute,
+  LoginSlugRoute: LoginSlugRoute,
   MSlugRoute: MSlugRoute,
   RPhoneRoute: RPhoneRoute,
   UCodeRoute: UCodeRoute,
+  LoginIndexRoute: LoginIndexRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
