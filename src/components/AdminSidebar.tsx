@@ -51,7 +51,7 @@ const GROUPS: AdminNavGroup[] = [
     label: "VIP 行銷推薦",
     items: [
       { title: "VIP 方案管理", url: "/vip-plans", icon: Crown },
-      { title: "推廣總覽 / 結算", url: "/admin/referrals", icon: TrendingUp },
+      { title: "推廣總覽 / 結算", url: "/admin/referrals", icon: TrendingUp, roles: ["super_admin", "admin", "finance", "sales"] },
       { title: "我的推廣收益", url: "/my-referrals", icon: Share2 },
     ],
   },
