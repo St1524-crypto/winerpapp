@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LoginPage } from "./login";
+import { LoginPage } from "@/components/login-page";
 import { isMobileDevice } from "@/lib/device";
 
 export const Route = createFileRoute("/login/$slug")({

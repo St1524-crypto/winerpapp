@@ -15,6 +15,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
+import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as UCodeRouteImport } from './routes/u.$code'
 import { Route as ShopVipRouteImport } from './routes/shop.vip'
 import { Route as ShopProductsRouteImport } from './routes/shop.products'
@@ -102,6 +103,11 @@ const ShopIndexRoute = ShopIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ShopRoute,
 } as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UCodeRoute = UCodeRouteImport.update({
   id: '/u/$code',
   path: '/u/$code',
@@ -138,9 +144,9 @@ const MSlugRoute = MSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginSlugRoute = LoginSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => LoginRoute,
+  id: '/login/$slug',
+  path: '/login/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CSlugRoute = CSlugRouteImport.update({
   id: '/c/$slug',
@@ -448,6 +454,7 @@ export interface FileRoutesByFullPath {
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
   '/u/$code': typeof UCodeRoute
+  '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
@@ -509,6 +516,7 @@ export interface FileRoutesByTo {
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
   '/u/$code': typeof UCodeRoute
+  '/login': typeof LoginIndexRoute
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
@@ -575,6 +583,7 @@ export interface FileRoutesById {
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
   '/u/$code': typeof UCodeRoute
+  '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
@@ -641,6 +650,7 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop/vip'
     | '/u/$code'
+    | '/login/'
     | '/shop/'
     | '/admin/audit-logs'
     | '/admin/companies'
@@ -702,6 +712,7 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop/vip'
     | '/u/$code'
+    | '/login'
     | '/shop'
     | '/admin/audit-logs'
     | '/admin/companies'
@@ -767,6 +778,7 @@ export interface FileRouteTypes {
     | '/shop/products'
     | '/shop/vip'
     | '/u/$code'
+    | '/login/'
     | '/shop/'
     | '/_authenticated/admin/audit-logs'
     | '/_authenticated/admin/companies'
@@ -800,9 +812,11 @@ export interface RootRouteChildren {
   ShopRoute: typeof ShopRouteWithChildren
   TwoFactorRoute: typeof TwoFactorRoute
   CSlugRoute: typeof CSlugRoute
+  LoginSlugRoute: typeof LoginSlugRoute
   MSlugRoute: typeof MSlugRoute
   RPhoneRoute: typeof RPhoneRoute
   UCodeRoute: typeof UCodeRoute
+  LoginIndexRoute: typeof LoginIndexRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -849,6 +863,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/'
       preLoaderRoute: typeof ShopIndexRouteImport
       parentRoute: typeof ShopRoute
+    }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/u/$code': {
       id: '/u/$code'
@@ -901,10 +922,10 @@ declare module '@tanstack/react-router' {
     }
     '/login/$slug': {
       id: '/login/$slug'
-      path: '/$slug'
+      path: '/login/$slug'
       fullPath: '/login/$slug'
       preLoaderRoute: typeof LoginSlugRouteImport
-      parentRoute: typeof LoginRoute
+      parentRoute: typeof rootRouteImport
     }
     '/c/$slug': {
       id: '/c/$slug'
@@ -1455,21 +1476,13 @@ const rootRouteChildren: RootRouteChildren = {
   ShopRoute: ShopRouteWithChildren,
   TwoFactorRoute: TwoFactorRoute,
   CSlugRoute: CSlugRoute,
+  LoginSlugRoute: LoginSlugRoute,
   MSlugRoute: MSlugRoute,
   RPhoneRoute: RPhoneRoute,
   UCodeRoute: UCodeRoute,
+  LoginIndexRoute: LoginIndexRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
