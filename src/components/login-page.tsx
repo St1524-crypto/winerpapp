@@ -57,7 +57,6 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
       if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
 
       const targetSlug = pathSlug || slugFromQuery || "";
-      console.log("[LoginPage] pathSlug:", pathSlug, "targetSlug:", targetSlug, "companies:", list.map((c) => c.slug));
       if (targetSlug) {
         const exact = list.find((c) => c.slug === targetSlug);
         const fuzzy =
@@ -69,7 +68,6 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
               c.company_name.includes(targetSlug) ||
               targetSlug.includes(c.company_name),
           );
-        console.log("[LoginPage] match:", fuzzy?.slug);
         if (fuzzy) setSelectedSlug(fuzzy.slug);
         else if (list.length === 1) setSelectedSlug(list[0].slug);
       } else if (list.length === 1) {
