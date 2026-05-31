@@ -158,7 +158,7 @@ function DealerTiersAdmin() {
 
               <div className="text-sm font-semibold pt-2 flex items-center gap-2"><TrendingUp className="h-4 w-4" />晉升條件</div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="所需 PV"><Input type="number" value={editing.required_pv} onChange={(e) => setEditing({ ...editing, required_pv: +e.target.value })} /></Field>
+                <Field label="所需獎勵點"><Input type="number" value={editing.required_pv} onChange={(e) => setEditing({ ...editing, required_pv: +e.target.value })} /></Field>
                 <Field label="所需直推 VIP 數"><Input type="number" value={editing.required_direct_vip} onChange={(e) => setEditing({ ...editing, required_direct_vip: +e.target.value })} /></Field>
                 <Field label="所需輔導下線階級">
                   <Select value={editing.required_mentor_tier ?? "none"} onValueChange={(v) => setEditing({ ...editing, required_mentor_tier: v === "none" ? null : v })}>
