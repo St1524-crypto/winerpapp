@@ -131,7 +131,7 @@ export const evaluateDealerTier = createServerFn({ method: "POST" })
       from_tier: fromTier,
       to_tier: toTier,
       change_type: changeType,
-      reason: `自動評估：PV=${m.current_pv}, 直推VIP=${m.direct_vip_count}`,
+      reason: `自動評估：獎勵點=${m.current_pv}, 直推VIP=${m.direct_vip_count}`,
       triggered_by: context.userId,
     });
 
