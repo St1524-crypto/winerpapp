@@ -101,7 +101,7 @@ function DealerTiersAdmin() {
             <CardContent className="text-sm space-y-2">
               <div className="text-xs font-semibold text-muted-foreground mt-2">晉升條件（{t.condition_logic}）</div>
               <ul className="text-xs space-y-1 ml-1">
-                {t.required_pv > 0 && <li>• PV ≥ {t.required_pv.toLocaleString()}</li>}
+                {t.required_pv > 0 && <li>• 獎勵點 ≥ {t.required_pv.toLocaleString()}</li>}
                 {t.required_direct_vip > 0 && <li>• 直推 VIP ≥ {t.required_direct_vip}</li>}
                 {t.required_mentor_tier && t.required_mentor_count > 0 && (
                   <li>• 輔導 {t.required_mentor_count} 位下線達 {t.required_mentor_tier} 級</li>
