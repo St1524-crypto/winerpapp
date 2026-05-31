@@ -101,7 +101,7 @@ function DealerTiersAdmin() {
             <CardContent className="text-sm space-y-2">
               <div className="text-xs font-semibold text-muted-foreground mt-2">晉升條件（{t.condition_logic}）</div>
               <ul className="text-xs space-y-1 ml-1">
-                {t.required_pv > 0 && <li>• PV ≥ {t.required_pv.toLocaleString()}</li>}
+                {t.required_pv > 0 && <li>• 獎勵點 ≥ {t.required_pv.toLocaleString()}</li>}
                 {t.required_direct_vip > 0 && <li>• 直推 VIP ≥ {t.required_direct_vip}</li>}
                 {t.required_mentor_tier && t.required_mentor_count > 0 && (
                   <li>• 輔導 {t.required_mentor_count} 位下線達 {t.required_mentor_tier} 級</li>
@@ -158,7 +158,7 @@ function DealerTiersAdmin() {
 
               <div className="text-sm font-semibold pt-2 flex items-center gap-2"><TrendingUp className="h-4 w-4" />晉升條件</div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="所需 PV"><Input type="number" value={editing.required_pv} onChange={(e) => setEditing({ ...editing, required_pv: +e.target.value })} /></Field>
+                <Field label="所需獎勵點"><Input type="number" value={editing.required_pv} onChange={(e) => setEditing({ ...editing, required_pv: +e.target.value })} /></Field>
                 <Field label="所需直推 VIP 數"><Input type="number" value={editing.required_direct_vip} onChange={(e) => setEditing({ ...editing, required_direct_vip: +e.target.value })} /></Field>
                 <Field label="所需輔導下線階級">
                   <Select value={editing.required_mentor_tier ?? "none"} onValueChange={(v) => setEditing({ ...editing, required_mentor_tier: v === "none" ? null : v })}>
