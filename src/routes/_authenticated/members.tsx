@@ -57,9 +57,10 @@ function Page() {
 
   async function load() {
     setLoading(true);
-    const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug").order("created_at", { ascending: false }),
+    const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }, { data: tierData }] = await Promise.all([
+      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
+      supabase.from("dealer_tier_status").select("user_id, current_tier"),
     ]);
     if (e1 || e2) { toast.error(e1?.message ?? e2?.message ?? "載入失敗"); setLoading(false); return; }
     const rolesMap = new Map<string, AppRole[]>();
@@ -68,6 +69,8 @@ function Page() {
       arr.push(r.role as AppRole);
       rolesMap.set(r.user_id, arr);
     });
+    const tierMap = new Map<string, string>();
+    (tierData ?? []).forEach((t: any) => { if (t.current_tier) tierMap.set(t.user_id, t.current_tier); });
     const byId = new Map<string, any>((profiles ?? []).map((p: any) => [p.id, p]));
     setList((profiles ?? []).map((p: any) => {
       const ref = p.referred_by ? byId.get(p.referred_by) : null;
@@ -76,6 +79,7 @@ function Page() {
         roles: rolesMap.get(p.id) ?? [],
         referrer_member_no: ref?.member_no ?? null,
         referrer_name: ref?.name ?? null,
+        current_tier: tierMap.get(p.id) ?? null,
       };
     }));
     setLoading(false);
