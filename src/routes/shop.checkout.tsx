@@ -154,9 +154,28 @@ function CheckoutPage() {
       const { error: iErr } = await supabase.from("sales_order_items").insert(rows);
       if (iErr) throw iErr;
 
+      // 扣抵錢包點數（餘額/折扣點），並產生交易紀錄
+      if (shoppingApplied > 0 || discountApplied > 0) {
+        try {
+          await applyOrderPoints({
+            data: {
+              orderId: order.id,
+              shopping_redeem: shoppingApplied,
+              discount_redeem: discountApplied,
+              reward_redeem: 0,
+              reward_earn: 0,
+            },
+          });
+          await refreshWallet();
+        } catch (err: any) {
+          toast.warning(`訂單已建立，但點數扣抵失敗：${err.message ?? err}`);
+        }
+      }
+
       await clear();
       toast.success(`訂單建立成功：${order_no}`);
       navigate({ to: "/shop/account/orders/$id", params: { id: order.id } });
+
     } catch (e: any) {
       toast.error(e.message ?? "建立訂單失敗");
     } finally {
