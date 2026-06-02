@@ -106,7 +106,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         .select("*, product:products(id, name, sku, price, wholesale_price, image, stock, status)")
         .eq("cart_id", id)
         .order("created_at", { ascending: false });
-      setItems((data ?? []) as unknown as CartItem[]);
+      const itemList = (data ?? []) as unknown as CartItem[];
+      setItems(itemList);
+      const pids = Array.from(new Set(itemList.map((i) => i.product_id).filter(Boolean)));
+      const tmap = await fetchTiersByProductIds(pids);
+      setTiersMap(tmap);
     } catch (e) {
       console.error(e);
     } finally {
