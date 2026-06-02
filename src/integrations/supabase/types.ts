@@ -549,6 +549,167 @@ export type Database = {
           },
         ]
       }
+      bonus_records: {
+        Row: {
+          base_amount: number
+          bonus_points: number
+          bonus_rate: number
+          bonus_type: string
+          created_at: string
+          fail_reason: string | null
+          generation_level: number | null
+          id: string
+          member_id: string
+          release_date: string | null
+          released_at: string | null
+          required_points_checked: boolean
+          required_points_passed: boolean
+          settlement_batch_id: string | null
+          settlement_date: string | null
+          source_member_id: string | null
+          source_order_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          base_amount?: number
+          bonus_points?: number
+          bonus_rate?: number
+          bonus_type: string
+          created_at?: string
+          fail_reason?: string | null
+          generation_level?: number | null
+          id?: string
+          member_id: string
+          release_date?: string | null
+          released_at?: string | null
+          required_points_checked?: boolean
+          required_points_passed?: boolean
+          settlement_batch_id?: string | null
+          settlement_date?: string | null
+          source_member_id?: string | null
+          source_order_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          base_amount?: number
+          bonus_points?: number
+          bonus_rate?: number
+          bonus_type?: string
+          created_at?: string
+          fail_reason?: string | null
+          generation_level?: number | null
+          id?: string
+          member_id?: string
+          release_date?: string | null
+          released_at?: string | null
+          required_points_checked?: boolean
+          required_points_passed?: boolean
+          settlement_batch_id?: string | null
+          settlement_date?: string | null
+          source_member_id?: string | null
+          source_order_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_records_settlement_batch_id_fkey"
+            columns: ["settlement_batch_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_settlement_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bonus_settings: {
+        Row: {
+          created_at: string
+          daily_bonus_auto_enabled: boolean
+          daily_bonus_cycle_days: number
+          daily_next_settlement_at: string
+          id: string
+          monthly_bonus_mode: string
+          monthly_bonus_settlement_day: number
+          reward_release_days: number
+          reward_release_mode: string
+          singleton: boolean
+          updated_at: string
+          vip_required_points: number
+        }
+        Insert: {
+          created_at?: string
+          daily_bonus_auto_enabled?: boolean
+          daily_bonus_cycle_days?: number
+          daily_next_settlement_at?: string
+          id?: string
+          monthly_bonus_mode?: string
+          monthly_bonus_settlement_day?: number
+          reward_release_days?: number
+          reward_release_mode?: string
+          singleton?: boolean
+          updated_at?: string
+          vip_required_points?: number
+        }
+        Update: {
+          created_at?: string
+          daily_bonus_auto_enabled?: boolean
+          daily_bonus_cycle_days?: number
+          daily_next_settlement_at?: string
+          id?: string
+          monthly_bonus_mode?: string
+          monthly_bonus_settlement_day?: number
+          reward_release_days?: number
+          reward_release_mode?: string
+          singleton?: boolean
+          updated_at?: string
+          vip_required_points?: number
+        }
+        Relationships: []
+      }
+      bonus_settlement_batches: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          settlement_period_end: string
+          settlement_period_start: string
+          settlement_type: string
+          status: string
+          total_bonus_points: number
+          total_members: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          settlement_period_end: string
+          settlement_period_start: string
+          settlement_type: string
+          status?: string
+          total_bonus_points?: number
+          total_members?: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          settlement_period_end?: string
+          settlement_period_start?: string
+          settlement_type?: string
+          status?: string
+          total_bonus_points?: number
+          total_members?: number
+        }
+        Relationships: []
+      }
       business_account_users: {
         Row: {
           business_account_id: string
@@ -2331,6 +2492,42 @@ export type Database = {
           },
         ]
       }
+      rank_rebate_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          exceeded_rebate_rate: number
+          id: string
+          rank_code: string
+          rank_name: string
+          required_points: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          exceeded_rebate_rate?: number
+          id?: string
+          rank_code: string
+          rank_name: string
+          required_points?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          exceeded_rebate_rate?: number
+          id?: string
+          rank_code?: string
+          rank_name?: string
+          required_points?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       referral_logs: {
         Row: {
           base_amount: number
@@ -2421,6 +2618,74 @@ export type Database = {
           signup_rewarded_at?: string | null
         }
         Relationships: []
+      }
+      repurchase_bonus_settings: {
+        Row: {
+          bonus_rate: number
+          created_at: string
+          enabled: boolean
+          generation_level: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          bonus_rate?: number
+          created_at?: string
+          enabled?: boolean
+          generation_level: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          bonus_rate?: number
+          created_at?: string
+          enabled?: boolean
+          generation_level?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reward_wallet_logs: {
+        Row: {
+          bonus_record_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          member_id: string
+          points: number
+          status: string
+          type: string
+        }
+        Insert: {
+          bonus_record_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          member_id: string
+          points: number
+          status?: string
+          type: string
+        }
+        Update: {
+          bonus_record_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          member_id?: string
+          points?: number
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_wallet_logs_bonus_record_id_fkey"
+            columns: ["bonus_record_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_records"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales_order_items: {
         Row: {

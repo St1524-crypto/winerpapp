@@ -68,9 +68,11 @@ import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
+import { Route as AuthenticatedAdminBonusCenterRouteImport } from './routes/_authenticated/admin.bonus-center'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicHooksBonusDailyTickRouteImport } from './routes/api/public/hooks/bonus-daily-tick'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 
@@ -385,6 +387,12 @@ const AuthenticatedAdminCompaniesRoute =
     path: '/companies',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminBonusCenterRoute =
+  AuthenticatedAdminBonusCenterRouteImport.update({
+    id: '/bonus-center',
+    path: '/bonus-center',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminAuditLogsRoute =
   AuthenticatedAdminAuditLogsRouteImport.update({
     id: '/audit-logs',
@@ -400,6 +408,12 @@ const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
     path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksBonusDailyTickRoute =
+  ApiPublicHooksBonusDailyTickRouteImport.update({
+    id: '/api/public/hooks/bonus-daily-tick',
+    path: '/api/public/hooks/bonus-daily-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const AuthenticatedB2bAccountsIdRoute =
@@ -457,6 +471,7 @@ export interface FileRoutesByFullPath {
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -477,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
@@ -519,6 +535,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginIndexRoute
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -539,6 +556,7 @@ export interface FileRoutesByTo {
   '/shop/account': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
@@ -586,6 +604,7 @@ export interface FileRoutesById {
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/_authenticated/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -606,6 +625,7 @@ export interface FileRoutesById {
   '/shop/account/': typeof ShopAccountIndexRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
@@ -653,6 +673,7 @@ export interface FileRouteTypes {
     | '/login/'
     | '/shop/'
     | '/admin/audit-logs'
+    | '/admin/bonus-center'
     | '/admin/companies'
     | '/admin/referrals'
     | '/admin/role-manager'
@@ -673,6 +694,7 @@ export interface FileRouteTypes {
     | '/shop/account/'
     | '/admin/companies/new'
     | '/b2b/accounts/$id'
+    | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -715,6 +737,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/shop'
     | '/admin/audit-logs'
+    | '/admin/bonus-center'
     | '/admin/companies'
     | '/admin/referrals'
     | '/admin/role-manager'
@@ -735,6 +758,7 @@ export interface FileRouteTypes {
     | '/shop/account'
     | '/admin/companies/new'
     | '/b2b/accounts/$id'
+    | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
   id:
@@ -781,6 +805,7 @@ export interface FileRouteTypes {
     | '/login/'
     | '/shop/'
     | '/_authenticated/admin/audit-logs'
+    | '/_authenticated/admin/bonus-center'
     | '/_authenticated/admin/companies'
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/role-manager'
@@ -801,6 +826,7 @@ export interface FileRouteTypes {
     | '/shop/account/'
     | '/_authenticated/admin/companies/new'
     | '/_authenticated/b2b/accounts/$id'
+    | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
   fileRoutesById: FileRoutesById
@@ -817,6 +843,7 @@ export interface RootRouteChildren {
   RPhoneRoute: typeof RPhoneRoute
   UCodeRoute: typeof UCodeRoute
   LoginIndexRoute: typeof LoginIndexRoute
+  ApiPublicHooksBonusDailyTickRoute: typeof ApiPublicHooksBonusDailyTickRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -1235,6 +1262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCompaniesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/bonus-center': {
+      id: '/_authenticated/admin/bonus-center'
+      path: '/bonus-center'
+      fullPath: '/admin/bonus-center'
+      preLoaderRoute: typeof AuthenticatedAdminBonusCenterRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/audit-logs': {
       id: '/_authenticated/admin/audit-logs'
       path: '/audit-logs'
@@ -1254,6 +1288,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/queue/process'
       fullPath: '/lovable/email/queue/process'
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/bonus-daily-tick': {
+      id: '/api/public/hooks/bonus-daily-tick'
+      path: '/api/public/hooks/bonus-daily-tick'
+      fullPath: '/api/public/hooks/bonus-daily-tick'
+      preLoaderRoute: typeof ApiPublicHooksBonusDailyTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/b2b/accounts/$id': {
@@ -1289,6 +1330,7 @@ const AuthenticatedAdminCompaniesRouteWithChildren =
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
+  AuthenticatedAdminBonusCenterRoute: typeof AuthenticatedAdminBonusCenterRoute
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
@@ -1297,6 +1339,7 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
+  AuthenticatedAdminBonusCenterRoute: AuthenticatedAdminBonusCenterRoute,
   AuthenticatedAdminCompaniesRoute:
     AuthenticatedAdminCompaniesRouteWithChildren,
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
@@ -1481,18 +1524,9 @@ const rootRouteChildren: RootRouteChildren = {
   RPhoneRoute: RPhoneRoute,
   UCodeRoute: UCodeRoute,
   LoginIndexRoute: LoginIndexRoute,
+  ApiPublicHooksBonusDailyTickRoute: ApiPublicHooksBonusDailyTickRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
