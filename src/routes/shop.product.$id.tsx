@@ -9,8 +9,9 @@ import { ShareProductButtons } from "@/components/shop/ShareProductButtons";
 import { useCart } from "@/hooks/use-cart";
 import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { setReferralCode } from "@/lib/referral-tracking";
-import { ShoppingCart, Heart, Truck, Shield, RotateCcw, Minus, Plus, ChevronRight } from "lucide-react";
-import type { Product, ProductImage } from "@/types/product";
+import { ShoppingCart, Heart, Truck, Shield, RotateCcw, Minus, Plus, ChevronRight, Sparkles } from "lucide-react";
+import type { Product, ProductImage, WholesaleTier } from "@/types/product";
+import { applyWholesalePricing, fetchTiersForProduct } from "@/lib/wholesale-pricing";
 
 export const Route = createFileRoute("/shop/product/$id")({
   component: ProductDetail,
@@ -29,6 +30,7 @@ function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [related, setRelated] = useState<Product[]>([]);
+  const [tiers, setTiers] = useState<WholesaleTier[]>([]);
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,8 @@ function ProductDetail() {
       setProduct(p as Product | null);
       const { data: imgs } = await supabase.from("product_images").select("*").eq("product_id", id).order("sort_order");
       setImages((imgs ?? []) as ProductImage[]);
+      const t = await fetchTiersForProduct(id);
+      setTiers(t);
       if (p?.category_id) {
         const { data: rel } = await supabase.from("products").select("*").eq("category_id", p.category_id).neq("id", id).eq("status", "active").limit(4);
         setRelated((rel ?? []) as Product[]);
@@ -82,8 +86,12 @@ function ProductDetail() {
 
   const gallery = [...(product.image ? [{ id: "main", image_url: product.image, product_id: id, sort_order: -1, created_at: "" }] : []), ...images];
   const outOfStock = product.stock <= 0;
-  const effPrice = getEffectivePrice(product, isDealer);
-  const showDealer = isDealer && product.wholesale_price > 0 && product.wholesale_price < product.price;
+  const baseEff = getEffectivePrice(product, isDealer);
+  const baseReward = Number((product as any).reward_points ?? 0);
+  const pricing = applyWholesalePricing(baseEff, baseReward, tiers, qty);
+  const effPrice = pricing.unitPrice;
+  const showDealer = !pricing.tier && isDealer && product.wholesale_price > 0 && product.wholesale_price < product.price;
+  const hasTiers = tiers.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-10">
@@ -132,6 +140,12 @@ function ProductDetail() {
 
           <div className="flex items-baseline gap-3 py-2 border-y border-border/60">
             <span className="text-3xl md:text-4xl font-bold text-primary tabular-nums">NT$ {effPrice.toLocaleString()}</span>
+            {pricing.tier && (
+              <>
+                <span className="text-sm text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</span>
+                <Badge variant="outline" className="border-primary text-primary"><Sparkles className="h-3 w-3 mr-1" />批發價</Badge>
+              </>
+            )}
             {showDealer && (
               <>
                 <span className="text-sm text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</span>
@@ -139,6 +153,33 @@ function ProductDetail() {
               </>
             )}
           </div>
+
+          {hasTiers && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Sparkles className="h-4 w-4 text-primary" /> 批發階梯（買越多越省）
+              </div>
+              <div className="space-y-1">
+                {tiers.map((t) => {
+                  const active = pricing.tier?.id === t.id;
+                  return (
+                    <div key={t.id ?? `${t.min_qty}`} className={`flex items-center justify-between text-sm rounded-md px-2 py-1 ${active ? "bg-primary text-primary-foreground" : ""}`}>
+                      <span>
+                        {t.min_qty}{t.max_qty == null ? "+" : `–${t.max_qty}`} 件
+                      </span>
+                      <span className="tabular-nums">
+                        NT$ {Number(t.unit_price).toLocaleString()} / 件
+                        <span className={`ml-3 ${active ? "" : "text-amber-600"}`}>+{t.unit_reward_points} 點/件</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                目前數量 {qty} 件 → 單件 NT$ {effPrice.toLocaleString()}，本次共得 {pricing.totalReward} 獎勵點。
+              </p>
+            </div>
+          )}
 
           <div className="space-y-3">
             <div className="flex items-center gap-3">

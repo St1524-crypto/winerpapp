@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Sparkles, Plus, Trash2 } from "lucide-react";
-import type { Category, Product } from "@/types/product";
+import type { Category, Product, WholesaleTier } from "@/types/product";
 import { ImageUploader, UploaderImage } from "./ImageUploader";
 
 interface SpecOption {
@@ -38,6 +38,7 @@ const empty = {
   reward_points: 0, discount_points_max: 0,
   status: "active", featured: false,
   specs: [] as SpecOption[],
+  tiers: [] as WholesaleTier[],
 };
 
 export function ProductFormDialog({ open, onOpenChange, product, categories, onSaved }: Props) {
@@ -61,9 +62,20 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         discount_points_max: Number((product as any).discount_points_max ?? 0),
         status: product.status, featured: product.featured,
         specs: Array.isArray((product as any).specs) ? ((product as any).specs as SpecOption[]) : [],
+        tiers: [],
       });
       supabase.from("product_images").select("*").eq("product_id", product.id).order("sort_order")
         .then(({ data }) => setImages((data ?? []).map((d: any) => ({ id: d.id, url: d.image_url, sort: d.sort_order }))));
+      supabase.from("product_wholesale_tiers" as any).select("*").eq("product_id", product.id).order("min_qty")
+        .then(({ data }) => {
+          const tiers = ((data ?? []) as any[]).map((t) => ({
+            id: t.id, product_id: t.product_id,
+            min_qty: t.min_qty, max_qty: t.max_qty,
+            unit_price: Number(t.unit_price), unit_reward_points: Number(t.unit_reward_points),
+            sort_order: t.sort_order,
+          })) as WholesaleTier[];
+          setForm((f) => ({ ...f, tiers }));
+        });
     } else {
       setForm({ ...empty });
       setImages([]);
@@ -144,6 +156,25 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         }
       }
 
+      // Sync wholesale tiers: delete-then-insert
+      if (productId) {
+        await supabase.from("product_wholesale_tiers" as any).delete().eq("product_id", productId);
+        const validTiers = form.tiers
+          .filter((t) => Number(t.min_qty) >= 1 && Number(t.unit_price) >= 0)
+          .map((t, i) => ({
+            product_id: productId!,
+            min_qty: Math.max(1, Math.floor(Number(t.min_qty) || 1)),
+            max_qty: t.max_qty == null || t.max_qty === ("" as any) ? null : Math.max(1, Math.floor(Number(t.max_qty))),
+            unit_price: Number(t.unit_price) || 0,
+            unit_reward_points: Math.max(0, Math.floor(Number(t.unit_reward_points) || 0)),
+            sort_order: i,
+          }));
+        if (validTiers.length) {
+          const { error: tErr } = await supabase.from("product_wholesale_tiers" as any).insert(validTiers);
+          if (tErr) throw tErr;
+        }
+      }
+
       toast.success(product ? "商品已更新" : "商品已新增");
       onSaved();
       onOpenChange(false);
@@ -162,10 +193,11 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="mt-2">
-          <TabsList className="grid grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-6 w-full">
             <TabsTrigger value="basic">基本資訊</TabsTrigger>
             <TabsTrigger value="price">價格庫存</TabsTrigger>
             <TabsTrigger value="specs">規格選項</TabsTrigger>
+            <TabsTrigger value="tiers">批發階梯</TabsTrigger>
             <TabsTrigger value="images">商品圖片</TabsTrigger>
             <TabsTrigger value="meta">其他</TabsTrigger>
           </TabsList>
@@ -318,9 +350,101 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
             )}
           </TabsContent>
 
+          <TabsContent value="tiers" className="space-y-3 pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">批發階梯</div>
+                <p className="text-xs text-muted-foreground">設定多段數量門檻，每段獨立指定批發單價與單件獎勵點。凡有設定階梯的商品會自動出現在商城「批發專區」。</p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  const last = form.tiers[form.tiers.length - 1];
+                  const nextMin = last ? (last.max_qty ?? last.min_qty) + 1 : 1;
+                  setForm({ ...form, tiers: [...form.tiers, { min_qty: nextMin, max_qty: null, unit_price: 0, unit_reward_points: 0, sort_order: form.tiers.length }] });
+                }}
+              >
+                <Plus className="h-4 w-4 mr-1" /> 新增階梯
+              </Button>
+            </div>
+
+            {form.tiers.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground py-8 border border-dashed border-border rounded-lg">
+                尚未設定批發階梯
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
+                  <div className="col-span-2">起 (≥)</div>
+                  <div className="col-span-2">迄 (≤，空=無上限)</div>
+                  <div className="col-span-3">單件批發價</div>
+                  <div className="col-span-3">單件獎勵點</div>
+                  <div className="col-span-2"></div>
+                </div>
+                {form.tiers.map((t, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                    <Input
+                      className="col-span-2"
+                      type="number" min={1}
+                      value={t.min_qty}
+                      onChange={(e) => {
+                        const next = [...form.tiers];
+                        next[i] = { ...next[i], min_qty: +e.target.value };
+                        setForm({ ...form, tiers: next });
+                      }}
+                    />
+                    <Input
+                      className="col-span-2"
+                      type="number" min={1}
+                      placeholder="無上限"
+                      value={t.max_qty ?? ""}
+                      onChange={(e) => {
+                        const next = [...form.tiers];
+                        const v = e.target.value;
+                        next[i] = { ...next[i], max_qty: v === "" ? null : +v };
+                        setForm({ ...form, tiers: next });
+                      }}
+                    />
+                    <Input
+                      className="col-span-3"
+                      type="number" min={0}
+                      value={t.unit_price}
+                      onChange={(e) => {
+                        const next = [...form.tiers];
+                        next[i] = { ...next[i], unit_price: +e.target.value };
+                        setForm({ ...form, tiers: next });
+                      }}
+                    />
+                    <Input
+                      className="col-span-3"
+                      type="number" min={0}
+                      value={t.unit_reward_points}
+                      onChange={(e) => {
+                        const next = [...form.tiers];
+                        next[i] = { ...next[i], unit_reward_points: +e.target.value };
+                        setForm({ ...form, tiers: next });
+                      }}
+                    />
+                    <Button
+                      type="button" size="icon" variant="ghost"
+                      className="col-span-2 h-9 w-9 justify-self-end"
+                      onClick={() => setForm({ ...form, tiers: form.tiers.filter((_, j) => j !== i) })}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+                <p className="text-xs text-muted-foreground pt-1">範例：1–5 件每件 NT$ 800（10 點），6+ 件每件 NT$ 700（15 點）。</p>
+              </div>
+            )}
+          </TabsContent>
+
           <TabsContent value="images" className="pt-4">
             <ImageUploader images={images} onChange={setImages} />
           </TabsContent>
+
 
 
           <TabsContent value="meta" className="space-y-4 pt-4">

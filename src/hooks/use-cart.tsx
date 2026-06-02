@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getCartClient } from "@/integrations/supabase/cart-client";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
+import { applyWholesalePricing, fetchTiersByProductIds } from "@/lib/wholesale-pricing";
+import type { WholesaleTier } from "@/types/product";
 import type { CartItem } from "@/types/shop";
 import { toast } from "sonner";
 
@@ -44,6 +46,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const isDealer = useIsDealer();
   const [cartId, setCartId] = useState<string | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
+  const [tiersMap, setTiersMap] = useState<Record<string, WholesaleTier[]>>({});
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
@@ -103,7 +106,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         .select("*, product:products(id, name, sku, price, wholesale_price, image, stock, status)")
         .eq("cart_id", id)
         .order("created_at", { ascending: false });
-      setItems((data ?? []) as unknown as CartItem[]);
+      const itemList = (data ?? []) as unknown as CartItem[];
+      setItems(itemList);
+      const pids = Array.from(new Set(itemList.map((i) => i.product_id).filter(Boolean)));
+      const tmap = await fetchTiersByProductIds(pids);
+      setTiersMap(tmap);
     } catch (e) {
       console.error(e);
     } finally {
@@ -146,7 +153,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const count = items.reduce((s, i) => s + i.quantity, 0);
-  const subtotal = items.reduce((s, i) => s + getEffectivePrice(i.product as any, isDealer) * i.quantity, 0);
+  const subtotal = items.reduce((s, i) => {
+    const base = getEffectivePrice(i.product as any, isDealer);
+    const tiers = tiersMap[i.product_id] ?? [];
+    const { unitPrice } = applyWholesalePricing(base, 0, tiers, i.quantity);
+    return s + unitPrice * i.quantity;
+  }, 0);
 
   return (
     <CartContext.Provider value={{ cartId, items, loading, count, subtotal, open, setOpen, addItem, updateQty, removeItem, clear, refresh }}>
