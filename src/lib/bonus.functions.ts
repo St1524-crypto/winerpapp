@@ -1,0 +1,531 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const ADMIN_ROLES = ["super_admin", "admin", "finance"];
+const VIEW_ROLES = [...ADMIN_ROLES, "sales"];
+
+async function assertRoles(userId: string, roles: string[]) {
+  const { data } = await supabaseAdmin
+    .from("user_roles").select("role").eq("user_id", userId);
+  const list = (data ?? []).map((r: any) => r.role);
+  if (!list.some((r) => roles.includes(r))) throw new Error("沒有權限");
+  return list;
+}
+
+async function getSettings() {
+  const { data } = await supabaseAdmin
+    .from("bonus_settings").select("*").limit(1).maybeSingle();
+  if (!data) throw new Error("bonus_settings 未初始化");
+  return data as any;
+}
+
+/* ───────────── 設定：讀取 / 更新 ───────────── */
+export const getBonusSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const s = await getSettings();
+    const { data: rb } = await supabaseAdmin
+      .from("repurchase_bonus_settings").select("*").order("generation_level");
+    const { data: rr } = await supabaseAdmin
+      .from("rank_rebate_settings").select("*").order("sort_order");
+    return { settings: s, repurchase: rb ?? [], rebate: rr ?? [] };
+  });
+
+const updateSchema = z.object({
+  daily_bonus_auto_enabled: z.boolean().optional(),
+  daily_bonus_cycle_days: z.number().int().min(1).max(365).optional(),
+  daily_next_settlement_at: z.string().optional(),
+  monthly_bonus_mode: z.enum(["auto", "manual"]).optional(),
+  monthly_bonus_settlement_day: z.number().int().min(1).max(28).optional(),
+  vip_required_points: z.number().int().min(0).optional(),
+  reward_release_days: z.number().int().min(0).max(365).optional(),
+  reward_release_mode: z.enum(["auto", "manual"]).optional(),
+});
+
+export const updateBonusSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => updateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const s = await getSettings();
+    const { error } = await supabaseAdmin
+      .from("bonus_settings").update(data).eq("id", s.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ───────────── 復購比例設定 ───────────── */
+export const upsertRepurchaseRate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      generation_level: z.number().int().min(1).max(20),
+      bonus_rate: z.number().min(0).max(100),
+      enabled: z.boolean().default(true),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const { error } = await supabaseAdmin
+      .from("repurchase_bonus_settings")
+      .upsert(data, { onConflict: "generation_level" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ───────────── 位階回饋設定 ───────────── */
+export const upsertRankRebate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      rank_code: z.string().min(1).max(32),
+      rank_name: z.string().min(1).max(64),
+      required_points: z.number().int().min(0),
+      exceeded_rebate_rate: z.number().min(0).max(100),
+      enabled: z.boolean().default(true),
+      sort_order: z.number().int().default(0),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const { error } = await supabaseAdmin
+      .from("rank_rebate_settings")
+      .upsert(data, { onConflict: "rank_code" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteRankRebate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    await supabaseAdmin.from("rank_rebate_settings").delete().eq("id", data.id);
+    return { ok: true };
+  });
+
+/* ───────────── 復購獎勵：訂單付款後產生 pending bonus_records ───────────── */
+/** 內部函式：被付款 webhook / admin 手動 / 復購觸發都可呼叫 */
+async function generateRepurchaseBonus(orderId: string) {
+  const { data: order } = await supabaseAdmin
+    .from("sales_orders")
+    .select("id, order_no, user_id, subtotal, payment_status, created_at")
+    .eq("id", orderId).maybeSingle();
+  if (!order) throw new Error("訂單不存在");
+  if ((order as any).payment_status !== "paid") throw new Error("訂單未付款");
+  const buyerId = (order as any).user_id as string | null;
+  if (!buyerId) throw new Error("訂單無買家");
+
+  // 復購判定：買家是否已有更早一筆 paid 訂單
+  const { data: prior } = await supabaseAdmin
+    .from("sales_orders").select("id")
+    .eq("user_id", buyerId).eq("payment_status", "paid")
+    .lt("created_at", (order as any).created_at)
+    .limit(1).maybeSingle();
+  const isRepurchase = !!prior;
+  if (!isRepurchase) return { ok: true, skipped: "首購非復購" };
+
+  const base = Number((order as any).subtotal ?? 0);
+  if (base <= 0) return { ok: true, skipped: "金額為 0" };
+
+  // 取上線 1, 2 代
+  const { data: rates } = await supabaseAdmin
+    .from("repurchase_bonus_settings").select("*").eq("enabled", true)
+    .order("generation_level");
+  const maxLevel = (rates ?? []).reduce((m, r: any) => Math.max(m, r.generation_level), 0);
+  let currentId: string | null = buyerId;
+  let inserted = 0;
+  for (let level = 1; level <= maxLevel; level++) {
+    if (!currentId) break;
+    const { data: cur } = await supabaseAdmin
+      .from("profiles").select("referred_by").eq("id", currentId).maybeSingle();
+    const upline = (cur as any)?.referred_by as string | null;
+    if (!upline) break;
+    const rate = Number((rates ?? []).find((r: any) => r.generation_level === level)?.bonus_rate ?? 0);
+    if (rate > 0) {
+      const pts = Math.floor(base * rate / 100);
+      if (pts > 0) {
+        const { error } = await supabaseAdmin.from("bonus_records").insert({
+          member_id: upline,
+          source_member_id: buyerId,
+          source_order_id: orderId,
+          bonus_type: "repurchase",
+          generation_level: level,
+          base_amount: base,
+          bonus_rate: rate,
+          bonus_points: pts,
+          status: "pending",
+        });
+        if (!error) inserted++;
+      }
+    }
+    currentId = upline;
+  }
+  return { ok: true, inserted };
+}
+
+export const generateRepurchaseForOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    return generateRepurchaseBonus(data.orderId);
+  });
+
+/* ───────────── 推薦獎勵：產生 pending（不檢查責任額） ───────────── */
+/** 由「綁定推薦人 + 首筆訂單 paid」或註冊獎勵呼叫；這裡提供管理員手動觸發。 */
+export const generateReferralBonus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      referrerId: z.string().uuid(),
+      sourceMemberId: z.string().uuid(),
+      points: z.number().int().min(1),
+      note: z.string().max(200).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const { error } = await supabaseAdmin.from("bonus_records").insert({
+      member_id: data.referrerId,
+      source_member_id: data.sourceMemberId,
+      bonus_type: "referral",
+      base_amount: 0,
+      bonus_rate: 0,
+      bonus_points: data.points,
+      status: "pending",
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ───────────── 日結算 ───────────── */
+export const runDailySettlement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const s = await getSettings();
+
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const releaseDate = new Date(today.getTime() + s.reward_release_days * 86400000)
+      .toISOString().slice(0, 10);
+
+    // 撈取 pending 的日獎金（推薦 / 復購 / 位階回饋）
+    const { data: pending } = await supabaseAdmin
+      .from("bonus_records")
+      .select("id, member_id, bonus_points")
+      .in("bonus_type", ["referral", "repurchase", "rank_rebate"])
+      .eq("status", "pending")
+      .limit(5000);
+
+    if (!pending || pending.length === 0) {
+      return { ok: true, count: 0, batch_id: null };
+    }
+
+    const totalPoints = pending.reduce((s, r: any) => s + Number(r.bonus_points ?? 0), 0);
+    const members = new Set(pending.map((r: any) => r.member_id)).size;
+
+    const { data: batch, error: bErr } = await supabaseAdmin
+      .from("bonus_settlement_batches").insert({
+        settlement_type: "daily",
+        settlement_period_start: todayStr,
+        settlement_period_end: todayStr,
+        total_members: members,
+        total_bonus_points: totalPoints,
+        status: "processing",
+        created_by: context.userId,
+      }).select("id").single();
+    if (bErr) throw new Error(bErr.message);
+
+    const ids = pending.map((r: any) => r.id);
+    await supabaseAdmin
+      .from("bonus_records")
+      .update({
+        status: "waiting_release",
+        settlement_batch_id: (batch as any).id,
+        settlement_date: todayStr,
+        release_date: releaseDate,
+      })
+      .in("id", ids);
+
+    await supabaseAdmin.from("bonus_settlement_batches")
+      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .eq("id", (batch as any).id);
+
+    // 推進下次結算日期
+    const next = new Date(today.getTime() + s.daily_bonus_cycle_days * 86400000);
+    await supabaseAdmin.from("bonus_settings")
+      .update({ daily_next_settlement_at: next.toISOString() })
+      .eq("id", s.id);
+
+    return { ok: true, count: pending.length, batch_id: (batch as any).id, points: totalPoints };
+  });
+
+/* ───────────── 月結算（VIP 責任額 + 超額回饋） ───────────── */
+export const runMonthlySettlement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ yyyymm: z.string().regex(/^\d{6}$/).optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const s = await getSettings();
+
+    const now = new Date();
+    const ym = data.yyyymm ?? `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const year = Number(ym.slice(0, 4));
+    const month = Number(ym.slice(4, 6));
+    const periodStart = new Date(Date.UTC(year, month - 1, 1));
+    const periodEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59));
+    const startStr = periodStart.toISOString().slice(0, 10);
+    const endStr = periodEnd.toISOString().slice(0, 10);
+    const settleDate = endStr;
+    const releaseDate = new Date(periodEnd.getTime() + s.reward_release_days * 86400000)
+      .toISOString().slice(0, 10);
+
+    // 撈 VIP 會員
+    const { data: vips } = await supabaseAdmin
+      .from("profiles")
+      .select("id, is_vip, vip_expires_at, member_no, name");
+    const activeVips = (vips ?? []).filter((p: any) => {
+      if (!p.is_vip) return false;
+      if (!p.vip_expires_at) return true;
+      return new Date(p.vip_expires_at) >= periodEnd;
+    });
+
+    if (activeVips.length === 0) {
+      return { ok: true, count: 0 };
+    }
+
+    // 撈位階回饋設定
+    const { data: rankRules } = await supabaseAdmin
+      .from("rank_rebate_settings").select("*").eq("enabled", true).order("sort_order");
+    const defaultRank = (rankRules ?? [])[0] as any;
+
+    // 為每位 VIP 統計當月入帳 reward 點
+    const { data: batch, error: bErr } = await supabaseAdmin
+      .from("bonus_settlement_batches").insert({
+        settlement_type: "monthly",
+        settlement_period_start: startStr,
+        settlement_period_end: endStr,
+        status: "processing",
+        created_by: context.userId,
+      }).select("id").single();
+    if (bErr) throw new Error(bErr.message);
+
+    let granted = 0;
+    let totalPts = 0;
+
+    for (const vip of activeVips) {
+      const { data: tx } = await supabaseAdmin
+        .from("point_transactions")
+        .select("amount")
+        .eq("user_id", (vip as any).id)
+        .eq("point_type", "reward")
+        .gte("created_at", periodStart.toISOString())
+        .lte("created_at", periodEnd.toISOString());
+      const monthlyPts = (tx ?? []).reduce((sum, t: any) => sum + Math.max(0, Number(t.amount ?? 0)), 0);
+
+      const rule = defaultRank;
+      const required = rule?.required_points ?? s.vip_required_points;
+      const passed = monthlyPts >= required;
+
+      // 月獎金 record（達標才入點，未達標 cancelled 留痕）
+      const bonusPoints = passed ? Math.floor(monthlyPts * 0) : 0; // 月獎金金額目前無公式 → 留 0 由規則決定
+      await supabaseAdmin.from("bonus_records").insert({
+        member_id: (vip as any).id,
+        bonus_type: "monthly_vip",
+        base_amount: monthlyPts,
+        bonus_rate: 0,
+        bonus_points: bonusPoints,
+        required_points_checked: true,
+        required_points_passed: passed,
+        fail_reason: passed ? null : `當月責任額 ${monthlyPts}/${required} 未達標`,
+        status: passed ? "waiting_release" : "cancelled",
+        settlement_batch_id: (batch as any).id,
+        settlement_date: settleDate,
+        release_date: passed ? releaseDate : null,
+      }).then(() => {});
+
+      // 超額回饋
+      if (passed && rule && monthlyPts > required && rule.exceeded_rebate_rate > 0) {
+        const excess = monthlyPts - required;
+        const rebate = Math.floor(excess * Number(rule.exceeded_rebate_rate) / 100);
+        if (rebate > 0) {
+          await supabaseAdmin.from("bonus_records").insert({
+            member_id: (vip as any).id,
+            bonus_type: "rank_rebate",
+            base_amount: excess,
+            bonus_rate: rule.exceeded_rebate_rate,
+            bonus_points: rebate,
+            required_points_checked: true,
+            required_points_passed: true,
+            status: "waiting_release",
+            settlement_batch_id: (batch as any).id,
+            settlement_date: settleDate,
+            release_date: releaseDate,
+          });
+          granted++;
+          totalPts += rebate;
+        }
+      }
+      if (passed) granted++;
+    }
+
+    await supabaseAdmin.from("bonus_settlement_batches")
+      .update({
+        status: "completed",
+        completed_at: new Date().toISOString(),
+        total_members: granted,
+        total_bonus_points: totalPts,
+      })
+      .eq("id", (batch as any).id);
+
+    return { ok: true, count: granted, batch_id: (batch as any).id, points: totalPts };
+  });
+
+/* ───────────── 發放（自動 / 手動） ───────────── */
+async function releaseRecords(recordIds: string[] | null) {
+  const query = supabaseAdmin
+    .from("bonus_records")
+    .select("id, member_id, bonus_points, bonus_type")
+    .eq("status", "waiting_release");
+  const { data: list } = recordIds
+    ? await query.in("id", recordIds)
+    : await query.lte("release_date", new Date().toISOString().slice(0, 10));
+
+  if (!list || list.length === 0) return { released: 0, points: 0 };
+
+  let totalPts = 0;
+  for (const r of list) {
+    const pts = Number((r as any).bonus_points ?? 0);
+    if (pts <= 0) {
+      await supabaseAdmin.from("bonus_records")
+        .update({ status: "released", released_at: new Date().toISOString() })
+        .eq("id", (r as any).id);
+      continue;
+    }
+    // 入錢包
+    const { data: w0 } = await supabaseAdmin
+      .from("member_points_wallet").select("reward_points").eq("user_id", (r as any).member_id).maybeSingle();
+    if (!w0) {
+      await supabaseAdmin.from("member_points_wallet").insert({ user_id: (r as any).member_id });
+    }
+    const current = Number((w0 as any)?.reward_points ?? 0);
+    const after = current + pts;
+    await supabaseAdmin.from("member_points_wallet")
+      .update({ reward_points: after, updated_at: new Date().toISOString() })
+      .eq("user_id", (r as any).member_id);
+    await supabaseAdmin.from("point_transactions").insert({
+      user_id: (r as any).member_id,
+      point_type: "reward",
+      amount: pts,
+      balance_after: after,
+      source: `bonus_${(r as any).bonus_type}`,
+      reference_id: (r as any).id,
+      note: `獎金發放 (${(r as any).bonus_type})`,
+    });
+    await supabaseAdmin.from("bonus_records")
+      .update({ status: "released", released_at: new Date().toISOString() })
+      .eq("id", (r as any).id);
+    await supabaseAdmin.from("reward_wallet_logs").insert({
+      member_id: (r as any).member_id,
+      bonus_record_id: (r as any).id,
+      points: pts,
+      type: "earn",
+      status: "success",
+      description: `獎金發放 (${(r as any).bonus_type})`,
+    });
+    totalPts += pts;
+  }
+  return { released: list.length, points: totalPts };
+}
+
+export const releaseDueRewards = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    return releaseRecords(null);
+  });
+
+export const manualReleaseRewards = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ recordIds: z.array(z.string().uuid()).min(1).max(500) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    return releaseRecords(data.recordIds);
+  });
+
+/* ───────────── 列表查詢 ───────────── */
+export const listSettlementBatches = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertRoles(context.userId, VIEW_ROLES);
+    const { data } = await supabaseAdmin
+      .from("bonus_settlement_batches").select("*")
+      .order("created_at", { ascending: false }).limit(100);
+    return data ?? [];
+  });
+
+export const listBonusRecords = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      status: z.string().optional(),
+      bonusType: z.string().optional(),
+      memberId: z.string().uuid().optional(),
+      limit: z.number().int().max(500).default(200),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, VIEW_ROLES);
+    let q = supabaseAdmin.from("bonus_records").select("*")
+      .order("created_at", { ascending: false }).limit(data.limit);
+    if (data.status) q = q.eq("status", data.status);
+    if (data.bonusType) q = q.eq("bonus_type", data.bonusType);
+    if (data.memberId) q = q.eq("member_id", data.memberId);
+    const { data: rows } = await q;
+    if (!rows || rows.length === 0) return { records: [], members: {} };
+
+    const memberIds = Array.from(new Set(
+      rows.flatMap((r: any) => [r.member_id, r.source_member_id]).filter(Boolean),
+    ));
+    const { data: profs } = await supabaseAdmin
+      .from("profiles").select("id, name, member_no").in("id", memberIds);
+    const memberMap: Record<string, any> = {};
+    (profs ?? []).forEach((p: any) => { memberMap[p.id] = p; });
+    return { records: rows, members: memberMap };
+  });
+
+/* ───────────── 會員端：我的獎勵點 ───────────── */
+export const getMyBonusRecords = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: rows } = await supabaseAdmin
+      .from("bonus_records").select("*")
+      .eq("member_id", context.userId)
+      .order("created_at", { ascending: false }).limit(300);
+    const s = await getSettings();
+
+    // 本月個人責任額
+    const now = new Date();
+    const ms = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+    const me = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59));
+    const { data: tx } = await supabaseAdmin
+      .from("point_transactions").select("amount")
+      .eq("user_id", context.userId).eq("point_type", "reward")
+      .gte("created_at", ms.toISOString()).lte("created_at", me.toISOString());
+    const monthlyPts = (tx ?? []).reduce((s, t: any) => s + Math.max(0, Number(t.amount ?? 0)), 0);
+
+    return {
+      records: rows ?? [],
+      monthly_points: monthlyPts,
+      vip_required_points: s.vip_required_points,
+      reward_release_days: s.reward_release_days,
+    };
+  });
