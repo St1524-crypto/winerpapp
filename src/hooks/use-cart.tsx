@@ -46,6 +46,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const isDealer = useIsDealer();
   const [cartId, setCartId] = useState<string | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
+  const [tiersMap, setTiersMap] = useState<Record<string, WholesaleTier[]>>({});
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
