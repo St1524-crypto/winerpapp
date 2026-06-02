@@ -19,7 +19,7 @@ import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
-interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; id_no?: string | null; apply_date?: string | null; sex?: string | null; addr_mail?: string | null; addr_home?: string | null; birthday?: string | null; }
+interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; id_no?: string | null; apply_date?: string | null; sex?: string | null; addr_mail?: string | null; addr_home?: string | null; birthday?: string | null; vip_expires_at?: string | null; is_vip?: boolean | null; }
 interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; current_tier?: string | null; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
