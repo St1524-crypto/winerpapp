@@ -2343,52 +2343,91 @@ export type Database = {
       }
       profiles: {
         Row: {
+          addr_home: string | null
+          addr_mail: string | null
+          apply_date: string | null
           avatar_url: string | null
           created_at: string
           current_company_id: string | null
           email: string | null
+          frozen_code: string | null
           id: string
+          id_no: string | null
           is_dealer: boolean
           is_vip: boolean
+          legacy_rank: string | null
           marketing_slug: string | null
           member_no: string | null
+          member_status: string | null
           name: string | null
+          nation: string | null
           phone: string | null
+          placement_id: string | null
           referral_code: string | null
           referred_by: string | null
+          sex: string | null
+          tel: string | null
           vip_expires_at: string | null
+          zip_home: string | null
+          zip_mail: string | null
         }
         Insert: {
+          addr_home?: string | null
+          addr_mail?: string | null
+          apply_date?: string | null
           avatar_url?: string | null
           created_at?: string
           current_company_id?: string | null
           email?: string | null
+          frozen_code?: string | null
           id: string
+          id_no?: string | null
           is_dealer?: boolean
           is_vip?: boolean
+          legacy_rank?: string | null
           marketing_slug?: string | null
           member_no?: string | null
+          member_status?: string | null
           name?: string | null
+          nation?: string | null
           phone?: string | null
+          placement_id?: string | null
           referral_code?: string | null
           referred_by?: string | null
+          sex?: string | null
+          tel?: string | null
           vip_expires_at?: string | null
+          zip_home?: string | null
+          zip_mail?: string | null
         }
         Update: {
+          addr_home?: string | null
+          addr_mail?: string | null
+          apply_date?: string | null
           avatar_url?: string | null
           created_at?: string
           current_company_id?: string | null
           email?: string | null
+          frozen_code?: string | null
           id?: string
+          id_no?: string | null
           is_dealer?: boolean
           is_vip?: boolean
+          legacy_rank?: string | null
           marketing_slug?: string | null
           member_no?: string | null
+          member_status?: string | null
           name?: string | null
+          nation?: string | null
           phone?: string | null
+          placement_id?: string | null
           referral_code?: string | null
           referred_by?: string | null
+          sex?: string | null
+          tel?: string | null
           vip_expires_at?: string | null
+          zip_home?: string | null
+          zip_mail?: string | null
         }
         Relationships: [
           {
@@ -2396,6 +2435,13 @@ export type Database = {
             columns: ["current_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_placement_id_fkey"
+            columns: ["placement_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
