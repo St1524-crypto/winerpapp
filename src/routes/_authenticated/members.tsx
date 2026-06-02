@@ -259,7 +259,26 @@ function Page() {
         <CardHeader className="pb-3">
           <div className="relative max-w-md">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="搜尋姓名 / Email / 電話 / 會員編號..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="搜尋姓名 / Email / 電話 / 會員編號 / 身份證號..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            {[
+              { k: "id_no", label: "身份證號" },
+              { k: "apply_date", label: "加入日期" },
+              { k: "sex", label: "性別" },
+              { k: "addr_mail", label: "通訊地址" },
+              { k: "addr_home", label: "戶籍地址" },
+              { k: "birthday", label: "生日" },
+            ].map((f) => {
+              const n = (fieldStats as any)[f.k] as number;
+              const pct = fieldStats.total ? Math.round((n / fieldStats.total) * 100) : 0;
+              return (
+                <Badge key={f.k} variant="outline" className="font-normal">
+                  {f.label}：<span className="font-mono ml-1">{n.toLocaleString()}</span>
+                  <span className="text-muted-foreground ml-1">/ {fieldStats.total.toLocaleString()}（{pct}%）</span>
+                </Badge>
+              );
+            })}
           </div>
         </CardHeader>
         <CardContent>
