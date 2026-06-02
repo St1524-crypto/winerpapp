@@ -410,7 +410,7 @@ function Page() {
 
       {/* Edit profile */}
       <Dialog open={!!editProfile} onOpenChange={(v) => !v && setEditProfile(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>編輯會員資料</DialogTitle></DialogHeader>
           {editProfile && (
             <div className="space-y-3 py-2">
