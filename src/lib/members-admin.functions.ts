@@ -82,6 +82,12 @@ const UpdateSchema = z.object({
     .regex(/^[A-Za-z0-9_-]{3,32}$/u, "行銷代稱僅可含英數字、底線或連字號，長度 3-32")
     .optional()
     .or(z.literal("")),
+  id_no: z.string().trim().max(32).optional().or(z.literal("")),
+  apply_date: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
+  sex: z.string().trim().max(8).optional().or(z.literal("")),
+  addr_mail: z.string().trim().max(255).optional().or(z.literal("")),
+  addr_home: z.string().trim().max(255).optional().or(z.literal("")),
+  birthday: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
 });
 
 export const adminUpdateMember = createServerFn({ method: "POST" })
