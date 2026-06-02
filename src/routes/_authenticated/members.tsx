@@ -346,6 +346,17 @@ function Page() {
                       ? <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30" variant="outline">經銷商</Badge>
                       : <span className="text-xs text-muted-foreground">—</span>}
                   </TableCell>
+                  <TableCell>
+                    {m.vip_expires_at ? (() => {
+                      const exp = new Date(m.vip_expires_at);
+                      const expired = exp.getTime() <= Date.now();
+                      return (
+                        <Badge variant="outline" className={expired ? "bg-red-500/15 text-red-500 border-red-500/30" : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"}>
+                          {expired ? "已到期 " : ""}{exp.toLocaleDateString()}
+                        </Badge>
+                      );
+                    })() : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{new Date(m.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1 items-center">
