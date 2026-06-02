@@ -62,9 +62,20 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         discount_points_max: Number((product as any).discount_points_max ?? 0),
         status: product.status, featured: product.featured,
         specs: Array.isArray((product as any).specs) ? ((product as any).specs as SpecOption[]) : [],
+        tiers: [],
       });
       supabase.from("product_images").select("*").eq("product_id", product.id).order("sort_order")
         .then(({ data }) => setImages((data ?? []).map((d: any) => ({ id: d.id, url: d.image_url, sort: d.sort_order }))));
+      supabase.from("product_wholesale_tiers" as any).select("*").eq("product_id", product.id).order("min_qty")
+        .then(({ data }) => {
+          const tiers = ((data ?? []) as any[]).map((t) => ({
+            id: t.id, product_id: t.product_id,
+            min_qty: t.min_qty, max_qty: t.max_qty,
+            unit_price: Number(t.unit_price), unit_reward_points: Number(t.unit_reward_points),
+            sort_order: t.sort_order,
+          })) as WholesaleTier[];
+          setForm((f) => ({ ...f, tiers }));
+        });
     } else {
       setForm({ ...empty });
       setImages([]);
