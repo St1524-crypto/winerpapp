@@ -2347,6 +2347,7 @@ export type Database = {
           addr_mail: string | null
           apply_date: string | null
           avatar_url: string | null
+          birthday: string | null
           created_at: string
           current_company_id: string | null
           email: string | null
@@ -2376,6 +2377,7 @@ export type Database = {
           addr_mail?: string | null
           apply_date?: string | null
           avatar_url?: string | null
+          birthday?: string | null
           created_at?: string
           current_company_id?: string | null
           email?: string | null
@@ -2405,6 +2407,7 @@ export type Database = {
           addr_mail?: string | null
           apply_date?: string | null
           avatar_url?: string | null
+          birthday?: string | null
           created_at?: string
           current_company_id?: string | null
           email?: string | null
