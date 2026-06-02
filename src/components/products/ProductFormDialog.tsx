@@ -38,6 +38,7 @@ const empty = {
   reward_points: 0, discount_points_max: 0,
   status: "active", featured: false,
   specs: [] as SpecOption[],
+  tiers: [] as WholesaleTier[],
 };
 
 export function ProductFormDialog({ open, onOpenChange, product, categories, onSaved }: Props) {
