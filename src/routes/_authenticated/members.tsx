@@ -19,8 +19,8 @@ import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
-interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; }
-interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; }
+interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; }
+interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; current_tier?: string | null; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
 const ROLE_COLORS: Record<AppRole, string> = {
@@ -57,9 +57,10 @@ function Page() {
 
   async function load() {
     setLoading(true);
-    const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug").order("created_at", { ascending: false }),
+    const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }, { data: tierData }] = await Promise.all([
+      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
+      supabase.from("dealer_tier_status").select("user_id, current_tier"),
     ]);
     if (e1 || e2) { toast.error(e1?.message ?? e2?.message ?? "載入失敗"); setLoading(false); return; }
     const rolesMap = new Map<string, AppRole[]>();
@@ -68,6 +69,8 @@ function Page() {
       arr.push(r.role as AppRole);
       rolesMap.set(r.user_id, arr);
     });
+    const tierMap = new Map<string, string>();
+    (tierData ?? []).forEach((t: any) => { if (t.current_tier) tierMap.set(t.user_id, t.current_tier); });
     const byId = new Map<string, any>((profiles ?? []).map((p: any) => [p.id, p]));
     setList((profiles ?? []).map((p: any) => {
       const ref = p.referred_by ? byId.get(p.referred_by) : null;
@@ -76,6 +79,7 @@ function Page() {
         roles: rolesMap.get(p.id) ?? [],
         referrer_member_no: ref?.member_no ?? null,
         referrer_name: ref?.name ?? null,
+        current_tier: tierMap.get(p.id) ?? null,
       };
     }));
     setLoading(false);
@@ -249,6 +253,7 @@ function Page() {
                 <TableHead>電話</TableHead>
                 <TableHead>推薦人</TableHead>
                 <TableHead>角色</TableHead>
+                <TableHead>位階</TableHead>
                 <TableHead>經銷商</TableHead>
                 <TableHead>建立日期</TableHead>
                 <TableHead className="text-right">操作</TableHead>
@@ -256,9 +261,9 @@ function Page() {
             </TableHeader>
             <TableBody>
               {loading ? Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}><TableCell colSpan={9}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
+                <TableRow key={i}><TableCell colSpan={10}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
               )) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-10">尚無會員</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-10">尚無會員</TableCell></TableRow>
               ) : filtered.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell>
@@ -288,6 +293,13 @@ function Page() {
                           <Badge key={r} variant="outline" className={ROLE_COLORS[r]}>{ROLE_LABELS[r]}</Badge>
                         ))}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {m.current_tier ? (
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 font-mono">{m.current_tier}</Badge>
+                    ) : m.legacy_rank ? (
+                      <span className="text-xs text-muted-foreground">{m.legacy_rank}</span>
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell>
                     {m.is_dealer
