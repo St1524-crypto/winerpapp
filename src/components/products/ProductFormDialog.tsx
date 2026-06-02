@@ -9,9 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, Plus, Trash2 } from "lucide-react";
 import type { Category, Product } from "@/types/product";
 import { ImageUploader, UploaderImage } from "./ImageUploader";
+
+interface SpecOption {
+  label: string;
+  price_delta: number;
+  stock: number;
+  sku_suffix: string;
+}
 import { generateSku, isSkuUnique } from "@/lib/sku";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 
@@ -30,6 +37,7 @@ const empty = {
   stock: 0, safe_stock: 0,
   reward_points: 0, discount_points_max: 0,
   status: "active", featured: false,
+  specs: [] as SpecOption[],
 };
 
 export function ProductFormDialog({ open, onOpenChange, product, categories, onSaved }: Props) {
@@ -52,6 +60,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         reward_points: Number((product as any).reward_points ?? 0),
         discount_points_max: Number((product as any).discount_points_max ?? 0),
         status: product.status, featured: product.featured,
+        specs: Array.isArray((product as any).specs) ? ((product as any).specs as SpecOption[]) : [],
       });
       supabase.from("product_images").select("*").eq("product_id", product.id).order("sort_order")
         .then(({ data }) => setImages((data ?? []).map((d: any) => ({ id: d.id, url: d.image_url, sort: d.sort_order }))));
@@ -93,6 +102,14 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         discount_points_max: Math.max(0, Math.floor(Number(form.discount_points_max) || 0)),
         status: form.status, featured: form.featured,
         image: images[0]?.url ?? null,
+        specs: form.specs
+          .filter((s) => s.label.trim())
+          .map((s) => ({
+            label: s.label.trim(),
+            price_delta: Number(s.price_delta) || 0,
+            stock: Math.max(0, Math.floor(Number(s.stock) || 0)),
+            sku_suffix: (s.sku_suffix || "").trim(),
+          })),
       };
 
       let productId = product?.id;
