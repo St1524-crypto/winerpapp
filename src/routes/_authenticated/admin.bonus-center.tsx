@@ -311,7 +311,7 @@ function Page() {
                       STATUS_LABEL[r.status] ?? r.status,
                       r.release_date ?? "",
                     ])];
-                  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+                  const csv = rows.map((r) => r.map((c: any) => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
                   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
                   const a = document.createElement("a");
                   a.href = URL.createObjectURL(blob);

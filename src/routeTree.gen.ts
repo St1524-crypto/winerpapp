@@ -68,6 +68,7 @@ import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
+import { Route as AuthenticatedAdminBonusCenterRouteImport } from './routes/_authenticated/admin.bonus-center'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -386,6 +387,12 @@ const AuthenticatedAdminCompaniesRoute =
     path: '/companies',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminBonusCenterRoute =
+  AuthenticatedAdminBonusCenterRouteImport.update({
+    id: '/bonus-center',
+    path: '/bonus-center',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminAuditLogsRoute =
   AuthenticatedAdminAuditLogsRouteImport.update({
     id: '/audit-logs',
@@ -464,6 +471,7 @@ export interface FileRoutesByFullPath {
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -527,6 +535,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginIndexRoute
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -595,6 +604,7 @@ export interface FileRoutesById {
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/_authenticated/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -663,6 +673,7 @@ export interface FileRouteTypes {
     | '/login/'
     | '/shop/'
     | '/admin/audit-logs'
+    | '/admin/bonus-center'
     | '/admin/companies'
     | '/admin/referrals'
     | '/admin/role-manager'
@@ -726,6 +737,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/shop'
     | '/admin/audit-logs'
+    | '/admin/bonus-center'
     | '/admin/companies'
     | '/admin/referrals'
     | '/admin/role-manager'
@@ -793,6 +805,7 @@ export interface FileRouteTypes {
     | '/login/'
     | '/shop/'
     | '/_authenticated/admin/audit-logs'
+    | '/_authenticated/admin/bonus-center'
     | '/_authenticated/admin/companies'
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/role-manager'
@@ -1249,6 +1262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCompaniesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/bonus-center': {
+      id: '/_authenticated/admin/bonus-center'
+      path: '/bonus-center'
+      fullPath: '/admin/bonus-center'
+      preLoaderRoute: typeof AuthenticatedAdminBonusCenterRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/audit-logs': {
       id: '/_authenticated/admin/audit-logs'
       path: '/audit-logs'
@@ -1310,6 +1330,7 @@ const AuthenticatedAdminCompaniesRouteWithChildren =
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
+  AuthenticatedAdminBonusCenterRoute: typeof AuthenticatedAdminBonusCenterRoute
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
@@ -1318,6 +1339,7 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
+  AuthenticatedAdminBonusCenterRoute: AuthenticatedAdminBonusCenterRoute,
   AuthenticatedAdminCompaniesRoute:
     AuthenticatedAdminCompaniesRouteWithChildren,
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
