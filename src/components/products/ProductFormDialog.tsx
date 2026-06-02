@@ -217,9 +217,97 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
           </TabsContent>
 
 
+          <TabsContent value="specs" className="space-y-3 pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">規格選項</div>
+                <p className="text-xs text-muted-foreground">例如：容量、顏色、口味。加價可填負數（折扣）。留空表示沿用商品主價格與庫存。</p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setForm({ ...form, specs: [...form.specs, { label: "", price_delta: 0, stock: 0, sku_suffix: "" }] })}
+              >
+                <Plus className="h-4 w-4 mr-1" /> 新增規格
+              </Button>
+            </div>
+
+            {form.specs.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground py-8 border border-dashed border-border rounded-lg">
+                尚未設定規格選項
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
+                  <div className="col-span-4">規格名稱 *</div>
+                  <div className="col-span-3">加價 (元)</div>
+                  <div className="col-span-2">庫存</div>
+                  <div className="col-span-2">SKU 後綴</div>
+                  <div className="col-span-1"></div>
+                </div>
+                {form.specs.map((s, i) => (
+                  <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                    <Input
+                      className="col-span-4"
+                      placeholder="如：750ml"
+                      value={s.label}
+                      onChange={(e) => {
+                        const next = [...form.specs];
+                        next[i] = { ...next[i], label: e.target.value };
+                        setForm({ ...form, specs: next });
+                      }}
+                    />
+                    <Input
+                      className="col-span-3"
+                      type="number"
+                      value={s.price_delta}
+                      onChange={(e) => {
+                        const next = [...form.specs];
+                        next[i] = { ...next[i], price_delta: +e.target.value };
+                        setForm({ ...form, specs: next });
+                      }}
+                    />
+                    <Input
+                      className="col-span-2"
+                      type="number"
+                      min={0}
+                      value={s.stock}
+                      onChange={(e) => {
+                        const next = [...form.specs];
+                        next[i] = { ...next[i], stock: +e.target.value };
+                        setForm({ ...form, specs: next });
+                      }}
+                    />
+                    <Input
+                      className="col-span-2 font-mono text-xs"
+                      placeholder="-A"
+                      value={s.sku_suffix}
+                      onChange={(e) => {
+                        const next = [...form.specs];
+                        next[i] = { ...next[i], sku_suffix: e.target.value };
+                        setForm({ ...form, specs: next });
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="col-span-1 h-9 w-9"
+                      onClick={() => setForm({ ...form, specs: form.specs.filter((_, j) => j !== i) })}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
           <TabsContent value="images" className="pt-4">
             <ImageUploader images={images} onChange={setImages} />
           </TabsContent>
+
 
           <TabsContent value="meta" className="space-y-4 pt-4">
             <div className="grid sm:grid-cols-2 gap-4">
