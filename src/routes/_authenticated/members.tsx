@@ -466,6 +466,11 @@ function Page() {
               </div>
               <div className="space-y-1"><Label>通訊地址</Label><Input value={form.addr_mail} onChange={(e) => setForm({ ...form, addr_mail: e.target.value })} placeholder="郵遞區號 + 完整地址" /></div>
               <div className="space-y-1"><Label>戶籍地址</Label><Input value={form.addr_home} onChange={(e) => setForm({ ...form, addr_home: e.target.value })} placeholder="郵遞區號 + 完整地址" /></div>
+              <div className="space-y-1">
+                <Label>年費到期日（VIP）</Label>
+                <Input type="date" value={form.vip_expires_at} onChange={(e) => setForm({ ...form, vip_expires_at: e.target.value })} />
+                <p className="text-[11px] text-muted-foreground">留空＝非 VIP；到期後將無法領取獎勵點。</p>
+              </div>
               <div className="pt-2 border-t border-border" />
               <div className="space-y-1"><Label>重設密碼 (留空則不變更)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" /></div>
             </div>
