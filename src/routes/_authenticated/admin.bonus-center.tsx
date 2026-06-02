@@ -29,7 +29,10 @@ export const Route = createFileRoute("/_authenticated/admin/bonus-center")({
 });
 
 function Guard() {
-  const { roles } = useAuth();
+  const { roles, loading } = useAuth();
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
   if (!roles.some((r) => ALLOW.includes(r))) {
     return <ForbiddenScreen requiredRoles={ALLOW} pageName="獎金管理中心" />;
   }
