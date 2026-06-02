@@ -49,6 +49,7 @@ import { Route as AuthenticatedDealerProgramRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
+import { Route as AuthenticatedCashAdminRouteImport } from './routes/_authenticated/cash-admin'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ShopAccountIndexRouteImport } from './routes/shop.account.index'
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
@@ -282,6 +283,11 @@ const AuthenticatedCategoriesRoute = AuthenticatedCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCashAdminRoute = AuthenticatedCashAdminRouteImport.update({
+  id: '/cash-admin',
+  path: '/cash-admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -441,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -508,6 +515,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/two-factor': typeof TwoFactorRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -576,6 +584,7 @@ export interface FileRoutesById {
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/cash-admin': typeof AuthenticatedCashAdminRoute
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -646,6 +655,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/two-factor'
     | '/admin'
+    | '/cash-admin'
     | '/categories'
     | '/customers'
     | '/dashboard'
@@ -713,6 +723,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/two-factor'
     | '/admin'
+    | '/cash-admin'
     | '/categories'
     | '/customers'
     | '/dashboard'
@@ -780,6 +791,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/two-factor'
     | '/_authenticated/admin'
+    | '/_authenticated/cash-admin'
     | '/_authenticated/categories'
     | '/_authenticated/customers'
     | '/_authenticated/dashboard'
@@ -1141,6 +1153,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCategoriesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/cash-admin': {
+      id: '/_authenticated/cash-admin'
+      path: '/cash-admin'
+      fullPath: '/cash-admin'
+      preLoaderRoute: typeof AuthenticatedCashAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -1417,6 +1436,7 @@ const AuthenticatedB2bAccountsRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedCashAdminRoute: typeof AuthenticatedCashAdminRoute
   AuthenticatedCategoriesRoute: typeof AuthenticatedCategoriesRoute
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -1446,6 +1466,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedCashAdminRoute: AuthenticatedCashAdminRoute,
   AuthenticatedCategoriesRoute: AuthenticatedCategoriesRoute,
   AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -1551,3 +1572,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
