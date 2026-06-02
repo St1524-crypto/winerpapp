@@ -1,36 +1,145 @@
-## 目標
-讓系統在手機上（<768px）也能流暢操作，重點優化訂單、表格、後台導覽與商城前台。
 
-## 範圍與作法
+# 獎金結算與獎勵點發放系統
 
-### 1. 後台訂單頁 `/orders`（src/routes/_authenticated/orders.tsx）
-- 列表：手機改為「卡片式」呈現（單號、客戶、金額、狀態、日期），點卡片進入詳情；桌機維持原表格。
-- 詳情 Dialog：手機改為全螢幕（`max-w-full h-[100dvh] rounded-none`），內容區可滾動。
-- 金流紀錄：手機改為堆疊式卡片（日期/方式/狀態下拉/金額），避免水平滾動。
-- 動作按鈕（PDF、列印、更新狀態）：手機改為底部 sticky bar 或下拉選單。
+依需求拆成四個層面：**資料層 → 結算引擎 → 後台管理 → 會員端**。考量範圍很大，建議分階段交付，本計畫先一次性把資料表與結算/發放核心邏輯落地，再做 UI；以下為完整建置藍圖。
 
-### 2. 全站表格 RWD（通用模式）
-- 為主要列表頁（products、purchases、receiving、inventory、b2b.accounts、finance.* 等）的 `<Table>` 外層加 `overflow-x-auto -mx-4 px-4` 讓表格可橫向滑動。
-- 不重寫所有表格為卡片，採「桌機 table / 手機 list」混合策略只在 orders 完整實作示範；其他頁面加上橫向滑動 + min-w 即可。
+---
 
-### 3. 後台側邊欄與導覽（src/components/AppSidebar.tsx / AppHeader.tsx / _authenticated.tsx）
-- 確認 `SidebarTrigger` 在手機 header 永遠可見（已在 AppHeader）。
-- 手機改用 `collapsible="offcanvas"`（已是 sidebar 預設行為），搜尋框在手機隱藏（已是 hidden md:flex）— 補上手機版搜尋 icon 按鈕（可選）。
-- header 上「管理員/營運模式」按鈕在手機只顯示 icon（已 `hidden sm:inline`）— OK。
-- 新增「手機底部快捷導覽」：在 `_authenticated` layout 加一個 `md:hidden` 的固定底欄，含 4 個常用入口（Dashboard、Orders、Products、Menu→開啟 sidebar），main 加 `pb-20 md:pb-0`。
+## 一、資料庫設計（一次 migration 完成）
 
-### 4. 商城 (shop) 前台
-- StorefrontHeader：手機已有搜尋列，補上 hamburger 開啟 Sheet 顯示分類連結（目前 Menu 按鈕無 onClick）。
-- 商品列表 / 商品詳情：確認 grid 在手機是 2 欄、padding/字級調整。
-- CartDrawer：確認手機可全寬。
+### 1. 設定表
 
-## 技術細節
-- 使用 `useIsMobile()` 判斷斷點時要避免 hydration mismatch；改用 Tailwind `md:` 響應式類別優先，僅互動性差異才用 hook。
-- Dialog 全螢幕：`DialogContent` 加 `className="sm:max-w-2xl max-w-full h-[100dvh] sm:h-auto rounded-none sm:rounded-lg"`。
-- 卡片化表格用 `<div className="md:hidden space-y-2">…</div>` + `<div className="hidden md:block"><Table>…</Table></div>`。
-- 底部導覽用 `fixed bottom-0 inset-x-0 z-40 md:hidden border-t bg-background/95 backdrop-blur`，4 欄 grid。
+- **bonus_settings**（單列設定）
+  - daily_bonus_auto_enabled `bool` default true
+  - daily_bonus_cycle_days `int` default 1（1/2/3/7/自訂）
+  - daily_next_settlement_at `timestamptz`
+  - monthly_bonus_mode `text`（auto / manual）
+  - monthly_bonus_settlement_day `int` default 1
+  - vip_required_points `int` default 200
+  - reward_release_days `int` default 7
+  - reward_release_mode `text`（auto / manual）
 
-## 不在範圍
-- 不改業務邏輯、API、資料表。
-- 不重寫所有列表為卡片（只 orders 全面卡片化，其他保留 table + 橫向滑動）。
-- 不動 PDF/列印輸出格式。
+- **repurchase_bonus_settings**（每代一列）
+  - generation_level `int`（1, 2, …）
+  - bonus_rate `numeric` default 10
+  - enabled `bool` default true
+
+- **rank_rebate_settings**（每位階一列）
+  - rank_code `text`（vip / svip / tvip / 自訂）
+  - rank_name `text`
+  - required_points `int`（該位階責任額）
+  - exceeded_rebate_rate `numeric`
+  - enabled `bool`
+  - 預設種子：VIP 200/5%、SVIP 200/8%、TVIP 200/10%
+
+### 2. 業績/結算表
+
+- **bonus_records**：所有獎金的最小單位
+  - member_id（領取人）、source_member_id（產生來源會員）、source_order_id
+  - bonus_type `text`：`referral` | `repurchase` | `monthly_vip` | `rank_rebate`
+  - generation_level `int nullable`（復購用）
+  - base_amount `numeric`（來源訂單金額；月獎金存當月責任額）
+  - bonus_rate `numeric`、bonus_points `int`
+  - required_points_checked `bool`、required_points_passed `bool`
+  - status `text`：`pending | settled | waiting_release | released | cancelled | failed`
+  - settlement_batch_id `uuid nullable`、settlement_date `date`
+  - release_date `date`（=settlement_date + reward_release_days）
+  - released_at `timestamptz`
+
+- **bonus_settlement_batches**
+  - settlement_type `text`：`daily | monthly`
+  - settlement_period_start/end、total_members、total_bonus_points
+  - status `text`：`processing | completed | failed`
+  - created_by, created_at, completed_at
+
+- **reward_wallet_logs**
+  - member_id, bonus_record_id, points, type（earn/cancel）, status, description
+
+所有表加 GRANT + RLS（會員只讀自己；admin/finance 角色完整存取，沿用既有 `has_role`）。
+
+---
+
+## 二、結算引擎（TanStack server functions）
+
+放在 `src/lib/bonus.functions.ts` + `bonus.server.ts`：
+
+### A. 日結算 `runDailySettlement(period)`
+1. 撈 `bonus_records` where `bonus_type IN ('referral','repurchase','rank_rebate')` AND `status='pending'` AND `created_at` 在週期內。
+2. 推薦獎勵 → 不檢查責任額直接 settled。
+3. 復購、位階回饋 → 一同進入。
+4. 建立 batch，更新 `status='waiting_release'`、寫入 `settlement_date`、`release_date = today + reward_release_days`。
+
+### B. 月結算 `runMonthlySettlement(yyyymm)`
+1. 撈當月所有 VIP（`is_vip=true` 且 `vip_expires_at >= 月末`）。
+2. 計算每位 VIP 當月個人責任點數（推薦/復購/購物加總 — 沿用既有 `point_transactions`）。
+3. 達 `vip_required_points` → 建立 `bonus_type='monthly_vip'` 的 bonus_record。
+4. **超過責任額部分**：依會員位階 → `rank_rebate_settings.exceeded_rebate_rate` 計算 → 建立 `bonus_type='rank_rebate'` record，回饋給自己。
+5. 未達者寫 record 但 `status='cancelled'`、required_points_passed=false（保留未達標原因供會員端查詢）。
+
+### C. 復購觸發 `onOrderPaid(orderId)`
+- 在訂單付款時呼叫（擴充既有 `referral.functions.ts` 的結算流程）。
+- 順著 `profiles.referred_by` 上溯找第 1、2 代推薦人。
+- 依 `repurchase_bonus_settings` 比例寫入 `bonus_records(status='pending')`。
+- 「是否為復購」：該買家已有過 paid 訂單 → 視為復購。
+
+### D. 發放 `releaseRewards(mode)`
+- 自動：每日 cron 撈 `status='waiting_release' AND release_date<=today` → 入錢包（`applyDelta(reward)` 沿用 `points.functions.ts`） → `status='released'`，寫 `reward_wallet_logs`。
+- 手動：admin 勾選 record ids 批次發放。
+
+### E. 排程
+- 用 `pg_cron` 每日 00:10 呼叫 `/api/public/hooks/bonus-daily-tick`，內部判斷是否到 `daily_next_settlement_at` / 月結日 / 自動發放。
+
+---
+
+## 三、後台 UI（`/admin/bonus-center`）
+
+單一入口頁 + Tabs：
+1. **日獎金設定**（開關、週期、下次結算、立即結算）
+2. **月獎金設定**（mode、結算日、責任額預設）
+3. **復購設定**（每代比例表格）
+4. **位階回饋**（rank_rebate_settings CRUD）
+5. **發放設定**（reward_release_days、mode）
+6. **結算紀錄**（batches 列表 + drill down 明細）
+7. **發放紀錄**（reward_wallet_logs）
+8. **會員獎金明細**（搜尋會員 → bonus_records）
+9. **手動結算/手動發放**按鈕
+10. **匯出 Excel**（CSV 下載）
+
+權限：`super_admin | admin | finance`。
+
+---
+
+## 四、會員端（`/my-rewards`）
+
+Tabs：
+- 日獎金明細（推薦/復購/位階回饋）
+- 月獎金明細（含未達標原因 = 顯示當月責任額 vs 門檻）
+- 責任額進度條（當月已累積 / 預設 200）
+- 等待發放列表（含預計發放日）
+- 已發放列表
+
+---
+
+## 五、技術重點
+
+- 結算冪等：`bonus_records` 對 `(source_order_id, member_id, bonus_type, generation_level)` 加唯一鍵，避免重複。
+- 月獎金冪等：對 `(member_id, bonus_type='monthly_vip', settlement_period_start)` 唯一鍵。
+- 所有結算邏輯走 `supabaseAdmin`（server fn 內），bypass RLS 確保跨會員寫入。
+- cron 使用 `project--8759c219-ed53-49ec-b52a-60a002da48ec.lovable.app` 穩定網域。
+
+---
+
+## 六、交付分階段建議
+
+**Phase 1（本次）**：資料表 + 結算/發放 server functions + cron + 後台「日獎金設定 / 結算紀錄 / 手動結算 / 手動發放」最小可用面板。
+**Phase 2**：月獎金完整 UI、位階回饋管理、復購比例設定、會員端 `/my-rewards`。
+**Phase 3**：Excel 匯出、進階查詢、未達標通知。
+
+---
+
+## 詢問
+
+1. **「責任額」定義**：每月個人累計的「獎勵點 reward_points 入帳量」嗎？還是另算「訂單實付金額 ÷ 某係數」？這會影響月獎金與位階回饋的計算來源。
+2. **月獎金金額**：規格中只提到「達 200 點可領」，但沒明說領多少。是否＝「當月個人責任額 × 某比例」、或固定獎金、或「下線業績的 X%」？
+3. **復購定義**：買家「第 2 筆以上 paid 訂單」即視為復購？還是同商品再次購買？
+4. **Phase 1 範圍同意嗎？** 若是，我下一步就送出 migration（資料表 + RLS + 種子資料）等你確認後即可繼續寫程式。
