@@ -88,6 +88,7 @@ const UpdateSchema = z.object({
   addr_mail: z.string().trim().max(255).optional().or(z.literal("")),
   addr_home: z.string().trim().max(255).optional().or(z.literal("")),
   birthday: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
+  vip_expires_at: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
 });
 
 export const adminUpdateMember = createServerFn({ method: "POST" })
