@@ -79,15 +79,23 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
 
   async function save() {
     if (!form.name.trim()) { toast.error("請輸入商品名稱"); return; }
-    if (!form.sku.trim()) { toast.error("請輸入或產生 SKU"); return; }
     if (!product && !currentCompanyId) { toast.error("尚未選擇公司"); return; }
-    const unique = await isSkuUnique(form.sku, product?.id);
-    if (!unique) { toast.error("SKU 已存在"); return; }
+
+    // 若未輸入 SKU，依分類自動產生（無分類則使用 GEN）
+    let sku = form.sku.trim();
+    if (!sku) {
+      const cat = categories.find((c) => c.id === form.category_id);
+      sku = await generateSku(cat?.name ?? "GEN");
+      setForm((f) => ({ ...f, sku }));
+    }
+
+    const unique = await isSkuUnique(sku, product?.id);
+    if (!unique) { toast.error("SKU 已存在，請修改"); return; }
 
     setSaving(true);
     try {
       const payload = {
-        sku: form.sku.trim(),
+        sku,
         name: form.name.trim(),
         short_description: form.short_description || null,
         description: form.description || null,
