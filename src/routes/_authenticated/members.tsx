@@ -253,6 +253,7 @@ function Page() {
                 <TableHead>電話</TableHead>
                 <TableHead>推薦人</TableHead>
                 <TableHead>角色</TableHead>
+                <TableHead>位階</TableHead>
                 <TableHead>經銷商</TableHead>
                 <TableHead>建立日期</TableHead>
                 <TableHead className="text-right">操作</TableHead>
