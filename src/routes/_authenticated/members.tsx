@@ -104,7 +104,7 @@ function Page() {
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "" });
     setCreateOpen(true);
   }
   function fmtDate(d?: string | null) { if (!d) return ""; return d.length >= 10 ? d.slice(0, 10) : d; }
