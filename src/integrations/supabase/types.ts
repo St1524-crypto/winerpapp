@@ -866,6 +866,60 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_transactions: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          bank_info: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          payment_method: string | null
+          processed_at: string | null
+          processed_by: string | null
+          reference_id: string | null
+          related_point_amount: number | null
+          status: string
+          tx_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number | null
+          bank_info?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          payment_method?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          reference_id?: string | null
+          related_point_amount?: number | null
+          status?: string
+          tx_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          bank_info?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          payment_method?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          reference_id?: string | null
+          related_point_amount?: number | null
+          status?: string
+          tx_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           company_id: string
@@ -1885,6 +1939,7 @@ export type Database = {
       }
       member_points_wallet: {
         Row: {
+          cash_balance: number
           discount_points: number
           reward_points: number
           shopping_points: number
@@ -1892,6 +1947,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cash_balance?: number
           discount_points?: number
           reward_points?: number
           shopping_points?: number
@@ -1899,6 +1955,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cash_balance?: number
           discount_points?: number
           reward_points?: number
           shopping_points?: number
