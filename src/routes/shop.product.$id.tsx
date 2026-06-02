@@ -30,6 +30,7 @@ function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [related, setRelated] = useState<Product[]>([]);
+  const [tiers, setTiers] = useState<WholesaleTier[]>([]);
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -48,6 +49,8 @@ function ProductDetail() {
       setProduct(p as Product | null);
       const { data: imgs } = await supabase.from("product_images").select("*").eq("product_id", id).order("sort_order");
       setImages((imgs ?? []) as ProductImage[]);
+      const t = await fetchTiersForProduct(id);
+      setTiers(t);
       if (p?.category_id) {
         const { data: rel } = await supabase.from("products").select("*").eq("category_id", p.category_id).neq("id", id).eq("status", "active").limit(4);
         setRelated((rel ?? []) as Product[]);
