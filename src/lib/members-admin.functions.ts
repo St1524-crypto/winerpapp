@@ -105,13 +105,19 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     const prevSlug = (prior as any)?.marketing_slug ?? null;
 
     const phone = data.phone !== undefined ? normalizePhone(data.phone) : undefined;
-    const profileUpdate: { name?: string; email?: string | null; phone?: string | null; referred_by?: string | null; marketing_slug?: string | null } = {};
+    const profileUpdate: Record<string, any> = {};
     if (data.name !== undefined) profileUpdate.name = data.name;
     if (data.email !== undefined) profileUpdate.email = data.email || null;
     if (phone !== undefined) profileUpdate.phone = phone;
     if (data.marketingSlug !== undefined) {
       profileUpdate.marketing_slug = data.marketingSlug ? data.marketingSlug.trim() : null;
     }
+    if (data.id_no !== undefined) profileUpdate.id_no = data.id_no || null;
+    if (data.apply_date !== undefined) profileUpdate.apply_date = data.apply_date || null;
+    if (data.sex !== undefined) profileUpdate.sex = data.sex || null;
+    if (data.addr_mail !== undefined) profileUpdate.addr_mail = data.addr_mail || null;
+    if (data.addr_home !== undefined) profileUpdate.addr_home = data.addr_home || null;
+    if (data.birthday !== undefined) profileUpdate.birthday = data.birthday || null;
 
     if (data.clearReferrer) {
       profileUpdate.referred_by = null;
