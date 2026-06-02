@@ -31,7 +31,7 @@ function WholesaleArea() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate({ to: "/login", search: { redirect: "/shop/wholesale" } as any });
+      navigate({ to: "/login" });
     }
   }, [authLoading, user, navigate]);
 
