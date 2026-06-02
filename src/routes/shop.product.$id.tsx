@@ -86,8 +86,12 @@ function ProductDetail() {
 
   const gallery = [...(product.image ? [{ id: "main", image_url: product.image, product_id: id, sort_order: -1, created_at: "" }] : []), ...images];
   const outOfStock = product.stock <= 0;
-  const effPrice = getEffectivePrice(product, isDealer);
-  const showDealer = isDealer && product.wholesale_price > 0 && product.wholesale_price < product.price;
+  const baseEff = getEffectivePrice(product, isDealer);
+  const baseReward = Number((product as any).reward_points ?? 0);
+  const pricing = applyWholesalePricing(baseEff, baseReward, tiers, qty);
+  const effPrice = pricing.unitPrice;
+  const showDealer = !pricing.tier && isDealer && product.wholesale_price > 0 && product.wholesale_price < product.price;
+  const hasTiers = tiers.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-10">
