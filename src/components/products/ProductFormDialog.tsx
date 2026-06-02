@@ -156,6 +156,25 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         }
       }
 
+      // Sync wholesale tiers: delete-then-insert
+      if (productId) {
+        await supabase.from("product_wholesale_tiers" as any).delete().eq("product_id", productId);
+        const validTiers = form.tiers
+          .filter((t) => Number(t.min_qty) >= 1 && Number(t.unit_price) >= 0)
+          .map((t, i) => ({
+            product_id: productId!,
+            min_qty: Math.max(1, Math.floor(Number(t.min_qty) || 1)),
+            max_qty: t.max_qty == null || t.max_qty === ("" as any) ? null : Math.max(1, Math.floor(Number(t.max_qty))),
+            unit_price: Number(t.unit_price) || 0,
+            unit_reward_points: Math.max(0, Math.floor(Number(t.unit_reward_points) || 0)),
+            sort_order: i,
+          }));
+        if (validTiers.length) {
+          const { error: tErr } = await supabase.from("product_wholesale_tiers" as any).insert(validTiers);
+          if (tErr) throw tErr;
+        }
+      }
+
       toast.success(product ? "商品已更新" : "商品已新增");
       onSaved();
       onOpenChange(false);
