@@ -71,6 +71,7 @@ import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicHooksBonusDailyTickRouteImport } from './routes/api/public/hooks/bonus-daily-tick'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 
@@ -402,6 +403,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBonusDailyTickRoute =
+  ApiPublicHooksBonusDailyTickRouteImport.update({
+    id: '/api/public/hooks/bonus-daily-tick',
+    path: '/api/public/hooks/bonus-daily-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedB2bAccountsIdRoute =
   AuthenticatedB2bAccountsIdRouteImport.update({
     id: '/$id',
@@ -477,6 +484,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
@@ -539,6 +547,7 @@ export interface FileRoutesByTo {
   '/shop/account': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
@@ -606,6 +615,7 @@ export interface FileRoutesById {
   '/shop/account/': typeof ShopAccountIndexRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
 }
@@ -673,6 +683,7 @@ export interface FileRouteTypes {
     | '/shop/account/'
     | '/admin/companies/new'
     | '/b2b/accounts/$id'
+    | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -735,6 +746,7 @@ export interface FileRouteTypes {
     | '/shop/account'
     | '/admin/companies/new'
     | '/b2b/accounts/$id'
+    | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
   id:
@@ -801,6 +813,7 @@ export interface FileRouteTypes {
     | '/shop/account/'
     | '/_authenticated/admin/companies/new'
     | '/_authenticated/b2b/accounts/$id'
+    | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
   fileRoutesById: FileRoutesById
@@ -817,6 +830,7 @@ export interface RootRouteChildren {
   RPhoneRoute: typeof RPhoneRoute
   UCodeRoute: typeof UCodeRoute
   LoginIndexRoute: typeof LoginIndexRoute
+  ApiPublicHooksBonusDailyTickRoute: typeof ApiPublicHooksBonusDailyTickRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -1256,6 +1270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/bonus-daily-tick': {
+      id: '/api/public/hooks/bonus-daily-tick'
+      path: '/api/public/hooks/bonus-daily-tick'
+      fullPath: '/api/public/hooks/bonus-daily-tick'
+      preLoaderRoute: typeof ApiPublicHooksBonusDailyTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/b2b/accounts/$id': {
       id: '/_authenticated/b2b/accounts/$id'
       path: '/$id'
@@ -1481,6 +1502,7 @@ const rootRouteChildren: RootRouteChildren = {
   RPhoneRoute: RPhoneRoute,
   UCodeRoute: UCodeRoute,
   LoginIndexRoute: LoginIndexRoute,
+  ApiPublicHooksBonusDailyTickRoute: ApiPublicHooksBonusDailyTickRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
