@@ -21,7 +21,10 @@ export const Route = createFileRoute("/_authenticated/admin/referrals")({
 });
 
 function AdminReferralsGuard() {
-  const { roles } = useAuth();
+  const { roles, loading } = useAuth();
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
   if (!roles.some((r) => REFERRAL_ADMIN_ROLES.includes(r))) {
     return <ForbiddenScreen requiredRoles={REFERRAL_ADMIN_ROLES} pageName="推廣總覽 / 結算" />;
   }
