@@ -2314,6 +2314,50 @@ export type Database = {
           },
         ]
       }
+      product_wholesale_tiers: {
+        Row: {
+          created_at: string
+          id: string
+          max_qty: number | null
+          min_qty: number
+          product_id: string
+          sort_order: number
+          unit_price: number
+          unit_reward_points: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_qty?: number | null
+          min_qty: number
+          product_id: string
+          sort_order?: number
+          unit_price?: number
+          unit_reward_points?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_qty?: number | null
+          min_qty?: number
+          product_id?: string
+          sort_order?: number
+          unit_price?: number
+          unit_reward_points?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_wholesale_tiers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string | null
