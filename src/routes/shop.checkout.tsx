@@ -33,11 +33,15 @@ function CheckoutPage() {
   const { items, subtotal, clear } = useCart();
   const isDealer = useIsDealer();
   const { addresses, defaultAddress, loading: addrLoading } = useAddresses();
+  const { wallet, refresh: refreshWallet } = useWallet();
+  const { is_vip } = useVipStatus();
   const navigate = useNavigate();
 
   const [selectedAddrId, setSelectedAddrId] = useState<string>("");
   const [form, setForm] = useState({ receiver_name: "", phone: "", address: "", notes: "" });
   const [placing, setPlacing] = useState(false);
+  const [useShopping, setUseShopping] = useState<number>(0);
+  const [useDiscount, setUseDiscount] = useState<number>(0);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
@@ -70,11 +74,19 @@ function CheckoutPage() {
   }, [selectedAddrId, addresses]);
 
   const shipping = subtotal >= FREE_SHIPPING || subtotal === 0 ? 0 : SHIPPING_FEE;
-  const total = subtotal + shipping;
+  // 折扣點僅 VIP（復購）可用；最多折抵小計
+  const maxDiscount = is_vip ? Math.min(wallet.discount_points, subtotal) : 0;
+  const discountApplied = Math.max(0, Math.min(Math.floor(useDiscount) || 0, maxDiscount));
+  const afterDiscount = Math.max(0, subtotal - discountApplied + shipping);
+  // 餘額（購物點）可全額折抵；1 點 = NT$1
+  const maxShoppingRedeem = Math.min(wallet.shopping_points, afterDiscount);
+  const shoppingApplied = Math.max(0, Math.min(Math.floor(useShopping) || 0, maxShoppingRedeem));
+  const total = Math.max(0, afterDiscount - shoppingApplied);
   const canPlace = useMemo(
     () => items.length > 0 && form.receiver_name && form.phone && form.address && !placing,
     [items, form, placing]
   );
+
 
   async function placeOrder() {
     if (!user || items.length === 0) return;
