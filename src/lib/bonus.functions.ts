@@ -596,15 +596,13 @@ export const getMyBonusRecords = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false }).limit(300);
     const s = await getSettings();
 
-    // 本月個人責任額
+    // 本月個人責任額 (來自復購訂單實付金額)
     const now = new Date();
-    const ms = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-    const me = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59));
-    const { data: tx } = await supabaseAdmin
-      .from("point_transactions").select("amount")
-      .eq("user_id", context.userId).eq("point_type", "reward")
-      .gte("created_at", ms.toISOString()).lte("created_at", me.toISOString());
-    const monthlyPts = (tx ?? []).reduce((s, t: any) => s + Math.max(0, Number(t.amount ?? 0)), 0);
+    const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const { data: mrp } = await supabaseAdmin
+      .from("monthly_responsibility_points").select("points")
+      .eq("member_id", context.userId).eq("ym", ym).maybeSingle();
+    const monthlyPts = Number((mrp as any)?.points ?? 0);
 
     return {
       records: rows ?? [],
