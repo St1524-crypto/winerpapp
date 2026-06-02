@@ -145,6 +145,12 @@ function Page() {
           referrerMemberNo: trimmedRef || undefined,
           clearReferrer: !trimmedRef && !!originalRef,
           marketingSlug: form.marketingSlug.trim() || "",
+          id_no: form.id_no,
+          apply_date: form.apply_date,
+          sex: form.sex,
+          addr_mail: form.addr_mail,
+          addr_home: form.addr_home,
+          birthday: form.birthday,
         },
       });
       toast.success("資料已更新");
