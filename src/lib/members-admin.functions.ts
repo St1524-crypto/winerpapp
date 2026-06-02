@@ -119,6 +119,10 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     if (data.addr_mail !== undefined) profileUpdate.addr_mail = data.addr_mail || null;
     if (data.addr_home !== undefined) profileUpdate.addr_home = data.addr_home || null;
     if (data.birthday !== undefined) profileUpdate.birthday = data.birthday || null;
+    if (data.vip_expires_at !== undefined) {
+      profileUpdate.vip_expires_at = data.vip_expires_at ? data.vip_expires_at : null;
+      profileUpdate.is_vip = !!(data.vip_expires_at && new Date(data.vip_expires_at) > new Date());
+    }
 
     if (data.clearReferrer) {
       profileUpdate.referred_by = null;
