@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Sparkles, Plus, Trash2 } from "lucide-react";
-import type { Category, Product } from "@/types/product";
+import type { Category, Product, WholesaleTier } from "@/types/product";
 import { ImageUploader, UploaderImage } from "./ImageUploader";
 
 interface SpecOption {
