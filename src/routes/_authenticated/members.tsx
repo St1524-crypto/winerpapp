@@ -436,6 +436,24 @@ function Page() {
                   留空則使用會員電話作為行銷網址：/r/{form.marketingSlug.trim() || form.phone || "電話"}
                 </p>
               </div>
+              <div className="pt-2 border-t border-border" />
+              <div className="text-xs font-medium text-muted-foreground">個人資料</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1"><Label>身份證號</Label><Input value={form.id_no} onChange={(e) => setForm({ ...form, id_no: e.target.value })} placeholder="A123456789" className="font-mono" /></div>
+                <div className="space-y-1">
+                  <Label>性別</Label>
+                  <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={form.sex} onChange={(e) => setForm({ ...form, sex: e.target.value })}>
+                    <option value="">—</option>
+                    <option value="M">男 (M)</option>
+                    <option value="F">女 (F)</option>
+                  </select>
+                </div>
+                <div className="space-y-1"><Label>加入日期</Label><Input type="date" value={form.apply_date} onChange={(e) => setForm({ ...form, apply_date: e.target.value })} /></div>
+                <div className="space-y-1"><Label>生日</Label><Input type="date" value={form.birthday} onChange={(e) => setForm({ ...form, birthday: e.target.value })} /></div>
+              </div>
+              <div className="space-y-1"><Label>通訊地址</Label><Input value={form.addr_mail} onChange={(e) => setForm({ ...form, addr_mail: e.target.value })} placeholder="郵遞區號 + 完整地址" /></div>
+              <div className="space-y-1"><Label>戶籍地址</Label><Input value={form.addr_home} onChange={(e) => setForm({ ...form, addr_home: e.target.value })} placeholder="郵遞區號 + 完整地址" /></div>
+              <div className="pt-2 border-t border-border" />
               <div className="space-y-1"><Label>重設密碼 (留空則不變更)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" /></div>
             </div>
           )}
