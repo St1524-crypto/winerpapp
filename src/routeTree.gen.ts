@@ -54,6 +54,7 @@ import { Route as ShopAccountIndexRouteImport } from './routes/shop.account.inde
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
+import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wallet'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
 import { Route as ShopAccountOrdersRouteImport } from './routes/shop.account.orders'
@@ -307,6 +308,11 @@ const ShopCategorySlugRoute = ShopCategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => ShopRoute,
 } as any)
+const ShopAccountWalletRoute = ShopAccountWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
 const ShopAccountProfileRoute = ShopAccountProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -486,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/finance/': typeof AuthenticatedFinanceIndexRoute
@@ -550,6 +557,7 @@ export interface FileRoutesByTo {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/finance': typeof AuthenticatedFinanceIndexRoute
@@ -619,6 +627,7 @@ export interface FileRoutesById {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
@@ -688,6 +697,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/finance/'
@@ -752,6 +762,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/finance'
@@ -820,6 +831,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/_authenticated/finance/'
@@ -1164,6 +1176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopCategorySlugRouteImport
       parentRoute: typeof ShopRoute
     }
+    '/shop/account/wallet': {
+      id: '/shop/account/wallet'
+      path: '/wallet'
+      fullPath: '/shop/account/wallet'
+      preLoaderRoute: typeof ShopAccountWalletRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
     '/shop/account/profile': {
       id: '/shop/account/profile'
       path: '/profile'
@@ -1475,6 +1494,7 @@ interface ShopAccountRouteChildren {
   ShopAccountOrdersRoute: typeof ShopAccountOrdersRouteWithChildren
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
+  ShopAccountWalletRoute: typeof ShopAccountWalletRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
 }
 
@@ -1483,6 +1503,7 @@ const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountOrdersRoute: ShopAccountOrdersRouteWithChildren,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
+  ShopAccountWalletRoute: ShopAccountWalletRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
 }
 
