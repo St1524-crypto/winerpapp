@@ -2332,6 +2332,7 @@ export type Database = {
           safe_stock: number
           short_description: string | null
           sku: string
+          specs: Json
           status: string
           stock: number
           updated_at: string
@@ -2354,6 +2355,7 @@ export type Database = {
           safe_stock?: number
           short_description?: string | null
           sku: string
+          specs?: Json
           status?: string
           stock?: number
           updated_at?: string
@@ -2376,6 +2378,7 @@ export type Database = {
           safe_stock?: number
           short_description?: string | null
           sku?: string
+          specs?: Json
           status?: string
           stock?: number
           updated_at?: string
