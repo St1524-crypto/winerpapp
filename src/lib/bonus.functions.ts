@@ -407,21 +407,18 @@ export const runMonthlySettlement = createServerFn({ method: "POST" })
     let totalPts = 0;
 
     for (const vip of activeVips) {
-      const { data: tx } = await supabaseAdmin
-        .from("point_transactions")
-        .select("amount")
-        .eq("user_id", (vip as any).id)
-        .eq("point_type", "reward")
-        .gte("created_at", periodStart.toISOString())
-        .lte("created_at", periodEnd.toISOString());
-      const monthlyPts = (tx ?? []).reduce((sum, t: any) => sum + Math.max(0, Number(t.amount ?? 0)), 0);
+      // 改由月度責任額累計表取數（復購訂單實付金額產生的獎勵點）
+      const { data: mrp } = await supabaseAdmin
+        .from("monthly_responsibility_points")
+        .select("points")
+        .eq("member_id", (vip as any).id).eq("ym", ym).maybeSingle();
+      const monthlyPts = Number((mrp as any)?.points ?? 0);
 
       const rule = defaultRank;
       const required = rule?.required_points ?? s.vip_required_points;
       const passed = monthlyPts >= required;
 
-      // 月獎金 record（達標才入點，未達標 cancelled 留痕）
-      const bonusPoints = passed ? Math.floor(monthlyPts * 0) : 0; // 月獎金金額目前無公式 → 留 0 由規則決定
+      const bonusPoints = passed ? Math.floor(monthlyPts * 0) : 0;
       await supabaseAdmin.from("bonus_records").insert({
         member_id: (vip as any).id,
         bonus_type: "monthly_vip",
