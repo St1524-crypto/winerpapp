@@ -92,8 +92,15 @@ function Page() {
     return (m.name ?? "").toLowerCase().includes(q)
       || (m.email ?? "").toLowerCase().includes(q)
       || (m.phone ?? "").toLowerCase().includes(q)
-      || (m.member_no ?? "").toLowerCase().includes(q);
+      || (m.member_no ?? "").toLowerCase().includes(q)
+      || (m.id_no ?? "").toLowerCase().includes(q);
   }), [list, search]);
+
+  const fieldStats = useMemo(() => {
+    const t = list.length;
+    const c = (k: keyof Profile) => list.filter((m) => !!m[k]).length;
+    return { total: t, id_no: c("id_no"), apply_date: c("apply_date"), sex: c("sex"), addr_mail: c("addr_mail"), addr_home: c("addr_home"), birthday: c("birthday") };
+  }, [list]);
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
