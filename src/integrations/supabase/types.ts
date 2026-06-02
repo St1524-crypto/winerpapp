@@ -1320,6 +1320,7 @@ export type Database = {
           tier_type: string
           updated_at: string
           upgrade_bonus_cap: number
+          upgrade_referral_rate: number
         }
         Insert: {
           code: string
@@ -1349,6 +1350,7 @@ export type Database = {
           tier_type?: string
           updated_at?: string
           upgrade_bonus_cap?: number
+          upgrade_referral_rate?: number
         }
         Update: {
           code?: string
@@ -1378,6 +1380,7 @@ export type Database = {
           tier_type?: string
           updated_at?: string
           upgrade_bonus_cap?: number
+          upgrade_referral_rate?: number
         }
         Relationships: []
       }
@@ -1903,6 +1906,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      monthly_responsibility_points: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          points: number
+          source_order_ids: string[]
+          updated_at: string
+          ym: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          points?: number
+          source_order_ids?: string[]
+          updated_at?: string
+          ym: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          points?: number
+          source_order_ids?: string[]
+          updated_at?: string
+          ym?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_responsibility_points_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       moq_rules: {
         Row: {
@@ -2760,6 +2801,7 @@ export type Database = {
           notes: string | null
           order_no: string
           order_status: string
+          order_type: string
           payment_status: string
           receiver_name: string
           receiver_phone: string
@@ -2788,6 +2830,7 @@ export type Database = {
           notes?: string | null
           order_no: string
           order_status?: string
+          order_type?: string
           payment_status?: string
           receiver_name: string
           receiver_phone: string
@@ -2816,6 +2859,7 @@ export type Database = {
           notes?: string | null
           order_no?: string
           order_status?: string
+          order_type?: string
           payment_status?: string
           receiver_name?: string
           receiver_phone?: string
@@ -3495,6 +3539,7 @@ export type Database = {
           notes: string | null
           order_no: string
           order_status: string
+          order_type: string
           payment_status: string
           receiver_name: string
           receiver_phone: string
