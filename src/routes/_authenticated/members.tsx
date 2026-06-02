@@ -151,6 +151,7 @@ function Page() {
           addr_mail: form.addr_mail,
           addr_home: form.addr_home,
           birthday: form.birthday,
+          vip_expires_at: form.vip_expires_at,
         },
       });
       toast.success("資料已更新");
