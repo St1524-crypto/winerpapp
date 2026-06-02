@@ -55,3 +55,13 @@ export const PRODUCT_STATUS = [
   { value: "draft", label: "草稿" },
   { value: "inactive", label: "已下架" },
 ] as const;
+
+export interface WholesaleTier {
+  id?: string;
+  product_id?: string;
+  min_qty: number;
+  max_qty: number | null;
+  unit_price: number;
+  unit_reward_points: number;
+  sort_order: number;
+}
