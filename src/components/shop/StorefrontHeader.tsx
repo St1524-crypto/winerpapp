@@ -55,6 +55,7 @@ export function StorefrontHeader() {
         <nav className="hidden lg:flex items-center gap-1 text-sm">
           <Link to="/shop" className="px-3 py-1.5 rounded-md hover:bg-accent">首頁</Link>
           <Link to="/shop/products" className="px-3 py-1.5 rounded-md hover:bg-accent">全部商品</Link>
+          <Link to="/shop/wholesale" className="px-3 py-1.5 rounded-md hover:bg-accent text-primary font-medium">批發專區</Link>
         </nav>
 
         <div className="flex items-center gap-1 ml-auto">
