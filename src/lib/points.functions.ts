@@ -122,8 +122,19 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
       await applyDelta(userId, "reward", -data.reward_redeem, "order_redeem", { reference_id: data.orderId });
     if (data.discount_redeem > 0)
       await applyDelta(userId, "discount", -data.discount_redeem, "order_redeem", { reference_id: data.orderId });
-    if (data.reward_earn > 0)
-      await applyDelta(userId, "reward", data.reward_earn, "order_earn", { reference_id: data.orderId });
+    if (data.reward_earn > 0) {
+      // 年費（VIP）到期會員不可領取獎勵點
+      const { data: prof } = await supabaseAdmin
+        .from("profiles")
+        .select("vip_expires_at")
+        .eq("id", userId)
+        .maybeSingle();
+      const exp = (prof as any)?.vip_expires_at as string | null;
+      const vipExpired = !!exp && new Date(exp) <= new Date();
+      if (!vipExpired) {
+        await applyDelta(userId, "reward", data.reward_earn, "order_earn", { reference_id: data.orderId });
+      }
+    }
     return { ok: true };
   });
 
