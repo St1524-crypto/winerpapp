@@ -279,8 +279,59 @@ function CheckoutPage() {
             <Separator />
             <div className="flex justify-between"><span className="text-muted-foreground">小計</span><span className="tabular-nums">NT$ {subtotal.toLocaleString()}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">運費</span><span className="tabular-nums">{shipping === 0 ? "免運" : `NT$ ${shipping}`}</span></div>
+
+            {/* 折扣點折抵（限 VIP 復購） */}
+            <div className="space-y-1 pt-1">
+              <div className="flex items-center justify-between text-xs">
+                <Label className="flex items-center gap-1 text-muted-foreground font-normal">
+                  <Percent className="h-3 w-3" />折扣點折抵
+                  {!is_vip && <span className="text-[10px] text-muted-foreground">（限 VIP 復購）</span>}
+                </Label>
+                <span className="text-muted-foreground">可用 {wallet.discount_points.toLocaleString()}</span>
+              </div>
+              <div className="flex gap-2">
+                <Input type="number" min={0} max={maxDiscount} value={useDiscount}
+                  disabled={!is_vip || maxDiscount === 0}
+                  onChange={(e) => setUseDiscount(Math.max(0, Math.min(maxDiscount, +e.target.value || 0)))}
+                  className="h-8 text-xs" />
+                <Button type="button" size="sm" variant="outline" className="h-8 text-xs px-2"
+                  disabled={!is_vip || maxDiscount === 0}
+                  onClick={() => setUseDiscount(maxDiscount)}>全部</Button>
+              </div>
+              {discountApplied > 0 && (
+                <div className="flex justify-between text-xs text-success">
+                  <span>已折抵</span><span className="tabular-nums">- NT$ {discountApplied.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
+            {/* 餘額（購物點）折抵 */}
+            <div className="space-y-1 pt-1">
+              <div className="flex items-center justify-between text-xs">
+                <Label className="flex items-center gap-1 text-muted-foreground font-normal">
+                  <Wallet className="h-3 w-3" />餘額支付
+                </Label>
+                <span className="text-muted-foreground">可用 {wallet.shopping_points.toLocaleString()}</span>
+              </div>
+              <div className="flex gap-2">
+                <Input type="number" min={0} max={maxShoppingRedeem} value={useShopping}
+                  disabled={maxShoppingRedeem === 0}
+                  onChange={(e) => setUseShopping(Math.max(0, Math.min(maxShoppingRedeem, +e.target.value || 0)))}
+                  className="h-8 text-xs" />
+                <Button type="button" size="sm" variant="outline" className="h-8 text-xs px-2"
+                  disabled={maxShoppingRedeem === 0}
+                  onClick={() => setUseShopping(maxShoppingRedeem)}>全部</Button>
+              </div>
+              {shoppingApplied > 0 && (
+                <div className="flex justify-between text-xs text-success">
+                  <span>已使用餘額</span><span className="tabular-nums">- NT$ {shoppingApplied.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
             <Separator />
-            <div className="flex justify-between font-semibold text-base"><span>總計</span><span className="tabular-nums text-primary">NT$ {total.toLocaleString()}</span></div>
+            <div className="flex justify-between font-semibold text-base"><span>應付總計</span><span className="tabular-nums text-primary">NT$ {total.toLocaleString()}</span></div>
+
             <Button className="w-full mt-2" disabled={!canPlace} onClick={placeOrder}>
               {placing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}送出訂單
             </Button>
