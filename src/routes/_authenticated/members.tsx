@@ -19,7 +19,7 @@ import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
-interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; }
+interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; id_no?: string | null; apply_date?: string | null; sex?: string | null; addr_mail?: string | null; addr_home?: string | null; birthday?: string | null; }
 interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; current_tier?: string | null; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
@@ -46,7 +46,7 @@ function Page() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "" });
 
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
@@ -58,7 +58,7 @@ function Page() {
   async function load() {
     setLoading(true);
     const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }, { data: tierData }] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("dealer_tier_status").select("user_id, current_tier"),
     ]);
@@ -92,17 +92,30 @@ function Page() {
     return (m.name ?? "").toLowerCase().includes(q)
       || (m.email ?? "").toLowerCase().includes(q)
       || (m.phone ?? "").toLowerCase().includes(q)
-      || (m.member_no ?? "").toLowerCase().includes(q);
+      || (m.member_no ?? "").toLowerCase().includes(q)
+      || (m.id_no ?? "").toLowerCase().includes(q);
   }), [list, search]);
+
+  const fieldStats = useMemo(() => {
+    const t = list.length;
+    const c = (k: keyof Profile) => list.filter((m) => !!m[k]).length;
+    return { total: t, id_no: c("id_no"), apply_date: c("apply_date"), sex: c("sex"), addr_mail: c("addr_mail"), addr_home: c("addr_home"), birthday: c("birthday") };
+  }, [list]);
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "" });
     setCreateOpen(true);
   }
+  function fmtDate(d?: string | null) { if (!d) return ""; return d.length >= 10 ? d.slice(0, 10) : d; }
   function openEditProfile(m: Member) {
     setEditProfile(m);
-    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "", referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? "" });
+    setForm({
+      name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "",
+      referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? "",
+      id_no: m.id_no ?? "", apply_date: fmtDate(m.apply_date), sex: m.sex ?? "",
+      addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday),
+    });
   }
 
   async function submitCreate() {
@@ -132,6 +145,12 @@ function Page() {
           referrerMemberNo: trimmedRef || undefined,
           clearReferrer: !trimmedRef && !!originalRef,
           marketingSlug: form.marketingSlug.trim() || "",
+          id_no: form.id_no,
+          apply_date: form.apply_date,
+          sex: form.sex,
+          addr_mail: form.addr_mail,
+          addr_home: form.addr_home,
+          birthday: form.birthday,
         },
       });
       toast.success("資料已更新");
@@ -240,7 +259,26 @@ function Page() {
         <CardHeader className="pb-3">
           <div className="relative max-w-md">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="搜尋姓名 / Email / 電話 / 會員編號..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="搜尋姓名 / Email / 電話 / 會員編號 / 身份證號..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            {[
+              { k: "id_no", label: "身份證號" },
+              { k: "apply_date", label: "加入日期" },
+              { k: "sex", label: "性別" },
+              { k: "addr_mail", label: "通訊地址" },
+              { k: "addr_home", label: "戶籍地址" },
+              { k: "birthday", label: "生日" },
+            ].map((f) => {
+              const n = (fieldStats as any)[f.k] as number;
+              const pct = fieldStats.total ? Math.round((n / fieldStats.total) * 100) : 0;
+              return (
+                <Badge key={f.k} variant="outline" className="font-normal">
+                  {f.label}：<span className="font-mono ml-1">{n.toLocaleString()}</span>
+                  <span className="text-muted-foreground ml-1">/ {fieldStats.total.toLocaleString()}（{pct}%）</span>
+                </Badge>
+              );
+            })}
           </div>
         </CardHeader>
         <CardContent>
@@ -372,7 +410,7 @@ function Page() {
 
       {/* Edit profile */}
       <Dialog open={!!editProfile} onOpenChange={(v) => !v && setEditProfile(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>編輯會員資料</DialogTitle></DialogHeader>
           {editProfile && (
             <div className="space-y-3 py-2">
@@ -398,6 +436,24 @@ function Page() {
                   留空則使用會員電話作為行銷網址：/r/{form.marketingSlug.trim() || form.phone || "電話"}
                 </p>
               </div>
+              <div className="pt-2 border-t border-border" />
+              <div className="text-xs font-medium text-muted-foreground">個人資料</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1"><Label>身份證號</Label><Input value={form.id_no} onChange={(e) => setForm({ ...form, id_no: e.target.value })} placeholder="A123456789" className="font-mono" /></div>
+                <div className="space-y-1">
+                  <Label>性別</Label>
+                  <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={form.sex} onChange={(e) => setForm({ ...form, sex: e.target.value })}>
+                    <option value="">—</option>
+                    <option value="M">男 (M)</option>
+                    <option value="F">女 (F)</option>
+                  </select>
+                </div>
+                <div className="space-y-1"><Label>加入日期</Label><Input type="date" value={form.apply_date} onChange={(e) => setForm({ ...form, apply_date: e.target.value })} /></div>
+                <div className="space-y-1"><Label>生日</Label><Input type="date" value={form.birthday} onChange={(e) => setForm({ ...form, birthday: e.target.value })} /></div>
+              </div>
+              <div className="space-y-1"><Label>通訊地址</Label><Input value={form.addr_mail} onChange={(e) => setForm({ ...form, addr_mail: e.target.value })} placeholder="郵遞區號 + 完整地址" /></div>
+              <div className="space-y-1"><Label>戶籍地址</Label><Input value={form.addr_home} onChange={(e) => setForm({ ...form, addr_home: e.target.value })} placeholder="郵遞區號 + 完整地址" /></div>
+              <div className="pt-2 border-t border-border" />
               <div className="space-y-1"><Label>重設密碼 (留空則不變更)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" /></div>
             </div>
           )}

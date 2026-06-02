@@ -82,6 +82,12 @@ const UpdateSchema = z.object({
     .regex(/^[A-Za-z0-9_-]{3,32}$/u, "行銷代稱僅可含英數字、底線或連字號，長度 3-32")
     .optional()
     .or(z.literal("")),
+  id_no: z.string().trim().max(32).optional().or(z.literal("")),
+  apply_date: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
+  sex: z.string().trim().max(8).optional().or(z.literal("")),
+  addr_mail: z.string().trim().max(255).optional().or(z.literal("")),
+  addr_home: z.string().trim().max(255).optional().or(z.literal("")),
+  birthday: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
 });
 
 export const adminUpdateMember = createServerFn({ method: "POST" })
@@ -99,13 +105,19 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     const prevSlug = (prior as any)?.marketing_slug ?? null;
 
     const phone = data.phone !== undefined ? normalizePhone(data.phone) : undefined;
-    const profileUpdate: { name?: string; email?: string | null; phone?: string | null; referred_by?: string | null; marketing_slug?: string | null } = {};
+    const profileUpdate: Record<string, any> = {};
     if (data.name !== undefined) profileUpdate.name = data.name;
     if (data.email !== undefined) profileUpdate.email = data.email || null;
     if (phone !== undefined) profileUpdate.phone = phone;
     if (data.marketingSlug !== undefined) {
       profileUpdate.marketing_slug = data.marketingSlug ? data.marketingSlug.trim() : null;
     }
+    if (data.id_no !== undefined) profileUpdate.id_no = data.id_no || null;
+    if (data.apply_date !== undefined) profileUpdate.apply_date = data.apply_date || null;
+    if (data.sex !== undefined) profileUpdate.sex = data.sex || null;
+    if (data.addr_mail !== undefined) profileUpdate.addr_mail = data.addr_mail || null;
+    if (data.addr_home !== undefined) profileUpdate.addr_home = data.addr_home || null;
+    if (data.birthday !== undefined) profileUpdate.birthday = data.birthday || null;
 
     if (data.clearReferrer) {
       profileUpdate.referred_by = null;
@@ -125,7 +137,7 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     if (Object.keys(profileUpdate).length) {
       const { error } = await supabaseAdmin
         .from("profiles")
-        .update(profileUpdate)
+        .update(profileUpdate as any)
         .eq("id", data.userId);
 
       if (error) throw new Error(error.message);
