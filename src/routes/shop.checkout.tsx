@@ -127,6 +127,7 @@ function CheckoutPage() {
           notes: form.notes || null,
           subtotal,
           shipping_fee: shipping,
+          discount_amount: discountApplied,
           total_amount: total,
           referrer_id: safeReferrerId,
         })
@@ -135,6 +136,7 @@ function CheckoutPage() {
       if (oErr) throw oErr;
 
       const prodCompanyMap = new Map(prodRows?.map((p: any) => [p.id, p.company_id]) ?? []);
+
       const rows = items.map((it) => {
         const unit = getEffectivePrice(it.product as any, isDealer);
         return {
