@@ -153,7 +153,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const count = items.reduce((s, i) => s + i.quantity, 0);
-  const subtotal = items.reduce((s, i) => s + getEffectivePrice(i.product as any, isDealer) * i.quantity, 0);
+  const subtotal = items.reduce((s, i) => {
+    const base = getEffectivePrice(i.product as any, isDealer);
+    const tiers = tiersMap[i.product_id] ?? [];
+    const { unitPrice } = applyWholesalePricing(base, 0, tiers, i.quantity);
+    return s + unitPrice * i.quantity;
+  }, 0);
 
   return (
     <CartContext.Provider value={{ cartId, items, loading, count, subtotal, open, setOpen, addItem, updateQty, removeItem, clear, refresh }}>
