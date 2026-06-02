@@ -254,7 +254,13 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                       value={s.label}
                       onChange={(e) => {
                         const next = [...form.specs];
-                        next[i] = { ...next[i], label: e.target.value };
+                        const old = next[i];
+                        const label = e.target.value;
+                        const skuSuffix =
+                          old.sku_suffix === "" || old.sku_suffix === old.label
+                            ? label
+                            : old.sku_suffix;
+                        next[i] = { ...old, label, sku_suffix: skuSuffix };
                         setForm({ ...form, specs: next });
                       }}
                     />
