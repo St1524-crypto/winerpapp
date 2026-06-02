@@ -97,12 +97,18 @@ function Page() {
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "" });
     setCreateOpen(true);
   }
+  function fmtDate(d?: string | null) { if (!d) return ""; return d.length >= 10 ? d.slice(0, 10) : d; }
   function openEditProfile(m: Member) {
     setEditProfile(m);
-    setForm({ name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "", referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? "" });
+    setForm({
+      name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "",
+      referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? "",
+      id_no: m.id_no ?? "", apply_date: fmtDate(m.apply_date), sex: m.sex ?? "",
+      addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday),
+    });
   }
 
   async function submitCreate() {
