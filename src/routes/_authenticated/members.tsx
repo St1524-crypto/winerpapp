@@ -295,6 +295,13 @@ function Page() {
                     </div>
                   </TableCell>
                   <TableCell>
+                    {m.current_tier ? (
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 font-mono">{m.current_tier}</Badge>
+                    ) : m.legacy_rank ? (
+                      <span className="text-xs text-muted-foreground">{m.legacy_rank}</span>
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
                     {m.is_dealer
                       ? <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30" variant="outline">經銷商</Badge>
                       : <span className="text-xs text-muted-foreground">—</span>}
