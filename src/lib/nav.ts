@@ -34,6 +34,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "會員管理", url: "/members", icon: UserCircle, roles: ["super_admin"] },
   { title: "使用者角色管理", url: "/user-roles", icon: UserCog, roles: ["super_admin"] },
   { title: "點數管理", url: "/points-admin", icon: Coins, roles: ["super_admin", "finance", "sales"] },
+  { title: "現金錢包審核", url: "/cash-admin", icon: Wallet, roles: ["super_admin", "finance", "admin"] },
   { title: "VIP 方案管理", url: "/vip-plans", icon: Crown, roles: ["super_admin", "sales"] },
   { title: "經銷商階級管理", url: "/dealer-tiers", icon: TrendingUp, roles: ["super_admin", "admin", "finance"] },
   { title: "經銷商制度設定", url: "/dealer-program", icon: Settings2, roles: ["super_admin", "admin", "finance"] },

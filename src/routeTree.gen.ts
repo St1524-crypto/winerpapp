@@ -49,11 +49,13 @@ import { Route as AuthenticatedDealerProgramRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
+import { Route as AuthenticatedCashAdminRouteImport } from './routes/_authenticated/cash-admin'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ShopAccountIndexRouteImport } from './routes/shop.account.index'
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
+import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wallet'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
 import { Route as ShopAccountOrdersRouteImport } from './routes/shop.account.orders'
@@ -281,6 +283,11 @@ const AuthenticatedCategoriesRoute = AuthenticatedCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCashAdminRoute = AuthenticatedCashAdminRouteImport.update({
+  id: '/cash-admin',
+  path: '/cash-admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -306,6 +313,11 @@ const ShopCategorySlugRoute = ShopCategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
   getParentRoute: () => ShopRoute,
+} as any)
+const ShopAccountWalletRoute = ShopAccountWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => ShopAccountRoute,
 } as any)
 const ShopAccountProfileRoute = ShopAccountProfileRouteImport.update({
   id: '/profile',
@@ -435,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -486,6 +499,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/finance/': typeof AuthenticatedFinanceIndexRoute
@@ -501,6 +515,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/two-factor': typeof TwoFactorRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -550,6 +565,7 @@ export interface FileRoutesByTo {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/finance': typeof AuthenticatedFinanceIndexRoute
@@ -568,6 +584,7 @@ export interface FileRoutesById {
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/cash-admin': typeof AuthenticatedCashAdminRoute
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -619,6 +636,7 @@ export interface FileRoutesById {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
@@ -637,6 +655,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/two-factor'
     | '/admin'
+    | '/cash-admin'
     | '/categories'
     | '/customers'
     | '/dashboard'
@@ -688,6 +707,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/finance/'
@@ -703,6 +723,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/two-factor'
     | '/admin'
+    | '/cash-admin'
     | '/categories'
     | '/customers'
     | '/dashboard'
@@ -752,6 +773,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/finance'
@@ -769,6 +791,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/two-factor'
     | '/_authenticated/admin'
+    | '/_authenticated/cash-admin'
     | '/_authenticated/categories'
     | '/_authenticated/customers'
     | '/_authenticated/dashboard'
@@ -820,6 +843,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/_authenticated/finance/'
@@ -1129,6 +1153,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCategoriesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/cash-admin': {
+      id: '/_authenticated/cash-admin'
+      path: '/cash-admin'
+      fullPath: '/cash-admin'
+      preLoaderRoute: typeof AuthenticatedCashAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -1163,6 +1194,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/category/$slug'
       preLoaderRoute: typeof ShopCategorySlugRouteImport
       parentRoute: typeof ShopRoute
+    }
+    '/shop/account/wallet': {
+      id: '/shop/account/wallet'
+      path: '/wallet'
+      fullPath: '/shop/account/wallet'
+      preLoaderRoute: typeof ShopAccountWalletRouteImport
+      parentRoute: typeof ShopAccountRoute
     }
     '/shop/account/profile': {
       id: '/shop/account/profile'
@@ -1398,6 +1436,7 @@ const AuthenticatedB2bAccountsRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedCashAdminRoute: typeof AuthenticatedCashAdminRoute
   AuthenticatedCategoriesRoute: typeof AuthenticatedCategoriesRoute
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -1427,6 +1466,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedCashAdminRoute: AuthenticatedCashAdminRoute,
   AuthenticatedCategoriesRoute: AuthenticatedCategoriesRoute,
   AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -1475,6 +1515,7 @@ interface ShopAccountRouteChildren {
   ShopAccountOrdersRoute: typeof ShopAccountOrdersRouteWithChildren
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
+  ShopAccountWalletRoute: typeof ShopAccountWalletRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
 }
 
@@ -1483,6 +1524,7 @@ const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountOrdersRoute: ShopAccountOrdersRouteWithChildren,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
+  ShopAccountWalletRoute: ShopAccountWalletRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
 }
 
