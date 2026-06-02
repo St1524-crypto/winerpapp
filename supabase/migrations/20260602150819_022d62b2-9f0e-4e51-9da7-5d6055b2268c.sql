@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.classify_sales_order() FROM public, anon, authenticated;

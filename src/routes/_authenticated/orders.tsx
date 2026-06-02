@@ -14,8 +14,9 @@ import { useCurrentCompany } from "@/hooks/use-current-company";
 import { useAuth } from "@/hooks/use-auth";
 import { deleteSalesOrder } from "@/lib/orders-admin.functions";
 import { processOrderCommission } from "@/lib/referral.functions";
+import { processOrderPaymentBonus } from "@/lib/bonus.functions";
 
-/** 訂單轉為 paid 時自動結算 VIP 推薦佣金（失敗不擋主流程） */
+/** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/升級獎金（失敗不擋主流程） */
 async function autoSettleCommission(orderId: string, nextStatus: string) {
   if (nextStatus !== "paid") return;
   try {
@@ -25,15 +26,26 @@ async function autoSettleCommission(orderId: string, nextStatus: string) {
     }
   } catch (e: any) {
     const msg = String(e?.message ?? "");
-    // 無推薦人 / 已結算 / 推薦人非 VIP → 不顯示錯誤（屬於正常情境）
     if (
-      msg.includes("無推薦人") ||
-      msg.includes("已結算") ||
-      msg.includes("非 VIP") ||
-      msg.includes("VIP 已過期") ||
+      msg.includes("無推薦人") || msg.includes("已結算") ||
+      msg.includes("非 VIP") || msg.includes("VIP 已過期") ||
       msg.includes("尚未付款")
-    ) return;
-    toast.warning("推薦佣金自動結算失敗", { description: msg });
+    ) {
+      // 正常情境，忽略
+    } else {
+      toast.warning("推薦佣金自動結算失敗", { description: msg });
+    }
+  }
+  // 觸發復購 / 升級訂單獎金 + 月度責任額累計
+  try {
+    const r: any = await processOrderPaymentBonus({ data: { orderId } });
+    if (r?.type === "repurchase" && r?.inserted > 0) {
+      toast.success(`復購獎金已產生 ${r.inserted} 筆`);
+    } else if (r?.type === "upgrade" && r?.inserted > 0) {
+      toast.success(`升級訂單獎金已產生 ${r.inserted} 筆 (差額制)`);
+    }
+  } catch (e: any) {
+    toast.warning("獎金產生失敗", { description: String(e?.message ?? "") });
   }
 }
 import { supabase } from "@/integrations/supabase/client";

@@ -106,31 +106,38 @@ export const deleteRankRebate = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/* ───────────── 復購獎勵：訂單付款後產生 pending bonus_records ───────────── */
-/** 內部函式：被付款 webhook / admin 手動 / 復購觸發都可呼叫 */
-async function generateRepurchaseBonus(orderId: string) {
-  const { data: order } = await supabaseAdmin
-    .from("sales_orders")
-    .select("id, order_no, user_id, subtotal, payment_status, created_at")
-    .eq("id", orderId).maybeSingle();
-  if (!order) throw new Error("訂單不存在");
-  if ((order as any).payment_status !== "paid") throw new Error("訂單未付款");
-  const buyerId = (order as any).user_id as string | null;
-  if (!buyerId) throw new Error("訂單無買家");
+/* ───────────── 訂單付款 → 自動產生獎金 + 累計責任額 ─────────────
+ * 依 sales_orders.order_type 判斷：
+ *   - repurchase：上線 1/2 代復購獎金 + 買家月度責任額累計
+ *   - upgrade   ：依 dealer_tiers.upgrade_referral_rate 差額制往上各階分潤
+ *   - normal    ：不處理
+ */
+async function addMonthlyResponsibility(memberId: string, points: number, orderId: string) {
+  if (points <= 0) return;
+  const now = new Date();
+  const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const { data: existing } = await supabaseAdmin
+    .from("monthly_responsibility_points")
+    .select("id, points, source_order_ids")
+    .eq("member_id", memberId).eq("ym", ym).maybeSingle();
+  if (existing) {
+    const ids = ((existing as any).source_order_ids ?? []) as string[];
+    if (ids.includes(orderId)) return;
+    await supabaseAdmin.from("monthly_responsibility_points")
+      .update({
+        points: Number((existing as any).points ?? 0) + points,
+        source_order_ids: [...ids, orderId],
+      })
+      .eq("id", (existing as any).id);
+  } else {
+    await supabaseAdmin.from("monthly_responsibility_points").insert({
+      member_id: memberId, ym, points, source_order_ids: [orderId],
+    });
+  }
+}
 
-  // 復購判定：買家是否已有更早一筆 paid 訂單
-  const { data: prior } = await supabaseAdmin
-    .from("sales_orders").select("id")
-    .eq("user_id", buyerId).eq("payment_status", "paid")
-    .lt("created_at", (order as any).created_at)
-    .limit(1).maybeSingle();
-  const isRepurchase = !!prior;
-  if (!isRepurchase) return { ok: true, skipped: "首購非復購" };
-
-  const base = Number((order as any).subtotal ?? 0);
-  if (base <= 0) return { ok: true, skipped: "金額為 0" };
-
-  // 取上線 1, 2 代
+async function processRepurchase(orderId: string, buyerId: string, base: number) {
+  if (base <= 0) return { inserted: 0, monthly: 0 };
   const { data: rates } = await supabaseAdmin
     .from("repurchase_bonus_settings").select("*").eq("enabled", true)
     .order("generation_level");
@@ -147,31 +154,111 @@ async function generateRepurchaseBonus(orderId: string) {
     if (rate > 0) {
       const pts = Math.floor(base * rate / 100);
       if (pts > 0) {
-        const { error } = await supabaseAdmin.from("bonus_records").insert({
-          member_id: upline,
-          source_member_id: buyerId,
-          source_order_id: orderId,
-          bonus_type: "repurchase",
-          generation_level: level,
-          base_amount: base,
-          bonus_rate: rate,
-          bonus_points: pts,
-          status: "pending",
-        });
-        if (!error) inserted++;
+        const { data: dup } = await supabaseAdmin.from("bonus_records")
+          .select("id").eq("source_order_id", orderId)
+          .eq("generation_level", level).eq("bonus_type", "repurchase").maybeSingle();
+        if (!dup) {
+          await supabaseAdmin.from("bonus_records").insert({
+            member_id: upline, source_member_id: buyerId, source_order_id: orderId,
+            bonus_type: "repurchase", generation_level: level,
+            base_amount: base, bonus_rate: rate, bonus_points: pts, status: "pending",
+          });
+          inserted++;
+        }
       }
     }
     currentId = upline;
   }
-  return { ok: true, inserted };
+  await addMonthlyResponsibility(buyerId, base, orderId);
+  return { inserted, monthly: base };
 }
+
+async function processUpgrade(orderId: string, buyerId: string, base: number) {
+  if (base <= 0) return { inserted: 0 };
+  const { data: tiers } = await supabaseAdmin
+    .from("dealer_tiers")
+    .select("code, upgrade_referral_rate")
+    .gt("upgrade_referral_rate", 0);
+  const tierMap = new Map<string, number>(
+    (tiers ?? []).map((t: any) => [t.code, Number(t.upgrade_referral_rate)]),
+  );
+  const { data: statuses } = await supabaseAdmin
+    .from("dealer_tier_status").select("user_id, current_tier");
+  const userTier = new Map<string, string>(
+    (statuses ?? []).map((s: any) => [s.user_id, s.current_tier]),
+  );
+
+  let currentId: string | null = buyerId;
+  let paidRate = 0;
+  let inserted = 0;
+  const guard = new Set<string>([buyerId]);
+  for (let i = 0; i < 20; i++) {
+    if (!currentId) break;
+    const { data: cur } = await supabaseAdmin
+      .from("profiles").select("referred_by").eq("id", currentId).maybeSingle();
+    const upline = (cur as any)?.referred_by as string | null;
+    if (!upline || guard.has(upline)) break;
+    guard.add(upline);
+
+    const tierCode = userTier.get(upline);
+    const tierRate = tierCode ? (tierMap.get(tierCode) ?? 0) : 0;
+    if (tierRate > paidRate) {
+      const diff = tierRate - paidRate;
+      const pts = Math.floor(base * diff / 100);
+      if (pts > 0) {
+        const { data: dup } = await supabaseAdmin.from("bonus_records")
+          .select("id").eq("source_order_id", orderId)
+          .eq("member_id", upline).eq("bonus_type", "referral").maybeSingle();
+        if (!dup) {
+          await supabaseAdmin.from("bonus_records").insert({
+            member_id: upline, source_member_id: buyerId, source_order_id: orderId,
+            bonus_type: "referral", generation_level: i + 1,
+            base_amount: base, bonus_rate: diff, bonus_points: pts, status: "pending",
+          });
+          inserted++;
+        }
+      }
+      paidRate = tierRate;
+    }
+    currentId = upline;
+  }
+  return { inserted };
+}
+
+async function processOrderPaymentBonusInternal(orderId: string) {
+  const { data: order } = await supabaseAdmin
+    .from("sales_orders")
+    .select("id, order_no, user_id, subtotal, payment_status, order_type, created_at")
+    .eq("id", orderId).maybeSingle();
+  if (!order) throw new Error("訂單不存在");
+  if ((order as any).payment_status !== "paid") throw new Error("訂單未付款");
+  const buyerId = (order as any).user_id as string | null;
+  if (!buyerId) return { ok: true, skipped: "無買家" };
+  const base = Number((order as any).subtotal ?? 0);
+  const type = (order as any).order_type as string;
+
+  if (type === "repurchase") {
+    const r = await processRepurchase(orderId, buyerId, base);
+    return { ok: true, type, ...r };
+  }
+  if (type === "upgrade") {
+    const r = await processUpgrade(orderId, buyerId, base);
+    return { ok: true, type, ...r };
+  }
+  return { ok: true, type, skipped: "一般訂單不發獎金" };
+}
+
+export const processOrderPaymentBonus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => processOrderPaymentBonusInternal(data.orderId));
 
 export const generateRepurchaseForOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertRoles(context.userId, ADMIN_ROLES);
-    return generateRepurchaseBonus(data.orderId);
+    return processOrderPaymentBonusInternal(data.orderId);
   });
 
 /* ───────────── 推薦獎勵：產生 pending（不檢查責任額） ───────────── */
@@ -320,21 +407,18 @@ export const runMonthlySettlement = createServerFn({ method: "POST" })
     let totalPts = 0;
 
     for (const vip of activeVips) {
-      const { data: tx } = await supabaseAdmin
-        .from("point_transactions")
-        .select("amount")
-        .eq("user_id", (vip as any).id)
-        .eq("point_type", "reward")
-        .gte("created_at", periodStart.toISOString())
-        .lte("created_at", periodEnd.toISOString());
-      const monthlyPts = (tx ?? []).reduce((sum, t: any) => sum + Math.max(0, Number(t.amount ?? 0)), 0);
+      // 改由月度責任額累計表取數（復購訂單實付金額產生的獎勵點）
+      const { data: mrp } = await supabaseAdmin
+        .from("monthly_responsibility_points")
+        .select("points")
+        .eq("member_id", (vip as any).id).eq("ym", ym).maybeSingle();
+      const monthlyPts = Number((mrp as any)?.points ?? 0);
 
       const rule = defaultRank;
       const required = rule?.required_points ?? s.vip_required_points;
       const passed = monthlyPts >= required;
 
-      // 月獎金 record（達標才入點，未達標 cancelled 留痕）
-      const bonusPoints = passed ? Math.floor(monthlyPts * 0) : 0; // 月獎金金額目前無公式 → 留 0 由規則決定
+      const bonusPoints = passed ? Math.floor(monthlyPts * 0) : 0;
       await supabaseAdmin.from("bonus_records").insert({
         member_id: (vip as any).id,
         bonus_type: "monthly_vip",
@@ -512,15 +596,13 @@ export const getMyBonusRecords = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false }).limit(300);
     const s = await getSettings();
 
-    // 本月個人責任額
+    // 本月個人責任額 (來自復購訂單實付金額)
     const now = new Date();
-    const ms = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-    const me = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59));
-    const { data: tx } = await supabaseAdmin
-      .from("point_transactions").select("amount")
-      .eq("user_id", context.userId).eq("point_type", "reward")
-      .gte("created_at", ms.toISOString()).lte("created_at", me.toISOString());
-    const monthlyPts = (tx ?? []).reduce((s, t: any) => s + Math.max(0, Number(t.amount ?? 0)), 0);
+    const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const { data: mrp } = await supabaseAdmin
+      .from("monthly_responsibility_points").select("points")
+      .eq("member_id", context.userId).eq("ym", ym).maybeSingle();
+    const monthlyPts = Number((mrp as any)?.points ?? 0);
 
     return {
       records: rows ?? [],
