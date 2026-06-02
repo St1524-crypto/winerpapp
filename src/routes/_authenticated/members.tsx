@@ -19,7 +19,7 @@ import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
-interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; id_no?: string | null; apply_date?: string | null; sex?: string | null; addr_mail?: string | null; addr_home?: string | null; birthday?: string | null; }
+interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; id_no?: string | null; apply_date?: string | null; sex?: string | null; addr_mail?: string | null; addr_home?: string | null; birthday?: string | null; vip_expires_at?: string | null; is_vip?: boolean | null; }
 interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; current_tier?: string | null; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
@@ -46,7 +46,7 @@ function Page() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "" });
 
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
@@ -58,7 +58,7 @@ function Page() {
   async function load() {
     setLoading(true);
     const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }, { data: tierData }] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("dealer_tier_status").select("user_id, current_tier"),
     ]);
@@ -104,7 +104,7 @@ function Page() {
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "" });
     setCreateOpen(true);
   }
   function fmtDate(d?: string | null) { if (!d) return ""; return d.length >= 10 ? d.slice(0, 10) : d; }
@@ -114,7 +114,7 @@ function Page() {
       name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "",
       referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? "",
       id_no: m.id_no ?? "", apply_date: fmtDate(m.apply_date), sex: m.sex ?? "",
-      addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday),
+      addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday), vip_expires_at: fmtDate(m.vip_expires_at),
     });
   }
 
@@ -151,6 +151,7 @@ function Page() {
           addr_mail: form.addr_mail,
           addr_home: form.addr_home,
           birthday: form.birthday,
+          vip_expires_at: form.vip_expires_at,
         },
       });
       toast.success("資料已更新");
@@ -293,15 +294,16 @@ function Page() {
                 <TableHead>角色</TableHead>
                 <TableHead>位階</TableHead>
                 <TableHead>經銷商</TableHead>
+                <TableHead>年費到期</TableHead>
                 <TableHead>建立日期</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}><TableCell colSpan={10}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
+                <TableRow key={i}><TableCell colSpan={11}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
               )) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-10">尚無會員</TableCell></TableRow>
+                <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-10">尚無會員</TableCell></TableRow>
               ) : filtered.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell>
@@ -343,6 +345,17 @@ function Page() {
                     {m.is_dealer
                       ? <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30" variant="outline">經銷商</Badge>
                       : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    {m.vip_expires_at ? (() => {
+                      const exp = new Date(m.vip_expires_at);
+                      const expired = exp.getTime() <= Date.now();
+                      return (
+                        <Badge variant="outline" className={expired ? "bg-red-500/15 text-red-500 border-red-500/30" : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"}>
+                          {expired ? "已到期 " : ""}{exp.toLocaleDateString()}
+                        </Badge>
+                      );
+                    })() : <span className="text-xs text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{new Date(m.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
@@ -453,6 +466,11 @@ function Page() {
               </div>
               <div className="space-y-1"><Label>通訊地址</Label><Input value={form.addr_mail} onChange={(e) => setForm({ ...form, addr_mail: e.target.value })} placeholder="郵遞區號 + 完整地址" /></div>
               <div className="space-y-1"><Label>戶籍地址</Label><Input value={form.addr_home} onChange={(e) => setForm({ ...form, addr_home: e.target.value })} placeholder="郵遞區號 + 完整地址" /></div>
+              <div className="space-y-1">
+                <Label>年費到期日（VIP）</Label>
+                <Input type="date" value={form.vip_expires_at} onChange={(e) => setForm({ ...form, vip_expires_at: e.target.value })} />
+                <p className="text-[11px] text-muted-foreground">留空＝非 VIP；到期後將無法領取獎勵點。</p>
+              </div>
               <div className="pt-2 border-t border-border" />
               <div className="space-y-1"><Label>重設密碼 (留空則不變更)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" /></div>
             </div>

@@ -88,6 +88,7 @@ const UpdateSchema = z.object({
   addr_mail: z.string().trim().max(255).optional().or(z.literal("")),
   addr_home: z.string().trim().max(255).optional().or(z.literal("")),
   birthday: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
+  vip_expires_at: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
 });
 
 export const adminUpdateMember = createServerFn({ method: "POST" })
@@ -118,6 +119,10 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     if (data.addr_mail !== undefined) profileUpdate.addr_mail = data.addr_mail || null;
     if (data.addr_home !== undefined) profileUpdate.addr_home = data.addr_home || null;
     if (data.birthday !== undefined) profileUpdate.birthday = data.birthday || null;
+    if (data.vip_expires_at !== undefined) {
+      profileUpdate.vip_expires_at = data.vip_expires_at ? data.vip_expires_at : null;
+      profileUpdate.is_vip = !!(data.vip_expires_at && new Date(data.vip_expires_at) > new Date());
+    }
 
     if (data.clearReferrer) {
       profileUpdate.referred_by = null;
