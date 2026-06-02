@@ -9,8 +9,9 @@ import { ShareProductButtons } from "@/components/shop/ShareProductButtons";
 import { useCart } from "@/hooks/use-cart";
 import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { setReferralCode } from "@/lib/referral-tracking";
-import { ShoppingCart, Heart, Truck, Shield, RotateCcw, Minus, Plus, ChevronRight } from "lucide-react";
-import type { Product, ProductImage } from "@/types/product";
+import { ShoppingCart, Heart, Truck, Shield, RotateCcw, Minus, Plus, ChevronRight, Sparkles } from "lucide-react";
+import type { Product, ProductImage, WholesaleTier } from "@/types/product";
+import { applyWholesalePricing, fetchTiersForProduct } from "@/lib/wholesale-pricing";
 
 export const Route = createFileRoute("/shop/product/$id")({
   component: ProductDetail,

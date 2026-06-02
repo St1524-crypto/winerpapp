@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as UCodeRouteImport } from './routes/u.$code'
+import { Route as ShopWholesaleRouteImport } from './routes/shop.wholesale'
 import { Route as ShopVipRouteImport } from './routes/shop.vip'
 import { Route as ShopProductsRouteImport } from './routes/shop.products'
 import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
@@ -116,6 +117,11 @@ const UCodeRoute = UCodeRouteImport.update({
   id: '/u/$code',
   path: '/u/$code',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ShopWholesaleRoute = ShopWholesaleRouteImport.update({
+  id: '/wholesale',
+  path: '/wholesale',
+  getParentRoute: () => ShopRoute,
 } as any)
 const ShopVipRoute = ShopVipRouteImport.update({
   id: '/vip',
@@ -480,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
+  '/shop/wholesale': typeof ShopWholesaleRoute
   '/u/$code': typeof UCodeRoute
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
@@ -546,6 +553,7 @@ export interface FileRoutesByTo {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
+  '/shop/wholesale': typeof ShopWholesaleRoute
   '/u/$code': typeof UCodeRoute
   '/login': typeof LoginIndexRoute
   '/shop': typeof ShopIndexRoute
@@ -617,6 +625,7 @@ export interface FileRoutesById {
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
+  '/shop/wholesale': typeof ShopWholesaleRoute
   '/u/$code': typeof UCodeRoute
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
@@ -688,6 +697,7 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/vip'
+    | '/shop/wholesale'
     | '/u/$code'
     | '/login/'
     | '/shop/'
@@ -754,6 +764,7 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/vip'
+    | '/shop/wholesale'
     | '/u/$code'
     | '/login'
     | '/shop'
@@ -824,6 +835,7 @@ export interface FileRouteTypes {
     | '/shop/checkout'
     | '/shop/products'
     | '/shop/vip'
+    | '/shop/wholesale'
     | '/u/$code'
     | '/login/'
     | '/shop/'
@@ -928,6 +940,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/u/$code'
       preLoaderRoute: typeof UCodeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/shop/wholesale': {
+      id: '/shop/wholesale'
+      path: '/wholesale'
+      fullPath: '/shop/wholesale'
+      preLoaderRoute: typeof ShopWholesaleRouteImport
+      parentRoute: typeof ShopRoute
     }
     '/shop/vip': {
       id: '/shop/vip'
@@ -1537,6 +1556,7 @@ interface ShopRouteChildren {
   ShopCheckoutRoute: typeof ShopCheckoutRoute
   ShopProductsRoute: typeof ShopProductsRoute
   ShopVipRoute: typeof ShopVipRoute
+  ShopWholesaleRoute: typeof ShopWholesaleRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ShopCategorySlugRoute: typeof ShopCategorySlugRoute
   ShopProductIdRoute: typeof ShopProductIdRoute
@@ -1547,6 +1567,7 @@ const ShopRouteChildren: ShopRouteChildren = {
   ShopCheckoutRoute: ShopCheckoutRoute,
   ShopProductsRoute: ShopProductsRoute,
   ShopVipRoute: ShopVipRoute,
+  ShopWholesaleRoute: ShopWholesaleRoute,
   ShopIndexRoute: ShopIndexRoute,
   ShopCategorySlugRoute: ShopCategorySlugRoute,
   ShopProductIdRoute: ShopProductIdRoute,
