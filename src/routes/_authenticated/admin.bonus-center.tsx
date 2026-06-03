@@ -17,10 +17,12 @@ import { toast } from "sonner";
 import {
   getBonusSettings, updateBonusSettings,
   upsertRepurchaseRate, upsertRankRebate, deleteRankRebate,
+  upsertMonthlyTier, deleteMonthlyTier,
   runDailySettlement, runMonthlySettlement,
   releaseDueRewards, manualReleaseRewards,
   listSettlementBatches, listBonusRecords,
 } from "@/lib/bonus.functions";
+
 
 const ALLOW: AppRole[] = ["super_admin", "admin", "finance"];
 
