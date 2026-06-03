@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentCompany } from "@/hooks/use-current-company";
+import { PRODUCT_PUBLIC_COLUMNS, mergeProductCosts } from "@/hooks/use-products";
 import type { InventoryLog, Product, ProductImage } from "@/types/product";
 
 export const Route = createFileRoute("/_authenticated/products/$productId")({ component: ProductDetail });
