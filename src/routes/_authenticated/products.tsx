@@ -38,7 +38,7 @@ function ProductsPage() {
   const [category, setCategory] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
-  const [sort, setSort] = useState<{ col: keyof Product; dir: "asc" | "desc" }>({ col: "created_at", dir: "desc" });
+  const [sort, setSort] = useState<{ col: keyof Product; dir: "asc" | "desc" }>({ col: "updated_at", dir: "desc" });
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
   const [invProduct, setInvProduct] = useState<Product | null>(null);
@@ -138,7 +138,7 @@ function ProductsPage() {
                   <TableHead className="text-right">成本</TableHead>
                   <TableHead className="text-right cursor-pointer" onClick={() => toggleSort("stock")}>庫存</TableHead>
                   <TableHead>狀態</TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => toggleSort("created_at")}>建立日期</TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => toggleSort("updated_at" as keyof Product)}>最後編輯 <ArrowUpDown className="inline h-3 w-3 ml-1" /></TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -179,7 +179,7 @@ function ProductsPage() {
                           {PRODUCT_STATUS.find((s) => s.value === p.status)?.label ?? p.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{new Date((p as any).updated_at ?? p.created_at).toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button asChild size="icon" variant="ghost" className="h-8 w-8" title="查看">
