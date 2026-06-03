@@ -488,3 +488,51 @@ function RebateRow({ row, isNew, onSaved }: { row: any; isNew?: boolean; onSaved
     </TableRow>
   );
 }
+
+function MonthlyTierRow({ row, isNew, onSaved }: { row: any; isNew?: boolean; onSaved: () => void }) {
+  const [r, setR] = useState({ ...row });
+  const [busy, setBusy] = useState(false);
+  return (
+    <TableRow>
+      <TableCell>
+        <Input type="number" min={0} className="w-32" value={r.threshold_points}
+          onChange={(e) => setR({ ...r, threshold_points: Number(e.target.value) })} />
+      </TableCell>
+      <TableCell>
+        <Input type="number" step="0.1" min={0} max={100} className="w-24" value={r.bonus_rate}
+          onChange={(e) => setR({ ...r, bonus_rate: Number(e.target.value) })} />
+      </TableCell>
+      <TableCell>
+        <Input type="number" className="w-20" value={r.sort_order}
+          onChange={(e) => setR({ ...r, sort_order: Number(e.target.value) })} />
+      </TableCell>
+      <TableCell>
+        <Switch checked={r.enabled} onCheckedChange={(v) => setR({ ...r, enabled: v })} />
+      </TableCell>
+      <TableCell className="flex gap-1">
+        <Button size="sm" disabled={busy || r.threshold_points < 0} onClick={async () => {
+          setBusy(true);
+          try {
+            const payload: any = {
+              threshold_points: r.threshold_points,
+              bonus_rate: r.bonus_rate,
+              sort_order: r.sort_order,
+              enabled: r.enabled,
+            };
+            if (!isNew && r.id) payload.id = r.id;
+            await upsertMonthlyTier({ data: payload });
+            toast.success("已儲存"); onSaved();
+          } catch (e: any) { toast.error(e.message); }
+          finally { setBusy(false); }
+        }}>{isNew ? "新增" : "儲存"}</Button>
+        {!isNew && (
+          <Button size="sm" variant="ghost" disabled={busy} onClick={async () => {
+            if (!confirm("確定刪除？")) return;
+            await deleteMonthlyTier({ data: { id: r.id } });
+            onSaved();
+          }}>刪除</Button>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
