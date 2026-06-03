@@ -2002,6 +2002,36 @@ export type Database = {
           },
         ]
       }
+      monthly_tier_bonus_settings: {
+        Row: {
+          bonus_rate: number
+          created_at: string
+          enabled: boolean
+          id: string
+          sort_order: number
+          threshold_points: number
+          updated_at: string
+        }
+        Insert: {
+          bonus_rate: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          sort_order?: number
+          threshold_points: number
+          updated_at?: string
+        }
+        Update: {
+          bonus_rate?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          sort_order?: number
+          threshold_points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       moq_rules: {
         Row: {
           carton_quantity: number

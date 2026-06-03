@@ -17,10 +17,12 @@ import { toast } from "sonner";
 import {
   getBonusSettings, updateBonusSettings,
   upsertRepurchaseRate, upsertRankRebate, deleteRankRebate,
+  upsertMonthlyTier, deleteMonthlyTier,
   runDailySettlement, runMonthlySettlement,
   releaseDueRewards, manualReleaseRewards,
   listSettlementBatches, listBonusRecords,
 } from "@/lib/bonus.functions";
+
 
 const ALLOW: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -182,6 +184,33 @@ function Page() {
           </Card>
 
           <Card>
+            <CardHeader>
+              <CardTitle className="text-base">月達成獎金階梯</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                以「當月自我消費 + 第一代消費」總額為基數，達到門檻即加發對應比例的獎勵點（取符合條件的最高階）。
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>門檻（點/元）</TableHead>
+                  <TableHead>加發比例 %</TableHead>
+                  <TableHead>排序</TableHead>
+                  <TableHead>啟用</TableHead>
+                  <TableHead></TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {(data.monthlyTiers ?? []).map((r: any) => (
+                    <MonthlyTierRow key={r.id} row={r} onSaved={loadAll} />
+                  ))}
+                  <MonthlyTierRow row={{ threshold_points: 0, bonus_rate: 0, sort_order: (data.monthlyTiers?.length ?? 0) + 1, enabled: true }} isNew onSaved={loadAll} />
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+
             <CardHeader><CardTitle className="text-base">獎勵點發放</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3 max-w-md">
@@ -452,6 +481,54 @@ function RebateRow({ row, isNew, onSaved }: { row: any; isNew?: boolean; onSaved
           <Button size="sm" variant="ghost" disabled={busy} onClick={async () => {
             if (!confirm("確定刪除？")) return;
             await deleteRankRebate({ data: { id: r.id } });
+            onSaved();
+          }}>刪除</Button>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
+function MonthlyTierRow({ row, isNew, onSaved }: { row: any; isNew?: boolean; onSaved: () => void }) {
+  const [r, setR] = useState({ ...row });
+  const [busy, setBusy] = useState(false);
+  return (
+    <TableRow>
+      <TableCell>
+        <Input type="number" min={0} className="w-32" value={r.threshold_points}
+          onChange={(e) => setR({ ...r, threshold_points: Number(e.target.value) })} />
+      </TableCell>
+      <TableCell>
+        <Input type="number" step="0.1" min={0} max={100} className="w-24" value={r.bonus_rate}
+          onChange={(e) => setR({ ...r, bonus_rate: Number(e.target.value) })} />
+      </TableCell>
+      <TableCell>
+        <Input type="number" className="w-20" value={r.sort_order}
+          onChange={(e) => setR({ ...r, sort_order: Number(e.target.value) })} />
+      </TableCell>
+      <TableCell>
+        <Switch checked={r.enabled} onCheckedChange={(v) => setR({ ...r, enabled: v })} />
+      </TableCell>
+      <TableCell className="flex gap-1">
+        <Button size="sm" disabled={busy || r.threshold_points < 0} onClick={async () => {
+          setBusy(true);
+          try {
+            const payload: any = {
+              threshold_points: r.threshold_points,
+              bonus_rate: r.bonus_rate,
+              sort_order: r.sort_order,
+              enabled: r.enabled,
+            };
+            if (!isNew && r.id) payload.id = r.id;
+            await upsertMonthlyTier({ data: payload });
+            toast.success("已儲存"); onSaved();
+          } catch (e: any) { toast.error(e.message); }
+          finally { setBusy(false); }
+        }}>{isNew ? "新增" : "儲存"}</Button>
+        {!isNew && (
+          <Button size="sm" variant="ghost" disabled={busy} onClick={async () => {
+            if (!confirm("確定刪除？")) return;
+            await deleteMonthlyTier({ data: { id: r.id } });
             onSaved();
           }}>刪除</Button>
         )}
