@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PRODUCT_PUBLIC_COLUMNS } from "@/hooks/use-products";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,7 @@ function ProductsList() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      let qb = supabase.from("products").select("*").eq("status", "active");
+      let qb = supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("status", "active");
       if (search.q) qb = qb.or(`name.ilike.%${search.q}%,sku.ilike.%${search.q}%`);
       if (search.cat) qb = qb.eq("category_id", search.cat);
       if (search.sort === "price_asc") qb = qb.order("price", { ascending: true });

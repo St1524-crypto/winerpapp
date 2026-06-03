@@ -3766,6 +3766,13 @@ export type Database = {
           slug: string
         }[]
       }
+      get_product_costs: {
+        Args: { _ids: string[] }
+        Returns: {
+          cost_price: number
+          id: string
+        }[]
+      }
       get_public_companies: {
         Args: never
         Returns: {

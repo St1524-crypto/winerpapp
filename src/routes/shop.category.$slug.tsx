@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PRODUCT_PUBLIC_COLUMNS } from "@/hooks/use-products";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
@@ -27,7 +28,7 @@ function CategoryPage() {
       setLoading(true);
       const { data: c } = await supabase.from("categories").select("*").eq("id", slug).maybeSingle();
       setCat(c as Category | null);
-      const { data: p } = await supabase.from("products").select("*").eq("category_id", slug).eq("status", "active").order("created_at", { ascending: false });
+      const { data: p } = await supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("category_id", slug).eq("status", "active").order("created_at", { ascending: false });
       setProducts((p ?? []) as Product[]);
       setLoading(false);
     })();

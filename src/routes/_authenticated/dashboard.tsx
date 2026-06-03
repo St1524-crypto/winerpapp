@@ -84,8 +84,8 @@ function Dashboard() {
       const { data: txToday } = await txQuery;
       let todayAmt = 0;
       if (txToday && txToday.length) {
-        const ids = Array.from(new Set(txToday.map((x: any) => x.product_id).filter(Boolean)));
-        const { data: prices } = await sb.from("products").select("id, cost_price").in("id", ids);
+        const ids = Array.from(new Set(txToday.map((x: any) => x.product_id).filter(Boolean))) as string[];
+        const { data: prices } = await sb.rpc("get_product_costs", { _ids: ids });
         const pm: Record<string, number> = {};
         (prices ?? []).forEach((p: any) => pm[p.id] = Number(p.cost_price) || 0);
         todayAmt = txToday.reduce((s: number, t: any) => s + (pm[t.product_id] ?? 0) * t.quantity, 0);

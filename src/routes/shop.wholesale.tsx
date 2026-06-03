@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PRODUCT_PUBLIC_COLUMNS } from "@/hooks/use-products";
 import { useAuth } from "@/hooks/use-auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +57,7 @@ function WholesaleArea() {
       }
       const { data: products } = await supabase
         .from("products")
-        .select("*")
+        .select(PRODUCT_PUBLIC_COLUMNS)
         .in("id", ids)
         .eq("status", "active");
       const result: WholesaleProduct[] = ((products ?? []) as Product[]).map((p) => ({

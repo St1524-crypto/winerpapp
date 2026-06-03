@@ -80,9 +80,18 @@ function Page() {
   async function loadRefs() {
     const [{ data: v }, { data: p }] = await Promise.all([
       sb.from("vendors").select("id,name,code").eq("status", "active").order("name"),
-      sb.from("products").select("id,sku,name,cost_price").eq("status", "active").order("name"),
+      sb.from("products").select("id,sku,name").eq("status", "active").order("name"),
     ]);
-    setVendors(v ?? []); setProducts(p ?? []);
+    const productRows = (p ?? []) as Array<{ id: string; sku: string; name: string }>;
+    let merged: Product[] = productRows.map((r) => ({ ...r, cost_price: 0 }));
+    if (productRows.length) {
+      const ids = productRows.map((r) => r.id);
+      const { data: costs } = await sb.rpc("get_product_costs", { _ids: ids });
+      const cm = new Map<string, number>();
+      (costs ?? []).forEach((c: any) => cm.set(c.id, Number(c.cost_price) || 0));
+      merged = productRows.map((r) => ({ ...r, cost_price: cm.get(r.id) ?? 0 }));
+    }
+    setVendors(v ?? []); setProducts(merged);
   }
   useEffect(() => { load(); loadRefs(); }, []);
 

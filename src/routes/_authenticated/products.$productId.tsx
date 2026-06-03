@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentCompany } from "@/hooks/use-current-company";
+import { PRODUCT_PUBLIC_COLUMNS, mergeProductCosts } from "@/hooks/use-products";
 import type { InventoryLog, Product, ProductImage } from "@/types/product";
 
 export const Route = createFileRoute("/_authenticated/products/$productId")({ component: ProductDetail });
@@ -32,11 +33,12 @@ function ProductDetail() {
       if (currentCompanyId) logsQuery.eq("company_id", currentCompanyId);
 
       const [{ data: p }, { data: imgs }, { data: lg }] = await Promise.all([
-        supabase.from("products").select("*").eq("id", productId).maybeSingle(),
+        supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("id", productId).maybeSingle(),
         supabase.from("product_images").select("*").eq("product_id", productId).order("sort_order"),
         logsQuery,
       ]);
-      setProduct(p as Product | null);
+      const merged = p ? (await mergeProductCosts([p as any]))[0] : null;
+      setProduct(merged as Product | null);
       setImages((imgs ?? []) as ProductImage[]);
       setLogs((lg ?? []) as InventoryLog[]);
       setLoading(false);

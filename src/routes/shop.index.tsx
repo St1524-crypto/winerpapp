@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PRODUCT_PUBLIC_COLUMNS } from "@/hooks/use-products";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -26,8 +27,8 @@ function ShopHome() {
   useEffect(() => {
     (async () => {
       const [f, l, c] = await Promise.all([
-        supabase.from("products").select("*").eq("status", "active").eq("featured", true).limit(8),
-        supabase.from("products").select("*").eq("status", "active").order("created_at", { ascending: false }).limit(8),
+        supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("status", "active").eq("featured", true).limit(8),
+        supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("status", "active").order("created_at", { ascending: false }).limit(8),
         supabase.from("categories").select("*").eq("status", "active").order("sort_order").limit(8),
       ]);
       setFeatured((f.data ?? []) as Product[]);

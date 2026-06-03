@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PRODUCT_PUBLIC_COLUMNS } from "@/hooks/use-products";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,14 +46,14 @@ function ProductDetail() {
     }
     (async () => {
       setLoading(true);
-      const { data: p } = await supabase.from("products").select("*").eq("id", id).single();
+      const { data: p } = await supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("id", id).single();
       setProduct(p as Product | null);
       const { data: imgs } = await supabase.from("product_images").select("*").eq("product_id", id).order("sort_order");
       setImages((imgs ?? []) as ProductImage[]);
       const t = await fetchTiersForProduct(id);
       setTiers(t);
       if (p?.category_id) {
-        const { data: rel } = await supabase.from("products").select("*").eq("category_id", p.category_id).neq("id", id).eq("status", "active").limit(4);
+        const { data: rel } = await supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("category_id", p.category_id).neq("id", id).eq("status", "active").limit(4);
         setRelated((rel ?? []) as Product[]);
       }
       setActiveImg(0);
