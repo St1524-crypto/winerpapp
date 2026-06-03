@@ -138,7 +138,7 @@ function ProductsPage() {
                   <TableHead className="text-right">成本</TableHead>
                   <TableHead className="text-right cursor-pointer" onClick={() => toggleSort("stock")}>庫存</TableHead>
                   <TableHead>狀態</TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => toggleSort("created_at")}>建立日期</TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => toggleSort("updated_at" as keyof Product)}>最後編輯 <ArrowUpDown className="inline h-3 w-3 ml-1" /></TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
