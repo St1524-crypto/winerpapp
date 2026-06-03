@@ -40,7 +40,7 @@ function AdminPanel() {
       const counts = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("user_roles").select("*", { count: "exact", head: true }),
-        supabase.from("products").select("*", { count: "exact", head: true }),
+        supabase.from("products").select("id", { count: "exact", head: true }),
         supabase.from("orders").select("*", { count: "exact", head: true }),
         supabase.from("notifications").select("*", { count: "exact", head: true }),
         supabase.from("audit_logs").select("*", { count: "exact", head: true }),
