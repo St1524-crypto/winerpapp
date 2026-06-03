@@ -30,8 +30,11 @@ export const getBonusSettings = createServerFn({ method: "GET" })
       .from("repurchase_bonus_settings").select("*").order("generation_level");
     const { data: rr } = await supabaseAdmin
       .from("rank_rebate_settings").select("*").order("sort_order");
-    return { settings: s, repurchase: rb ?? [], rebate: rr ?? [] };
+    const { data: mt } = await supabaseAdmin
+      .from("monthly_tier_bonus_settings").select("*").order("threshold_points");
+    return { settings: s, repurchase: rb ?? [], rebate: rr ?? [], monthlyTiers: mt ?? [] };
   });
+
 
 const updateSchema = z.object({
   daily_bonus_auto_enabled: z.boolean().optional(),
