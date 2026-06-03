@@ -38,7 +38,7 @@ function ProductsPage() {
   const [category, setCategory] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
-  const [sort, setSort] = useState<{ col: keyof Product; dir: "asc" | "desc" }>({ col: "created_at", dir: "desc" });
+  const [sort, setSort] = useState<{ col: keyof Product; dir: "asc" | "desc" }>({ col: "updated_at", dir: "desc" });
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
   const [invProduct, setInvProduct] = useState<Product | null>(null);
