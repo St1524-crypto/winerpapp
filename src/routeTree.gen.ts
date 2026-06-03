@@ -51,9 +51,9 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
 import { Route as AuthenticatedCashAdminRouteImport } from './routes/_authenticated/cash-admin'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ShopAccountIndexRouteImport } from './routes/shop.account.index'
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
 import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wallet'
@@ -294,11 +294,6 @@ const AuthenticatedCashAdminRoute = AuthenticatedCashAdminRouteImport.update({
   path: '/cash-admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const ShopAccountIndexRoute = ShopAccountIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -310,6 +305,11 @@ const AuthenticatedFinanceIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedFinanceRoute,
   } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const ShopProductIdRoute = ShopProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
@@ -383,39 +383,39 @@ const AuthenticatedB2bAccountsRoute =
   } as any)
 const AuthenticatedAdminSecurityRoute =
   AuthenticatedAdminSecurityRouteImport.update({
-    id: '/security',
-    path: '/security',
-    getParentRoute: () => AuthenticatedAdminRoute,
+    id: '/admin/security',
+    path: '/admin/security',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminRoleManagerRoute =
   AuthenticatedAdminRoleManagerRouteImport.update({
-    id: '/role-manager',
-    path: '/role-manager',
-    getParentRoute: () => AuthenticatedAdminRoute,
+    id: '/admin/role-manager',
+    path: '/admin/role-manager',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminReferralsRoute =
   AuthenticatedAdminReferralsRouteImport.update({
-    id: '/referrals',
-    path: '/referrals',
-    getParentRoute: () => AuthenticatedAdminRoute,
+    id: '/admin/referrals',
+    path: '/admin/referrals',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminCompaniesRoute =
   AuthenticatedAdminCompaniesRouteImport.update({
-    id: '/companies',
-    path: '/companies',
-    getParentRoute: () => AuthenticatedAdminRoute,
+    id: '/admin/companies',
+    path: '/admin/companies',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminBonusCenterRoute =
   AuthenticatedAdminBonusCenterRouteImport.update({
-    id: '/bonus-center',
-    path: '/bonus-center',
-    getParentRoute: () => AuthenticatedAdminRoute,
+    id: '/admin/bonus-center',
+    path: '/admin/bonus-center',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminAuditLogsRoute =
   AuthenticatedAdminAuditLogsRouteImport.update({
-    id: '/audit-logs',
-    path: '/audit-logs',
-    getParentRoute: () => AuthenticatedAdminRoute,
+    id: '/admin/audit-logs',
+    path: '/admin/audit-logs',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const ShopAccountOrdersIdRoute = ShopAccountOrdersIdRouteImport.update({
   id: '/$id',
@@ -452,7 +452,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/customers': typeof AuthenticatedCustomersRoute
@@ -509,6 +508,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
@@ -521,7 +521,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/reset-password': typeof ResetPasswordRoute
   '/two-factor': typeof TwoFactorRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/customers': typeof AuthenticatedCustomersRoute
@@ -576,6 +575,7 @@ export interface FileRoutesByTo {
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/finance': typeof AuthenticatedFinanceIndexRoute
   '/shop/account': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
@@ -591,7 +591,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/cash-admin': typeof AuthenticatedCashAdminRoute
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
@@ -648,6 +647,7 @@ export interface FileRoutesById {
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
@@ -663,7 +663,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/two-factor'
-    | '/admin'
     | '/cash-admin'
     | '/categories'
     | '/customers'
@@ -720,6 +719,7 @@ export interface FileRouteTypes {
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
+    | '/admin/'
     | '/finance/'
     | '/shop/account/'
     | '/admin/companies/new'
@@ -732,7 +732,6 @@ export interface FileRouteTypes {
     | '/'
     | '/reset-password'
     | '/two-factor'
-    | '/admin'
     | '/cash-admin'
     | '/categories'
     | '/customers'
@@ -787,6 +786,7 @@ export interface FileRouteTypes {
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
+    | '/admin'
     | '/finance'
     | '/shop/account'
     | '/admin/companies/new'
@@ -801,7 +801,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/two-factor'
-    | '/_authenticated/admin'
     | '/_authenticated/cash-admin'
     | '/_authenticated/categories'
     | '/_authenticated/customers'
@@ -858,6 +857,7 @@ export interface FileRouteTypes {
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
+    | '/_authenticated/admin/'
     | '/_authenticated/finance/'
     | '/shop/account/'
     | '/_authenticated/admin/companies/new'
@@ -1179,13 +1179,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCashAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/shop/account/': {
       id: '/shop/account/'
       path: '/'
@@ -1199,6 +1192,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/finance/'
       preLoaderRoute: typeof AuthenticatedFinanceIndexRouteImport
       parentRoute: typeof AuthenticatedFinanceRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/shop/product/$id': {
       id: '/shop/product/$id'
@@ -1293,45 +1293,45 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/admin/security': {
       id: '/_authenticated/admin/security'
-      path: '/security'
+      path: '/admin/security'
       fullPath: '/admin/security'
       preLoaderRoute: typeof AuthenticatedAdminSecurityRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/role-manager': {
       id: '/_authenticated/admin/role-manager'
-      path: '/role-manager'
+      path: '/admin/role-manager'
       fullPath: '/admin/role-manager'
       preLoaderRoute: typeof AuthenticatedAdminRoleManagerRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/referrals': {
       id: '/_authenticated/admin/referrals'
-      path: '/referrals'
+      path: '/admin/referrals'
       fullPath: '/admin/referrals'
       preLoaderRoute: typeof AuthenticatedAdminReferralsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/companies': {
       id: '/_authenticated/admin/companies'
-      path: '/companies'
+      path: '/admin/companies'
       fullPath: '/admin/companies'
       preLoaderRoute: typeof AuthenticatedAdminCompaniesRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/bonus-center': {
       id: '/_authenticated/admin/bonus-center'
-      path: '/bonus-center'
+      path: '/admin/bonus-center'
       fullPath: '/admin/bonus-center'
       preLoaderRoute: typeof AuthenticatedAdminBonusCenterRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/audit-logs': {
       id: '/_authenticated/admin/audit-logs'
-      path: '/audit-logs'
+      path: '/admin/audit-logs'
       fullPath: '/admin/audit-logs'
       preLoaderRoute: typeof AuthenticatedAdminAuditLogsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/shop/account/orders/$id': {
       id: '/shop/account/orders/$id'
@@ -1371,42 +1371,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedAdminCompaniesRouteChildren {
-  AuthenticatedAdminCompaniesNewRoute: typeof AuthenticatedAdminCompaniesNewRoute
-}
-
-const AuthenticatedAdminCompaniesRouteChildren: AuthenticatedAdminCompaniesRouteChildren =
-  {
-    AuthenticatedAdminCompaniesNewRoute: AuthenticatedAdminCompaniesNewRoute,
-  }
-
-const AuthenticatedAdminCompaniesRouteWithChildren =
-  AuthenticatedAdminCompaniesRoute._addFileChildren(
-    AuthenticatedAdminCompaniesRouteChildren,
-  )
-
-interface AuthenticatedAdminRouteChildren {
-  AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
-  AuthenticatedAdminBonusCenterRoute: typeof AuthenticatedAdminBonusCenterRoute
-  AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
-  AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
-  AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
-  AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
-}
-
-const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
-  AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
-  AuthenticatedAdminBonusCenterRoute: AuthenticatedAdminBonusCenterRoute,
-  AuthenticatedAdminCompaniesRoute:
-    AuthenticatedAdminCompaniesRouteWithChildren,
-  AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
-  AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
-  AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
-}
-
-const AuthenticatedAdminRouteWithChildren =
-  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
-
 interface AuthenticatedFinanceRouteChildren {
   AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
   AuthenticatedFinancePayableRoute: typeof AuthenticatedFinancePayableRoute
@@ -1439,6 +1403,20 @@ const AuthenticatedProductsRouteWithChildren =
     AuthenticatedProductsRouteChildren,
   )
 
+interface AuthenticatedAdminCompaniesRouteChildren {
+  AuthenticatedAdminCompaniesNewRoute: typeof AuthenticatedAdminCompaniesNewRoute
+}
+
+const AuthenticatedAdminCompaniesRouteChildren: AuthenticatedAdminCompaniesRouteChildren =
+  {
+    AuthenticatedAdminCompaniesNewRoute: AuthenticatedAdminCompaniesNewRoute,
+  }
+
+const AuthenticatedAdminCompaniesRouteWithChildren =
+  AuthenticatedAdminCompaniesRoute._addFileChildren(
+    AuthenticatedAdminCompaniesRouteChildren,
+  )
+
 interface AuthenticatedB2bAccountsRouteChildren {
   AuthenticatedB2bAccountsIdRoute: typeof AuthenticatedB2bAccountsIdRoute
 }
@@ -1454,7 +1432,6 @@ const AuthenticatedB2bAccountsRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedCashAdminRoute: typeof AuthenticatedCashAdminRoute
   AuthenticatedCategoriesRoute: typeof AuthenticatedCategoriesRoute
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
@@ -1480,11 +1457,17 @@ interface AuthenticatedRouteChildren {
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedVipPlansRoute: typeof AuthenticatedVipPlansRoute
   AuthenticatedWarehousesRoute: typeof AuthenticatedWarehousesRoute
+  AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
+  AuthenticatedAdminBonusCenterRoute: typeof AuthenticatedAdminBonusCenterRoute
+  AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
+  AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
+  AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
+  AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedCashAdminRoute: AuthenticatedCashAdminRoute,
   AuthenticatedCategoriesRoute: AuthenticatedCategoriesRoute,
   AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
@@ -1511,7 +1494,15 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedVipPlansRoute: AuthenticatedVipPlansRoute,
   AuthenticatedWarehousesRoute: AuthenticatedWarehousesRoute,
+  AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
+  AuthenticatedAdminBonusCenterRoute: AuthenticatedAdminBonusCenterRoute,
+  AuthenticatedAdminCompaniesRoute:
+    AuthenticatedAdminCompaniesRouteWithChildren,
+  AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
+  AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
+  AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
   AuthenticatedB2bAccountsRoute: AuthenticatedB2bAccountsRouteWithChildren,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -1593,3 +1584,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

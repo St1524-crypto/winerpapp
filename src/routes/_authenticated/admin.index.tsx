@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 
-export const Route = createFileRoute("/_authenticated/admin")({
+export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
     meta: [
       { title: "管理員控制中心 — 源倍力 ERP" },
