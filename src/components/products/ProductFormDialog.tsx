@@ -36,7 +36,7 @@ const empty = {
   price: 0, wholesale_price: 0, cost_price: 0,
   stock: 0, safe_stock: 0,
   reward_points: 0, discount_points_max: 0,
-  status: "active", featured: false,
+  status: "inactive", featured: false,
   specs: [] as SpecOption[],
   tiers: [] as WholesaleTier[],
 };
