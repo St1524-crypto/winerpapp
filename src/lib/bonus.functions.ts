@@ -109,6 +109,37 @@ export const deleteRankRebate = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/* ───────────── 月達成獎金階梯設定 ───────────── */
+export const upsertMonthlyTier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid().optional(),
+      threshold_points: z.number().int().min(0),
+      bonus_rate: z.number().min(0).max(100),
+      sort_order: z.number().int().default(0),
+      enabled: z.boolean().default(true),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const { error } = await supabaseAdmin
+      .from("monthly_tier_bonus_settings")
+      .upsert(data, { onConflict: "threshold_points" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteMonthlyTier = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    await supabaseAdmin.from("monthly_tier_bonus_settings").delete().eq("id", data.id);
+    return { ok: true };
+  });
+
+
 /* ───────────── 訂單付款 → 自動產生獎金 + 累計責任額 ─────────────
  * 依 sales_orders.order_type 判斷：
  *   - repurchase：上線 1/2 代復購獎金 + 買家月度責任額累計
