@@ -57,7 +57,7 @@ function WholesaleArea() {
       }
       const { data: products } = await supabase
         .from("products")
-        .select("*")
+        .select(PRODUCT_PUBLIC_COLUMNS)
         .in("id", ids)
         .eq("status", "active");
       const result: WholesaleProduct[] = ((products ?? []) as Product[]).map((p) => ({
