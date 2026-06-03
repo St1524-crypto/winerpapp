@@ -179,7 +179,7 @@ function ProductsPage() {
                           {PRODUCT_STATUS.find((s) => s.value === p.status)?.label ?? p.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{new Date((p as any).updated_at ?? p.created_at).toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button asChild size="icon" variant="ghost" className="h-8 w-8" title="查看">
