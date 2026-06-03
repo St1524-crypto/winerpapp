@@ -426,7 +426,27 @@ export const runMonthlySettlement = createServerFn({ method: "POST" })
       .from("rank_rebate_settings").select("*").eq("enabled", true).order("sort_order");
     const defaultRank = (rankRules ?? [])[0] as any;
 
-    // 為每位 VIP 統計當月入帳 reward 點
+    // 撈月達成獎金階梯設定（依門檻由小到大）
+    const { data: tiersRaw } = await supabaseAdmin
+      .from("monthly_tier_bonus_settings").select("*").eq("enabled", true)
+      .order("threshold_points");
+    const tiers = (tiersRaw ?? []) as Array<{ threshold_points: number; bonus_rate: number }>;
+
+    // 撈本月所有月度責任額（用於計算第一代下線消費）
+    const { data: allMrp } = await supabaseAdmin
+      .from("monthly_responsibility_points").select("member_id, points").eq("ym", ym);
+    const mrpMap: Record<string, number> = {};
+    (allMrp ?? []).forEach((r: any) => { mrpMap[r.member_id] = Number(r.points ?? 0); });
+
+    // 撈所有 referred_by 對應，以建立 vip -> 第一代下線清單
+    const { data: refRows } = await supabaseAdmin
+      .from("profiles").select("id, referred_by").not("referred_by", "is", null);
+    const childrenMap: Record<string, string[]> = {};
+    (refRows ?? []).forEach((p: any) => {
+      const up = p.referred_by as string;
+      (childrenMap[up] ||= []).push(p.id);
+    });
+
     const { data: batch, error: bErr } = await supabaseAdmin
       .from("bonus_settlement_batches").insert({
         settlement_type: "monthly",
@@ -440,41 +460,57 @@ export const runMonthlySettlement = createServerFn({ method: "POST" })
     let granted = 0;
     let totalPts = 0;
 
+    function pickTierRate(amount: number): number {
+      let rate = 0;
+      for (const t of tiers) {
+        if (amount >= Number(t.threshold_points)) rate = Number(t.bonus_rate);
+      }
+      return rate;
+    }
+
     for (const vip of activeVips) {
-      // 改由月度責任額累計表取數（復購訂單實付金額產生的獎勵點）
-      const { data: mrp } = await supabaseAdmin
-        .from("monthly_responsibility_points")
-        .select("points")
-        .eq("member_id", (vip as any).id).eq("ym", ym).maybeSingle();
-      const monthlyPts = Number((mrp as any)?.points ?? 0);
+      const vipId = (vip as any).id as string;
+      const selfPts = mrpMap[vipId] ?? 0;
+      const firstGen = childrenMap[vipId] ?? [];
+      const firstGenPts = firstGen.reduce((sum, cid) => sum + (mrpMap[cid] ?? 0), 0);
+      const totalBase = selfPts + firstGenPts;
 
       const rule = defaultRank;
       const required = rule?.required_points ?? s.vip_required_points;
-      const passed = monthlyPts >= required;
+      const passed = totalBase >= required;
 
-      const bonusPoints = passed ? Math.floor(monthlyPts * 0) : 0;
+      const tierRate = passed ? pickTierRate(totalBase) : 0;
+      const bonusPoints = tierRate > 0 ? Math.floor(totalBase * tierRate / 100) : 0;
+
       await supabaseAdmin.from("bonus_records").insert({
-        member_id: (vip as any).id,
+        member_id: vipId,
         bonus_type: "monthly_vip",
-        base_amount: monthlyPts,
-        bonus_rate: 0,
+        base_amount: totalBase,
+        bonus_rate: tierRate,
         bonus_points: bonusPoints,
         required_points_checked: true,
         required_points_passed: passed,
-        fail_reason: passed ? null : `當月責任額 ${monthlyPts}/${required} 未達標`,
-        status: passed ? "waiting_release" : "cancelled",
+        fail_reason: passed
+          ? (tierRate === 0 ? `未達任一加發門檻 (${totalBase})` : null)
+          : `當月自我+第一代 ${totalBase}/${required} 未達標`,
+        status: passed && bonusPoints > 0 ? "waiting_release" : "cancelled",
         settlement_batch_id: (batch as any).id,
         settlement_date: settleDate,
-        release_date: passed ? releaseDate : null,
+        release_date: passed && bonusPoints > 0 ? releaseDate : null,
       }).then(() => {});
 
-      // 超額回饋
-      if (passed && rule && monthlyPts > required && rule.exceeded_rebate_rate > 0) {
-        const excess = monthlyPts - required;
+      if (passed && bonusPoints > 0) {
+        granted++;
+        totalPts += bonusPoints;
+      }
+
+      // 超額回饋（保留位階回饋機制，以個人責任額為基礎）
+      if (passed && rule && selfPts > required && rule.exceeded_rebate_rate > 0) {
+        const excess = selfPts - required;
         const rebate = Math.floor(excess * Number(rule.exceeded_rebate_rate) / 100);
         if (rebate > 0) {
           await supabaseAdmin.from("bonus_records").insert({
-            member_id: (vip as any).id,
+            member_id: vipId,
             bonus_type: "rank_rebate",
             base_amount: excess,
             bonus_rate: rule.exceeded_rebate_rate,
@@ -490,8 +526,8 @@ export const runMonthlySettlement = createServerFn({ method: "POST" })
           totalPts += rebate;
         }
       }
-      if (passed) granted++;
     }
+
 
     await supabaseAdmin.from("bonus_settlement_batches")
       .update({
