@@ -2992,6 +2992,7 @@ export type Database = {
           invoice_type: string | null
           notes: string | null
           order_no: string
+          order_source: string | null
           order_status: string
           order_type: string
           payment_status: string
@@ -3021,6 +3022,7 @@ export type Database = {
           invoice_type?: string | null
           notes?: string | null
           order_no: string
+          order_source?: string | null
           order_status?: string
           order_type?: string
           payment_status?: string
@@ -3050,6 +3052,7 @@ export type Database = {
           invoice_type?: string | null
           notes?: string | null
           order_no?: string
+          order_source?: string | null
           order_status?: string
           order_type?: string
           payment_status?: string
@@ -3730,6 +3733,7 @@ export type Database = {
           invoice_type: string | null
           notes: string | null
           order_no: string
+          order_source: string | null
           order_status: string
           order_type: string
           payment_status: string

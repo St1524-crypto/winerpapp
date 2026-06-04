@@ -142,9 +142,12 @@ type OrderRow = {
   shipping_status: keyof typeof SHIPPING_STATUS;
   payment_status: keyof typeof PAYMENT_STATUS;
   notes: string | null;
+  order_source: string | null;
   created_at: string;
   company_id: string;
 };
+
+const ORDER_SOURCES = ["官網", "電話", "LINE", "實體店", "展會", "經銷商", "其他"];
 
 // =================== Helpers ===================
 function fmt(n: number | string | null | undefined) {
@@ -527,6 +530,7 @@ function OrdersPage() {
                       <TableHead>訂單號</TableHead>
                       <TableHead>客戶</TableHead>
                       <TableHead>建立日期</TableHead>
+                      <TableHead>來源</TableHead>
                       <TableHead className="text-right">總金額</TableHead>
                       <TableHead>訂單狀態</TableHead>
                       <TableHead>出貨</TableHead>
@@ -553,6 +557,11 @@ function OrdersPage() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {new Date(o.created_at).toLocaleDateString("zh-TW")}
+                        </TableCell>
+                        <TableCell>
+                          {o.order_source
+                            ? <Badge variant="outline">{o.order_source}</Badge>
+                            : <span className="text-xs text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
                         <TableCell>
@@ -763,6 +772,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [depositMethod, setDepositMethod] = useState("bank_transfer");
   const [taxAdded, setTaxAdded] = useState(false);
   const [notes, setNotes] = useState("");
+  const [orderSource, setOrderSource] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -990,6 +1000,14 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       });
       if (error) throw new Error(`建立訂單失敗：${error.message}`);
 
+      // 寫入訂單來源（RPC 不包含此欄位，建立後補上）
+      if (orderSource.trim() && (orderRow as any)?.id) {
+        await supabase
+          .from("sales_orders")
+          .update({ order_source: orderSource.trim() })
+          .eq("id", (orderRow as any).id);
+      }
+
       return { createdNewCustomer, orderRow };
 
     },
@@ -998,7 +1016,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       toast.success(res?.createdNewCustomer ? "訂單已建立，並同步新增客戶" : "訂單已建立");
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
-      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes("");
+      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource("");
       setDeposit("0"); setBalance("0");
       setCustomerId(null);
       onCreated();
@@ -1403,7 +1421,21 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
               訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
             </div>
           </div>
-          <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>訂單來源</Label>
+              <Input
+                list="order-source-options"
+                value={orderSource}
+                onChange={(e) => setOrderSource(e.target.value)}
+                placeholder="例如：官網、電話、LINE..."
+              />
+              <datalist id="order-source-options">
+                {ORDER_SOURCES.map((s) => <option key={s} value={s} />)}
+              </datalist>
+            </div>
+            <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>取消</Button>
@@ -1907,6 +1939,7 @@ function EditOrderDialog({
   const [shippingFee, setShippingFee] = useState(String(order.shipping_fee ?? 0));
   const [discount, setDiscount] = useState(String(order.discount_amount ?? 0));
   const [notes, setNotes] = useState(order.notes ?? "");
+  const [orderSource, setOrderSource] = useState(order.order_source ?? "");
   const [editItems, setEditItems] = useState(
     initialItems.map((it) => ({
       product_id: it.product_id,
@@ -1932,6 +1965,7 @@ function EditOrderDialog({
     setShippingFee(String(order.shipping_fee ?? 0));
     setDiscount(String(order.discount_amount ?? 0));
     setNotes(order.notes ?? "");
+    setOrderSource(order.order_source ?? "");
     setEditItems(
       initialItems.map((it) => ({
         product_id: it.product_id,
@@ -2008,6 +2042,7 @@ function EditOrderDialog({
           discount_amount: Number(discount || 0),
           total_amount: total,
           notes: notes.trim() || null,
+          order_source: orderSource.trim() || null,
         })
         .eq("id", order.id);
       if (upErr) throw new Error(`更新訂單失敗：${upErr.message}`);
@@ -2169,7 +2204,21 @@ function EditOrderDialog({
             </div>
           </div>
 
-          <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>訂單來源</Label>
+              <Input
+                list="order-source-options-edit"
+                value={orderSource}
+                onChange={(e) => setOrderSource(e.target.value)}
+                placeholder="例如：官網、電話、LINE..."
+              />
+              <datalist id="order-source-options-edit">
+                {ORDER_SOURCES.map((s) => <option key={s} value={s} />)}
+              </datalist>
+            </div>
+            <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          </div>
 
           <div className="text-xs text-muted-foreground">
             注意：訂單金額變動後，付款 / 收款狀態需於詳情頁另行核對。
