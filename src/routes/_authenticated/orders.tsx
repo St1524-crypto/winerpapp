@@ -142,9 +142,12 @@ type OrderRow = {
   shipping_status: keyof typeof SHIPPING_STATUS;
   payment_status: keyof typeof PAYMENT_STATUS;
   notes: string | null;
+  order_source: string | null;
   created_at: string;
   company_id: string;
 };
+
+const ORDER_SOURCES = ["官網", "電話", "LINE", "實體店", "展會", "經銷商", "其他"];
 
 // =================== Helpers ===================
 function fmt(n: number | string | null | undefined) {
@@ -763,6 +766,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [depositMethod, setDepositMethod] = useState("bank_transfer");
   const [taxAdded, setTaxAdded] = useState(false);
   const [notes, setNotes] = useState("");
+  const [orderSource, setOrderSource] = useState("");
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
