@@ -784,12 +784,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const { currentCompanyId } = useCurrentCompany();
 
   const customersQ = useQuery({
-    queryKey: ["customers-picker"],
-    enabled: open,
+    queryKey: ["customers-picker", currentCompanyId],
+    enabled: open && !!currentCompanyId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customers")
         .select("id,name,email,phone,company")
+        .eq("company_id", currentCompanyId!)
         .order("updated_at", { ascending: false })
         .limit(200);
       if (error) throw new Error(error.message);
@@ -798,13 +799,14 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   });
 
   const productsQ = useQuery({
-    queryKey: ["products-picker-orders"],
-    enabled: open,
+    queryKey: ["products-picker-orders", currentCompanyId],
+    enabled: open && !!currentCompanyId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
         .select("id,name,sku,price,image,stock")
         .eq("status", "active")
+        .eq("company_id", currentCompanyId!)
         .order("updated_at", { ascending: false })
         .limit(300);
       if (error) throw new Error(error.message);
