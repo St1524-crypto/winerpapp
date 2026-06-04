@@ -172,11 +172,13 @@ function Page() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>客戶編號</TableHead>
                 <TableHead>姓名</TableHead>
                 <TableHead>公司</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>電話</TableHead>
-                <TableHead>備註</TableHead>
+                <TableHead>收件地址</TableHead>
+                <TableHead>來源</TableHead>
                 <TableHead>建立日期</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
