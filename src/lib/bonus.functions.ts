@@ -286,7 +286,10 @@ async function processOrderPaymentBonusInternal(orderId: string) {
 export const processOrderPaymentBonus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => processOrderPaymentBonusInternal(data.orderId));
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    return processOrderPaymentBonusInternal(data.orderId);
+  });
 
 export const generateRepurchaseForOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
