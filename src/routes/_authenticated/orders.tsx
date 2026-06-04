@@ -1939,6 +1939,7 @@ function EditOrderDialog({
   const [shippingFee, setShippingFee] = useState(String(order.shipping_fee ?? 0));
   const [discount, setDiscount] = useState(String(order.discount_amount ?? 0));
   const [notes, setNotes] = useState(order.notes ?? "");
+  const [orderSource, setOrderSource] = useState(order.order_source ?? "");
   const [editItems, setEditItems] = useState(
     initialItems.map((it) => ({
       product_id: it.product_id,
@@ -1964,6 +1965,7 @@ function EditOrderDialog({
     setShippingFee(String(order.shipping_fee ?? 0));
     setDiscount(String(order.discount_amount ?? 0));
     setNotes(order.notes ?? "");
+    setOrderSource(order.order_source ?? "");
     setEditItems(
       initialItems.map((it) => ({
         product_id: it.product_id,
@@ -2040,6 +2042,7 @@ function EditOrderDialog({
           discount_amount: Number(discount || 0),
           total_amount: total,
           notes: notes.trim() || null,
+          order_source: orderSource.trim() || null,
         })
         .eq("id", order.id);
       if (upErr) throw new Error(`更新訂單失敗：${upErr.message}`);
@@ -2201,7 +2204,21 @@ function EditOrderDialog({
             </div>
           </div>
 
-          <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>訂單來源</Label>
+              <Input
+                list="order-source-options-edit"
+                value={orderSource}
+                onChange={(e) => setOrderSource(e.target.value)}
+                placeholder="例如：官網、電話、LINE..."
+              />
+              <datalist id="order-source-options-edit">
+                {ORDER_SOURCES.map((s) => <option key={s} value={s} />)}
+              </datalist>
+            </div>
+            <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          </div>
 
           <div className="text-xs text-muted-foreground">
             注意：訂單金額變動後，付款 / 收款狀態需於詳情頁另行核對。
