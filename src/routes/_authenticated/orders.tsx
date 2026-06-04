@@ -994,6 +994,14 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       });
       if (error) throw new Error(`建立訂單失敗：${error.message}`);
 
+      // 寫入訂單來源（RPC 不包含此欄位，建立後補上）
+      if (orderSource.trim() && (orderRow as any)?.id) {
+        await supabase
+          .from("sales_orders")
+          .update({ order_source: orderSource.trim() })
+          .eq("id", (orderRow as any).id);
+      }
+
       return { createdNewCustomer, orderRow };
 
     },
@@ -1002,7 +1010,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       toast.success(res?.createdNewCustomer ? "訂單已建立，並同步新增客戶" : "訂單已建立");
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
-      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes("");
+      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource("");
       setDeposit("0"); setBalance("0");
       setCustomerId(null);
       onCreated();
@@ -1407,7 +1415,21 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
               訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
             </div>
           </div>
-          <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>訂單來源</Label>
+              <Input
+                list="order-source-options"
+                value={orderSource}
+                onChange={(e) => setOrderSource(e.target.value)}
+                placeholder="例如：官網、電話、LINE..."
+              />
+              <datalist id="order-source-options">
+                {ORDER_SOURCES.map((s) => <option key={s} value={s} />)}
+              </datalist>
+            </div>
+            <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>取消</Button>
