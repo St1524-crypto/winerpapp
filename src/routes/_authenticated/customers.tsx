@@ -185,15 +185,16 @@ function Page() {
             </TableHeader>
             <TableBody>
               {loading ? Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+                <TableRow key={i}><TableCell colSpan={9}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
               )) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
                     {search ? "查無符合條件的客戶" : "尚無客戶，點擊右上角新增"}
                   </TableCell>
                 </TableRow>
               ) : filtered.map((c) => (
                 <TableRow key={c.id}>
+                  <TableCell className="font-mono text-xs">{c.customer_no ?? "—"}</TableCell>
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {c.company ? (
@@ -216,8 +217,11 @@ function Page() {
                       </span>
                     ) : "—"}
                   </TableCell>
-                  <TableCell className="max-w-[240px] truncate text-xs text-muted-foreground">
-                    {c.notes ?? "—"}
+                  <TableCell className="max-w-[220px] truncate text-xs text-muted-foreground">
+                    {c.shipping_address ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    {c.source ? <Badge variant="outline">{c.source}</Badge> : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {new Date(c.created_at).toLocaleDateString()}
