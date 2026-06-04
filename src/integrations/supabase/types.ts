@@ -3773,6 +3773,7 @@ export type Database = {
           id: string
         }[]
       }
+      get_profile_id_no: { Args: { _user_id: string }; Returns: string }
       get_public_companies: {
         Args: never
         Returns: {
