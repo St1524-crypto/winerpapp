@@ -530,6 +530,7 @@ function OrdersPage() {
                       <TableHead>訂單號</TableHead>
                       <TableHead>客戶</TableHead>
                       <TableHead>建立日期</TableHead>
+                      <TableHead>來源</TableHead>
                       <TableHead className="text-right">總金額</TableHead>
                       <TableHead>訂單狀態</TableHead>
                       <TableHead>出貨</TableHead>
@@ -556,6 +557,11 @@ function OrdersPage() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {new Date(o.created_at).toLocaleDateString("zh-TW")}
+                        </TableCell>
+                        <TableCell>
+                          {o.order_source
+                            ? <Badge variant="outline">{o.order_source}</Badge>
+                            : <span className="text-xs text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
                         <TableCell>
