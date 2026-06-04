@@ -158,21 +158,21 @@ export const processOrderCommission = createServerFn({ method: "POST" })
       .select("id, order_no, user_id, referrer_id, subtotal, payment_status")
       .eq("id", data.orderId)
       .maybeSingle();
-    if (!order) throw new Error("訂單不存在");
+    if (!order) return { ok: false, skipped: true, reason: "訂單不存在", points: 0, rate: 0 };
     if ((order as any).payment_status !== "paid") {
-      throw new Error("訂單尚未付款，無法結算佣金");
+      return { ok: false, skipped: true, reason: "訂單尚未付款，無法結算佣金", points: 0, rate: 0 };
     }
     if (!(order as any).referrer_id) {
-      throw new Error("此訂單無推薦人");
+      return { ok: false, skipped: true, reason: "此訂單無推薦人", points: 0, rate: 0 };
     }
     if ((order as any).referrer_id === (order as any).user_id) {
-      throw new Error("禁止自己推薦自己");
+      return { ok: false, skipped: true, reason: "禁止自己推薦自己", points: 0, rate: 0 };
     }
 
     // 防止重複：referral_logs.order_id UNIQUE
     const { data: existing } = await supabaseAdmin
       .from("referral_logs").select("id").eq("order_id", (order as any).id).maybeSingle();
-    if (existing) throw new Error("此訂單佣金已結算");
+    if (existing) return { ok: false, skipped: true, reason: "此訂單佣金已結算", points: 0, rate: 0 };
 
     // 確認推薦人仍是 VIP
     const { data: refProf } = await supabaseAdmin
@@ -181,11 +181,11 @@ export const processOrderCommission = createServerFn({ method: "POST" })
       .eq("id", (order as any).referrer_id)
       .maybeSingle();
     if (!refProf || !(refProf as any).is_vip) {
-      throw new Error("推薦人非 VIP，不發放佣金");
+      return { ok: false, skipped: true, reason: "推薦人非 VIP，不發放佣金", points: 0, rate: 0 };
     }
     const exp = (refProf as any).vip_expires_at;
     if (exp && new Date(exp) <= new Date()) {
-      throw new Error("推薦人 VIP 已過期");
+      return { ok: false, skipped: true, reason: "推薦人 VIP 已過期", points: 0, rate: 0 };
     }
 
     // 取最新 VIP 方案的 referral_rate_percent
