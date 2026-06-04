@@ -1157,33 +1157,42 @@ export type Database = {
           company: string | null
           company_id: string
           created_at: string
+          customer_no: string | null
           email: string | null
           id: string
           name: string
           notes: string | null
           phone: string | null
+          shipping_address: string | null
+          source: string | null
           updated_at: string
         }
         Insert: {
           company?: string | null
           company_id: string
           created_at?: string
+          customer_no?: string | null
           email?: string | null
           id?: string
           name: string
           notes?: string | null
           phone?: string | null
+          shipping_address?: string | null
+          source?: string | null
           updated_at?: string
         }
         Update: {
           company?: string | null
           company_id?: string
           created_at?: string
+          customer_no?: string | null
           email?: string | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          shipping_address?: string | null
+          source?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3752,6 +3761,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      generate_customer_no: { Args: never; Returns: string }
       generate_member_no: { Args: never; Returns: string }
       generate_po_no: { Args: never; Returns: string }
       generate_receipt_no: { Args: never; Returns: string }
