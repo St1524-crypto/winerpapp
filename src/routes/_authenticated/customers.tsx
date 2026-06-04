@@ -17,10 +17,13 @@ import { Plus, Search, Pencil, Trash2, Users, Receipt, Mail, Phone, Building2 } 
 
 interface Customer {
   id: string;
+  customer_no: string | null;
   name: string;
   email: string | null;
   phone: string | null;
   company: string | null;
+  shipping_address: string | null;
+  source: string | null;
   notes: string | null;
   created_at: string;
 }
@@ -34,7 +37,9 @@ interface OrderRow {
   created_at: string;
 }
 
-const empty = { name: "", email: "", phone: "", company: "", notes: "" };
+const empty = { name: "", email: "", phone: "", company: "", shipping_address: "", source: "", notes: "" };
+
+const SOURCES = ["官網", "電話", "展會", "介紹", "社群", "廣告", "其他"];
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "待處理", processing: "處理中", shipped: "已出貨",
@@ -59,10 +64,10 @@ function Page() {
     setLoading(true);
     const { data, error } = await supabase
       .from("customers")
-      .select("id, name, email, phone, company, notes, created_at")
+      .select("id, customer_no, name, email, phone, company, shipping_address, source, notes, created_at")
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
-    else setList(data ?? []);
+    else setList((data ?? []) as Customer[]);
     setLoading(false);
   }
   useEffect(() => { load(); }, [currentCompanyId]);
@@ -70,7 +75,7 @@ function Page() {
   const filtered = useMemo(() => list.filter((c) => {
     if (!search) return true;
     const s = search.toLowerCase();
-    return [c.name, c.email, c.phone, c.company].some((v) => v?.toLowerCase().includes(s));
+    return [c.customer_no, c.name, c.email, c.phone, c.company, c.source].some((v) => v?.toLowerCase().includes(s));
   }), [list, search]);
 
   function openNew() {
@@ -81,7 +86,10 @@ function Page() {
     setEditing(c);
     setForm({
       name: c.name, email: c.email ?? "", phone: c.phone ?? "",
-      company: c.company ?? "", notes: c.notes ?? "",
+      company: c.company ?? "",
+      shipping_address: c.shipping_address ?? "",
+      source: c.source ?? "",
+      notes: c.notes ?? "",
     });
     setOpen(true);
   }
@@ -94,6 +102,8 @@ function Page() {
       email: form.email.trim() || null,
       phone: form.phone.trim() || null,
       company: form.company.trim() || null,
+      shipping_address: form.shipping_address.trim() || null,
+      source: form.source.trim() || null,
       notes: form.notes.trim() || null,
     };
     const res = editing
