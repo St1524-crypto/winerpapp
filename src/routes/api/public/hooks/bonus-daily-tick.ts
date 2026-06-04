@@ -10,7 +10,21 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        // 僅允許 pg_cron / 內部排程觸發：必須帶 service role key 作為 Bearer token
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (!serviceKey) {
+          return new Response(JSON.stringify({ ok: false, reason: "server_misconfigured" }), { status: 500 });
+        }
+        const authHeader = request.headers.get("Authorization") ?? request.headers.get("authorization");
+        if (!authHeader?.toLowerCase().startsWith("bearer ")) {
+          return new Response(JSON.stringify({ ok: false, reason: "unauthorized" }), { status: 401 });
+        }
+        const token = authHeader.slice("bearer ".length).trim();
+        if (token !== serviceKey) {
+          return new Response(JSON.stringify({ ok: false, reason: "unauthorized" }), { status: 401 });
+        }
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         const { data: s } = await supabaseAdmin
