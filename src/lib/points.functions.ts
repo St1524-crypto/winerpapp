@@ -69,7 +69,7 @@ export const getMyPointTx = createServerFn({ method: "GET" })
       .select("*")
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false })
-      .limit(100);
+      .limit(1000);
     return data ?? [];
   });
 
