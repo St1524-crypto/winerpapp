@@ -163,7 +163,6 @@ function CheckoutPage() {
               shopping_redeem: shoppingApplied,
               discount_redeem: discountApplied,
               reward_redeem: 0,
-              reward_earn: 0,
             },
           });
           await refreshWallet();

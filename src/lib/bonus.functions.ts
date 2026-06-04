@@ -24,7 +24,8 @@ async function getSettings() {
 /* ───────────── 設定：讀取 / 更新 ───────────── */
 export const getBonusSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
     const s = await getSettings();
     const { data: rb } = await supabaseAdmin
       .from("repurchase_bonus_settings").select("*").order("generation_level");
@@ -285,7 +286,10 @@ async function processOrderPaymentBonusInternal(orderId: string) {
 export const processOrderPaymentBonus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ orderId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => processOrderPaymentBonusInternal(data.orderId));
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    return processOrderPaymentBonusInternal(data.orderId);
+  });
 
 export const generateRepurchaseForOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

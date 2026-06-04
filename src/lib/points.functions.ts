@@ -102,13 +102,12 @@ export const adminAdjustPoints = createServerFn({ method: "POST" })
     return { balance_after: after };
   });
 
-// ---- 結帳：扣點 + 入點 ----
+// ---- 結帳：扣點 + 入點（reward_earn 由伺服器依訂單實際商品計算，不接受客戶端輸入）----
 const redeemSchema = z.object({
   orderId: z.string().uuid(),
   shopping_redeem: z.number().int().min(0).default(0),
   reward_redeem: z.number().int().min(0).default(0),
   discount_redeem: z.number().int().min(0).default(0),
-  reward_earn: z.number().int().min(0).default(0),
 });
 
 export const applyOrderPoints = createServerFn({ method: "POST" })
@@ -116,23 +115,66 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
   .inputValidator((d) => redeemSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+
+    // 驗證訂單歸屬與付款狀態
+    const { data: order } = await supabaseAdmin
+      .from("sales_orders")
+      .select("id, user_id, payment_status")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!order || (order as any).user_id !== userId) {
+      throw new Error("訂單不存在或無權存取");
+    }
+
     if (data.shopping_redeem > 0)
       await applyDelta(userId, "shopping", -data.shopping_redeem, "order_redeem", { reference_id: data.orderId });
     if (data.reward_redeem > 0)
       await applyDelta(userId, "reward", -data.reward_redeem, "order_redeem", { reference_id: data.orderId });
     if (data.discount_redeem > 0)
       await applyDelta(userId, "discount", -data.discount_redeem, "order_redeem", { reference_id: data.orderId });
-    if (data.reward_earn > 0) {
-      // 年費（VIP）到期會員不可領取獎勵點
-      const { data: prof } = await supabaseAdmin
-        .from("profiles")
-        .select("vip_expires_at")
-        .eq("id", userId)
+
+    // reward_earn：伺服器端依訂單實際商品計算，僅在付款完成後發放
+    if ((order as any).payment_status === "paid") {
+      // 防止重複入點：檢查是否已產生過 order_earn 紀錄
+      const { data: dup } = await supabaseAdmin
+        .from("point_transactions")
+        .select("id")
+        .eq("reference_id", data.orderId)
+        .eq("source", "order_earn")
         .maybeSingle();
-      const exp = (prof as any)?.vip_expires_at as string | null;
-      const vipExpired = !!exp && new Date(exp) <= new Date();
-      if (!vipExpired) {
-        await applyDelta(userId, "reward", data.reward_earn, "order_earn", { reference_id: data.orderId });
+      if (!dup) {
+        const { data: items } = await supabaseAdmin
+          .from("sales_order_items")
+          .select("product_id, quantity")
+          .eq("sales_order_id", data.orderId);
+        const productIds = Array.from(new Set((items ?? []).map((i: any) => i.product_id).filter(Boolean)));
+        let rewardEarn = 0;
+        if (productIds.length > 0) {
+          const { data: prods } = await supabaseAdmin
+            .from("products")
+            .select("id, reward_points")
+            .in("id", productIds);
+          const ptsMap = new Map<string, number>(
+            (prods ?? []).map((p: any) => [p.id, Number(p.reward_points ?? 0)]),
+          );
+          for (const it of items ?? []) {
+            rewardEarn += (ptsMap.get((it as any).product_id) ?? 0) * Number((it as any).quantity ?? 0);
+          }
+        }
+        if (rewardEarn > 0) {
+          // VIP 到期會員不可領取
+          const { data: prof } = await supabaseAdmin
+            .from("profiles")
+            .select("is_vip, vip_expires_at")
+            .eq("id", userId)
+            .maybeSingle();
+          const exp = (prof as any)?.vip_expires_at as string | null;
+          const isVip = !!(prof as any)?.is_vip;
+          const vipExpired = !!exp && new Date(exp) <= new Date();
+          if (isVip && !vipExpired) {
+            await applyDelta(userId, "reward", rewardEarn, "order_earn", { reference_id: data.orderId });
+          }
+        }
       }
     }
     return { ok: true };
@@ -197,9 +239,21 @@ export const getMyVip = createServerFn({ method: "GET" })
 
 export const upgradeVip = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ planId: z.string().uuid() }).parse(d))
+  .inputValidator((d) => z.object({ planId: z.string().uuid(), targetUserId: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { userId } = context;
+    const callerId = context.userId;
+
+    // 僅管理員/財務可手動開通 VIP；一般會員需透過已付款的升級訂單由系統自動開通。
+    const { data: rolesData } = await supabaseAdmin
+      .from("user_roles").select("role").eq("user_id", callerId);
+    const roles = (rolesData ?? []).map((r: any) => r.role);
+    const isAdmin = roles.some((r: string) => ["super_admin", "admin", "finance"].includes(r));
+    if (!isAdmin) {
+      throw new Error("VIP 開通需透過完成付款流程，或由管理員代為開通");
+    }
+
+    const userId = data.targetUserId ?? callerId;
+
     const { data: plan } = await supabaseAdmin
       .from("vip_plans")
       .select("id, name, price, duration_days, bonus_points, status")
@@ -222,8 +276,8 @@ export const upgradeVip = createServerFn({ method: "POST" })
       plan_id: (plan as any).id,
       expires_at: newExpires.toISOString(),
       amount_paid: (plan as any).price,
-      source: "plan",
-      notes: (plan as any).name,
+      source: "admin",
+      notes: `${(plan as any).name} (granted by ${callerId})`,
     });
     await supabaseAdmin.from("profiles").update({
       is_vip: true,
