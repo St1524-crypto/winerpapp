@@ -60,7 +60,8 @@ function AdminReferralsPage() {
       // 以訂單編號查 id
       const { data: o } = await supabase.from("sales_orders").select("id").eq("order_no", orderNo.trim()).maybeSingle();
       if (!o) { toast.error("找不到此訂單"); return; }
-      const res = await processOrderCommission({ data: { orderId: (o as any).id } });
+      const res: any = await processOrderCommission({ data: { orderId: (o as any).id } });
+      if (res?.skipped) { toast.warning(res.reason ?? "無法結算"); return; }
       toast.success(`已結算 +${res.points} 點（比例 ${res.rate}%）`);
       setOrderNo("");
       load();

@@ -20,21 +20,14 @@ import { processOrderPaymentBonus } from "@/lib/bonus.functions";
 async function autoSettleCommission(orderId: string, nextStatus: string) {
   if (nextStatus !== "paid") return;
   try {
-    const res = await processOrderCommission({ data: { orderId } });
-    if (res?.points && res.points > 0) {
+    const res: any = await processOrderCommission({ data: { orderId } });
+    if (res?.skipped) {
+      // 業務規則導致跳過（無推薦人 / 已結算 / 非 VIP 等），靜默處理
+    } else if (res?.points && res.points > 0) {
       toast.success(`已自動發放推薦獎勵 ${res.points} 點 (${res.rate}%)`);
     }
   } catch (e: any) {
-    const msg = String(e?.message ?? "");
-    if (
-      msg.includes("無推薦人") || msg.includes("已結算") ||
-      msg.includes("非 VIP") || msg.includes("VIP 已過期") ||
-      msg.includes("尚未付款")
-    ) {
-      // 正常情境，忽略
-    } else {
-      toast.warning("推薦佣金自動結算失敗", { description: msg });
-    }
+    toast.warning("推薦佣金自動結算失敗", { description: String(e?.message ?? "") });
   }
   // 觸發復購 / 升級訂單獎金 + 月度責任額累計
   try {
