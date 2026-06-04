@@ -239,9 +239,21 @@ export const getMyVip = createServerFn({ method: "GET" })
 
 export const upgradeVip = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ planId: z.string().uuid() }).parse(d))
+  .inputValidator((d) => z.object({ planId: z.string().uuid(), targetUserId: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { userId } = context;
+    const callerId = context.userId;
+
+    // 僅管理員/財務可手動開通 VIP；一般會員需透過已付款的升級訂單由系統自動開通。
+    const { data: rolesData } = await supabaseAdmin
+      .from("user_roles").select("role").eq("user_id", callerId);
+    const roles = (rolesData ?? []).map((r: any) => r.role);
+    const isAdmin = roles.some((r: string) => ["super_admin", "admin", "finance"].includes(r));
+    if (!isAdmin) {
+      throw new Error("VIP 開通需透過完成付款流程，或由管理員代為開通");
+    }
+
+    const userId = data.targetUserId ?? callerId;
+
     const { data: plan } = await supabaseAdmin
       .from("vip_plans")
       .select("id, name, price, duration_days, bonus_points, status")
@@ -264,8 +276,8 @@ export const upgradeVip = createServerFn({ method: "POST" })
       plan_id: (plan as any).id,
       expires_at: newExpires.toISOString(),
       amount_paid: (plan as any).price,
-      source: "plan",
-      notes: (plan as any).name,
+      source: "admin",
+      notes: `${(plan as any).name} (granted by ${callerId})`,
     });
     await supabaseAdmin.from("profiles").update({
       is_vip: true,
