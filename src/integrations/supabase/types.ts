@@ -3817,6 +3817,13 @@ export type Database = {
         }
         Returns: number
       }
+      profile_sensitive_unchanged: {
+        Args: {
+          _new: Database["public"]["Tables"]["profiles"]["Row"]
+          _old: Database["public"]["Tables"]["profiles"]["Row"]
+        }
+        Returns: boolean
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
