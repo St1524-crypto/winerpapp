@@ -70,6 +70,7 @@ import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
+import { Route as AuthenticatedAdminMemberSearchRouteImport } from './routes/_authenticated/admin.member-search'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
 import { Route as AuthenticatedAdminBonusCenterRouteImport } from './routes/_authenticated/admin.bonus-center'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
@@ -399,6 +400,12 @@ const AuthenticatedAdminReferralsRoute =
     path: '/admin/referrals',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminMemberSearchRoute =
+  AuthenticatedAdminMemberSearchRouteImport.update({
+    id: '/admin/member-search',
+    path: '/admin/member-search',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminCompaniesRoute =
   AuthenticatedAdminCompaniesRouteImport.update({
     id: '/admin/companies',
@@ -492,6 +499,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
+  '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
@@ -559,6 +567,7 @@ export interface FileRoutesByTo {
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
+  '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
@@ -631,6 +640,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
+  '/_authenticated/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
@@ -703,6 +713,7 @@ export interface FileRouteTypes {
     | '/admin/audit-logs'
     | '/admin/bonus-center'
     | '/admin/companies'
+    | '/admin/member-search'
     | '/admin/referrals'
     | '/admin/role-manager'
     | '/admin/security'
@@ -770,6 +781,7 @@ export interface FileRouteTypes {
     | '/admin/audit-logs'
     | '/admin/bonus-center'
     | '/admin/companies'
+    | '/admin/member-search'
     | '/admin/referrals'
     | '/admin/role-manager'
     | '/admin/security'
@@ -841,6 +853,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/audit-logs'
     | '/_authenticated/admin/bonus-center'
     | '/_authenticated/admin/companies'
+    | '/_authenticated/admin/member-search'
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/role-manager'
     | '/_authenticated/admin/security'
@@ -1312,6 +1325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReferralsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/member-search': {
+      id: '/_authenticated/admin/member-search'
+      path: '/admin/member-search'
+      fullPath: '/admin/member-search'
+      preLoaderRoute: typeof AuthenticatedAdminMemberSearchRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/companies': {
       id: '/_authenticated/admin/companies'
       path: '/admin/companies'
@@ -1460,6 +1480,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
   AuthenticatedAdminBonusCenterRoute: typeof AuthenticatedAdminBonusCenterRoute
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
+  AuthenticatedAdminMemberSearchRoute: typeof AuthenticatedAdminMemberSearchRoute
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
@@ -1498,6 +1519,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminBonusCenterRoute: AuthenticatedAdminBonusCenterRoute,
   AuthenticatedAdminCompaniesRoute:
     AuthenticatedAdminCompaniesRouteWithChildren,
+  AuthenticatedAdminMemberSearchRoute: AuthenticatedAdminMemberSearchRoute,
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
