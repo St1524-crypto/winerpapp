@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Coins, Gift, Percent, History, Copy } from "lucide-react";
+import { Coins, Gift, Percent, History, Copy, TrendingUp, CalendarDays, CalendarRange, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useWallet, useVipStatus } from "@/hooks/use-wallet";
 import { getMyPointTx, getMyReferralStats } from "@/lib/points.functions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/shop/account/points")({
   component: PointsPage,
@@ -24,10 +26,30 @@ const SOURCE_LABELS: Record<string, string> = {
   expire: "點數過期",
 };
 
+type Tx = {
+  id: string;
+  amount: number;
+  point_type: "shopping" | "reward" | "discount" | string;
+  source: string;
+  note?: string | null;
+  created_at: string;
+};
+
+function ymd(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function ym(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 function PointsPage() {
   const { wallet, loading } = useWallet();
   const { is_vip, vip_expires_at } = useVipStatus();
-  const [tx, setTx] = useState<any[]>([]);
+  const [tx, setTx] = useState<Tx[]>([]);
+  const [txLoading, setTxLoading] = useState(true);
   const [ref, setRef] = useState<{ referral_code: string | null; total: number; total_points: number }>({
     referral_code: null,
     total: 0,
@@ -35,7 +57,11 @@ function PointsPage() {
   });
 
   useEffect(() => {
-    getMyPointTx().then((d) => setTx(d as any[])).catch(() => {});
+    setTxLoading(true);
+    getMyPointTx()
+      .then((d) => setTx(d as Tx[]))
+      .catch(() => {})
+      .finally(() => setTxLoading(false));
     getMyReferralStats().then((d) => setRef(d as any)).catch(() => {});
   }, []);
 
@@ -43,8 +69,96 @@ function PointsPage() {
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/login?ref=${ref.referral_code}`
     : "";
 
+  // 收益 = 獎勵點正向異動
+  const rewardEarnings = useMemo(() => tx.filter((t) => t.point_type === "reward" && t.amount > 0), [tx]);
+
+  const totalEarnings = useMemo(() => rewardEarnings.reduce((s, t) => s + t.amount, 0), [rewardEarnings]);
+
+  const todayKey = ymd(new Date());
+  const monthKey = ym(new Date());
+
+  const todayEarnings = useMemo(
+    () => rewardEarnings.filter((t) => ymd(new Date(t.created_at)) === todayKey).reduce((s, t) => s + t.amount, 0),
+    [rewardEarnings, todayKey],
+  );
+
+  const monthEarnings = useMemo(
+    () => rewardEarnings.filter((t) => ym(new Date(t.created_at)) === monthKey).reduce((s, t) => s + t.amount, 0),
+    [rewardEarnings, monthKey],
+  );
+
+  // 日明細：近 30 天
+  const dailyDetail = useMemo(() => {
+    const map = new Map<string, { date: string; amount: number; count: number }>();
+    for (const t of rewardEarnings) {
+      const k = ymd(new Date(t.created_at));
+      const cur = map.get(k) ?? { date: k, amount: 0, count: 0 };
+      cur.amount += t.amount;
+      cur.count += 1;
+      map.set(k, cur);
+    }
+    return [...map.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 60);
+  }, [rewardEarnings]);
+
+  // 月明細：近 12 個月
+  const monthlyDetail = useMemo(() => {
+    const map = new Map<string, { month: string; amount: number; count: number }>();
+    for (const t of rewardEarnings) {
+      const k = ym(new Date(t.created_at));
+      const cur = map.get(k) ?? { month: k, amount: 0, count: 0 };
+      cur.amount += t.amount;
+      cur.count += 1;
+      map.set(k, cur);
+    }
+    return [...map.values()].sort((a, b) => (a.month < b.month ? 1 : -1)).slice(0, 24);
+  }, [rewardEarnings]);
+
   return (
     <div className="space-y-6">
+      {/* 收益總覽 */}
+      <div className="grid sm:grid-cols-3 gap-4">
+        <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
+              <TrendingUp className="h-4 w-4 text-primary" />累計總收益
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {txLoading ? <Skeleton className="h-8 w-24" /> : (
+              <div className="text-3xl font-bold tabular-nums text-primary">{totalEarnings.toLocaleString()}</div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">歷史累計獲得獎勵點</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-success/10 to-transparent border-success/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
+              <Sparkles className="h-4 w-4 text-success" />今日收益
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {txLoading ? <Skeleton className="h-8 w-24" /> : (
+              <div className="text-3xl font-bold tabular-nums text-success">+{todayEarnings.toLocaleString()}</div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">{todayKey}</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-warning/10 to-transparent border-warning/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
+              <CalendarRange className="h-4 w-4 text-warning" />本月收益
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {txLoading ? <Skeleton className="h-8 w-24" /> : (
+              <div className="text-3xl font-bold tabular-nums text-warning">+{monthEarnings.toLocaleString()}</div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">{monthKey}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 錢包餘額 */}
       <div className="grid sm:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2 text-muted-foreground"><Coins className="h-4 w-4 text-primary" />購物點</CardTitle></CardHeader>
@@ -104,33 +218,102 @@ function PointsPage() {
         </CardContent>
       </Card>
 
+      {/* 獎勵點明細：日 / 月 / 全部 */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><History className="h-4 w-4" />點數異動紀錄</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Gift className="h-4 w-4 text-warning" />獎勵點明細
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {tx.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">尚無紀錄</p>
-          ) : (
-            <div className="space-y-2 text-sm">
-              {tx.map((t) => (
-                <div key={t.id} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
-                  <div className="min-w-0">
-                    <div className="font-medium text-xs">
-                      {SOURCE_LABELS[t.source] ?? t.source} ·{" "}
-                      {t.point_type === "shopping" ? "購物點" : t.point_type === "reward" ? "獎勵點" : "折扣點"}
+          <Tabs defaultValue="daily">
+            <TabsList>
+              <TabsTrigger value="daily" className="gap-1"><CalendarDays className="h-3.5 w-3.5" />日明細</TabsTrigger>
+              <TabsTrigger value="monthly" className="gap-1"><CalendarRange className="h-3.5 w-3.5" />月明細</TabsTrigger>
+              <TabsTrigger value="all" className="gap-1"><History className="h-3.5 w-3.5" />全部異動</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="daily" className="mt-4">
+              {txLoading ? (
+                <Skeleton className="h-40 w-full" />
+              ) : dailyDetail.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">尚無紀錄</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>日期</TableHead>
+                      <TableHead className="text-right">筆數</TableHead>
+                      <TableHead className="text-right">獲得獎勵點</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyDetail.map((d) => (
+                      <TableRow key={d.date}>
+                        <TableCell className="font-mono text-xs">{d.date}</TableCell>
+                        <TableCell className="text-right tabular-nums text-xs">{d.count}</TableCell>
+                        <TableCell className="text-right tabular-nums font-semibold text-success">+{d.amount.toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+
+            <TabsContent value="monthly" className="mt-4">
+              {txLoading ? (
+                <Skeleton className="h-40 w-full" />
+              ) : monthlyDetail.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">尚無紀錄</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>月份</TableHead>
+                      <TableHead className="text-right">筆數</TableHead>
+                      <TableHead className="text-right">獲得獎勵點</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {monthlyDetail.map((m) => (
+                      <TableRow key={m.month}>
+                        <TableCell className="font-mono text-xs">{m.month}</TableCell>
+                        <TableCell className="text-right tabular-nums text-xs">{m.count}</TableCell>
+                        <TableCell className="text-right tabular-nums font-semibold text-success">+{m.amount.toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+
+            <TabsContent value="all" className="mt-4">
+              {txLoading ? (
+                <Skeleton className="h-40 w-full" />
+              ) : tx.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">尚無紀錄</p>
+              ) : (
+                <div className="space-y-2 text-sm">
+                  {tx.map((t) => (
+                    <div key={t.id} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
+                      <div className="min-w-0">
+                        <div className="font-medium text-xs">
+                          {SOURCE_LABELS[t.source] ?? t.source} ·{" "}
+                          {t.point_type === "shopping" ? "購物點" : t.point_type === "reward" ? "獎勵點" : "折扣點"}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {new Date(t.created_at).toLocaleString()} {t.note ? `· ${t.note}` : ""}
+                        </div>
+                      </div>
+                      <div className={`tabular-nums font-semibold ${t.amount > 0 ? "text-success" : "text-destructive"}`}>
+                        {t.amount > 0 ? "+" : ""}{t.amount}
+                      </div>
                     </div>
-                    <div className="text-[11px] text-muted-foreground">
-                      {new Date(t.created_at).toLocaleString()} {t.note ? `· ${t.note}` : ""}
-                    </div>
-                  </div>
-                  <div className={`tabular-nums font-semibold ${t.amount > 0 ? "text-success" : "text-destructive"}`}>
-                    {t.amount > 0 ? "+" : ""}{t.amount}
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
