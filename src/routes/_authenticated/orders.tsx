@@ -1981,13 +1981,14 @@ function EditOrderDialog({
   }
 
   const productsQ = useQuery({
-    queryKey: ["products-picker-edit-orders"],
-    enabled: open,
+    queryKey: ["products-picker-edit-orders", currentCompany?.id],
+    enabled: open && !!currentCompany?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
         .select("id,name,sku,price,image,stock")
         .eq("status", "active")
+        .eq("company_id", currentCompany!.id)
         .order("updated_at", { ascending: false })
         .limit(300);
       if (error) throw new Error(error.message);
