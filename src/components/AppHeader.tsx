@@ -87,7 +87,11 @@ export function AppHeader() {
             <div className="truncate text-sm">{user?.email}</div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem><User className="h-4 w-4 mr-2" />個人資料</DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/shop/account/profile" className="cursor-pointer">
+              <User className="h-4 w-4 mr-2" />個人資料
+            </Link>
+          </DropdownMenuItem>
           {isSuperAdmin && (
             <DropdownMenuItem onClick={toggleAdmin}>
               {inAdmin ? <LayoutDashboard className="h-4 w-4 mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
