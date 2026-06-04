@@ -249,6 +249,9 @@ function Page() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editing ? "編輯客戶" : "新增客戶"}</DialogTitle>
+            {editing?.customer_no && (
+              <DialogDescription>客戶編號：<span className="font-mono">{editing.customer_no}</span></DialogDescription>
+            )}
           </DialogHeader>
           <div className="grid sm:grid-cols-2 gap-4 py-2">
             <div className="space-y-2 sm:col-span-2">
@@ -266,6 +269,22 @@ function Page() {
             <div className="space-y-2 sm:col-span-2">
               <Label>Email</Label>
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>收件地址</Label>
+              <Input value={form.shipping_address} onChange={(e) => setForm({ ...form, shipping_address: e.target.value })} placeholder="完整收件地址" />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>客戶來源</Label>
+              <Input
+                list="customer-source-options"
+                value={form.source}
+                onChange={(e) => setForm({ ...form, source: e.target.value })}
+                placeholder="例如：官網、電話、展會、介紹..."
+              />
+              <datalist id="customer-source-options">
+                {SOURCES.map((s) => <option key={s} value={s} />)}
+              </datalist>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>備註</Label>
