@@ -17,10 +17,13 @@ import { Plus, Search, Pencil, Trash2, Users, Receipt, Mail, Phone, Building2 } 
 
 interface Customer {
   id: string;
+  customer_no: string | null;
   name: string;
   email: string | null;
   phone: string | null;
   company: string | null;
+  shipping_address: string | null;
+  source: string | null;
   notes: string | null;
   created_at: string;
 }
@@ -34,7 +37,9 @@ interface OrderRow {
   created_at: string;
 }
 
-const empty = { name: "", email: "", phone: "", company: "", notes: "" };
+const empty = { name: "", email: "", phone: "", company: "", shipping_address: "", source: "", notes: "" };
+
+const SOURCES = ["官網", "電話", "展會", "介紹", "社群", "廣告", "其他"];
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "待處理", processing: "處理中", shipped: "已出貨",
@@ -59,10 +64,10 @@ function Page() {
     setLoading(true);
     const { data, error } = await supabase
       .from("customers")
-      .select("id, name, email, phone, company, notes, created_at")
+      .select("id, customer_no, name, email, phone, company, shipping_address, source, notes, created_at")
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
-    else setList(data ?? []);
+    else setList((data ?? []) as Customer[]);
     setLoading(false);
   }
   useEffect(() => { load(); }, [currentCompanyId]);
@@ -70,7 +75,7 @@ function Page() {
   const filtered = useMemo(() => list.filter((c) => {
     if (!search) return true;
     const s = search.toLowerCase();
-    return [c.name, c.email, c.phone, c.company].some((v) => v?.toLowerCase().includes(s));
+    return [c.customer_no, c.name, c.email, c.phone, c.company, c.source].some((v) => v?.toLowerCase().includes(s));
   }), [list, search]);
 
   function openNew() {
@@ -81,7 +86,10 @@ function Page() {
     setEditing(c);
     setForm({
       name: c.name, email: c.email ?? "", phone: c.phone ?? "",
-      company: c.company ?? "", notes: c.notes ?? "",
+      company: c.company ?? "",
+      shipping_address: c.shipping_address ?? "",
+      source: c.source ?? "",
+      notes: c.notes ?? "",
     });
     setOpen(true);
   }
@@ -94,6 +102,8 @@ function Page() {
       email: form.email.trim() || null,
       phone: form.phone.trim() || null,
       company: form.company.trim() || null,
+      shipping_address: form.shipping_address.trim() || null,
+      source: form.source.trim() || null,
       notes: form.notes.trim() || null,
     };
     const res = editing
@@ -162,26 +172,29 @@ function Page() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>客戶編號</TableHead>
                 <TableHead>姓名</TableHead>
                 <TableHead>公司</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>電話</TableHead>
-                <TableHead>備註</TableHead>
+                <TableHead>收件地址</TableHead>
+                <TableHead>來源</TableHead>
                 <TableHead>建立日期</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+                <TableRow key={i}><TableCell colSpan={9}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
               )) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-10">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
                     {search ? "查無符合條件的客戶" : "尚無客戶，點擊右上角新增"}
                   </TableCell>
                 </TableRow>
               ) : filtered.map((c) => (
                 <TableRow key={c.id}>
+                  <TableCell className="font-mono text-xs">{c.customer_no ?? "—"}</TableCell>
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {c.company ? (
@@ -204,8 +217,11 @@ function Page() {
                       </span>
                     ) : "—"}
                   </TableCell>
-                  <TableCell className="max-w-[240px] truncate text-xs text-muted-foreground">
-                    {c.notes ?? "—"}
+                  <TableCell className="max-w-[220px] truncate text-xs text-muted-foreground">
+                    {c.shipping_address ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    {c.source ? <Badge variant="outline">{c.source}</Badge> : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {new Date(c.created_at).toLocaleDateString()}
@@ -233,6 +249,9 @@ function Page() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editing ? "編輯客戶" : "新增客戶"}</DialogTitle>
+            {editing?.customer_no && (
+              <DialogDescription>客戶編號：<span className="font-mono">{editing.customer_no}</span></DialogDescription>
+            )}
           </DialogHeader>
           <div className="grid sm:grid-cols-2 gap-4 py-2">
             <div className="space-y-2 sm:col-span-2">
@@ -250,6 +269,22 @@ function Page() {
             <div className="space-y-2 sm:col-span-2">
               <Label>Email</Label>
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>收件地址</Label>
+              <Input value={form.shipping_address} onChange={(e) => setForm({ ...form, shipping_address: e.target.value })} placeholder="完整收件地址" />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>客戶來源</Label>
+              <Input
+                list="customer-source-options"
+                value={form.source}
+                onChange={(e) => setForm({ ...form, source: e.target.value })}
+                placeholder="例如：官網、電話、展會、介紹..."
+              />
+              <datalist id="customer-source-options">
+                {SOURCES.map((s) => <option key={s} value={s} />)}
+              </datalist>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>備註</Label>
