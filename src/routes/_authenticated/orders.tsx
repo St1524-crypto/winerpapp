@@ -1462,7 +1462,21 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                 {ORDER_SOURCES.map((s) => <option key={s} value={s} />)}
               </datalist>
             </div>
-            <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+            <div>
+              <Label>業務人員</Label>
+              <Select value={salespersonId || "none"} onValueChange={(v) => setSalespersonId(v === "none" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="請選擇" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">未指定</SelectItem>
+                  {(staffQ.data ?? []).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2"><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           </div>
         </div>
         <DialogFooter>
