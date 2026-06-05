@@ -569,6 +569,12 @@ function OrdersPage() {
                             ? <Badge variant="outline">{o.order_source}</Badge>
                             : <span className="text-xs text-muted-foreground">—</span>}
                         </TableCell>
+                        <TableCell className="text-xs">
+                          {o.salesperson_name ?? <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {o.created_by_name ?? "—"}
+                        </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={ORDER_STATUS[o.order_status]?.tone}>
