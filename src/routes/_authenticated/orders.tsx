@@ -2049,6 +2049,28 @@ function EditOrderDialog({
     },
   });
 
+  const staffQ = useQuery({
+    queryKey: ["company-staff-picker-edit", order.company_id],
+    enabled: open && !!order.company_id,
+    queryFn: async () => {
+      const { data: members, error } = await supabase
+        .from("company_members")
+        .select("user_id")
+        .eq("company_id", order.company_id!);
+      if (error) throw new Error(error.message);
+      const ids = (members ?? []).map((m) => m.user_id);
+      if (ids.length === 0) return [] as Array<{ id: string; name: string }>;
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, name, email")
+        .in("id", ids);
+      return (profs ?? [])
+        .map((p) => ({ id: p.id as string, name: (p.name as string | null) ?? (p.email as string | null) ?? "(未命名)" }))
+        .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+    },
+  });
+
+
   const subtotalNum = useMemo(
     () => editItems.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
     [editItems],
