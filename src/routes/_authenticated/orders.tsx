@@ -2020,6 +2020,7 @@ function EditOrderDialog({
     setDiscount(String(order.discount_amount ?? 0));
     setNotes(order.notes ?? "");
     setOrderSource(order.order_source ?? "");
+    setSalespersonId(order.salesperson_id ?? "");
     setEditItems(
       initialItems.map((it) => ({
         product_id: it.product_id,
