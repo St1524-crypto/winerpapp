@@ -24,6 +24,7 @@ type Setting = {
 const CATEGORY_LABEL: Record<string, string> = {
   qualification: "資格與考核",
   rewards: "回饋與分紅",
+  monthly_achievement_bonus: "月達成獎金（自我消費 + 第一代消費）",
   general: "一般",
 };
 
