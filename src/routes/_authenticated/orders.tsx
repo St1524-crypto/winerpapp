@@ -143,6 +143,10 @@ type OrderRow = {
   payment_status: keyof typeof PAYMENT_STATUS;
   notes: string | null;
   order_source: string | null;
+  salesperson_id: string | null;
+  salesperson_name: string | null;
+  created_by_id: string | null;
+  created_by_name: string | null;
   created_at: string;
   company_id: string;
 };
