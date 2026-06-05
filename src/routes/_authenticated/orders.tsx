@@ -2100,7 +2100,7 @@ function EditOrderDialog({
           notes: notes.trim() || null,
           order_source: orderSource.trim() || null,
           salesperson_id: salespersonId || null,
-          salesperson_name: salespersonId ? undefined : null,
+          salesperson_name: null,
         })
         .eq("id", order.id);
       if (upErr) throw new Error(`更新訂單失敗：${upErr.message}`);
