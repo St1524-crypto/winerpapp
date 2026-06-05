@@ -1028,12 +1028,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       });
       if (error) throw new Error(`建立訂單失敗：${error.message}`);
 
-      // 寫入訂單來源（RPC 不包含此欄位，建立後補上）
-      if (orderSource.trim() && (orderRow as any)?.id) {
-        await supabase
-          .from("sales_orders")
-          .update({ order_source: orderSource.trim() })
-          .eq("id", (orderRow as any).id);
+      // 寫入訂單來源 / 業務人員（RPC 不包含這些欄位，建立後補上；建檔人員由 DB trigger 自動寫入）
+      const patch: Record<string, unknown> = {};
+      if (orderSource.trim()) patch.order_source = orderSource.trim();
+      if (salespersonId) patch.salesperson_id = salespersonId;
+      if (Object.keys(patch).length > 0 && (orderRow as any)?.id) {
+        await supabase.from("sales_orders").update(patch).eq("id", (orderRow as any).id);
       }
 
       return { createdNewCustomer, orderRow };
@@ -1046,7 +1046,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
       setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource("");
       setDeposit("0"); setBalance("0");
-      setCustomerId(null);
+      setCustomerId(null); setSalespersonId("");
       onCreated();
     },
     onError: (e: any) => toast.error(e?.message ?? "建立失敗"),
