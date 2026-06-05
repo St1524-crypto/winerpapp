@@ -819,6 +819,27 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  const staffQ = useQuery({
+    queryKey: ["company-staff-picker", currentCompanyId],
+    enabled: open && !!currentCompanyId,
+    queryFn: async () => {
+      const { data: members, error } = await supabase
+        .from("company_members")
+        .select("user_id, role")
+        .eq("company_id", currentCompanyId!);
+      if (error) throw new Error(error.message);
+      const ids = (members ?? []).map((m) => m.user_id);
+      if (ids.length === 0) return [] as Array<{ id: string; name: string }>;
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, name, email")
+        .in("id", ids);
+      return (profs ?? [])
+        .map((p) => ({ id: p.id as string, name: (p.name as string | null) ?? (p.email as string | null) ?? "(未命名)" }))
+        .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+    },
+  });
+
   function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null }) {
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.product_id === p.id);
