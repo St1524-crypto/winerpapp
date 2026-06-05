@@ -777,6 +777,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [taxAdded, setTaxAdded] = useState(false);
   const [notes, setNotes] = useState("");
   const [orderSource, setOrderSource] = useState("");
+  const [salespersonId, setSalespersonId] = useState<string>("");
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
