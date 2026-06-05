@@ -535,6 +535,8 @@ function OrdersPage() {
                       <TableHead>客戶</TableHead>
                       <TableHead>建立日期</TableHead>
                       <TableHead>來源</TableHead>
+                      <TableHead>業務</TableHead>
+                      <TableHead>建檔人員</TableHead>
                       <TableHead className="text-right">總金額</TableHead>
                       <TableHead>訂單狀態</TableHead>
                       <TableHead>出貨</TableHead>
