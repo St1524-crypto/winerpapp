@@ -2982,6 +2982,8 @@ export type Database = {
           company_id: string
           coupon_code: string | null
           created_at: string
+          created_by_id: string | null
+          created_by_name: string | null
           customer_email: string | null
           customer_id: string | null
           customer_name: string
@@ -2999,6 +3001,8 @@ export type Database = {
           receiver_name: string
           receiver_phone: string
           referrer_id: string | null
+          salesperson_id: string | null
+          salesperson_name: string | null
           shipping_address: string
           shipping_fee: number
           shipping_method: string
@@ -3012,6 +3016,8 @@ export type Database = {
           company_id: string
           coupon_code?: string | null
           created_at?: string
+          created_by_id?: string | null
+          created_by_name?: string | null
           customer_email?: string | null
           customer_id?: string | null
           customer_name: string
@@ -3029,6 +3035,8 @@ export type Database = {
           receiver_name: string
           receiver_phone: string
           referrer_id?: string | null
+          salesperson_id?: string | null
+          salesperson_name?: string | null
           shipping_address: string
           shipping_fee?: number
           shipping_method?: string
@@ -3042,6 +3050,8 @@ export type Database = {
           company_id?: string
           coupon_code?: string | null
           created_at?: string
+          created_by_id?: string | null
+          created_by_name?: string | null
           customer_email?: string | null
           customer_id?: string | null
           customer_name?: string
@@ -3059,6 +3069,8 @@ export type Database = {
           receiver_name?: string
           receiver_phone?: string
           referrer_id?: string | null
+          salesperson_id?: string | null
+          salesperson_name?: string | null
           shipping_address?: string
           shipping_fee?: number
           shipping_method?: string
@@ -3077,6 +3089,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sales_orders_created_by_id_fkey"
+            columns: ["created_by_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sales_orders_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
@@ -3086,6 +3105,13 @@ export type Database = {
           {
             foreignKeyName: "sales_orders_referrer_id_fkey"
             columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_salesperson_id_fkey"
+            columns: ["salesperson_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -3723,6 +3749,8 @@ export type Database = {
           company_id: string
           coupon_code: string | null
           created_at: string
+          created_by_id: string | null
+          created_by_name: string | null
           customer_email: string | null
           customer_id: string | null
           customer_name: string
@@ -3740,6 +3768,8 @@ export type Database = {
           receiver_name: string
           receiver_phone: string
           referrer_id: string | null
+          salesperson_id: string | null
+          salesperson_name: string | null
           shipping_address: string
           shipping_fee: number
           shipping_method: string

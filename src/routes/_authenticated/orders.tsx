@@ -143,6 +143,10 @@ type OrderRow = {
   payment_status: keyof typeof PAYMENT_STATUS;
   notes: string | null;
   order_source: string | null;
+  salesperson_id: string | null;
+  salesperson_name: string | null;
+  created_by_id: string | null;
+  created_by_name: string | null;
   created_at: string;
   company_id: string;
 };
@@ -468,6 +472,9 @@ function OrdersPage() {
                         <div className="text-xs text-muted-foreground truncate">
                           {o.customer_email ?? "—"} · {new Date(o.created_at).toLocaleDateString("zh-TW")}
                         </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          業務：{o.salesperson_name ?? "—"} · 建檔：{o.created_by_name ?? "—"}
+                        </div>
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -531,6 +538,8 @@ function OrdersPage() {
                       <TableHead>客戶</TableHead>
                       <TableHead>建立日期</TableHead>
                       <TableHead>來源</TableHead>
+                      <TableHead>業務</TableHead>
+                      <TableHead>建檔人員</TableHead>
                       <TableHead className="text-right">總金額</TableHead>
                       <TableHead>訂單狀態</TableHead>
                       <TableHead>出貨</TableHead>
@@ -562,6 +571,12 @@ function OrdersPage() {
                           {o.order_source
                             ? <Badge variant="outline">{o.order_source}</Badge>
                             : <span className="text-xs text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {o.salesperson_name ?? <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {o.created_by_name ?? "—"}
                         </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
                         <TableCell>
@@ -773,6 +788,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [taxAdded, setTaxAdded] = useState(false);
   const [notes, setNotes] = useState("");
   const [orderSource, setOrderSource] = useState("");
+  const [salespersonId, setSalespersonId] = useState<string>("");
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -811,6 +827,27 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         .limit(300);
       if (error) throw new Error(error.message);
       return data ?? [];
+    },
+  });
+
+  const staffQ = useQuery({
+    queryKey: ["company-staff-picker", currentCompanyId],
+    enabled: open && !!currentCompanyId,
+    queryFn: async () => {
+      const { data: members, error } = await supabase
+        .from("company_members")
+        .select("user_id, role")
+        .eq("company_id", currentCompanyId!);
+      if (error) throw new Error(error.message);
+      const ids = (members ?? []).map((m) => m.user_id);
+      if (ids.length === 0) return [] as Array<{ id: string; name: string }>;
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, name, email")
+        .in("id", ids);
+      return (profs ?? [])
+        .map((p) => ({ id: p.id as string, name: (p.name as string | null) ?? (p.email as string | null) ?? "(未命名)" }))
+        .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
     },
   });
 
@@ -1002,12 +1039,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       });
       if (error) throw new Error(`建立訂單失敗：${error.message}`);
 
-      // 寫入訂單來源（RPC 不包含此欄位，建立後補上）
-      if (orderSource.trim() && (orderRow as any)?.id) {
-        await supabase
-          .from("sales_orders")
-          .update({ order_source: orderSource.trim() })
-          .eq("id", (orderRow as any).id);
+      // 寫入訂單來源 / 業務人員（RPC 不包含這些欄位，建立後補上；建檔人員由 DB trigger 自動寫入）
+      const patch: { order_source?: string; salesperson_id?: string } = {};
+      if (orderSource.trim()) patch.order_source = orderSource.trim();
+      if (salespersonId) patch.salesperson_id = salespersonId;
+      if (Object.keys(patch).length > 0 && (orderRow as any)?.id) {
+        await supabase.from("sales_orders").update(patch).eq("id", (orderRow as any).id);
       }
 
       return { createdNewCustomer, orderRow };
@@ -1020,7 +1057,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
       setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource("");
       setDeposit("0"); setBalance("0");
-      setCustomerId(null);
+      setCustomerId(null); setSalespersonId("");
       onCreated();
     },
     onError: (e: any) => toast.error(e?.message ?? "建立失敗"),
@@ -1436,7 +1473,21 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                 {ORDER_SOURCES.map((s) => <option key={s} value={s} />)}
               </datalist>
             </div>
-            <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+            <div>
+              <Label>業務人員</Label>
+              <Select value={salespersonId || "none"} onValueChange={(v) => setSalespersonId(v === "none" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="請選擇" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">未指定</SelectItem>
+                  {(staffQ.data ?? []).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2"><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
           </div>
         </div>
         <DialogFooter>
@@ -1942,6 +1993,7 @@ function EditOrderDialog({
   const [discount, setDiscount] = useState(String(order.discount_amount ?? 0));
   const [notes, setNotes] = useState(order.notes ?? "");
   const [orderSource, setOrderSource] = useState(order.order_source ?? "");
+  const [salespersonId, setSalespersonId] = useState<string>(order.salesperson_id ?? "");
   const [editItems, setEditItems] = useState(
     initialItems.map((it) => ({
       product_id: it.product_id,
@@ -1968,6 +2020,7 @@ function EditOrderDialog({
     setDiscount(String(order.discount_amount ?? 0));
     setNotes(order.notes ?? "");
     setOrderSource(order.order_source ?? "");
+    setSalespersonId(order.salesperson_id ?? "");
     setEditItems(
       initialItems.map((it) => ({
         product_id: it.product_id,
@@ -1995,6 +2048,28 @@ function EditOrderDialog({
       return data ?? [];
     },
   });
+
+  const staffQ = useQuery({
+    queryKey: ["company-staff-picker-edit", order.company_id],
+    enabled: open && !!order.company_id,
+    queryFn: async () => {
+      const { data: members, error } = await supabase
+        .from("company_members")
+        .select("user_id")
+        .eq("company_id", order.company_id!);
+      if (error) throw new Error(error.message);
+      const ids = (members ?? []).map((m) => m.user_id);
+      if (ids.length === 0) return [] as Array<{ id: string; name: string }>;
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, name, email")
+        .in("id", ids);
+      return (profs ?? [])
+        .map((p) => ({ id: p.id as string, name: (p.name as string | null) ?? (p.email as string | null) ?? "(未命名)" }))
+        .sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+    },
+  });
+
 
   const subtotalNum = useMemo(
     () => editItems.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
@@ -2046,6 +2121,8 @@ function EditOrderDialog({
           total_amount: total,
           notes: notes.trim() || null,
           order_source: orderSource.trim() || null,
+          salesperson_id: salespersonId || null,
+          salesperson_name: null,
         })
         .eq("id", order.id);
       if (upErr) throw new Error(`更新訂單失敗：${upErr.message}`);
@@ -2220,7 +2297,22 @@ function EditOrderDialog({
                 {ORDER_SOURCES.map((s) => <option key={s} value={s} />)}
               </datalist>
             </div>
-            <div><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+            <div>
+              <Label>業務人員</Label>
+              <Select value={salespersonId || "none"} onValueChange={(v) => setSalespersonId(v === "none" ? "" : v)}>
+                <SelectTrigger><SelectValue placeholder="請選擇" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">未指定</SelectItem>
+                  {(staffQ.data ?? []).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2"><Label>備註</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+            <div className="sm:col-span-2 text-xs text-muted-foreground">
+              建檔人員：{order.created_by_name ?? "—"}（依登入帳號自動產生，無法修改）
+            </div>
           </div>
 
           <div className="text-xs text-muted-foreground">
