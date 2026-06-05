@@ -472,6 +472,9 @@ function OrdersPage() {
                         <div className="text-xs text-muted-foreground truncate">
                           {o.customer_email ?? "—"} · {new Date(o.created_at).toLocaleDateString("zh-TW")}
                         </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          業務：{o.salesperson_name ?? "—"} · 建檔：{o.created_by_name ?? "—"}
+                        </div>
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
