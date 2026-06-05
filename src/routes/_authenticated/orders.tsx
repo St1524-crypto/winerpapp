@@ -1993,6 +1993,7 @@ function EditOrderDialog({
   const [discount, setDiscount] = useState(String(order.discount_amount ?? 0));
   const [notes, setNotes] = useState(order.notes ?? "");
   const [orderSource, setOrderSource] = useState(order.order_source ?? "");
+  const [salespersonId, setSalespersonId] = useState<string>(order.salesperson_id ?? "");
   const [editItems, setEditItems] = useState(
     initialItems.map((it) => ({
       product_id: it.product_id,
