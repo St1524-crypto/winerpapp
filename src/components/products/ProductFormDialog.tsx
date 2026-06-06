@@ -104,6 +104,13 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
     const unique = await isSkuUnique(sku, product?.id);
     if (!unique) { toast.error("SKU 已存在，請修改"); return; }
 
+    // 規則：未上傳商品圖一律下架，必須由管理員手動上架
+    const noImage = images.length === 0;
+    const effectiveStatus = noImage ? "inactive" : form.status;
+    if (noImage && form.status === "active") {
+      toast.warning("未上傳商品圖，已自動設為「已下架」。如需上架，請先上傳圖片。");
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -120,7 +127,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         safe_stock: Math.max(0, Math.floor(Number(form.safe_stock) || 0)),
         reward_points: Math.max(0, Math.floor(Number(form.reward_points) || 0)),
         discount_points_max: Math.max(0, Math.floor(Number(form.discount_points_max) || 0)),
-        status: form.status, featured: form.featured,
+        status: effectiveStatus, featured: form.featured,
         image: images[0]?.url ?? null,
         specs: form.specs
           .filter((s) => s.label.trim())
@@ -131,6 +138,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
             sku_suffix: (s.sku_suffix || "").trim(),
           })),
       };
+
 
       let productId = product?.id;
       if (product) {
@@ -454,12 +462,16 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">上架中</SelectItem>
+                    <SelectItem value="active" disabled={images.length === 0}>上架中{images.length === 0 ? "（需先上傳商品圖）" : ""}</SelectItem>
                     <SelectItem value="draft">草稿</SelectItem>
                     <SelectItem value="inactive">已下架</SelectItem>
                   </SelectContent>
                 </Select>
+                {images.length === 0 && (
+                  <p className="text-xs text-warning">未上傳商品圖：儲存後將自動設為「已下架」，管理員上傳圖片後才能改為上架。</p>
+                )}
               </div>
+
               <div className="flex items-center justify-between rounded-lg border border-border p-3">
                 <div>
                   <div className="font-medium text-sm">熱門商品</div>
