@@ -814,6 +814,57 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  // 會員（profiles）— 限本公司
+  const membersQ = useQuery({
+    queryKey: ["members-picker", currentCompanyId],
+    enabled: open && !!currentCompanyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,name,email,phone,member_no,is_vip,is_dealer,addr_mail,addr_home")
+        .eq("current_company_id", currentCompanyId!)
+        .not("phone", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(300);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+  // 經銷商
+  const dealersQ = useQuery({
+    queryKey: ["dealers-picker", currentCompanyId],
+    enabled: open && !!currentCompanyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dealers")
+        .select("id,code,name,contact,phone,email,address,status")
+        .eq("company_id", currentCompanyId!)
+        .eq("status", "active")
+        .order("updated_at", { ascending: false })
+        .limit(200);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+  // 廠商
+  const vendorsQ = useQuery({
+    queryKey: ["vendors-picker", currentCompanyId],
+    enabled: open && !!currentCompanyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id,code,name,contact,phone,email,address,status")
+        .eq("company_id", currentCompanyId!)
+        .eq("status", "active")
+        .order("updated_at", { ascending: false })
+        .limit(200);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
   const productsQ = useQuery({
     queryKey: ["products-picker-orders", currentCompanyId],
     enabled: open && !!currentCompanyId,
