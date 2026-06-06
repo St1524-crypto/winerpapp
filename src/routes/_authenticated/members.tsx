@@ -57,12 +57,32 @@ function Page() {
 
   async function load() {
     setLoading(true);
-    const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }, { data: tierData }] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip").order("created_at", { ascending: false }).limit(5000),
+    // Paginate profiles to bypass PostgREST default max-rows cap (1000)
+    const PAGE = 1000;
+    let from = 0;
+    const allProfiles: any[] = [];
+    let lastErr: any = null;
+    while (true) {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip")
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) { lastErr = error; break; }
+      if (!data || data.length === 0) break;
+      allProfiles.push(...data);
+      if (data.length < PAGE) break;
+      from += PAGE;
+      if (from > 50000) break; // safety
+    }
+    const [{ data: rolesData, error: e2 }, { data: tierData }] = await Promise.all([
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("dealer_tier_status").select("user_id, current_tier"),
     ]);
+    const profiles = allProfiles;
+    const e1 = lastErr;
     if (e1 || e2) { toast.error(e1?.message ?? e2?.message ?? "載入失敗"); setLoading(false); return; }
+
     const rolesMap = new Map<string, AppRole[]>();
     (rolesData ?? []).forEach((r: any) => {
       const arr = rolesMap.get(r.user_id) ?? [];
