@@ -1114,13 +1114,25 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     onError: (e: any) => toast.error(e?.message ?? "建立失敗"),
   });
 
-  function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null }) {
+  function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null }) {
     setCustomerId(c.id);
     setCustomer(c.name);
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
+    if (c.address && !address) setAddress(c.address);
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
+  }
+
+  // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
+  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string }) {
+    setCustomerId(null);
+    setCustomer(e.name);
+    setEmail(e.email ?? "");
+    setPhone(e.phone ?? "");
+    if (e.address && !address) setAddress(e.address);
+    setPickerOpen(false);
+    toast.success(`已帶入${e.label}：${e.name}`);
   }
 
   return (
