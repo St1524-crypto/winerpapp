@@ -1174,7 +1174,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   <span className="truncate">
                     {customerId
                       ? `${customer}${email ? ` · ${email}` : ""}`
-                      : "搜尋客戶姓名 / Email / 電話 / 公司"}
+                      : "搜尋客戶 / 會員 / 經銷商 / 廠商（姓名・電話・Email）"}
                   </span>
                   <Search className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
                 </Button>
