@@ -1292,13 +1292,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                       onValueChange={(v) => setQaName(v)}
                     />
                     <CommandList>
-                      {customersQ.isLoading ? (
+                      {customersQ.isLoading && membersQ.isLoading && dealersQ.isLoading && vendorsQ.isLoading ? (
                         <div className="py-6 text-center text-sm text-muted-foreground">載入中...</div>
                       ) : (
                         <>
                           <CommandEmpty>
                             <div className="py-4 px-3 space-y-2 text-center">
-                              <div className="text-sm text-muted-foreground">查無此客戶</div>
+                              <div className="text-sm text-muted-foreground">查無相符的客戶／會員／經銷商／廠商</div>
                               <Button
                                 type="button"
                                 size="sm"
