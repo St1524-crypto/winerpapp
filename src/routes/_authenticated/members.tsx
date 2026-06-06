@@ -318,7 +318,86 @@ function Page() {
             })}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 md:px-6">
+          {/* Mobile card list */}
+          <div className="md:hidden space-y-2">
+            {loading ? Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            )) : filtered.length === 0 ? (
+              <div className="text-center text-muted-foreground py-10 text-sm">尚無會員</div>
+            ) : filtered.map((m) => (
+              <div key={m.id} className="rounded-lg border border-border bg-card p-3 space-y-2">
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-10 w-10 shrink-0">
+                    {m.avatar_url && <AvatarImage src={m.avatar_url} />}
+                    <AvatarFallback>{(m.name ?? m.email ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="font-medium truncate">{m.name ?? "—"}</div>
+                      {m.member_no && <span className="font-mono text-[11px] text-muted-foreground">{m.member_no}</span>}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">{m.email ?? m.phone ?? "—"}</div>
+                    {m.phone && m.email && (
+                      <div className="text-xs text-muted-foreground truncate">{m.phone}</div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 text-[11px]">
+                  {m.roles.map((r) => (
+                    <Badge key={r} variant="outline" className={ROLE_COLORS[r]}>{ROLE_LABELS[r]}</Badge>
+                  ))}
+                  {m.current_tier && (
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 font-mono">{m.current_tier}</Badge>
+                  )}
+                  {m.is_dealer && <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30" variant="outline">經銷商</Badge>}
+                  {m.vip_expires_at && (() => {
+                    const exp = new Date(m.vip_expires_at);
+                    const expired = exp.getTime() <= Date.now();
+                    return (
+                      <Badge variant="outline" className={expired ? "bg-red-500/15 text-red-500 border-red-500/30" : "bg-amber-500/15 text-amber-600 border-amber-500/30"}>
+                        VIP {expired ? "已到期" : exp.toLocaleDateString()}
+                      </Badge>
+                    );
+                  })()}
+                </div>
+                {m.referrer_member_no && (
+                  <div className="text-[11px] text-muted-foreground">
+                    推薦人：<span className="font-mono">{m.referrer_member_no}</span> · {m.referrer_name ?? "—"}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-1 pt-1 border-t border-border/60">
+                  {(m.marketing_slug || m.phone) && (
+                    <Button asChild size="sm" variant="ghost" className="h-8 px-2 text-xs">
+                      <a href={`/r/${m.marketing_slug || m.phone}`} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3.5 w-3.5 mr-1" />預覽
+                      </a>
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <>
+                      <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => openEditProfile(m)}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" />編輯
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => openPasswordTools(m)}>
+                        <KeyRound className="h-3.5 w-3.5 mr-1" />密碼
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => toggleDealer(m)}>
+                        <Handshake className={`h-3.5 w-3.5 mr-1 ${m.is_dealer ? "text-emerald-600" : ""}`} />
+                        {m.is_dealer ? "取消經銷" : "經銷"}
+                      </Button>
+                    </>
+                  )}
+                  <Button size="sm" variant="ghost" className="h-8 px-2 text-xs" onClick={() => openEditRoles(m)}>
+                    <Shield className="h-3.5 w-3.5 mr-1" />角色
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -436,6 +515,7 @@ function Page() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
