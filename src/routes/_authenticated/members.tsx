@@ -279,14 +279,14 @@ function Page() {
 
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6">
+    <div className="max-w-[1600px] mx-auto space-y-4 md:space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><UserCircle className="h-6 w-6 text-primary" />會員管理</h1>
-          <p className="text-sm text-muted-foreground mt-1">管理會員帳號、基本資料與角色權限</p>
+        <div className="min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight flex items-center gap-2"><UserCircle className="h-5 w-5 md:h-6 md:w-6 text-primary" />會員管理</h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">管理會員帳號、基本資料與角色權限</p>
         </div>
         {isAdmin && (
-          <Button onClick={openCreate} className="bg-gradient-primary">
+          <Button onClick={openCreate} size="sm" className="bg-gradient-primary">
             <UserPlus className="h-4 w-4 mr-2" />新增會員
           </Button>
         )}
