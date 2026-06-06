@@ -814,6 +814,57 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  // 會員（profiles）— 限本公司
+  const membersQ = useQuery({
+    queryKey: ["members-picker", currentCompanyId],
+    enabled: open && !!currentCompanyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,name,email,phone,member_no,is_vip,is_dealer,addr_mail,addr_home")
+        .eq("current_company_id", currentCompanyId!)
+        .not("phone", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(300);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+  // 經銷商
+  const dealersQ = useQuery({
+    queryKey: ["dealers-picker", currentCompanyId],
+    enabled: open && !!currentCompanyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dealers")
+        .select("id,code,name,contact,phone,email,address,status")
+        .eq("company_id", currentCompanyId!)
+        .eq("status", "active")
+        .order("updated_at", { ascending: false })
+        .limit(200);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+  // 廠商
+  const vendorsQ = useQuery({
+    queryKey: ["vendors-picker", currentCompanyId],
+    enabled: open && !!currentCompanyId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vendors")
+        .select("id,code,name,contact,phone,email,address,status")
+        .eq("company_id", currentCompanyId!)
+        .eq("status", "active")
+        .order("updated_at", { ascending: false })
+        .limit(200);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
   const productsQ = useQuery({
     queryKey: ["products-picker-orders", currentCompanyId],
     enabled: open && !!currentCompanyId,
@@ -1063,13 +1114,25 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     onError: (e: any) => toast.error(e?.message ?? "建立失敗"),
   });
 
-  function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null }) {
+  function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null }) {
     setCustomerId(c.id);
     setCustomer(c.name);
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
+    if (c.address && !address) setAddress(c.address);
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
+  }
+
+  // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
+  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string }) {
+    setCustomerId(null);
+    setCustomer(e.name);
+    setEmail(e.email ?? "");
+    setPhone(e.phone ?? "");
+    if (e.address && !address) setAddress(e.address);
+    setPickerOpen(false);
+    toast.success(`已帶入${e.label}：${e.name}`);
   }
 
   return (
@@ -1111,7 +1174,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   <span className="truncate">
                     {customerId
                       ? `${customer}${email ? ` · ${email}` : ""}`
-                      : "搜尋客戶姓名 / Email / 電話 / 公司"}
+                      : "搜尋客戶 / 會員 / 經銷商 / 廠商（姓名・電話・Email）"}
                   </span>
                   <Search className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
                 </Button>
@@ -1229,13 +1292,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                       onValueChange={(v) => setQaName(v)}
                     />
                     <CommandList>
-                      {customersQ.isLoading ? (
+                      {customersQ.isLoading && membersQ.isLoading && dealersQ.isLoading && vendorsQ.isLoading ? (
                         <div className="py-6 text-center text-sm text-muted-foreground">載入中...</div>
                       ) : (
                         <>
                           <CommandEmpty>
                             <div className="py-4 px-3 space-y-2 text-center">
-                              <div className="text-sm text-muted-foreground">查無此客戶</div>
+                              <div className="text-sm text-muted-foreground">查無相符的客戶／會員／經銷商／廠商</div>
                               <Button
                                 type="button"
                                 size="sm"
@@ -1250,8 +1313,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                           <CommandGroup heading={`客戶 (${customersQ.data?.length ?? 0})`}>
                             {(customersQ.data ?? []).map((c: any) => (
                               <CommandItem
-                                key={c.id}
-                                value={`${c.name} ${c.email ?? ""} ${c.phone ?? ""} ${c.company ?? ""}`}
+                                key={`cust-${c.id}`}
+                                value={`客戶 ${c.name} ${c.email ?? ""} ${c.phone ?? ""} ${c.company ?? ""}`}
                                 onSelect={() => pickCustomer(c)}
                               >
                                 <Check className={`h-4 w-4 mr-2 ${customerId === c.id ? "opacity-100" : "opacity-0"}`} />
@@ -1262,6 +1325,83 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                                   </div>
                                   <div className="text-xs text-muted-foreground truncate">
                                     {[c.email, c.phone].filter(Boolean).join(" · ") || "—"}
+                                  </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                          <CommandGroup heading={`會員 (${membersQ.data?.length ?? 0})`}>
+                            {(membersQ.data ?? []).map((m: any) => (
+                              <CommandItem
+                                key={`mem-${m.id}`}
+                                value={`會員 ${m.name ?? ""} ${m.email ?? ""} ${m.phone ?? ""} ${m.member_no ?? ""}`}
+                                onSelect={() => pickEntity({
+                                  name: m.name ?? m.member_no ?? "會員",
+                                  email: m.email ?? null,
+                                  phone: m.phone ?? null,
+                                  address: m.addr_mail ?? m.addr_home ?? null,
+                                  label: m.is_vip ? "VIP 會員" : "會員",
+                                })}
+                              >
+                                <div className="flex-1 min-w-0 ml-6">
+                                  <div className="text-sm font-medium truncate">
+                                    {m.name ?? "(未命名)"}
+                                    {m.member_no && <span className="text-xs text-muted-foreground ml-2">{m.member_no}</span>}
+                                    {m.is_vip && <span className="text-xs text-primary ml-2">VIP</span>}
+                                    {m.is_dealer && <span className="text-xs text-primary ml-2">經銷</span>}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {[m.email, m.phone].filter(Boolean).join(" · ") || "—"}
+                                  </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                          <CommandGroup heading={`經銷商 (${dealersQ.data?.length ?? 0})`}>
+                            {(dealersQ.data ?? []).map((d: any) => (
+                              <CommandItem
+                                key={`dlr-${d.id}`}
+                                value={`經銷商 ${d.name ?? ""} ${d.contact ?? ""} ${d.phone ?? ""} ${d.email ?? ""} ${d.code ?? ""}`}
+                                onSelect={() => pickEntity({
+                                  name: d.contact ? `${d.name}（${d.contact}）` : d.name,
+                                  email: d.email ?? null,
+                                  phone: d.phone ?? null,
+                                  address: d.address ?? null,
+                                  label: "經銷商",
+                                })}
+                              >
+                                <div className="flex-1 min-w-0 ml-6">
+                                  <div className="text-sm font-medium truncate">
+                                    {d.name}
+                                    {d.code && <span className="text-xs text-muted-foreground ml-2">{d.code}</span>}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {[d.contact, d.phone, d.email].filter(Boolean).join(" · ") || "—"}
+                                  </div>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                          <CommandGroup heading={`廠商 (${vendorsQ.data?.length ?? 0})`}>
+                            {(vendorsQ.data ?? []).map((v: any) => (
+                              <CommandItem
+                                key={`ven-${v.id}`}
+                                value={`廠商 ${v.name ?? ""} ${v.contact ?? ""} ${v.phone ?? ""} ${v.email ?? ""} ${v.code ?? ""}`}
+                                onSelect={() => pickEntity({
+                                  name: v.contact ? `${v.name}（${v.contact}）` : v.name,
+                                  email: v.email ?? null,
+                                  phone: v.phone ?? null,
+                                  address: v.address ?? null,
+                                  label: "廠商",
+                                })}
+                              >
+                                <div className="flex-1 min-w-0 ml-6">
+                                  <div className="text-sm font-medium truncate">
+                                    {v.name}
+                                    {v.code && <span className="text-xs text-muted-foreground ml-2">{v.code}</span>}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {[v.contact, v.phone, v.email].filter(Boolean).join(" · ") || "—"}
                                   </div>
                                 </div>
                               </CommandItem>
