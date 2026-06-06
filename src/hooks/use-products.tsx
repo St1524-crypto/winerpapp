@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import type { Category, Product } from "@/types/product";
 
 // cost_price is restricted to staff via RPC (get_product_costs); never select it directly.
