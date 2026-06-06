@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 import type { Category, Product } from "@/types/product";
 
 // cost_price is restricted to staff via RPC (get_product_costs); never select it directly.
@@ -44,6 +45,7 @@ interface ProductFilters {
 }
 
 export function useProducts(filters: ProductFilters) {
+  const { currentCompanyId } = useCurrentCompany();
   const [data, setData] = useState<Product[]>([]);
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,7 @@ export function useProducts(filters: ProductFilters) {
     setLoading(true);
     const { page = 1, pageSize = 10, sort = { col: "created_at", dir: "desc" } } = filters;
     let q = supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS, { count: "exact" });
+    if (currentCompanyId) q = q.eq("company_id", currentCompanyId);
     if (filters.search) {
       const s = `%${filters.search}%`;
       q = q.or(`name.ilike.${s},sku.ilike.${s}`);
@@ -65,7 +68,7 @@ export function useProducts(filters: ProductFilters) {
     setData(merged as Product[]);
     setCount(count ?? 0);
     setLoading(false);
-  }, [JSON.stringify(filters)]);
+  }, [JSON.stringify(filters), currentCompanyId]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
