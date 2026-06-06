@@ -58,7 +58,7 @@ function Page() {
   async function load() {
     setLoading(true);
     const [{ data: profiles, error: e1 }, { data: rolesData, error: e2 }, { data: tierData }] = await Promise.all([
-      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip").order("created_at", { ascending: false }).limit(5000),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("dealer_tier_status").select("user_id, current_tier"),
     ]);
@@ -72,6 +72,21 @@ function Page() {
     const tierMap = new Map<string, string>();
     (tierData ?? []).forEach((t: any) => { if (t.current_tier) tierMap.set(t.user_id, t.current_tier); });
     const byId = new Map<string, any>((profiles ?? []).map((p: any) => [p.id, p]));
+
+    // Fetch referrer profiles that aren't already in the current page
+    const missingRefIds = Array.from(new Set(
+      (profiles ?? [])
+        .map((p: any) => p.referred_by)
+        .filter((rid: string | null): rid is string => !!rid && !byId.has(rid))
+    ));
+    if (missingRefIds.length > 0) {
+      const { data: refProfiles } = await supabase
+        .from("profiles")
+        .select("id, member_no, name")
+        .in("id", missingRefIds);
+      (refProfiles ?? []).forEach((r: any) => byId.set(r.id, r));
+    }
+
     setList((profiles ?? []).map((p: any) => {
       const ref = p.referred_by ? byId.get(p.referred_by) : null;
       return {
@@ -84,6 +99,7 @@ function Page() {
     }));
     setLoading(false);
   }
+
   useEffect(() => { load(); }, []);
 
   const filtered = useMemo(() => list.filter((m) => {
