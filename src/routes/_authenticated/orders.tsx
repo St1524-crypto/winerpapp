@@ -1463,7 +1463,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                                 onSelect={() => addItem(p)}
                               >
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-sm font-medium truncate">{p.name}</div>
+                                  <div className="text-sm font-medium truncate flex items-center gap-1.5">
+                                    <span className="truncate">{p.name}</span>
+                                    <Badge variant="outline" className={p.status === "active" ? "border-emerald-500/40 text-emerald-700" : "border-muted-foreground/40 text-muted-foreground"}>
+                                      {p.status === "active" ? "上架中" : "已下架"}
+                                    </Badge>
+                                  </div>
                                   <div className="text-xs text-muted-foreground truncate">
                                     {p.sku ?? "—"} · 庫存 {p.stock ?? 0}
                                   </div>
