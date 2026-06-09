@@ -871,11 +871,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id,name,sku,price,image,stock")
-        .eq("status", "active")
+        .select("id,name,sku,price,image,stock,status")
         .eq("company_id", currentCompanyId!)
         .order("updated_at", { ascending: false })
-        .limit(300);
+        .limit(500);
       if (error) throw new Error(error.message);
       return data ?? [];
     },
