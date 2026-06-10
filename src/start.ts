@@ -3,11 +3,17 @@ import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 import { renderErrorPage } from "./lib/error-page";
 
-const errorMiddleware = createMiddleware().server(async ({ next }) => {
+const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
   try {
     return await next();
   } catch (error) {
     if (error != null && typeof error === "object" && "statusCode" in error) {
+      throw error;
+    }
+    // Let serverFn RPC errors propagate so client `.catch()` handlers work
+    // and the framework returns a proper JSON error envelope.
+    const url = request?.url ?? "";
+    if (url.includes("/_serverFn/")) {
       throw error;
     }
     console.error(error);
