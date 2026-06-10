@@ -4091,6 +4091,13 @@ export type Database = {
           id: string
         }[]
       }
+      get_product_wholesale_prices: {
+        Args: { _ids: string[] }
+        Returns: {
+          id: string
+          wholesale_price: number
+        }[]
+      }
       get_profile_id_no: { Args: { _user_id: string }; Returns: string }
       get_public_companies: {
         Args: never
