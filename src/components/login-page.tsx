@@ -92,9 +92,19 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
     if (!loading && user) {
       if (sessionStorage.getItem("mfa_pending") === user.id) {
         navigate({ to: "/two-factor" });
-      } else {
-        navigate({ to: roles.includes("super_admin") ? "/admin" : "/dashboard" });
+        return;
       }
+      const STAFF_ROLES = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor"];
+      const isStaff = roles.some((r) => STAFF_ROLES.includes(r as string));
+      if (isStaff) {
+        (async () => {
+          await supabase.auth.signOut();
+          toast.error("此頁面僅供會員登入，請使用管理員登入頁", { description: "/admin/login" });
+          navigate({ to: "/admin/login" });
+        })();
+        return;
+      }
+      navigate({ to: "/shop" });
     }
   }, [user, loading, roles, navigate]);
 
