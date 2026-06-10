@@ -162,7 +162,7 @@ function AuthLayout() {
     );
   }
 
-  const inAdmin = pathname.startsWith("/admin") && roles.includes("super_admin");
+  const inAdmin = inAdminPath && isStaff;
 
   return (
     <SidebarProvider>
