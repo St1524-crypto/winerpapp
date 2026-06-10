@@ -1720,6 +1720,185 @@ export type Database = {
           },
         ]
       }
+      group_buy_orders: {
+        Row: {
+          cash_amount: number
+          created_at: string
+          group_buy_id: string
+          id: string
+          paid_at: string | null
+          payment_method: string
+          points_used: number
+          quantity: number
+          sales_order_id: string | null
+          status: string
+          subtotal: number
+          unit_price: number
+          user_id: string
+        }
+        Insert: {
+          cash_amount?: number
+          created_at?: string
+          group_buy_id: string
+          id?: string
+          paid_at?: string | null
+          payment_method?: string
+          points_used?: number
+          quantity?: number
+          sales_order_id?: string | null
+          status?: string
+          subtotal: number
+          unit_price: number
+          user_id: string
+        }
+        Update: {
+          cash_amount?: number
+          created_at?: string
+          group_buy_id?: string
+          id?: string
+          paid_at?: string | null
+          payment_method?: string
+          points_used?: number
+          quantity?: number
+          sales_order_id?: string | null
+          status?: string
+          subtotal?: number
+          unit_price?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_buy_orders_group_buy_id_fkey"
+            columns: ["group_buy_id"]
+            isOneToOne: false
+            referencedRelation: "group_buys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_buy_orders_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_buy_settings: {
+        Row: {
+          auto_refund_hours: number | null
+          company_id: string
+          created_at: string
+          default_duration_days: number
+          id: string
+          initiator_reward_pct: number
+          max_orders_per_user: number
+          target_count: number
+          updated_at: string
+          winner_reward_pct: number
+        }
+        Insert: {
+          auto_refund_hours?: number | null
+          company_id: string
+          created_at?: string
+          default_duration_days?: number
+          id?: string
+          initiator_reward_pct?: number
+          max_orders_per_user?: number
+          target_count?: number
+          updated_at?: string
+          winner_reward_pct?: number
+        }
+        Update: {
+          auto_refund_hours?: number | null
+          company_id?: string
+          created_at?: string
+          default_duration_days?: number
+          id?: string
+          initiator_reward_pct?: number
+          max_orders_per_user?: number
+          target_count?: number
+          updated_at?: string
+          winner_reward_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_buy_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_buys: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          current_count: number
+          expires_at: string
+          id: string
+          initiator_id: string
+          product_id: string
+          started_at: string
+          status: string
+          target_count: number
+          unit_price: number
+          updated_at: string
+          winner_id: string | null
+          winner_picked_at: string | null
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          current_count?: number
+          expires_at: string
+          id?: string
+          initiator_id: string
+          product_id: string
+          started_at?: string
+          status?: string
+          target_count?: number
+          unit_price: number
+          updated_at?: string
+          winner_id?: string | null
+          winner_picked_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          current_count?: number
+          expires_at?: string
+          id?: string
+          initiator_id?: string
+          product_id?: string
+          started_at?: string
+          status?: string
+          target_count?: number
+          unit_price?: number
+          updated_at?: string
+          winner_id?: string | null
+          winner_picked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_buys_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_buys_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_logs: {
         Row: {
           after_stock: number
@@ -3710,6 +3889,94 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "warehouses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_deliveries: {
+        Row: {
+          attempts: number
+          delivered_at: string
+          endpoint_id: string
+          error: string | null
+          event: string
+          id: string
+          payload: Json
+          response_body: string | null
+          status_code: number | null
+        }
+        Insert: {
+          attempts?: number
+          delivered_at?: string
+          endpoint_id: string
+          error?: string | null
+          event: string
+          id?: string
+          payload: Json
+          response_body?: string | null
+          status_code?: number | null
+        }
+        Update: {
+          attempts?: number
+          delivered_at?: string
+          endpoint_id?: string
+          error?: string | null
+          event?: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          status_code?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_endpoints: {
+        Row: {
+          active: boolean
+          bearer_token: string
+          company_id: string
+          created_at: string
+          events: string[]
+          id: string
+          name: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          bearer_token?: string
+          company_id: string
+          created_at?: string
+          events?: string[]
+          id?: string
+          name: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          bearer_token?: string
+          company_id?: string
+          created_at?: string
+          events?: string[]
+          id?: string
+          name?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_endpoints_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
