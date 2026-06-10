@@ -12,10 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RecruitRouteImport } from './routes/recruit'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as LoginIndexRouteImport } from './routes/login.index'
+import { Route as GroupBuysIndexRouteImport } from './routes/group-buys.index'
 import { Route as UCodeRouteImport } from './routes/u.$code'
 import { Route as ShopWholesaleRouteImport } from './routes/shop.wholesale'
 import { Route as ShopVipRouteImport } from './routes/shop.vip'
@@ -25,6 +27,7 @@ import { Route as ShopAccountRouteImport } from './routes/shop.account'
 import { Route as RPhoneRouteImport } from './routes/r.$phone'
 import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as LoginSlugRouteImport } from './routes/login.$slug'
+import { Route as GroupBuysIdRouteImport } from './routes/group-buys.$id'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authenticated/warehouses'
 import { Route as AuthenticatedVipPlansRouteImport } from './routes/_authenticated/vip-plans'
@@ -98,6 +101,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecruitRoute = RecruitRouteImport.update({
+  id: '/recruit',
+  path: '/recruit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -115,6 +123,11 @@ const ShopIndexRoute = ShopIndexRouteImport.update({
 const LoginIndexRoute = LoginIndexRouteImport.update({
   id: '/login/',
   path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupBuysIndexRoute = GroupBuysIndexRouteImport.update({
+  id: '/group-buys/',
+  path: '/group-buys/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UCodeRoute = UCodeRouteImport.update({
@@ -160,6 +173,11 @@ const MSlugRoute = MSlugRouteImport.update({
 const LoginSlugRoute = LoginSlugRouteImport.update({
   id: '/login/$slug',
   path: '/login/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupBuysIdRoute = GroupBuysIdRouteImport.update({
+  id: '/group-buys/$id',
+  path: '/group-buys/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CSlugRoute = CSlugRouteImport.update({
@@ -476,6 +494,7 @@ const AuthenticatedAdminCompaniesNewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/recruit': typeof RecruitRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
@@ -505,6 +524,7 @@ export interface FileRoutesByFullPath {
   '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/c/$slug': typeof CSlugRoute
+  '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
   '/r/$phone': typeof RPhoneRoute
@@ -514,6 +534,7 @@ export interface FileRoutesByFullPath {
   '/shop/vip': typeof ShopVipRoute
   '/shop/wholesale': typeof ShopWholesaleRoute
   '/u/$code': typeof UCodeRoute
+  '/group-buys/': typeof GroupBuysIndexRoute
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
@@ -550,6 +571,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/recruit': typeof RecruitRoute
   '/reset-password': typeof ResetPasswordRoute
   '/two-factor': typeof TwoFactorRoute
   '/cash-admin': typeof AuthenticatedCashAdminRoute
@@ -577,6 +599,7 @@ export interface FileRoutesByTo {
   '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/c/$slug': typeof CSlugRoute
+  '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
   '/r/$phone': typeof RPhoneRoute
@@ -585,6 +608,7 @@ export interface FileRoutesByTo {
   '/shop/vip': typeof ShopVipRoute
   '/shop/wholesale': typeof ShopWholesaleRoute
   '/u/$code': typeof UCodeRoute
+  '/group-buys': typeof GroupBuysIndexRoute
   '/login': typeof LoginIndexRoute
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
@@ -623,6 +647,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/recruit': typeof RecruitRoute
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
@@ -652,6 +677,7 @@ export interface FileRoutesById {
   '/_authenticated/vip-plans': typeof AuthenticatedVipPlansRoute
   '/_authenticated/warehouses': typeof AuthenticatedWarehousesRoute
   '/c/$slug': typeof CSlugRoute
+  '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
   '/r/$phone': typeof RPhoneRoute
@@ -661,6 +687,7 @@ export interface FileRoutesById {
   '/shop/vip': typeof ShopVipRoute
   '/shop/wholesale': typeof ShopWholesaleRoute
   '/u/$code': typeof UCodeRoute
+  '/group-buys/': typeof GroupBuysIndexRoute
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
@@ -699,6 +726,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/recruit'
     | '/reset-password'
     | '/shop'
     | '/two-factor'
@@ -728,6 +756,7 @@ export interface FileRouteTypes {
     | '/vip-plans'
     | '/warehouses'
     | '/c/$slug'
+    | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
     | '/r/$phone'
@@ -737,6 +766,7 @@ export interface FileRouteTypes {
     | '/shop/vip'
     | '/shop/wholesale'
     | '/u/$code'
+    | '/group-buys/'
     | '/login/'
     | '/shop/'
     | '/admin/audit-logs'
@@ -773,6 +803,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/recruit'
     | '/reset-password'
     | '/two-factor'
     | '/cash-admin'
@@ -800,6 +831,7 @@ export interface FileRouteTypes {
     | '/vip-plans'
     | '/warehouses'
     | '/c/$slug'
+    | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
     | '/r/$phone'
@@ -808,6 +840,7 @@ export interface FileRouteTypes {
     | '/shop/vip'
     | '/shop/wholesale'
     | '/u/$code'
+    | '/group-buys'
     | '/login'
     | '/shop'
     | '/admin/audit-logs'
@@ -845,6 +878,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/recruit'
     | '/reset-password'
     | '/shop'
     | '/two-factor'
@@ -874,6 +908,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vip-plans'
     | '/_authenticated/warehouses'
     | '/c/$slug'
+    | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
     | '/r/$phone'
@@ -883,6 +918,7 @@ export interface FileRouteTypes {
     | '/shop/vip'
     | '/shop/wholesale'
     | '/u/$code'
+    | '/group-buys/'
     | '/login/'
     | '/shop/'
     | '/_authenticated/admin/audit-logs'
@@ -921,14 +957,17 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  RecruitRoute: typeof RecruitRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRouteWithChildren
   TwoFactorRoute: typeof TwoFactorRoute
   CSlugRoute: typeof CSlugRoute
+  GroupBuysIdRoute: typeof GroupBuysIdRoute
   LoginSlugRoute: typeof LoginSlugRoute
   MSlugRoute: typeof MSlugRoute
   RPhoneRoute: typeof RPhoneRoute
   UCodeRoute: typeof UCodeRoute
+  GroupBuysIndexRoute: typeof GroupBuysIndexRoute
   LoginIndexRoute: typeof LoginIndexRoute
   ApiPublicAiRecruitRoute: typeof ApiPublicAiRecruitRoute
   ApiPublicCronExpireGroupBuysRoute: typeof ApiPublicCronExpireGroupBuysRoute
@@ -959,6 +998,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recruit': {
+      id: '/recruit'
+      path: '/recruit'
+      fullPath: '/recruit'
+      preLoaderRoute: typeof RecruitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -985,6 +1031,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login/'
       preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/group-buys/': {
+      id: '/group-buys/'
+      path: '/group-buys'
+      fullPath: '/group-buys/'
+      preLoaderRoute: typeof GroupBuysIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/u/$code': {
@@ -1048,6 +1101,13 @@ declare module '@tanstack/react-router' {
       path: '/login/$slug'
       fullPath: '/login/$slug'
       preLoaderRoute: typeof LoginSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/group-buys/$id': {
+      id: '/group-buys/$id'
+      path: '/group-buys/$id'
+      fullPath: '/group-buys/$id'
+      preLoaderRoute: typeof GroupBuysIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/c/$slug': {
@@ -1654,14 +1714,17 @@ const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  RecruitRoute: RecruitRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRouteWithChildren,
   TwoFactorRoute: TwoFactorRoute,
   CSlugRoute: CSlugRoute,
+  GroupBuysIdRoute: GroupBuysIdRoute,
   LoginSlugRoute: LoginSlugRoute,
   MSlugRoute: MSlugRoute,
   RPhoneRoute: RPhoneRoute,
   UCodeRoute: UCodeRoute,
+  GroupBuysIndexRoute: GroupBuysIndexRoute,
   LoginIndexRoute: LoginIndexRoute,
   ApiPublicAiRecruitRoute: ApiPublicAiRecruitRoute,
   ApiPublicCronExpireGroupBuysRoute: ApiPublicCronExpireGroupBuysRoute,
