@@ -29,6 +29,7 @@ import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as LoginSlugRouteImport } from './routes/login.$slug'
 import { Route as GroupBuysIdRouteImport } from './routes/group-buys.$id'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
+import { Route as AuthenticatedWebhooksAdminRouteImport } from './routes/_authenticated/webhooks-admin'
 import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authenticated/warehouses'
 import { Route as AuthenticatedVipPlansRouteImport } from './routes/_authenticated/vip-plans'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
@@ -46,6 +47,8 @@ import { Route as AuthenticatedMyReferralsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
 import { Route as AuthenticatedInventoryTxRouteImport } from './routes/_authenticated/inventory-tx'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
+import { Route as AuthenticatedGroupBuySettingsRouteImport } from './routes/_authenticated/group-buy-settings'
+import { Route as AuthenticatedGroupBuyAdminRouteImport } from './routes/_authenticated/group-buy-admin'
 import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedDealersRouteImport } from './routes/_authenticated/dealers'
 import { Route as AuthenticatedDealerTiersRouteImport } from './routes/_authenticated/dealer-tiers'
@@ -185,6 +188,12 @@ const CSlugRoute = CSlugRouteImport.update({
   path: '/c/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedWebhooksAdminRoute =
+  AuthenticatedWebhooksAdminRouteImport.update({
+    id: '/webhooks-admin',
+    path: '/webhooks-admin',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedWarehousesRoute = AuthenticatedWarehousesRouteImport.update({
   id: '/warehouses',
   path: '/warehouses',
@@ -274,6 +283,18 @@ const AuthenticatedInventoryRoute = AuthenticatedInventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedGroupBuySettingsRoute =
+  AuthenticatedGroupBuySettingsRouteImport.update({
+    id: '/group-buy-settings',
+    path: '/group-buy-settings',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedGroupBuyAdminRoute =
+  AuthenticatedGroupBuyAdminRouteImport.update({
+    id: '/group-buy-admin',
+    path: '/group-buy-admin',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
   id: '/finance',
   path: '/finance',
@@ -506,6 +527,8 @@ export interface FileRoutesByFullPath {
   '/dealer-tiers': typeof AuthenticatedDealerTiersRoute
   '/dealers': typeof AuthenticatedDealersRoute
   '/finance': typeof AuthenticatedFinanceRouteWithChildren
+  '/group-buy-admin': typeof AuthenticatedGroupBuyAdminRoute
+  '/group-buy-settings': typeof AuthenticatedGroupBuySettingsRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/members': typeof AuthenticatedMembersRoute
@@ -523,6 +546,7 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
+  '/webhooks-admin': typeof AuthenticatedWebhooksAdminRoute
   '/c/$slug': typeof CSlugRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
@@ -581,6 +605,8 @@ export interface FileRoutesByTo {
   '/dealer-program': typeof AuthenticatedDealerProgramRoute
   '/dealer-tiers': typeof AuthenticatedDealerTiersRoute
   '/dealers': typeof AuthenticatedDealersRoute
+  '/group-buy-admin': typeof AuthenticatedGroupBuyAdminRoute
+  '/group-buy-settings': typeof AuthenticatedGroupBuySettingsRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/members': typeof AuthenticatedMembersRoute
@@ -598,6 +624,7 @@ export interface FileRoutesByTo {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
+  '/webhooks-admin': typeof AuthenticatedWebhooksAdminRoute
   '/c/$slug': typeof CSlugRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
@@ -659,6 +686,8 @@ export interface FileRoutesById {
   '/_authenticated/dealer-tiers': typeof AuthenticatedDealerTiersRoute
   '/_authenticated/dealers': typeof AuthenticatedDealersRoute
   '/_authenticated/finance': typeof AuthenticatedFinanceRouteWithChildren
+  '/_authenticated/group-buy-admin': typeof AuthenticatedGroupBuyAdminRoute
+  '/_authenticated/group-buy-settings': typeof AuthenticatedGroupBuySettingsRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/inventory-tx': typeof AuthenticatedInventoryTxRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
@@ -676,6 +705,7 @@ export interface FileRoutesById {
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/vip-plans': typeof AuthenticatedVipPlansRoute
   '/_authenticated/warehouses': typeof AuthenticatedWarehousesRoute
+  '/_authenticated/webhooks-admin': typeof AuthenticatedWebhooksAdminRoute
   '/c/$slug': typeof CSlugRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
@@ -738,6 +768,8 @@ export interface FileRouteTypes {
     | '/dealer-tiers'
     | '/dealers'
     | '/finance'
+    | '/group-buy-admin'
+    | '/group-buy-settings'
     | '/inventory'
     | '/inventory-tx'
     | '/members'
@@ -755,6 +787,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/vip-plans'
     | '/warehouses'
+    | '/webhooks-admin'
     | '/c/$slug'
     | '/group-buys/$id'
     | '/login/$slug'
@@ -813,6 +846,8 @@ export interface FileRouteTypes {
     | '/dealer-program'
     | '/dealer-tiers'
     | '/dealers'
+    | '/group-buy-admin'
+    | '/group-buy-settings'
     | '/inventory'
     | '/inventory-tx'
     | '/members'
@@ -830,6 +865,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/vip-plans'
     | '/warehouses'
+    | '/webhooks-admin'
     | '/c/$slug'
     | '/group-buys/$id'
     | '/login/$slug'
@@ -890,6 +926,8 @@ export interface FileRouteTypes {
     | '/_authenticated/dealer-tiers'
     | '/_authenticated/dealers'
     | '/_authenticated/finance'
+    | '/_authenticated/group-buy-admin'
+    | '/_authenticated/group-buy-settings'
     | '/_authenticated/inventory'
     | '/_authenticated/inventory-tx'
     | '/_authenticated/members'
@@ -907,6 +945,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendors'
     | '/_authenticated/vip-plans'
     | '/_authenticated/warehouses'
+    | '/_authenticated/webhooks-admin'
     | '/c/$slug'
     | '/group-buys/$id'
     | '/login/$slug'
@@ -1117,6 +1156,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/webhooks-admin': {
+      id: '/_authenticated/webhooks-admin'
+      path: '/webhooks-admin'
+      fullPath: '/webhooks-admin'
+      preLoaderRoute: typeof AuthenticatedWebhooksAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/warehouses': {
       id: '/_authenticated/warehouses'
       path: '/warehouses'
@@ -1234,6 +1280,20 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/inventory'
       preLoaderRoute: typeof AuthenticatedInventoryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/group-buy-settings': {
+      id: '/_authenticated/group-buy-settings'
+      path: '/group-buy-settings'
+      fullPath: '/group-buy-settings'
+      preLoaderRoute: typeof AuthenticatedGroupBuySettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/group-buy-admin': {
+      id: '/_authenticated/group-buy-admin'
+      path: '/group-buy-admin'
+      fullPath: '/group-buy-admin'
+      preLoaderRoute: typeof AuthenticatedGroupBuyAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/finance': {
@@ -1581,6 +1641,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDealerTiersRoute: typeof AuthenticatedDealerTiersRoute
   AuthenticatedDealersRoute: typeof AuthenticatedDealersRoute
   AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRouteWithChildren
+  AuthenticatedGroupBuyAdminRoute: typeof AuthenticatedGroupBuyAdminRoute
+  AuthenticatedGroupBuySettingsRoute: typeof AuthenticatedGroupBuySettingsRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedInventoryTxRoute: typeof AuthenticatedInventoryTxRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
@@ -1598,6 +1660,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedVipPlansRoute: typeof AuthenticatedVipPlansRoute
   AuthenticatedWarehousesRoute: typeof AuthenticatedWarehousesRoute
+  AuthenticatedWebhooksAdminRoute: typeof AuthenticatedWebhooksAdminRoute
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
   AuthenticatedAdminBonusCenterRoute: typeof AuthenticatedAdminBonusCenterRoute
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
@@ -1619,6 +1682,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDealerTiersRoute: AuthenticatedDealerTiersRoute,
   AuthenticatedDealersRoute: AuthenticatedDealersRoute,
   AuthenticatedFinanceRoute: AuthenticatedFinanceRouteWithChildren,
+  AuthenticatedGroupBuyAdminRoute: AuthenticatedGroupBuyAdminRoute,
+  AuthenticatedGroupBuySettingsRoute: AuthenticatedGroupBuySettingsRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedInventoryTxRoute: AuthenticatedInventoryTxRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
@@ -1637,6 +1702,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedVipPlansRoute: AuthenticatedVipPlansRoute,
   AuthenticatedWarehousesRoute: AuthenticatedWarehousesRoute,
+  AuthenticatedWebhooksAdminRoute: AuthenticatedWebhooksAdminRoute,
   AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
   AuthenticatedAdminBonusCenterRoute: AuthenticatedAdminBonusCenterRoute,
   AuthenticatedAdminCompaniesRoute:
