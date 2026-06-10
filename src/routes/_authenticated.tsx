@@ -115,7 +115,7 @@ function AuthLayout() {
           // 紀錄失敗不阻擋登出
         }
         await signOut();
-        navigate({ to: "/login" });
+        navigate({ to: inAdminPath ? "/admin/login" : "/login" });
       })();
       return;
     }
