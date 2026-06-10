@@ -15,14 +15,14 @@ const STAFF_ROLES = ["super_admin", "admin", "finance", "warehouse", "sales", "v
 export const Route = createFileRoute("/admin/login")({ component: AdminLoginPage });
 
 function AdminLoginPage() {
-  const { user, loading, roles } = useAuth();
+  const { user, loading, roles, rolesLoaded } = useAuth();
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (loading || !user) return;
+    if (loading || !user || !rolesLoaded || busy) return;
     if (sessionStorage.getItem("mfa_pending") === user.id) {
       navigate({ to: "/two-factor" });
       return;
@@ -37,7 +37,8 @@ function AdminLoginPage() {
       return;
     }
     navigate({ to: "/admin" });
-  }, [user, loading, roles, navigate]);
+  }, [user, loading, roles, rolesLoaded, busy, navigate]);
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
