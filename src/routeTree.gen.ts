@@ -29,6 +29,7 @@ import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as LoginSlugRouteImport } from './routes/login.$slug'
 import { Route as GroupBuysIdRouteImport } from './routes/group-buys.$id'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AuthenticatedWebhooksAdminRouteImport } from './routes/_authenticated/webhooks-admin'
 import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authenticated/warehouses'
 import { Route as AuthenticatedVipPlansRouteImport } from './routes/_authenticated/vip-plans'
@@ -186,6 +187,11 @@ const GroupBuysIdRoute = GroupBuysIdRouteImport.update({
 const CSlugRoute = CSlugRouteImport.update({
   id: '/c/$slug',
   path: '/c/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWebhooksAdminRoute =
@@ -547,6 +553,7 @@ export interface FileRoutesByFullPath {
   '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/webhooks-admin': typeof AuthenticatedWebhooksAdminRoute
+  '/admin/login': typeof AdminLoginRoute
   '/c/$slug': typeof CSlugRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
@@ -625,6 +632,7 @@ export interface FileRoutesByTo {
   '/vip-plans': typeof AuthenticatedVipPlansRoute
   '/warehouses': typeof AuthenticatedWarehousesRoute
   '/webhooks-admin': typeof AuthenticatedWebhooksAdminRoute
+  '/admin/login': typeof AdminLoginRoute
   '/c/$slug': typeof CSlugRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
@@ -706,6 +714,7 @@ export interface FileRoutesById {
   '/_authenticated/vip-plans': typeof AuthenticatedVipPlansRoute
   '/_authenticated/warehouses': typeof AuthenticatedWarehousesRoute
   '/_authenticated/webhooks-admin': typeof AuthenticatedWebhooksAdminRoute
+  '/admin/login': typeof AdminLoginRoute
   '/c/$slug': typeof CSlugRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
@@ -788,6 +797,7 @@ export interface FileRouteTypes {
     | '/vip-plans'
     | '/warehouses'
     | '/webhooks-admin'
+    | '/admin/login'
     | '/c/$slug'
     | '/group-buys/$id'
     | '/login/$slug'
@@ -866,6 +876,7 @@ export interface FileRouteTypes {
     | '/vip-plans'
     | '/warehouses'
     | '/webhooks-admin'
+    | '/admin/login'
     | '/c/$slug'
     | '/group-buys/$id'
     | '/login/$slug'
@@ -946,6 +957,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vip-plans'
     | '/_authenticated/warehouses'
     | '/_authenticated/webhooks-admin'
+    | '/admin/login'
     | '/c/$slug'
     | '/group-buys/$id'
     | '/login/$slug'
@@ -1000,6 +1012,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRouteWithChildren
   TwoFactorRoute: typeof TwoFactorRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   CSlugRoute: typeof CSlugRoute
   GroupBuysIdRoute: typeof GroupBuysIdRoute
   LoginSlugRoute: typeof LoginSlugRoute
@@ -1154,6 +1167,13 @@ declare module '@tanstack/react-router' {
       path: '/c/$slug'
       fullPath: '/c/$slug'
       preLoaderRoute: typeof CSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/webhooks-admin': {
@@ -1784,6 +1804,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRouteWithChildren,
   TwoFactorRoute: TwoFactorRoute,
+  AdminLoginRoute: AdminLoginRoute,
   CSlugRoute: CSlugRoute,
   GroupBuysIdRoute: GroupBuysIdRoute,
   LoginSlugRoute: LoginSlugRoute,

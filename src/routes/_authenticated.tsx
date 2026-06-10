@@ -28,9 +28,29 @@ function AuthLayout() {
   const [mfaChecked, setMfaChecked] = useState(false);
   const [companyChecked, setCompanyChecked] = useState(false);
 
+  const STAFF_ROLES = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor"];
+  const isStaff = roles.some((r) => STAFF_ROLES.includes(r as string));
+  const inAdminPath = pathname.startsWith("/admin");
+
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
-  }, [user, loading, navigate]);
+    if (loading) return;
+    if (!user) {
+      navigate({ to: inAdminPath ? "/admin/login" : "/login" });
+      return;
+    }
+    // 角色已載入後再判斷 (避免角色清單尚未抓回)
+    if (roles.length === 0) return;
+    if (inAdminPath && !isStaff) {
+      toast.error("您沒有權限進入後台");
+      navigate({ to: "/shop" });
+      return;
+    }
+    if (!inAdminPath && isStaff && (pathname.startsWith("/shop/account") || pathname === "/shop/account")) {
+      toast.error("管理員帳號不可進入會員中心，請使用一般會員帳號");
+      navigate({ to: "/admin" });
+      return;
+    }
+  }, [user, loading, navigate, inAdminPath, isStaff, roles, pathname]);
 
   // Enforce 2FA verification before showing any protected content
   useEffect(() => {
@@ -95,7 +115,7 @@ function AuthLayout() {
           // 紀錄失敗不阻擋登出
         }
         await signOut();
-        navigate({ to: "/login" });
+        navigate({ to: inAdminPath ? "/admin/login" : "/login" });
       })();
       return;
     }
@@ -142,7 +162,7 @@ function AuthLayout() {
     );
   }
 
-  const inAdmin = pathname.startsWith("/admin") && roles.includes("super_admin");
+  const inAdmin = inAdminPath && isStaff;
 
   return (
     <SidebarProvider>
