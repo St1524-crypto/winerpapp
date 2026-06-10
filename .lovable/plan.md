@@ -1,56 +1,119 @@
-## 目標
-在商城新增「批發專區」分頁。商品可自訂多段（>2 段）數量門檻，每段設定單件批發價與單件獎勵點。所有登入會員皆可購買；凡商品有設定批發階梯，即自動出現在批發專區。
 
-## 資料庫
-新增 `product_wholesale_tiers` 表：
+# 好處多多樂拼購 AI 招商中心 — 實作計畫
 
-| 欄位 | 型別 | 說明 |
-|---|---|---|
-| id | uuid | PK |
-| product_id | uuid | FK→products，ON DELETE CASCADE |
-| min_qty | int | 此段起始件數（≥1） |
-| max_qty | int? | 此段結束件數，NULL = 不設上限（最高段） |
-| unit_price | numeric | 此段單件售價 |
-| unit_reward_points | int | 此段每件獎勵點 |
-| sort_order | int | 由小到大排序 |
-| created_at / updated_at | timestamptz | |
+沿用現有 profiles / products / sales_orders / user_roles / company_id 多租戶基礎，新增四個獨立模組。
 
-- RLS：登入會員可 SELECT；admin 可全 CRUD
-- GRANT：authenticated SELECT、service_role ALL
-- 索引：(product_id, min_qty)
+## 一、資料庫（migration）
 
-## 後台（商品管理）
-`ProductFormDialog.tsx` 在「規格選項」區下新增「批發階梯」卡片：
-- 「新增階梯」按鈕（最少 2 段才算有效，可任意新增）
-- 每列欄位：起始件數、結束件數（留空=無上限）、單件批發價、單件獎勵點、刪除
-- 儲存時：與商品同步寫入 `product_wholesale_tiers`（先刪後插）
-- 驗證：段間連續、不重疊、min_qty ≥ 1
+### 1. 拼團系統
+```text
+group_buys           團主檔
+  ├─ id, company_id, product_id, initiator_id (發起人)
+  ├─ unit_price, target_count (=6), current_count
+  ├─ status: open | completed | expired | refunded
+  ├─ started_at, expires_at (默認 +7 天)
+  └─ completed_at, winner_id (中獎者), winner_picked_at
 
-## 商城前台
-1. **新路由** `src/routes/shop.wholesale.tsx`
-   - 標題「VIP 批發專區」，需登入才能瀏覽（未登入導向 /login）
-   - 列出所有有設定批發階梯的商品（透過 `product_wholesale_tiers` 反查 product）
-   - 商品卡顯示「起批 N 件 NT$ X」
-2. **商品頁** `shop.product.$id.tsx`：若有階梯，顯示階梯表格（件數區間 / 單價 / 獎勵點），並依目前選擇數量即時提示適用階梯
-3. **價格計算共用函式** `src/lib/wholesale-pricing.ts`：依商品 + 數量回傳 { unitPrice, rewardPerUnit, totalReward }
-4. **購物車 / 結帳**：載入購物車項目時順帶取得 tiers，依數量套用對應階梯價，原 wholesale_price 邏輯保留為 fallback
-5. **導覽**：商城 Header 與底部行動選單新增「批發專區」入口
+group_buy_orders     參與單（最多每人 2 單）
+  ├─ id, group_buy_id, user_id, quantity (1-2)
+  ├─ sales_order_id (連結正式訂單)
+  ├─ payment_method: points | bank_transfer | mixed
+  ├─ points_used, cash_amount
+  ├─ status: pending_payment | paid | refunded
+  └─ created_at, paid_at
 
-## 訂單入庫
-建立訂單時 `sales_order_items.unit_price` 直接寫入該階梯單價；獎勵點記錄維持原 reward 寫入流程，但金額依「階梯單件點 × 數量」總和。
+group_buy_settings   後台設定（每公司一筆）
+  ├─ winner_reward_pct DEFAULT 80   (中獎者購物點 %)
+  ├─ initiator_reward_pct DEFAULT 10 (發起人獎勵點 %)
+  ├─ default_duration_days DEFAULT 7
+  ├─ max_orders_per_user DEFAULT 2
+  └─ auto_refund_hours (未滿員自動退款，留欄位但不啟用)
+```
 
-## 技術細節
-- 階梯查詢一律 by product_id 排序 min_qty asc
-- 適用判斷：取 `min_qty <= qty AND (max_qty IS NULL OR qty <= max_qty)` 之列
-- 型別：`src/types/product.ts` 新增 `WholesaleTier` interface
-- 商城列表用一支 RPC 或 `products + inner join tiers` 篩選
+規則 trigger：
+- `before insert on group_buy_orders`：檢查同人同團 ≤ 2 單、團未滿、未過期
+- `before insert on group_buys`：檢查同 product 沒有 status=open 的團
+- `after update on group_buys` → status 變 completed：呼叫 `private.settle_group_buy()` 隨機抽 winner、發放獎勵到 `reward_wallet_logs` + `member_points_wallet`
 
-## 變更檔
-- `supabase/migrations/*` 建表與 RLS
-- `src/types/product.ts`（新型別）
-- `src/lib/wholesale-pricing.ts`（新檔）
-- `src/components/products/ProductFormDialog.tsx`（階梯編輯）
-- `src/routes/shop.wholesale.tsx`（新檔）
-- `src/routes/shop.product.$id.tsx`（顯示階梯 + 套用價）
-- `src/hooks/use-cart.tsx`（套用階梯價）
-- `src/components/shop/StorefrontHeader.tsx`、`MobileBottomNav.tsx`（導覽）
+### 2. 獎勵點系統（沿用既有 wallet）
+- `reward_wallet_logs` 已存在；新增 `source_type` 值：`group_buy_winner` / `group_buy_initiator` / `referral` / `repurchase`
+- 新增 server fn：`spendPoints(orderId, amount)` 扣購物點付款
+
+### 3. Webhook 系統
+```text
+webhook_endpoints
+  ├─ id, company_id, name, url
+  ├─ bearer_token (隨機產生，後台可重 roll)
+  ├─ events text[] (member.created | order.created | group_buy.created | vip.upgraded)
+  ├─ active, created_at
+
+webhook_deliveries   投遞紀錄（除錯用）
+  ├─ id, endpoint_id, event, payload jsonb
+  ├─ status_code, response_body, attempts
+  └─ delivered_at, error
+```
+
+事件觸發點（server fn 內，非同步 fire-and-forget）：
+- `handle_new_user` 後 → `member.created`
+- `create_sales_order_with_items` 完成 → `order.created`
+- group_buy 建立 → `group_buy.created`
+- VIP 升級訂單付款完成 → `vip.upgraded`
+
+## 二、Server functions / routes
+
+```text
+src/lib/group-buy.functions.ts
+  - listOpenGroupBuys({ companyId })
+  - getGroupBuy({ id })
+  - createGroupBuy({ productId, durationDays? })
+  - joinGroupBuy({ groupBuyId, quantity, paymentMethod, pointsUsed })
+  - settleGroupBuy({ id })   // admin 手動結算
+  - expireGroupBuys()         // pg_cron 每小時呼叫
+
+src/lib/rewards.functions.ts
+  - getMyWallet()
+  - listMyRewardLogs()
+  - spendPoints({ amount, orderId })
+
+src/lib/webhooks.functions.ts (admin)
+  - list/create/update/delete endpoints
+  - rerollToken({ id })
+  - listDeliveries({ endpointId })
+
+src/lib/webhooks.server.ts
+  - deliverWebhook(event, payload)  // fetch + Bearer + 寫 deliveries
+
+src/routes/api/ai/recruit.ts (server route, /api/public/ai/recruit)
+  - POST { messages } → Lovable AI Gateway streamText
+  - system prompt 內含即時讀取的 VIP 方案、商品、獎勵設定
+```
+
+## 三、前台頁面
+
+- `/group-buys` — 公開拼團列表（卡片：商品圖 / 進度 6 人 / 倒數 / 加入按鈕）
+- `/group-buys/$id` — 詳情頁（成員、剩餘名額、付款方式選擇：購物點 / 匯款 / 混合）
+- `/recruit` — AI 招商中心，公開頁面 + Chat UI（useChat 串 `/api/public/ai/recruit`）
+- 商品頁加「發起拼團」按鈕（VIP 會員可用）
+
+## 四、後台頁面（admin）
+
+- `/group-buy-admin` — 拼團管理（列表、強制結算 / 退款、查看成員）
+- `/group-buy-settings` — 獎勵 % / 期限 / 限購設定
+- `/webhooks-admin` — Webhook endpoint 管理 + 投遞紀錄
+- 既有 `/rewards` 頁面擴充來源類型篩選
+
+## 五、技術細節
+
+- 抽中獎者：用 `ORDER BY random() LIMIT 1` 從付款完成的 participants 中挑，記錄到 `group_buys.winner_id`
+- 購物點付款：在 `joinGroupBuy` 內以交易（rpc function）同步扣 wallet 並建立 sales_order
+- AI 招商：`gemini-3-flash-preview`，system prompt 動態組合 VIP plans、active products、bonus settings 的簡述
+- Webhook security：Bearer Token 在 header `Authorization: Bearer <token>`，payload 加 `event`、`timestamp`、`data`
+- pg_cron 每小時跑 `expireGroupBuys`（呼叫 `/api/public/cron/expire-group-buys`，apikey 驗證）
+
+## 六、不在此次範圍
+
+- 不改既有 profiles / sales_orders / products 結構（只新增關聯表）
+- 不做拼團聊天室 / 分享圖
+- HMAC 簽章（先 Bearer，之後可加）
+
+完成後驗收：發起拼團 → 6 人加入 → 自動抽中獎者並發點 → Webhook 收到事件 → AI 招商頁能回答 VIP 制度問題。
