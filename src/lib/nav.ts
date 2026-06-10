@@ -41,6 +41,9 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "經銷商階級管理", url: "/dealer-tiers", icon: TrendingUp, roles: ["super_admin", "admin", "finance"] },
   { title: "經銷商制度設定", url: "/dealer-program", icon: Settings2, roles: ["super_admin", "admin", "finance"] },
   { title: "客服重要通知", url: "/support-announcements", icon: Megaphone, roles: ["super_admin", "admin", "sales"] },
+  { title: "拼團管理", url: "/group-buy-admin", icon: Users, roles: ["super_admin", "admin", "sales"] },
+  { title: "拼團與獎勵設定", url: "/group-buy-settings", icon: Settings2, roles: ["super_admin", "admin"] },
+  { title: "Webhook 管理", url: "/webhooks-admin", icon: Network, roles: ["super_admin", "admin"] },
   { title: "系統設定", url: "/settings", icon: Settings, roles: ["super_admin", "admin"] },
   { title: "RLS 存取測試", url: "/rls-test", icon: ShieldCheck, roles: ["super_admin"] },
 ];
