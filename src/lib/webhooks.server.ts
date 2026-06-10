@@ -38,7 +38,7 @@ export async function deliverWebhook(event: WebhookEvent, data: unknown, company
         err = String(e?.message || e).slice(0, 500);
       }
       await supabaseAdmin.from("webhook_deliveries").insert({
-        endpoint_id: ep.id, event, payload, status_code: status || null, response_body: body || null, error: err,
+        endpoint_id: ep.id, event, payload: payload as any, status_code: status || null, response_body: body || null, error: err,
       });
     }),
   );

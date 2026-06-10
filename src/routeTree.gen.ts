@@ -78,6 +78,8 @@ import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authe
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksBonusDailyTickRouteImport } from './routes/api/public/hooks/bonus-daily-tick'
+import { Route as ApiPublicCronExpireGroupBuysRouteImport } from './routes/api/public/cron/expire-group-buys'
+import { Route as ApiPublicAiRecruitRouteImport } from './routes/api/public/ai/recruit'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 
@@ -448,6 +450,17 @@ const ApiPublicHooksBonusDailyTickRoute =
     path: '/api/public/hooks/bonus-daily-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronExpireGroupBuysRoute =
+  ApiPublicCronExpireGroupBuysRouteImport.update({
+    id: '/api/public/cron/expire-group-buys',
+    path: '/api/public/cron/expire-group-buys',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAiRecruitRoute = ApiPublicAiRecruitRouteImport.update({
+  id: '/api/public/ai/recruit',
+  path: '/api/public/ai/recruit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedB2bAccountsIdRoute =
   AuthenticatedB2bAccountsIdRouteImport.update({
     id: '/$id',
@@ -529,6 +542,8 @@ export interface FileRoutesByFullPath {
   '/shop/account/': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
+  '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
@@ -598,6 +613,8 @@ export interface FileRoutesByTo {
   '/shop/account': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
+  '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
@@ -672,6 +689,8 @@ export interface FileRoutesById {
   '/shop/account/': typeof ShopAccountIndexRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
+  '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
+  '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
@@ -746,6 +765,8 @@ export interface FileRouteTypes {
     | '/shop/account/'
     | '/admin/companies/new'
     | '/b2b/accounts/$id'
+    | '/api/public/ai/recruit'
+    | '/api/public/cron/expire-group-buys'
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
@@ -815,6 +836,8 @@ export interface FileRouteTypes {
     | '/shop/account'
     | '/admin/companies/new'
     | '/b2b/accounts/$id'
+    | '/api/public/ai/recruit'
+    | '/api/public/cron/expire-group-buys'
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
@@ -888,6 +911,8 @@ export interface FileRouteTypes {
     | '/shop/account/'
     | '/_authenticated/admin/companies/new'
     | '/_authenticated/b2b/accounts/$id'
+    | '/api/public/ai/recruit'
+    | '/api/public/cron/expire-group-buys'
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
@@ -905,6 +930,8 @@ export interface RootRouteChildren {
   RPhoneRoute: typeof RPhoneRoute
   UCodeRoute: typeof UCodeRoute
   LoginIndexRoute: typeof LoginIndexRoute
+  ApiPublicAiRecruitRoute: typeof ApiPublicAiRecruitRoute
+  ApiPublicCronExpireGroupBuysRoute: typeof ApiPublicCronExpireGroupBuysRoute
   ApiPublicHooksBonusDailyTickRoute: typeof ApiPublicHooksBonusDailyTickRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
@@ -1394,6 +1421,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBonusDailyTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/expire-group-buys': {
+      id: '/api/public/cron/expire-group-buys'
+      path: '/api/public/cron/expire-group-buys'
+      fullPath: '/api/public/cron/expire-group-buys'
+      preLoaderRoute: typeof ApiPublicCronExpireGroupBuysRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ai/recruit': {
+      id: '/api/public/ai/recruit'
+      path: '/api/public/ai/recruit'
+      fullPath: '/api/public/ai/recruit'
+      preLoaderRoute: typeof ApiPublicAiRecruitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/b2b/accounts/$id': {
       id: '/_authenticated/b2b/accounts/$id'
       path: '/$id'
@@ -1622,19 +1663,11 @@ const rootRouteChildren: RootRouteChildren = {
   RPhoneRoute: RPhoneRoute,
   UCodeRoute: UCodeRoute,
   LoginIndexRoute: LoginIndexRoute,
+  ApiPublicAiRecruitRoute: ApiPublicAiRecruitRoute,
+  ApiPublicCronExpireGroupBuysRoute: ApiPublicCronExpireGroupBuysRoute,
   ApiPublicHooksBonusDailyTickRoute: ApiPublicHooksBonusDailyTickRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

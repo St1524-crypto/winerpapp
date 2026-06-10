@@ -126,9 +126,7 @@ export const joinGroupBuy = createServerFn({ method: "POST" })
       paid_at: status === "paid" ? new Date().toISOString() : null,
     }).select().single();
     if (error) {
-      // refund points if insert failed
       if (pointsUsed > 0) {
-        await supabaseAdmin.rpc("noop").catch(() => {});
         const { data: w } = await supabaseAdmin
           .from("member_points_wallet").select("shopping_points").eq("user_id", userId).maybeSingle();
         if (w) await supabaseAdmin.from("member_points_wallet")
