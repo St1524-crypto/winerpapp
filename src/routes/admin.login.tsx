@@ -94,7 +94,10 @@ function AdminLoginPage() {
   }
 
   return (
-    <div className="admin-light min-h-screen flex items-center justify-center px-4 bg-background text-foreground">
+    <div
+      className="admin-light min-h-screen flex items-center justify-center px-4 bg-background"
+      style={{ color: "oklch(0.22 0.02 260)" }}
+    >
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
@@ -106,11 +109,26 @@ function AdminLoginPage() {
         <form onSubmit={submit} className="rounded-xl border bg-card p-6 shadow-elegant space-y-4">
           <div className="space-y-2">
             <Label htmlFor="identifier">帳號 (Email 或員工編號)</Label>
-            <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" required />
+            <Input
+              id="identifier"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              autoComplete="username"
+              required
+              style={{ color: "oklch(0.22 0.02 260)" }}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">密碼</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+              style={{ color: "oklch(0.22 0.02 260)" }}
+            />
           </div>
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "登入後台"}
