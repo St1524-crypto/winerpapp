@@ -37,9 +37,15 @@ function Page() {
   const { roles: myRoles } = useAuth();
   const isAdmin = myRoles.includes("super_admin") || myRoles.includes("admin");
 
+  const PAGE_SIZE = 15;
+
   const [list, setList] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [stats, setStats] = useState({ total: 0, id_no: 0, apply_date: 0, sex: 0, addr_mail: 0, addr_home: 0, birthday: 0 });
   const [editingRoles, setEditingRoles] = useState<Member | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<AppRole[]>([]);
   const [saving, setSaving] = useState(false);
@@ -55,55 +61,59 @@ function Page() {
   const [pwResult, setPwResult] = useState<{ password?: string; email?: string | null; actionLink?: string | null } | null>(null);
   const [pwBusy, setPwBusy] = useState<null | "reset" | "temp" | "impersonate">(null);
 
+  // Debounce search input -> committed search; reset to page 1
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
   async function load() {
     setLoading(true);
-    // Paginate profiles to bypass PostgREST default max-rows cap (1000)
-    const PAGE = 1000;
-    let from = 0;
-    const allProfiles: any[] = [];
-    let lastErr: any = null;
-    while (true) {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip")
-        .order("created_at", { ascending: false })
-        .range(from, from + PAGE - 1);
-      if (error) { lastErr = error; break; }
-      if (!data || data.length === 0) break;
-      allProfiles.push(...data);
-      if (data.length < PAGE) break;
-      from += PAGE;
-      if (from > 50000) break; // safety
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    let q = supabase
+      .from("profiles")
+      .select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (search) {
+      const esc = search.replace(/[%,]/g, "");
+      q = q.or(`name.ilike.%${esc}%,email.ilike.%${esc}%,phone.ilike.%${esc}%,member_no.ilike.%${esc}%,id_no.ilike.%${esc}%`);
     }
-    const [{ data: rolesData, error: e2 }, { data: tierData }] = await Promise.all([
-      supabase.from("user_roles").select("user_id, role"),
-      supabase.from("dealer_tier_status").select("user_id, current_tier"),
-    ]);
-    const profiles = allProfiles;
-    const e1 = lastErr;
-    if (e1 || e2) { toast.error(e1?.message ?? e2?.message ?? "載入失敗"); setLoading(false); return; }
+    const { data: profiles, error: e1, count } = await q;
+    if (e1) { toast.error(e1.message ?? "載入失敗"); setLoading(false); return; }
+    setTotalCount(count ?? 0);
+
+    const userIds = (profiles ?? []).map((p: any) => p.id);
+    const [rolesRes, tierRes] = userIds.length === 0
+      ? [{ data: [] as any[] }, { data: [] as any[] }]
+      : await Promise.all([
+          supabase.from("user_roles").select("user_id, role").in("user_id", userIds),
+          supabase.from("dealer_tier_status").select("user_id, current_tier").in("user_id", userIds),
+        ]);
+    const rolesData = rolesRes.data ?? [];
+    const tierData = tierRes.data ?? [];
 
     const rolesMap = new Map<string, AppRole[]>();
-    (rolesData ?? []).forEach((r: any) => {
+    rolesData.forEach((r: any) => {
       const arr = rolesMap.get(r.user_id) ?? [];
       arr.push(r.role as AppRole);
       rolesMap.set(r.user_id, arr);
     });
     const tierMap = new Map<string, string>();
-    (tierData ?? []).forEach((t: any) => { if (t.current_tier) tierMap.set(t.user_id, t.current_tier); });
-    const byId = new Map<string, any>((profiles ?? []).map((p: any) => [p.id, p]));
+    tierData.forEach((t: any) => { if (t.current_tier) tierMap.set(t.user_id, t.current_tier); });
 
-    // Fetch referrer profiles that aren't already in the current page
-    const missingRefIds = Array.from(new Set(
+    const refIds = Array.from(new Set(
       (profiles ?? [])
         .map((p: any) => p.referred_by)
-        .filter((rid: string | null): rid is string => !!rid && !byId.has(rid))
+        .filter((rid: string | null): rid is string => !!rid)
     ));
-    if (missingRefIds.length > 0) {
+    const byId = new Map<string, any>();
+    if (refIds.length > 0) {
       const { data: refProfiles } = await supabase
         .from("profiles")
         .select("id, member_no, name")
-        .in("id", missingRefIds);
+        .in("id", refIds);
       (refProfiles ?? []).forEach((r: any) => byId.set(r.id, r));
     }
 
@@ -120,23 +130,31 @@ function Page() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, search]);
 
-  const filtered = useMemo(() => list.filter((m) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (m.name ?? "").toLowerCase().includes(q)
-      || (m.email ?? "").toLowerCase().includes(q)
-      || (m.phone ?? "").toLowerCase().includes(q)
-      || (m.member_no ?? "").toLowerCase().includes(q)
-      || (m.id_no ?? "").toLowerCase().includes(q);
-  }), [list, search]);
+  // Load lightweight profile-fill stats (counts only)
+  useEffect(() => {
+    (async () => {
+      const fields: Array<keyof Profile> = ["id_no","apply_date","sex","addr_mail","addr_home","birthday"];
+      const totalRes = await supabase.from("profiles").select("id", { count: "exact", head: true });
+      const counts = await Promise.all(fields.map((f) =>
+        supabase.from("profiles").select("id", { count: "exact", head: true }).not(f as string, "is", null)
+      ));
+      setStats({
+        total: totalRes.count ?? 0,
+        id_no: counts[0].count ?? 0,
+        apply_date: counts[1].count ?? 0,
+        sex: counts[2].count ?? 0,
+        addr_mail: counts[3].count ?? 0,
+        addr_home: counts[4].count ?? 0,
+        birthday: counts[5].count ?? 0,
+      });
+    })();
+  }, []);
 
-  const fieldStats = useMemo(() => {
-    const t = list.length;
-    const c = (k: keyof Profile) => list.filter((m) => !!m[k]).length;
-    return { total: t, id_no: c("id_no"), apply_date: c("apply_date"), sex: c("sex"), addr_mail: c("addr_mail"), addr_home: c("addr_home"), birthday: c("birthday") };
-  }, [list]);
+  const filtered = list;
+  const fieldStats = stats;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
