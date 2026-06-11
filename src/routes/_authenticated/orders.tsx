@@ -182,7 +182,7 @@ function OrdersPage() {
   >([]);
   const batchAbortRef = useRef<AbortController | null>(null);
   const { logoUrl } = useBranding();
-  const { current: currentCompany } = useCurrentCompany();
+  const { current: currentCompany, currentCompanyId: activeCompanyId } = useCurrentCompany();
   const pdfLogoUrl = currentCompany?.logo_url || logoUrl;
   const companyHeader = currentCompany
     ? {
@@ -329,11 +329,13 @@ function OrdersPage() {
   }
 
   const ordersQ = useQuery({
-    queryKey: ["sales-orders", tab, search],
+    queryKey: ["sales-orders", tab, search, activeCompanyId],
+    enabled: !!activeCompanyId,
     queryFn: async () => {
       let q = supabase
         .from("sales_orders")
         .select("*")
+        .eq("company_id", activeCompanyId!)
         .order("created_at", { ascending: false })
         .limit(200);
       if (tab !== "all") q = q.eq("order_status", tab);
