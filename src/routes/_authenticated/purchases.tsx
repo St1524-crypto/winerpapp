@@ -402,7 +402,7 @@ function Page() {
                           <Select value={it.product_id ?? ""} onValueChange={(v) => updateItem(i, { product_id: v })}>
                             <SelectTrigger><SelectValue placeholder="選擇商品" /></SelectTrigger>
                             <SelectContent>
-                              {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.sku} · {p.name}</SelectItem>)}
+                              {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.sku} · {p.name}{p.status && p.status !== "active" ? "（已下架）" : ""}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </TableCell>
