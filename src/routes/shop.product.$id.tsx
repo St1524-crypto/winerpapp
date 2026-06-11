@@ -46,7 +46,7 @@ function ProductDetail() {
     }
     (async () => {
       setLoading(true);
-      const { data: p } = await supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("id", id).single();
+      const { data: p } = await supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("id", id).eq("status", "active").maybeSingle();
       setProduct(p as Product | null);
       const { data: imgs } = await supabase.from("product_images").select("*").eq("product_id", id).order("sort_order");
       setImages((imgs ?? []) as ProductImage[]);
