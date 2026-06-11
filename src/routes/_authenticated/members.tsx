@@ -534,6 +534,19 @@ function Page() {
             </TableBody>
           </Table>
           </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between gap-3 flex-wrap pt-4 px-2 md:px-0 text-sm">
+            <div className="text-muted-foreground text-xs">
+              共 <span className="font-mono">{totalCount.toLocaleString()}</span> 筆 · 第 {page} / {totalPages} 頁 · 每頁 {PAGE_SIZE} 筆
+            </div>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="outline" disabled={page <= 1 || loading} onClick={() => setPage(1)}>« 首頁</Button>
+              <Button size="sm" variant="outline" disabled={page <= 1 || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>‹ 上一頁</Button>
+              <Button size="sm" variant="outline" disabled={page >= totalPages || loading} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>下一頁 ›</Button>
+              <Button size="sm" variant="outline" disabled={page >= totalPages || loading} onClick={() => setPage(totalPages)}>末頁 »</Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
