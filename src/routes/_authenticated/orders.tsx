@@ -151,7 +151,7 @@ type OrderRow = {
   company_id: string;
 };
 
-const ORDER_SOURCES = ["官網", "電話", "LINE", "實體店", "展會", "經銷商", "其他"];
+const ORDER_SOURCES = ["蝦皮1", "蝦皮2", "LINE", "其他", "官網", "雅虎1", "雅虎2", "露天1", "露天2"];
 
 // =================== Helpers ===================
 function fmt(n: number | string | null | undefined) {
