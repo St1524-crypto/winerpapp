@@ -314,7 +314,7 @@ function Page() {
         <CardHeader className="pb-3">
           <div className="relative max-w-md">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="搜尋姓名 / Email / 電話 / 會員編號 / 身份證號..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="搜尋姓名 / Email / 電話 / 會員編號 / 身份證號..." className="pl-9" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           </div>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             {[
