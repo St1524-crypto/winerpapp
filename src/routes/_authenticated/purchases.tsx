@@ -80,7 +80,7 @@ function Page() {
   async function loadRefs() {
     const [{ data: v }, { data: p }] = await Promise.all([
       sb.from("vendors").select("id,name,code").eq("status", "active").order("name"),
-      sb.from("products").select("id,sku,name").eq("status", "active").order("name"),
+      sb.from("products").select("id,sku,name,status").order("name"),
     ]);
     const productRows = (p ?? []) as Array<{ id: string; sku: string; name: string }>;
     let merged: Product[] = productRows.map((r) => ({ ...r, cost_price: 0 }));
