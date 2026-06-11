@@ -48,7 +48,7 @@ interface POItem {
   unit: string; quantity: number; received_quantity: number; price: number; subtotal: number;
 }
 interface Vendor { id: string; name: string; code: string; }
-interface Product { id: string; sku: string; name: string; cost_price: number; }
+interface Product { id: string; sku: string; name: string; cost_price: number; status?: string; }
 
 const sb: any = supabase;
 
