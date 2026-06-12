@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { cronAuthErrorResponse, requireCronSecret } from "@/lib/cron-auth.server";
 
 /**
  * 日結算 / 發放排程入口
@@ -11,19 +12,8 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // 僅允許 pg_cron / 內部排程觸發：必須帶 service role key 作為 Bearer token
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!serviceKey) {
-          return new Response(JSON.stringify({ ok: false, reason: "server_misconfigured" }), { status: 500 });
-        }
-        const authHeader = request.headers.get("Authorization") ?? request.headers.get("authorization");
-        if (!authHeader?.toLowerCase().startsWith("bearer ")) {
-          return new Response(JSON.stringify({ ok: false, reason: "unauthorized" }), { status: 401 });
-        }
-        const token = authHeader.slice("bearer ".length).trim();
-        if (token !== serviceKey) {
-          return new Response(JSON.stringify({ ok: false, reason: "unauthorized" }), { status: 401 });
-        }
+        const auth = requireCronSecret(request);
+        if (!auth.ok) return cronAuthErrorResponse(auth);
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

@@ -1,9 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { cronAuthErrorResponse, requireCronSecret } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/cron/expire-group-buys")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const auth = requireCronSecret(request);
+        if (!auth.ok) return cronAuthErrorResponse(auth);
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data, error } = await supabaseAdmin
           .from("group_buys")

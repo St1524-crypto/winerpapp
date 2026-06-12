@@ -155,17 +155,24 @@ export const markGroupBuyOrderPaid = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const expireGroupBuys = createServerFn({ method: "POST" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("group_buys")
-    .update({ status: "expired" })
-    .lt("expires_at", new Date().toISOString())
-    .eq("status", "open")
-    .select("id");
-  if (error) throw error;
-  return { expired: data?.length ?? 0 };
-});
+export const expireGroupBuys = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data: roles } = await supabase.from("user_roles").select("role");
+    const isAdmin = roles?.some((r: any) => ["super_admin", "admin", "finance"].includes(r.role));
+    if (!isAdmin) throw new Error("Unauthorized");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("group_buys")
+      .update({ status: "expired" })
+      .lt("expires_at", new Date().toISOString())
+      .eq("status", "open")
+      .select("id");
+    if (error) throw error;
+    return { expired: data?.length ?? 0 };
+  });
 
 export const listMyGroupBuyOrders = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
