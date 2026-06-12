@@ -1,23 +1,39 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import {
+  publicAiCorsHeaders,
+  publicAiOptionsResponse,
+  requirePublicAiAccess,
+} from "@/lib/public-ai-guard.server";
 
 export const Route = createFileRoute("/api/public/ai/recruit")({
   server: {
     handlers: {
-      OPTIONS: async () => new Response(null, {
-        status: 204,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-      }),
+      OPTIONS: async ({ request }) => publicAiOptionsResponse(request),
       POST: async ({ request }) => {
+        const access = requirePublicAiAccess(request);
+        if (!access.ok) return access.response;
+
         const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        if (!key) {
+          return new Response("Missing LOVABLE_API_KEY", {
+            status: 500,
+            headers: publicAiCorsHeaders(access.origin),
+          });
+        }
         const { messages } = (await request.json()) as { messages: UIMessage[] };
-        if (!Array.isArray(messages)) return new Response("Bad request", { status: 400 });
+        if (
+          !Array.isArray(messages)
+          || messages.length === 0
+          || messages.length > 20
+          || JSON.stringify(messages).length > 24_000
+        ) {
+          return new Response("Bad request", {
+            status: 400,
+            headers: publicAiCorsHeaders(access.origin),
+          });
+        }
 
         // 即時讀取資料庫資料組合 system prompt
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -61,7 +77,7 @@ ${gbText}
         });
 
         return result.toUIMessageStreamResponse({
-          headers: { "Access-Control-Allow-Origin": "*" },
+          headers: publicAiCorsHeaders(access.origin),
           originalMessages: messages,
         });
       },
