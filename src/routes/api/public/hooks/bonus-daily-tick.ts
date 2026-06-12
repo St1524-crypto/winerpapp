@@ -126,6 +126,12 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
           const prev = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1));
           const yyyymm = `${prev.getUTCFullYear()}${String(prev.getUTCMonth() + 1).padStart(2, "0")}`;
           result.monthly_target = yyyymm;
+          try {
+            const { settleMonthlyBonus } = await import("@/lib/monthly-settlement.server");
+            result.monthly = await settleMonthlyBonus({ yyyymm, source: "cron" });
+          } catch (e: any) {
+            result.monthly_error = e.message;
+          }
           // 註：實際月結算邏輯較重，由管理員透過後台或下次擴充處理。
         }
 

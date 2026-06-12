@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { settleMonthlyBonus } from "@/lib/monthly-settlement.server";
 
 const ADMIN_ROLES = ["super_admin", "admin", "finance"];
 const VIEW_ROLES = [...ADMIN_ROLES, "sales"];
@@ -397,6 +398,12 @@ export const runMonthlySettlement = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertRoles(context.userId, ADMIN_ROLES);
+    return settleMonthlyBonus({
+      yyyymm: data.yyyymm,
+      createdBy: context.userId,
+      source: "admin",
+    });
+
     const s = await getSettings();
 
     const now = new Date();
