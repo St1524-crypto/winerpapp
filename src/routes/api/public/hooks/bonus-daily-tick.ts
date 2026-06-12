@@ -28,41 +28,12 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
         // ── 日結算 ──
         if ((s as any).daily_bonus_auto_enabled && new Date((s as any).daily_next_settlement_at) <= now) {
           try {
-            const releaseDate = new Date(now.getTime() + Number((s as any).reward_release_days) * 86400000)
-              .toISOString().slice(0, 10);
-            const { data: pending } = await supabaseAdmin
-              .from("bonus_records")
-              .select("id, member_id, bonus_points")
-              .in("bonus_type", ["referral", "repurchase", "rank_rebate"])
-              .eq("status", "pending").limit(5000);
-
-            if (pending && pending.length > 0) {
-              const totalPts = pending.reduce((sum, r: any) => sum + Number(r.bonus_points ?? 0), 0);
-              const memberCount = new Set(pending.map((r: any) => r.member_id)).size;
-              const { data: batch } = await supabaseAdmin.from("bonus_settlement_batches").insert({
-                settlement_type: "daily",
-                settlement_period_start: today,
-                settlement_period_end: today,
-                total_members: memberCount,
-                total_bonus_points: totalPts,
-                status: "completed",
-                completed_at: now.toISOString(),
-                notes: "auto cron",
-              }).select("id").single();
-              await supabaseAdmin.from("bonus_records").update({
-                status: "waiting_release",
-                settlement_batch_id: (batch as any)?.id,
-                settlement_date: today,
-                release_date: releaseDate,
-              }).in("id", pending.map((r: any) => r.id));
-              result.daily = { count: pending.length, points: totalPts };
-            } else {
-              result.daily = { count: 0 };
-            }
-            const next = new Date(now.getTime() + Number((s as any).daily_bonus_cycle_days) * 86400000);
-            await supabaseAdmin.from("bonus_settings")
-              .update({ daily_next_settlement_at: next.toISOString() })
-              .eq("id", (s as any).id);
+            const { data: daily, error: dailyError } = await (supabaseAdmin as any).rpc("settle_daily_bonus", {
+              _created_by: null,
+              _advance_next: true,
+            });
+            if (dailyError) throw new Error(dailyError.message);
+            result.daily = daily;
           } catch (e: any) {
             result.daily_error = e.message;
           }
@@ -70,6 +41,19 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
 
         // ── 自動發放 ──
         if ((s as any).reward_release_mode === "auto") {
+          try {
+            const { data: release, error: releaseError } = await (supabaseAdmin as any).rpc("release_bonus_rewards", {
+              _record_ids: null,
+              _limit: 2000,
+            });
+            if (releaseError) throw new Error(releaseError.message);
+            result.release = release;
+          } catch (e: any) {
+            result.release_error = e.message;
+          }
+        }
+
+        if (false && (s as any).reward_release_mode === "auto") {
           try {
             const { data: due } = await supabaseAdmin
               .from("bonus_records")

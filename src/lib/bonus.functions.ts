@@ -332,6 +332,13 @@ export const runDailySettlement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertRoles(context.userId, ADMIN_ROLES);
+    const { data, error } = await (supabaseAdmin as any).rpc("settle_daily_bonus", {
+      _created_by: context.userId,
+      _advance_next: false,
+    });
+    if (error) throw new Error(error.message);
+    return data;
+
     const s = await getSettings();
 
     const today = new Date();
@@ -554,6 +561,13 @@ export const runMonthlySettlement = createServerFn({ method: "POST" })
 
 /* ───────────── 發放（自動 / 手動） ───────────── */
 async function releaseRecords(recordIds: string[] | null) {
+  const { data, error } = await (supabaseAdmin as any).rpc("release_bonus_rewards", {
+    _record_ids: recordIds,
+    _limit: recordIds ? recordIds.length : 2000,
+  });
+  if (error) throw new Error(error.message);
+  return data;
+
   const query = supabaseAdmin
     .from("bonus_records")
     .select("id, member_id, bonus_points, bonus_type")
