@@ -9,8 +9,7 @@ import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
 import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
-
-const STAFF_ROLES = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor"];
+import { getPortalRouteForRoles, isAdminPortalRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/admin/login")({ component: AdminLoginPage });
 
@@ -27,13 +26,8 @@ function AdminLoginPage() {
       navigate({ to: "/two-factor" });
       return;
     }
-    const isStaff = roles.some((r) => STAFF_ROLES.includes(r as string));
-    if (!isStaff) {
-      (async () => {
-        await supabase.auth.signOut();
-        toast.error("此頁面僅供管理員登入，請使用會員登入頁", { description: "/login" });
-        navigate({ to: "/login" });
-      })();
+    if (!isAdminPortalRole(roles)) {
+      navigate({ to: getPortalRouteForRoles(roles) });
       return;
     }
     navigate({ to: "/admin" });
@@ -62,10 +56,9 @@ function AdminLoginPage() {
       // 角色驗證 (server-side)
       const { data: rolesRows } = await supabase.from("user_roles").select("role").eq("user_id", uid!);
       const userRoles = (rolesRows ?? []).map((r: { role: string }) => r.role);
-      const isStaff = userRoles.some((r) => STAFF_ROLES.includes(r));
-      if (!isStaff) {
-        await supabase.auth.signOut();
-        throw new Error("此頁面僅供管理員登入，請使用會員登入頁 /login");
+      if (!isAdminPortalRole(userRoles)) {
+        navigate({ to: getPortalRouteForRoles(userRoles as any) });
+        return;
       }
 
       const session = data.session;

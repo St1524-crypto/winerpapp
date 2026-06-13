@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentSessionStatus } from "@/lib/security.functions";
+import { getPortalRouteForRoles, isAdminPortalRole } from "@/lib/roles";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,8 +29,7 @@ function AuthLayout() {
   const [mfaChecked, setMfaChecked] = useState(false);
   const [companyChecked, setCompanyChecked] = useState(false);
 
-  const STAFF_ROLES = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor"];
-  const isStaff = roles.some((r) => STAFF_ROLES.includes(r as string));
+  const isAdminPortal = isAdminPortalRole(roles);
   const inAdminPath = pathname.startsWith("/admin");
 
   useEffect(() => {
@@ -40,17 +40,17 @@ function AuthLayout() {
     }
     // 角色已載入後再判斷 (避免角色清單尚未抓回)
     if (roles.length === 0) return;
-    if (inAdminPath && !isStaff) {
+    if (inAdminPath && !isAdminPortal) {
       toast.error("您沒有權限進入後台");
-      navigate({ to: "/shop" });
+      navigate({ to: getPortalRouteForRoles(roles) });
       return;
     }
-    if (!inAdminPath && isStaff && (pathname.startsWith("/shop/account") || pathname === "/shop/account")) {
+    if (!inAdminPath && isAdminPortal && (pathname.startsWith("/shop/account") || pathname === "/shop/account")) {
       toast.error("管理員帳號不可進入會員中心，請使用一般會員帳號");
       navigate({ to: "/admin" });
       return;
     }
-  }, [user, loading, navigate, inAdminPath, isStaff, roles, pathname]);
+  }, [user, loading, navigate, inAdminPath, isAdminPortal, roles, pathname]);
 
   // Enforce 2FA verification before showing any protected content
   useEffect(() => {
@@ -162,7 +162,7 @@ function AuthLayout() {
     );
   }
 
-  const inAdmin = inAdminPath && isStaff;
+  const inAdmin = inAdminPath && isAdminPortal;
 
   return (
     <SidebarProvider>

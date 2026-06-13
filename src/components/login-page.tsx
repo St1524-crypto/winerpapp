@@ -14,12 +14,13 @@ import { resolveLoginEmail, getUserCompany } from "@/lib/auth-lookup.functions";
 import { handleReferralSignup } from "@/lib/points.functions";
 import { bindSponsorByCode } from "@/lib/referral.functions";
 import { getReferralCode, clearReferralCode } from "@/lib/referral-tracking";
+import { getPortalRouteForRoles } from "@/lib/roles";
 
 type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
 
 export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string; memberMode?: boolean } = {}) {
 
-  const { user, loading, roles } = useAuth();
+  const { user, loading, roles, rolesLoaded } = useAuth();
   const { logoUrl } = useBranding();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
@@ -89,24 +90,14 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   }, [selectedSlug, pathSlug]);
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && rolesLoaded) {
       if (sessionStorage.getItem("mfa_pending") === user.id) {
         navigate({ to: "/two-factor" });
         return;
       }
-      const STAFF_ROLES = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor"];
-      const isStaff = roles.some((r) => STAFF_ROLES.includes(r as string));
-      if (isStaff) {
-        (async () => {
-          await supabase.auth.signOut();
-          toast.error("此頁面僅供會員登入，請使用管理員登入頁", { description: "/admin/login" });
-          navigate({ to: "/admin/login" });
-        })();
-        return;
-      }
-      navigate({ to: "/shop" });
+      navigate({ to: getPortalRouteForRoles(roles) });
     }
-  }, [user, loading, roles, navigate]);
+  }, [user, loading, roles, rolesLoaded, navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
