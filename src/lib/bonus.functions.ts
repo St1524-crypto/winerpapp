@@ -640,6 +640,38 @@ export const manualReleaseRewards = createServerFn({ method: "POST" })
     return releaseRecords(data.recordIds);
   });
 
+export const retryFailedBonusRewards = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ recordIds: z.array(z.string().uuid()).min(1).max(500) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+
+    const { data: failedRows, error: fetchError } = await supabaseAdmin
+      .from("bonus_records")
+      .select("id")
+      .eq("status", "failed")
+      .in("id", data.recordIds);
+    if (fetchError) throw new Error(fetchError.message);
+
+    const ids = (failedRows ?? []).map((row: any) => row.id);
+    if (ids.length === 0) return { retried: 0, released: 0, points: 0 };
+
+    const { error: updateError } = await supabaseAdmin
+      .from("bonus_records")
+      .update({
+        status: "waiting_release",
+        fail_reason: null,
+        release_date: new Date().toISOString().slice(0, 10),
+      })
+      .in("id", ids);
+    if (updateError) throw new Error(updateError.message);
+
+    const releaseResult = await releaseRecords(ids);
+    return { retried: ids.length, ...(releaseResult ?? {}) };
+  });
+
 /* ───────────── 列表查詢 ───────────── */
 export const listSettlementBatches = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -725,6 +757,17 @@ async function listOperationsRecords(status: string) {
   return data ?? [];
 }
 
+async function listOperationsRecordsByType(bonusType: string) {
+  const { data, error } = await supabaseAdmin
+    .from("bonus_records")
+    .select("*")
+    .eq("bonus_type", bonusType)
+    .order("created_at", { ascending: false })
+    .limit(OPERATIONS_RECORD_LIMIT);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
 async function getMemberMapForBonusRows(rows: any[]) {
   const memberIds = Array.from(new Set(
     rows.flatMap((row: any) => [row.member_id, row.source_member_id]).filter(Boolean),
@@ -758,6 +801,9 @@ export const getBonusOperationsData = createServerFn({ method: "GET" })
       waitingRecords,
       releasedRecords,
       failedRecords,
+      referralRecords,
+      repurchaseRecords,
+      settings,
     ] = await Promise.all([
       countSettlementBatchesByType("daily"),
       countSettlementBatchesByType("monthly"),
@@ -769,12 +815,17 @@ export const getBonusOperationsData = createServerFn({ method: "GET" })
       listOperationsRecords("waiting_release"),
       listOperationsRecords("released"),
       listOperationsRecords("failed"),
+      listOperationsRecordsByType("referral"),
+      listOperationsRecordsByType("repurchase"),
+      getSettings(),
     ]);
 
     const members = await getMemberMapForBonusRows([
       ...waitingRecords,
       ...releasedRecords,
       ...failedRecords,
+      ...referralRecords,
+      ...repurchaseRecords,
     ]);
 
     return {
@@ -793,6 +844,15 @@ export const getBonusOperationsData = createServerFn({ method: "GET" })
         waiting: waitingRecords,
         released: releasedRecords,
         failed: failedRecords,
+        referral: referralRecords,
+        repurchase: repurchaseRecords,
+      },
+      settings: {
+        dailyBonusAutoEnabled: Boolean(settings.daily_bonus_auto_enabled),
+        monthlyBonusMode: settings.monthly_bonus_mode,
+        rewardReleaseDays: Number(settings.reward_release_days ?? 7),
+        dailyNextSettlementAt: settings.daily_next_settlement_at,
+        monthlyBonusSettlementDay: Number(settings.monthly_bonus_settlement_day ?? 1),
       },
       members,
     };

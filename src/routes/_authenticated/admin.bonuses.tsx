@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import {
   Loader2,
   Play,
   RefreshCw,
+  RotateCcw,
   Send,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ import {
   getBonusOperationsData,
   manualReleaseRewards,
   releaseDueRewards,
+  retryFailedBonusRewards,
   runDailySettlement,
   runMonthlySettlement,
 } from "@/lib/bonus.functions";
@@ -42,6 +44,14 @@ type BonusOperationsSummary = {
   waitingRelease: number;
   released: number;
   failed: number;
+};
+
+type BonusOperationsSettings = {
+  dailyBonusAutoEnabled: boolean;
+  monthlyBonusMode: string;
+  rewardReleaseDays: number;
+  dailyNextSettlementAt?: string | null;
+  monthlyBonusSettlementDay?: number;
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -94,7 +104,15 @@ function BonusOperationsCenter() {
   const [waiting, setWaiting] = useState<BonusRecordBundle>({ records: [], members: {} });
   const [released, setReleased] = useState<BonusRecordBundle>({ records: [], members: {} });
   const [failed, setFailed] = useState<BonusRecordBundle>({ records: [], members: {} });
+  const [referral, setReferral] = useState<BonusRecordBundle>({ records: [], members: {} });
+  const [repurchase, setRepurchase] = useState<BonusRecordBundle>({ records: [], members: {} });
+  const [settings, setSettings] = useState<BonusOperationsSettings>({
+    dailyBonusAutoEnabled: false,
+    monthlyBonusMode: "manual",
+    rewardReleaseDays: 7,
+  });
   const [selectedWaiting, setSelectedWaiting] = useState<Set<string>>(new Set());
+  const [selectedFailed, setSelectedFailed] = useState<Set<string>>(new Set());
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [settlementMonth, setSettlementMonth] = useState(previousMonthInput());
 
@@ -115,7 +133,17 @@ function BonusOperationsCenter() {
       setWaiting({ records: data.records?.waiting ?? [], members });
       setReleased({ records: data.records?.released ?? [], members });
       setFailed({ records: data.records?.failed ?? [], members });
+      setReferral({ records: data.records?.referral ?? [], members });
+      setRepurchase({ records: data.records?.repurchase ?? [], members });
+      setSettings({
+        dailyBonusAutoEnabled: Boolean(data.settings?.dailyBonusAutoEnabled),
+        monthlyBonusMode: data.settings?.monthlyBonusMode ?? "manual",
+        rewardReleaseDays: Number(data.settings?.rewardReleaseDays ?? 7),
+        dailyNextSettlementAt: data.settings?.dailyNextSettlementAt,
+        monthlyBonusSettlementDay: data.settings?.monthlyBonusSettlementDay,
+      });
       setSelectedWaiting(new Set());
+      setSelectedFailed(new Set());
     } catch (error: any) {
       toast.error(error?.message ?? "讀取獎金營運資料失敗");
     } finally {
@@ -142,6 +170,15 @@ function BonusOperationsCenter() {
 
   function toggleWaitingRecord(id: string, checked: boolean) {
     setSelectedWaiting((current) => {
+      const next = new Set(current);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  function toggleFailedRecord(id: string, checked: boolean) {
+    setSelectedFailed((current) => {
       const next = new Set(current);
       if (checked) next.add(id);
       else next.delete(id);
@@ -242,9 +279,56 @@ function BonusOperationsCenter() {
         </CardContent>
       </Card>
 
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <StatusCard
+          title="日獎金自動結算"
+          value={settings.dailyBonusAutoEnabled ? "啟用" : "停用"}
+          detail={`下次：${formatDateTime(settings.dailyNextSettlementAt)}`}
+        />
+        <StatusCard
+          title="日獎金手動結算"
+          value="可執行"
+          detail="使用上方手動日結算按鈕"
+        />
+        <StatusCard
+          title="月獎金自動結算"
+          value={settings.monthlyBonusMode === "auto" ? "啟用" : "手動模式"}
+          detail={`每月 ${settings.monthlyBonusSettlementDay ?? 1} 日`}
+        />
+        <StatusCard
+          title="月獎金手動結算"
+          value="可執行"
+          detail="使用上方月份選擇後結算"
+        />
+        <StatusCard
+          title="7天延遲發放"
+          value={`${settings.rewardReleaseDays} 天`}
+          detail="結算後依預計發放日釋出"
+        />
+      </section>
+
       <div className="grid gap-6 xl:grid-cols-2">
         <BatchTable title="日獎金批次" rows={dailyBatches} />
         <BatchTable title="月獎金批次" rows={monthlyBatches} />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <RecordTable
+          title="推薦獎勵查詢"
+          rows={referral.records}
+          members={referral.members}
+          timeLabel="建立時間"
+          timeKey="created_at"
+          showStatus
+        />
+        <RecordTable
+          title="復購獎勵查詢"
+          rows={repurchase.records}
+          members={repurchase.members}
+          timeLabel="建立時間"
+          timeKey="created_at"
+          showStatus
+        />
       </div>
 
       <RecordTable
@@ -253,6 +337,7 @@ function BonusOperationsCenter() {
         members={waiting.members}
         timeLabel="預計發放日"
         timeKey="release_date"
+        showDelay
         selectable
         selected={selectedWaiting}
         onToggle={toggleWaitingRecord}
@@ -272,7 +357,25 @@ function BonusOperationsCenter() {
         members={failed.members}
         timeLabel="時間"
         timeKey="updated_at"
+        selectable
+        selected={selectedFailed}
+        onToggle={toggleFailedRecord}
         showFailureReason
+        action={
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busyAction !== null || selectedFailed.size === 0}
+            onClick={() =>
+              runAction("retry-release", "重新發放", () =>
+                retryFailedBonusRewards({ data: { recordIds: Array.from(selectedFailed) } }),
+              )
+            }
+          >
+            {busyAction === "retry-release" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
+            重新發放
+          </Button>
+        }
         loading={loading}
       />
     </div>
@@ -290,6 +393,18 @@ function MetricCard({ title, value, icon: Icon, tone }: { title: string; value: 
         <div className={tone === "danger" ? "text-destructive" : "text-primary"}>
           <Icon className="h-5 w-5" />
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatusCard({ title, value, detail }: { title: string; value: string; detail: string }) {
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <p className="text-sm text-muted-foreground">{title}</p>
+        <p className="mt-1 text-xl font-semibold">{value}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
       </CardContent>
     </Card>
   );
@@ -346,7 +461,10 @@ function RecordTable({
   selectable,
   selected,
   onToggle,
+  showStatus,
+  showDelay,
   showFailureReason,
+  action,
 }: {
   title: string;
   rows: any[];
@@ -356,13 +474,17 @@ function RecordTable({
   selectable?: boolean;
   selected?: Set<string>;
   onToggle?: (id: string, checked: boolean) => void;
+  showStatus?: boolean;
+  showDelay?: boolean;
   showFailureReason?: boolean;
+  action?: ReactNode;
   loading?: boolean;
 }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className={action ? "flex flex-row items-center justify-between gap-3" : undefined}>
         <CardTitle className="text-base">{title}</CardTitle>
+        {action}
       </CardHeader>
       <CardContent>
         <Table>
@@ -371,15 +493,17 @@ function RecordTable({
               {selectable && <TableHead className="w-10" />}
               <TableHead>會員</TableHead>
               <TableHead>獎金類型</TableHead>
+              {showStatus && <TableHead>狀態</TableHead>}
               <TableHead>點數</TableHead>
               {showFailureReason && <TableHead>失敗原因</TableHead>}
               <TableHead>{timeLabel}</TableHead>
+              {showDelay && <TableHead>延遲發放</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={selectable ? (showFailureReason ? 6 : 5) : (showFailureReason ? 5 : 4)} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={recordTableColumnCount({ selectable, showFailureReason, showStatus, showDelay })} className="py-8 text-center text-muted-foreground">
                   目前沒有資料
                 </TableCell>
               </TableRow>
@@ -397,9 +521,15 @@ function RecordTable({
                   )}
                   <TableCell>{memberLabel(row.member_id, members)}</TableCell>
                   <TableCell>{TYPE_LABEL[row.bonus_type] ?? row.bonus_type ?? "-"}</TableCell>
+                  {showStatus && (
+                    <TableCell>
+                      <StatusBadge status={row.status} />
+                    </TableCell>
+                  )}
                   <TableCell className="tabular-nums">{formatNumber(row.bonus_points)}</TableCell>
                   {showFailureReason && <TableCell className="max-w-sm truncate">{row.fail_reason ?? row.failure_reason ?? "-"}</TableCell>}
                   <TableCell>{timeKey === "release_date" ? formatDate(row[timeKey]) : formatDateTime(row[timeKey] ?? row.created_at)}</TableCell>
+                  {showDelay && <TableCell>{releaseDelayLabel(row.release_date)}</TableCell>}
                 </TableRow>
               ))
             )}
@@ -408,6 +538,26 @@ function RecordTable({
       </CardContent>
     </Card>
   );
+}
+
+function recordTableColumnCount(options: { selectable?: boolean; showFailureReason?: boolean; showStatus?: boolean; showDelay?: boolean }) {
+  return 4
+    + (options.selectable ? 1 : 0)
+    + (options.showFailureReason ? 1 : 0)
+    + (options.showStatus ? 1 : 0)
+    + (options.showDelay ? 1 : 0);
+}
+
+function releaseDelayLabel(value: unknown) {
+  if (!value) return "-";
+  const target = new Date(String(value));
+  if (Number.isNaN(target.getTime())) return "-";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  const days = Math.ceil((target.getTime() - today.getTime()) / 86400000);
+  if (days > 0) return `${days} 天後`;
+  return "可發放";
 }
 
 function StatusBadge({ status }: { status?: string }) {
