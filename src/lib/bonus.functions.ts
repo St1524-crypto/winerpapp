@@ -681,6 +681,123 @@ export const listBonusRecords = createServerFn({ method: "POST" })
     return { records: rows, members: memberMap };
   });
 
+/* ───────────── Admin：獎金營運中心查詢 ───────────── */
+const OPERATIONS_BATCH_LIMIT = 50;
+const OPERATIONS_RECORD_LIMIT = 200;
+
+async function countBonusRecordsByStatus(status: string) {
+  const { count, error } = await supabaseAdmin
+    .from("bonus_records")
+    .select("id", { count: "exact", head: true })
+    .eq("status", status);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+async function countSettlementBatchesByType(settlementType: string) {
+  const { count, error } = await supabaseAdmin
+    .from("bonus_settlement_batches")
+    .select("id", { count: "exact", head: true })
+    .eq("settlement_type", settlementType);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+async function listOperationsBatches(settlementType: string) {
+  const { data, error } = await supabaseAdmin
+    .from("bonus_settlement_batches")
+    .select("*")
+    .eq("settlement_type", settlementType)
+    .order("created_at", { ascending: false })
+    .limit(OPERATIONS_BATCH_LIMIT);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+async function listOperationsRecords(status: string) {
+  const { data, error } = await supabaseAdmin
+    .from("bonus_records")
+    .select("*")
+    .eq("status", status)
+    .order("created_at", { ascending: false })
+    .limit(OPERATIONS_RECORD_LIMIT);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+async function getMemberMapForBonusRows(rows: any[]) {
+  const memberIds = Array.from(new Set(
+    rows.flatMap((row: any) => [row.member_id, row.source_member_id]).filter(Boolean),
+  ));
+  if (memberIds.length === 0) return {};
+
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id, name, member_no")
+    .in("id", memberIds);
+  if (error) throw new Error(error.message);
+
+  const memberMap: Record<string, any> = {};
+  (data ?? []).forEach((profile: any) => { memberMap[profile.id] = profile; });
+  return memberMap;
+}
+
+export const getBonusOperationsData = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertRoles(context.userId, VIEW_ROLES);
+
+    const [
+      dailyBatchCount,
+      monthlyBatchCount,
+      waitingCount,
+      releasedCount,
+      failedCount,
+      dailyBatches,
+      monthlyBatches,
+      waitingRecords,
+      releasedRecords,
+      failedRecords,
+    ] = await Promise.all([
+      countSettlementBatchesByType("daily"),
+      countSettlementBatchesByType("monthly"),
+      countBonusRecordsByStatus("waiting_release"),
+      countBonusRecordsByStatus("released"),
+      countBonusRecordsByStatus("failed"),
+      listOperationsBatches("daily"),
+      listOperationsBatches("monthly"),
+      listOperationsRecords("waiting_release"),
+      listOperationsRecords("released"),
+      listOperationsRecords("failed"),
+    ]);
+
+    const members = await getMemberMapForBonusRows([
+      ...waitingRecords,
+      ...releasedRecords,
+      ...failedRecords,
+    ]);
+
+    return {
+      summary: {
+        dailyBatches: dailyBatchCount,
+        monthlyBatches: monthlyBatchCount,
+        waitingRelease: waitingCount,
+        released: releasedCount,
+        failed: failedCount,
+      },
+      batches: {
+        daily: dailyBatches,
+        monthly: monthlyBatches,
+      },
+      records: {
+        waiting: waitingRecords,
+        released: releasedRecords,
+        failed: failedRecords,
+      },
+      members,
+    };
+  });
+
 /* ───────────── 會員端：我的獎勵點 ───────────── */
 export const getMyBonusRecords = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

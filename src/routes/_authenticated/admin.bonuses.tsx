@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  listBonusRecords,
-  listSettlementBatches,
+  getBonusOperationsData,
   manualReleaseRewards,
   releaseDueRewards,
   runDailySettlement,
@@ -35,6 +34,14 @@ const ALLOW: AppRole[] = ["super_admin", "admin", "finance"];
 type BonusRecordBundle = {
   records: any[];
   members: Record<string, any>;
+};
+
+type BonusOperationsSummary = {
+  dailyBatches: number;
+  monthlyBatches: number;
+  waitingRelease: number;
+  released: number;
+  failed: number;
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -75,7 +82,15 @@ function Guard() {
 
 function BonusOperationsCenter() {
   const [loading, setLoading] = useState(true);
-  const [batches, setBatches] = useState<any[]>([]);
+  const [summary, setSummary] = useState<BonusOperationsSummary>({
+    dailyBatches: 0,
+    monthlyBatches: 0,
+    waitingRelease: 0,
+    released: 0,
+    failed: 0,
+  });
+  const [dailyBatches, setDailyBatches] = useState<any[]>([]);
+  const [monthlyBatches, setMonthlyBatches] = useState<any[]>([]);
   const [waiting, setWaiting] = useState<BonusRecordBundle>({ records: [], members: {} });
   const [released, setReleased] = useState<BonusRecordBundle>({ records: [], members: {} });
   const [failed, setFailed] = useState<BonusRecordBundle>({ records: [], members: {} });
@@ -86,16 +101,20 @@ function BonusOperationsCenter() {
   async function loadAll() {
     setLoading(true);
     try {
-      const [batchRows, waitingRows, releasedRows, failedRows] = await Promise.all([
-        listSettlementBatches(),
-        listBonusRecords({ data: { status: "waiting_release", limit: 200 } }),
-        listBonusRecords({ data: { status: "released", limit: 200 } }),
-        listBonusRecords({ data: { status: "failed", limit: 200 } }),
-      ]);
-      setBatches(batchRows ?? []);
-      setWaiting(normalizeBundle(waitingRows));
-      setReleased(normalizeBundle(releasedRows));
-      setFailed(normalizeBundle(failedRows));
+      const data = await getBonusOperationsData();
+      const members = data.members ?? {};
+      setSummary({
+        dailyBatches: data.summary?.dailyBatches ?? 0,
+        monthlyBatches: data.summary?.monthlyBatches ?? 0,
+        waitingRelease: data.summary?.waitingRelease ?? 0,
+        released: data.summary?.released ?? 0,
+        failed: data.summary?.failed ?? 0,
+      });
+      setDailyBatches(data.batches?.daily ?? []);
+      setMonthlyBatches(data.batches?.monthly ?? []);
+      setWaiting({ records: data.records?.waiting ?? [], members });
+      setReleased({ records: data.records?.released ?? [], members });
+      setFailed({ records: data.records?.failed ?? [], members });
       setSelectedWaiting(new Set());
     } catch (error: any) {
       toast.error(error?.message ?? "讀取獎金營運資料失敗");
@@ -107,15 +126,6 @@ function BonusOperationsCenter() {
   useEffect(() => {
     loadAll();
   }, []);
-
-  const dailyBatches = useMemo(
-    () => batches.filter((batch) => batch.settlement_type === "daily"),
-    [batches],
-  );
-  const monthlyBatches = useMemo(
-    () => batches.filter((batch) => batch.settlement_type === "monthly"),
-    [batches],
-  );
 
   async function runAction(actionKey: string, label: string, action: () => Promise<any>) {
     setBusyAction(actionKey);
@@ -158,11 +168,11 @@ function BonusOperationsCenter() {
       </div>
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        <MetricCard title="日獎金批次數" value={dailyBatches.length} icon={CalendarClock} />
-        <MetricCard title="月獎金批次數" value={monthlyBatches.length} icon={History} />
-        <MetricCard title="待發放筆數" value={waiting.records.length} icon={Send} />
-        <MetricCard title="已發放筆數" value={released.records.length} icon={CheckCircle2} />
-        <MetricCard title="失敗筆數" value={failed.records.length} icon={AlertTriangle} tone="danger" />
+        <MetricCard title="日獎金批次數" value={summary.dailyBatches} icon={CalendarClock} />
+        <MetricCard title="月獎金批次數" value={summary.monthlyBatches} icon={History} />
+        <MetricCard title="待發放筆數" value={summary.waitingRelease} icon={Send} />
+        <MetricCard title="已發放筆數" value={summary.released} icon={CheckCircle2} />
+        <MetricCard title="失敗筆數" value={summary.failed} icon={AlertTriangle} tone="danger" />
       </section>
 
       <Card>
@@ -403,13 +413,6 @@ function RecordTable({
 function StatusBadge({ status }: { status?: string }) {
   const variant = status === "failed" ? "destructive" : status === "completed" ? "default" : "secondary";
   return <Badge variant={variant}>{STATUS_LABEL[status ?? ""] ?? status ?? "-"}</Badge>;
-}
-
-function normalizeBundle(value: any): BonusRecordBundle {
-  return {
-    records: Array.isArray(value?.records) ? value.records : [],
-    members: value?.members ?? {},
-  };
 }
 
 function previousMonthInput() {
