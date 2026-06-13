@@ -40,7 +40,7 @@ function GroupBuyDetail() {
   const subtotal = Number(gb.unit_price) * qty;
 
   async function handleJoin() {
-    if (!auth.user) { navigate({ to: "/login/index" as any }); return; }
+    if (!auth.user) { navigate({ to: "/login" }); return; }
     setSubmitting(true);
     try {
       await joinFn({ data: { groupBuyId: id, quantity: qty, paymentMethod: pm, pointsUsed } });
