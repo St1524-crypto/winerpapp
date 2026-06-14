@@ -20,8 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  listBonusRecords,
-  listSettlementBatches,
+  getBonusOperationsData,
   manualReleaseRewards,
   releaseDueRewards,
 } from "@/lib/bonus.functions";
@@ -31,6 +30,14 @@ const ALLOWED_ROLES: AppRole[] = ["super_admin", "admin"];
 type BonusRecordBundle = {
   records: any[];
   members: Record<string, any>;
+};
+
+type BonusOperationsSummary = {
+  waitingRelease: number;
+  released: number;
+  failed: number;
+  dailyBatches: number;
+  monthlyBatches: number;
 };
 
 type ConfirmAction =
@@ -94,6 +101,13 @@ function BonusOperationsPage() {
   const [released, setReleased] = useState<BonusRecordBundle>({ records: [], members: {} });
   const [failed, setFailed] = useState<BonusRecordBundle>({ records: [], members: {} });
   const [batches, setBatches] = useState<any[]>([]);
+  const [summary, setSummary] = useState<BonusOperationsSummary>({
+    waitingRelease: 0,
+    released: 0,
+    failed: 0,
+    dailyBatches: 0,
+    monthlyBatches: 0,
+  });
 
   const selectedWaitingRecords = useMemo(
     () => waiting.records.filter((record) => selectedWaiting.has(record.id)),
@@ -103,17 +117,20 @@ function BonusOperationsPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [waitingData, releasedData, failedData, batchData] = await Promise.all([
-        listBonusRecords({ data: { status: "waiting_release", limit: 200 } }),
-        listBonusRecords({ data: { status: "released", limit: 200 } }),
-        listBonusRecords({ data: { status: "failed", limit: 200 } }),
-        listSettlementBatches(),
-      ]);
+      const data = await getBonusOperationsData();
+      const members = data.members ?? {};
 
-      setWaiting(normalizeBundle(waitingData));
-      setReleased(normalizeBundle(releasedData));
-      setFailed(normalizeBundle(failedData));
-      setBatches(batchData ?? []);
+      setWaiting({ records: data.records?.waiting ?? [], members });
+      setReleased({ records: data.records?.released ?? [], members });
+      setFailed({ records: data.records?.failed ?? [], members });
+      setBatches([...(data.batches?.daily ?? []), ...(data.batches?.monthly ?? [])]);
+      setSummary({
+        waitingRelease: Number(data.summary?.waitingRelease ?? 0),
+        released: Number(data.summary?.released ?? 0),
+        failed: Number(data.summary?.failed ?? 0),
+        dailyBatches: Number(data.summary?.dailyBatches ?? 0),
+        monthlyBatches: Number(data.summary?.monthlyBatches ?? 0),
+      });
       setSelectedWaiting(new Set());
     } catch (error: any) {
       toast.error(error?.message ?? "讀取獎金營運資料失敗");
@@ -176,10 +193,10 @@ function BonusOperationsPage() {
       <section>
         <h2 className="sr-only">總覽</h2>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard title="待發放獎金" value={waiting.records.length} icon={Send} />
-          <MetricCard title="已發放獎金" value={released.records.length} icon={CheckCircle2} />
-          <MetricCard title="失敗獎金" value={failed.records.length} icon={AlertTriangle} tone="danger" />
-          <MetricCard title="批次紀錄" value={batches.length} icon={History} />
+          <MetricCard title="待發放獎金" value={summary.waitingRelease} icon={Send} />
+          <MetricCard title="已發放獎金" value={summary.released} icon={CheckCircle2} />
+          <MetricCard title="失敗獎金" value={summary.failed} icon={AlertTriangle} tone="danger" />
+          <MetricCard title="批次紀錄" value={summary.dailyBatches + summary.monthlyBatches} icon={History} />
         </div>
       </section>
 
@@ -515,13 +532,6 @@ function ConfirmReleaseDialog({
       </AlertDialogContent>
     </AlertDialog>
   );
-}
-
-function normalizeBundle(input: any): BonusRecordBundle {
-  return {
-    records: input?.records ?? [],
-    members: input?.members ?? {},
-  };
 }
 
 function StatusBadge({ status }: { status?: string | null }) {
