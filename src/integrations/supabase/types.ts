@@ -556,12 +556,16 @@ export type Database = {
           bonus_rate: number
           bonus_type: string
           created_at: string
+          failed_at: string | null
           fail_reason: string | null
           generation_level: number | null
           id: string
           member_id: string
+          release_attempts: number
           release_date: string | null
+          release_source: string | null
           released_at: string | null
+          released_by: string | null
           required_points_checked: boolean
           required_points_passed: boolean
           settlement_batch_id: string | null
@@ -577,12 +581,16 @@ export type Database = {
           bonus_rate?: number
           bonus_type: string
           created_at?: string
+          failed_at?: string | null
           fail_reason?: string | null
           generation_level?: number | null
           id?: string
           member_id: string
+          release_attempts?: number
           release_date?: string | null
+          release_source?: string | null
           released_at?: string | null
+          released_by?: string | null
           required_points_checked?: boolean
           required_points_passed?: boolean
           settlement_batch_id?: string | null
@@ -598,12 +606,16 @@ export type Database = {
           bonus_rate?: number
           bonus_type?: string
           created_at?: string
+          failed_at?: string | null
           fail_reason?: string | null
           generation_level?: number | null
           id?: string
           member_id?: string
+          release_attempts?: number
           release_date?: string | null
+          release_source?: string | null
           released_at?: string | null
+          released_by?: string | null
           required_points_checked?: boolean
           required_points_passed?: boolean
           settlement_batch_id?: string | null
