@@ -714,6 +714,103 @@ export const listBonusRecords = createServerFn({ method: "POST" })
   });
 
 /* ───────────── Admin：獎金營運中心查詢 ───────────── */
+export const getSettlementBatchDetail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ batchId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, VIEW_ROLES);
+
+    const { data: batch, error: batchError } = await supabaseAdmin
+      .from("bonus_settlement_batches")
+      .select("*")
+      .eq("id", data.batchId)
+      .maybeSingle();
+    if (batchError) throw new Error(batchError.message);
+    if (!batch) throw new Error("Settlement batch not found");
+
+    const { data: records, error: recordsError } = await supabaseAdmin
+      .from("bonus_records")
+      .select("*")
+      .eq("settlement_batch_id", data.batchId)
+      .order("created_at", { ascending: false });
+    if (recordsError) throw new Error(recordsError.message);
+
+    const rows = records ?? [];
+    const members = await getMemberMapForBonusRows(rows);
+
+    return {
+      batch,
+      records: rows,
+      members,
+      summary: {
+        waitingRelease: rows.filter((row: any) => row.status === "waiting_release").length,
+        released: rows.filter((row: any) => row.status === "released").length,
+        failed: rows.filter((row: any) => row.status === "failed").length,
+        totalPoints: rows.reduce((sum: number, row: any) => sum + Number(row.bonus_points ?? 0), 0),
+      },
+    };
+  });
+
+export const getBonusRecordDetail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ recordId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, VIEW_ROLES);
+
+    const { data: record, error: recordError } = await supabaseAdmin
+      .from("bonus_records")
+      .select("*")
+      .eq("id", data.recordId)
+      .maybeSingle();
+    if (recordError) throw new Error(recordError.message);
+    if (!record) throw new Error("Bonus record not found");
+
+    const [memberResult, batchResult, rewardLogsResult, pointTransactionsResult] = await Promise.all([
+      supabaseAdmin
+        .from("profiles")
+        .select("id, name, member_no, email")
+        .eq("id", (record as any).member_id)
+        .maybeSingle(),
+      (record as any).settlement_batch_id
+        ? supabaseAdmin
+          .from("bonus_settlement_batches")
+          .select("*")
+          .eq("id", (record as any).settlement_batch_id)
+          .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      supabaseAdmin
+        .from("reward_wallet_logs")
+        .select("*")
+        .eq("bonus_record_id", data.recordId)
+        .order("created_at", { ascending: false }),
+      supabaseAdmin
+        .from("point_transactions")
+        .select("*")
+        .eq("reference_id", data.recordId)
+        .order("created_at", { ascending: false }),
+    ]);
+
+    const errors = [
+      memberResult.error,
+      batchResult.error,
+      rewardLogsResult.error,
+      pointTransactionsResult.error,
+    ].filter(Boolean);
+    if (errors.length > 0) throw new Error(errors[0]!.message);
+
+    return {
+      record,
+      member: memberResult.data ?? null,
+      settlementBatch: batchResult.data ?? null,
+      rewardWalletLogs: rewardLogsResult.data ?? [],
+      pointTransactions: pointTransactionsResult.data ?? [],
+    };
+  });
+
 const OPERATIONS_BATCH_LIMIT = 50;
 const OPERATIONS_RECORD_LIMIT = 200;
 
