@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Coins, History, Loader2, RefreshCw, Send, WalletCards } from "lucide-react";
 import { toast } from "sonner";
@@ -453,18 +453,19 @@ function BatchTable({ rows, loading }: { rows: any[]; loading: boolean }) {
                 <TableHead className="text-right">失敗筆數</TableHead>
                 <TableHead>建立時間</TableHead>
                 <TableHead>完成時間</TableHead>
+                <TableHead className="text-right">明細</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={11} className="py-8 text-center text-muted-foreground">
                     載入中...
                   </TableCell>
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={11} className="py-8 text-center text-muted-foreground">
                     目前沒有批次紀錄
                   </TableCell>
                 </TableRow>
@@ -483,6 +484,13 @@ function BatchTable({ rows, loading }: { rows: any[]; loading: boolean }) {
                     <TableCell className="text-right text-muted-foreground">下一階段</TableCell>
                     <TableCell>{formatDateTime(row.created_at)}</TableCell>
                     <TableCell>{formatDateTime(row.completed_at)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/admin/bonuses/batches/$batchId" params={{ batchId: row.id }}>
+                          查看
+                        </Link>
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
