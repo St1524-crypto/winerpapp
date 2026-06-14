@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VendorRouteImport } from './routes/vendor'
 import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -18,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as GroupBuysIndexRouteImport } from './routes/group-buys.index'
+import { Route as VendorLoginRouteImport } from './routes/vendor.login'
 import { Route as UCodeRouteImport } from './routes/u.$code'
 import { Route as ShopWholesaleRouteImport } from './routes/shop.wholesale'
 import { Route as ShopVipRouteImport } from './routes/shop.vip'
@@ -80,6 +82,7 @@ import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminReferralTreeRouteImport } from './routes/_authenticated/admin.referral-tree'
 import { Route as AuthenticatedAdminMemberSearchRouteImport } from './routes/_authenticated/admin.member-search'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
+import { Route as AuthenticatedAdminBonusesRouteImport } from './routes/_authenticated/admin.bonuses'
 import { Route as AuthenticatedAdminBonusCenterRouteImport } from './routes/_authenticated/admin.bonus-center'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
@@ -90,6 +93,11 @@ import { Route as ApiPublicAiRecruitRouteImport } from './routes/api/public/ai/r
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 
+const VendorRoute = VendorRouteImport.update({
+  id: '/vendor',
+  path: '/vendor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TwoFactorRoute = TwoFactorRouteImport.update({
   id: '/two-factor',
   path: '/two-factor',
@@ -133,6 +141,11 @@ const GroupBuysIndexRoute = GroupBuysIndexRouteImport.update({
   id: '/group-buys/',
   path: '/group-buys/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const VendorLoginRoute = VendorLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => VendorRoute,
 } as any)
 const UCodeRoute = UCodeRouteImport.update({
   id: '/u/$code',
@@ -466,6 +479,12 @@ const AuthenticatedAdminCompaniesRoute =
     path: '/admin/companies',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminBonusesRoute =
+  AuthenticatedAdminBonusesRouteImport.update({
+    id: '/admin/bonuses',
+    path: '/admin/bonuses',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminBonusCenterRoute =
   AuthenticatedAdminBonusCenterRouteImport.update({
     id: '/admin/bonus-center',
@@ -525,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
+  '/vendor': typeof VendorRouteWithChildren
   '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/customers': typeof AuthenticatedCustomersRoute
@@ -565,11 +585,13 @@ export interface FileRoutesByFullPath {
   '/shop/vip': typeof ShopVipRoute
   '/shop/wholesale': typeof ShopWholesaleRoute
   '/u/$code': typeof UCodeRoute
+  '/vendor/login': typeof VendorLoginRoute
   '/group-buys/': typeof GroupBuysIndexRoute
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
+  '/admin/bonuses': typeof AuthenticatedAdminBonusesRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
@@ -605,6 +627,7 @@ export interface FileRoutesByTo {
   '/recruit': typeof RecruitRoute
   '/reset-password': typeof ResetPasswordRoute
   '/two-factor': typeof TwoFactorRoute
+  '/vendor': typeof VendorRouteWithChildren
   '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/customers': typeof AuthenticatedCustomersRoute
@@ -643,11 +666,13 @@ export interface FileRoutesByTo {
   '/shop/vip': typeof ShopVipRoute
   '/shop/wholesale': typeof ShopWholesaleRoute
   '/u/$code': typeof UCodeRoute
+  '/vendor/login': typeof VendorLoginRoute
   '/group-buys': typeof GroupBuysIndexRoute
   '/login': typeof LoginIndexRoute
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
+  '/admin/bonuses': typeof AuthenticatedAdminBonusesRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
@@ -686,6 +711,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
+  '/vendor': typeof VendorRouteWithChildren
   '/_authenticated/cash-admin': typeof AuthenticatedCashAdminRoute
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
@@ -726,11 +752,13 @@ export interface FileRoutesById {
   '/shop/vip': typeof ShopVipRoute
   '/shop/wholesale': typeof ShopWholesaleRoute
   '/u/$code': typeof UCodeRoute
+  '/vendor/login': typeof VendorLoginRoute
   '/group-buys/': typeof GroupBuysIndexRoute
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
+  '/_authenticated/admin/bonuses': typeof AuthenticatedAdminBonusesRoute
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/_authenticated/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/_authenticated/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
@@ -769,6 +797,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/two-factor'
+    | '/vendor'
     | '/cash-admin'
     | '/categories'
     | '/customers'
@@ -809,11 +838,13 @@ export interface FileRouteTypes {
     | '/shop/vip'
     | '/shop/wholesale'
     | '/u/$code'
+    | '/vendor/login'
     | '/group-buys/'
     | '/login/'
     | '/shop/'
     | '/admin/audit-logs'
     | '/admin/bonus-center'
+    | '/admin/bonuses'
     | '/admin/companies'
     | '/admin/member-search'
     | '/admin/referral-tree'
@@ -849,6 +880,7 @@ export interface FileRouteTypes {
     | '/recruit'
     | '/reset-password'
     | '/two-factor'
+    | '/vendor'
     | '/cash-admin'
     | '/categories'
     | '/customers'
@@ -887,11 +919,13 @@ export interface FileRouteTypes {
     | '/shop/vip'
     | '/shop/wholesale'
     | '/u/$code'
+    | '/vendor/login'
     | '/group-buys'
     | '/login'
     | '/shop'
     | '/admin/audit-logs'
     | '/admin/bonus-center'
+    | '/admin/bonuses'
     | '/admin/companies'
     | '/admin/member-search'
     | '/admin/referral-tree'
@@ -929,6 +963,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/two-factor'
+    | '/vendor'
     | '/_authenticated/cash-admin'
     | '/_authenticated/categories'
     | '/_authenticated/customers'
@@ -969,11 +1004,13 @@ export interface FileRouteTypes {
     | '/shop/vip'
     | '/shop/wholesale'
     | '/u/$code'
+    | '/vendor/login'
     | '/group-buys/'
     | '/login/'
     | '/shop/'
     | '/_authenticated/admin/audit-logs'
     | '/_authenticated/admin/bonus-center'
+    | '/_authenticated/admin/bonuses'
     | '/_authenticated/admin/companies'
     | '/_authenticated/admin/member-search'
     | '/_authenticated/admin/referral-tree'
@@ -1012,6 +1049,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRouteWithChildren
   TwoFactorRoute: typeof TwoFactorRoute
+  VendorRoute: typeof VendorRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
   CSlugRoute: typeof CSlugRoute
   GroupBuysIdRoute: typeof GroupBuysIdRoute
@@ -1029,6 +1067,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vendor': {
+      id: '/vendor'
+      path: '/vendor'
+      fullPath: '/vendor'
+      preLoaderRoute: typeof VendorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/two-factor': {
       id: '/two-factor'
       path: '/two-factor'
@@ -1091,6 +1136,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/group-buys/'
       preLoaderRoute: typeof GroupBuysIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/vendor/login': {
+      id: '/vendor/login'
+      path: '/login'
+      fullPath: '/vendor/login'
+      preLoaderRoute: typeof VendorLoginRouteImport
+      parentRoute: typeof VendorRoute
     }
     '/u/$code': {
       id: '/u/$code'
@@ -1526,6 +1578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCompaniesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/bonuses': {
+      id: '/_authenticated/admin/bonuses'
+      path: '/admin/bonuses'
+      fullPath: '/admin/bonuses'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/bonus-center': {
       id: '/_authenticated/admin/bonus-center'
       path: '/admin/bonus-center'
@@ -1683,6 +1742,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedWebhooksAdminRoute: typeof AuthenticatedWebhooksAdminRoute
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
   AuthenticatedAdminBonusCenterRoute: typeof AuthenticatedAdminBonusCenterRoute
+  AuthenticatedAdminBonusesRoute: typeof AuthenticatedAdminBonusesRoute
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
   AuthenticatedAdminMemberSearchRoute: typeof AuthenticatedAdminMemberSearchRoute
   AuthenticatedAdminReferralTreeRoute: typeof AuthenticatedAdminReferralTreeRoute
@@ -1725,6 +1785,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedWebhooksAdminRoute: AuthenticatedWebhooksAdminRoute,
   AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
   AuthenticatedAdminBonusCenterRoute: AuthenticatedAdminBonusCenterRoute,
+  AuthenticatedAdminBonusesRoute: AuthenticatedAdminBonusesRoute,
   AuthenticatedAdminCompaniesRoute:
     AuthenticatedAdminCompaniesRouteWithChildren,
   AuthenticatedAdminMemberSearchRoute: AuthenticatedAdminMemberSearchRoute,
@@ -1797,6 +1858,17 @@ const ShopRouteChildren: ShopRouteChildren = {
 
 const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)
 
+interface VendorRouteChildren {
+  VendorLoginRoute: typeof VendorLoginRoute
+}
+
+const VendorRouteChildren: VendorRouteChildren = {
+  VendorLoginRoute: VendorLoginRoute,
+}
+
+const VendorRouteWithChildren =
+  VendorRoute._addFileChildren(VendorRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -1804,6 +1876,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRouteWithChildren,
   TwoFactorRoute: TwoFactorRoute,
+  VendorRoute: VendorRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
   CSlugRoute: CSlugRoute,
   GroupBuysIdRoute: GroupBuysIdRoute,
@@ -1821,3 +1894,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
