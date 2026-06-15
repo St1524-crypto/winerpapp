@@ -650,27 +650,127 @@ export const retryFailedBonusRewards = createServerFn({ method: "POST" })
 
     const { data: failedRows, error: fetchError } = await supabaseAdmin
       .from("bonus_records")
-      .select("id")
+      .select("id, status, fail_reason, release_attempts")
       .eq("status", "failed")
       .in("id", data.recordIds);
     if (fetchError) throw new Error(fetchError.message);
 
-    const ids = (failedRows ?? []).map((row: any) => row.id);
+    const rows = failedRows ?? [];
+    const ids = rows.map((row: any) => row.id);
     if (ids.length === 0) return { retried: 0, released: 0, points: 0 };
+    const originalById = new Map(rows.map((row: any) => [row.id, row]));
 
-    const { error: updateError } = await supabaseAdmin
+    try {
+      const now = new Date().toISOString();
+      const releaseDate = now.slice(0, 10);
+
+      for (const row of rows as any[]) {
+        const { error: prepareError } = await supabaseAdmin
+          .from("bonus_records")
+          .update({
+            status: "waiting_release",
+            fail_reason: null,
+            release_attempts: Number(row.release_attempts ?? 0) + 1,
+            release_source: "retry",
+            release_date: releaseDate,
+            updated_at: now,
+          })
+          .eq("id", row.id)
+          .eq("status", "failed");
+        if (prepareError) throw new Error(prepareError.message);
+      }
+
+      const releaseResult = await releaseRecords(ids);
+      const { data: releasedRows, error: releasedFetchError } = await supabaseAdmin
+        .from("bonus_records")
+        .select("id, status, released_at")
+        .in("id", ids);
+      if (releasedFetchError) throw new Error(releasedFetchError.message);
+
+      const releasedIds = new Set((releasedRows ?? [])
+        .filter((row: any) => row.status === "released")
+        .map((row: any) => row.id));
+      const unreleasedIds = ids.filter((id: string) => !releasedIds.has(id));
+      if (unreleasedIds.length > 0) {
+        await restoreFailedBonusRetries(unreleasedIds, originalById, "Retry did not release the bonus record");
+        await writeBonusRetryAudit(context.userId, "bonus_retry_failed", unreleasedIds, originalById, {
+          reason: "Retry did not release the bonus record",
+        });
+      }
+
+      const successIds = ids.filter((id: string) => releasedIds.has(id));
+      if (successIds.length > 0) {
+        await writeBonusRetryAudit(context.userId, "bonus_retry_success", successIds, originalById, releaseResult ?? {});
+      }
+
+      return {
+        retried: ids.length,
+        ...(releaseResult ?? {}),
+        released: successIds.length,
+        failed: unreleasedIds.length,
+      };
+    } catch (error: any) {
+      const reason = error?.message ?? "Retry release failed";
+      await restoreFailedBonusRetries(ids, originalById, reason);
+      await writeBonusRetryAudit(context.userId, "bonus_retry_failed", ids, originalById, { reason });
+      throw error;
+    }
+  });
+
+/* ───────────── 失敗重試稽核輔助 ───────────── */
+async function restoreFailedBonusRetries(ids: string[], originalById: Map<string, any>, reason: string) {
+  const failedAt = new Date().toISOString();
+
+  for (const id of ids) {
+    const original = originalById.get(id);
+    const originalReason = original?.fail_reason ? String(original.fail_reason) : "";
+    const retryReason = `Retry failed: ${reason}`;
+    const failReason = originalReason.includes(retryReason)
+      ? originalReason
+      : [originalReason, retryReason].filter(Boolean).join("\n");
+
+    const { error } = await supabaseAdmin
       .from("bonus_records")
       .update({
-        status: "waiting_release",
-        fail_reason: null,
-        release_date: new Date().toISOString().slice(0, 10),
+        status: "failed",
+        fail_reason: failReason,
+        failed_at: failedAt,
+        release_source: "retry",
+        updated_at: failedAt,
       })
-      .in("id", ids);
-    if (updateError) throw new Error(updateError.message);
+      .eq("id", id)
+      .neq("status", "released");
+    if (error) throw new Error(error.message);
+  }
+}
 
-    const releaseResult = await releaseRecords(ids);
-    return { retried: ids.length, ...(releaseResult ?? {}) };
+async function writeBonusRetryAudit(
+  userId: string,
+  action: "bonus_retry_success" | "bonus_retry_failed",
+  ids: string[],
+  originalById: Map<string, any>,
+  details: Record<string, unknown>,
+) {
+  const rows = ids.map((id) => {
+    const original = originalById.get(id);
+    return {
+      user_id: userId,
+      action,
+      entity: "bonus_record",
+      entity_id: id,
+      metadata: {
+        original_status: original?.status ?? null,
+        original_fail_reason: original?.fail_reason ?? null,
+        original_release_attempts: original?.release_attempts ?? 0,
+        release_source: "retry",
+        ...details,
+      },
+    };
   });
+
+  const { error } = await supabaseAdmin.from("audit_logs").insert(rows);
+  if (error) throw new Error(error.message);
+}
 
 /* ───────────── 列表查詢 ───────────── */
 export const listSettlementBatches = createServerFn({ method: "GET" })
