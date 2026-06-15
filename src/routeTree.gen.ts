@@ -92,6 +92,7 @@ import { Route as ApiPublicCronExpireGroupBuysRouteImport } from './routes/api/p
 import { Route as ApiPublicAiRecruitRouteImport } from './routes/api/public/ai/recruit'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
+import { Route as AuthenticatedAdminBonusesBatchesBatchIdRouteImport } from './routes/_authenticated/admin.bonuses.batches.$batchId'
 
 const VendorRoute = VendorRouteImport.update({
   id: '/vendor',
@@ -537,6 +538,12 @@ const AuthenticatedAdminCompaniesNewRoute =
     path: '/new',
     getParentRoute: () => AuthenticatedAdminCompaniesRoute,
   } as any)
+const AuthenticatedAdminBonusesBatchesBatchIdRoute =
+  AuthenticatedAdminBonusesBatchesBatchIdRouteImport.update({
+    id: '/batches/$batchId',
+    path: '/batches/$batchId',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -591,7 +598,7 @@ export interface FileRoutesByFullPath {
   '/shop/': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
-  '/admin/bonuses': typeof AuthenticatedAdminBonusesRoute
+  '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
@@ -621,6 +628,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
+  '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -672,7 +680,7 @@ export interface FileRoutesByTo {
   '/shop': typeof ShopIndexRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
-  '/admin/bonuses': typeof AuthenticatedAdminBonusesRoute
+  '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
@@ -702,6 +710,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
+  '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -758,7 +767,7 @@ export interface FileRoutesById {
   '/shop/': typeof ShopIndexRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
-  '/_authenticated/admin/bonuses': typeof AuthenticatedAdminBonusesRoute
+  '/_authenticated/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/_authenticated/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/_authenticated/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
@@ -788,6 +797,7 @@ export interface FileRoutesById {
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
+  '/_authenticated/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -874,6 +884,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
+    | '/admin/bonuses/batches/$batchId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -955,6 +966,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
+    | '/admin/bonuses/batches/$batchId'
   id:
     | '__root__'
     | '/'
@@ -1040,6 +1052,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
+    | '/_authenticated/admin/bonuses/batches/$batchId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1648,6 +1661,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCompaniesNewRouteImport
       parentRoute: typeof AuthenticatedAdminCompaniesRoute
     }
+    '/_authenticated/admin/bonuses/batches/$batchId': {
+      id: '/_authenticated/admin/bonuses/batches/$batchId'
+      path: '/batches/$batchId'
+      fullPath: '/admin/bonuses/batches/$batchId'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesBatchesBatchIdRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
   }
 }
 
@@ -1681,6 +1701,21 @@ const AuthenticatedProductsRouteChildren: AuthenticatedProductsRouteChildren = {
 const AuthenticatedProductsRouteWithChildren =
   AuthenticatedProductsRoute._addFileChildren(
     AuthenticatedProductsRouteChildren,
+  )
+
+interface AuthenticatedAdminBonusesRouteChildren {
+  AuthenticatedAdminBonusesBatchesBatchIdRoute: typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
+}
+
+const AuthenticatedAdminBonusesRouteChildren: AuthenticatedAdminBonusesRouteChildren =
+  {
+    AuthenticatedAdminBonusesBatchesBatchIdRoute:
+      AuthenticatedAdminBonusesBatchesBatchIdRoute,
+  }
+
+const AuthenticatedAdminBonusesRouteWithChildren =
+  AuthenticatedAdminBonusesRoute._addFileChildren(
+    AuthenticatedAdminBonusesRouteChildren,
   )
 
 interface AuthenticatedAdminCompaniesRouteChildren {
@@ -1742,7 +1777,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedWebhooksAdminRoute: typeof AuthenticatedWebhooksAdminRoute
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
   AuthenticatedAdminBonusCenterRoute: typeof AuthenticatedAdminBonusCenterRoute
-  AuthenticatedAdminBonusesRoute: typeof AuthenticatedAdminBonusesRoute
+  AuthenticatedAdminBonusesRoute: typeof AuthenticatedAdminBonusesRouteWithChildren
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
   AuthenticatedAdminMemberSearchRoute: typeof AuthenticatedAdminMemberSearchRoute
   AuthenticatedAdminReferralTreeRoute: typeof AuthenticatedAdminReferralTreeRoute
@@ -1785,7 +1820,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedWebhooksAdminRoute: AuthenticatedWebhooksAdminRoute,
   AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
   AuthenticatedAdminBonusCenterRoute: AuthenticatedAdminBonusCenterRoute,
-  AuthenticatedAdminBonusesRoute: AuthenticatedAdminBonusesRoute,
+  AuthenticatedAdminBonusesRoute: AuthenticatedAdminBonusesRouteWithChildren,
   AuthenticatedAdminCompaniesRoute:
     AuthenticatedAdminCompaniesRouteWithChildren,
   AuthenticatedAdminMemberSearchRoute: AuthenticatedAdminMemberSearchRoute,
