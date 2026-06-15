@@ -23,6 +23,7 @@ import {
   getBonusOperationsData,
   manualReleaseRewards,
   releaseDueRewards,
+  retryFailedBonusRewards,
 } from "@/lib/bonus.functions";
 
 const ALLOWED_ROLES: AppRole[] = ["super_admin", "admin"];
@@ -43,7 +44,8 @@ type BonusOperationsSummary = {
 type ConfirmAction =
   | { type: "release-selected"; ids: string[] }
   | { type: "release-one"; ids: string[] }
-  | { type: "release-due"; ids: null };
+  | { type: "release-due"; ids: null }
+  | { type: "retry-failed"; ids: string[] };
 
 const TYPE_LABEL: Record<string, string> = {
   referral: "推薦獎勵",
@@ -159,6 +161,9 @@ function BonusOperationsPage() {
       if (confirmAction.type === "release-due") {
         await releaseDueRewards();
         toast.success("已送出到期待發放獎金");
+      } else if (confirmAction.type === "retry-failed") {
+        const result = await retryFailedBonusRewards({ data: { recordIds: confirmAction.ids } });
+        toast.success(`已重新發放 ${result.retried ?? confirmAction.ids.length} 筆失敗獎金`);
       } else {
         await manualReleaseRewards({ data: { recordIds: confirmAction.ids } });
         toast.success(`已送出 ${confirmAction.ids.length} 筆手動發放`);
@@ -231,11 +236,12 @@ function BonusOperationsPage() {
 
       <BonusRecordTable
         title="失敗獎金"
-        description="僅列出 bonus_records.status = failed 的紀錄。重新發放會在下一階段接上完整失敗重試流程。"
+        description="僅列出 bonus_records.status = failed 的紀錄。重新發放會透過既有失敗重試流程處理。"
         records={failed.records}
         members={failed.members}
         mode="failed"
         loading={loading}
+        onRetryFailed={(id) => setConfirmAction({ type: "retry-failed", ids: [id] })}
       />
 
       <BatchTable rows={batches} loading={loading} />
@@ -243,6 +249,7 @@ function BonusOperationsPage() {
       <ConfirmReleaseDialog
         action={confirmAction}
         records={waiting.records}
+        failedRecords={failed.records}
         busy={busy}
         onOpenChange={(open) => {
           if (!open && !busy) setConfirmAction(null);
@@ -315,6 +322,7 @@ function BonusRecordTable({
   selected,
   onToggle,
   onReleaseOne,
+  onRetryFailed,
 }: {
   title: string;
   description: string;
@@ -325,6 +333,7 @@ function BonusRecordTable({
   selected?: Set<string>;
   onToggle?: (id: string, checked: boolean) => void;
   onReleaseOne?: (id: string) => void;
+  onRetryFailed?: (id: string) => void;
 }) {
   const isWaiting = mode === "waiting";
   const isReleased = mode === "released";
@@ -410,7 +419,9 @@ function BonusRecordTable({
                     {isFailed && <TableCell>{formatDateTime(record.updated_at ?? record.created_at)}</TableCell>}
                     {isFailed && (
                       <TableCell>
-                        <Badge variant="secondary">下一階段開放</Badge>
+                        <Button size="sm" variant="outline" onClick={() => onRetryFailed?.(record.id)}>
+                          重新發放
+                        </Button>
                       </TableCell>
                     )}
                     {isWaiting && (
@@ -505,23 +516,32 @@ function BatchTable({ rows, loading }: { rows: any[]; loading: boolean }) {
 function ConfirmReleaseDialog({
   action,
   records,
+  failedRecords,
   busy,
   onOpenChange,
   onConfirm,
 }: {
   action: ConfirmAction | null;
   records: any[];
+  failedRecords: any[];
   busy: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }) {
-  const selectedRecords = action?.ids ? records.filter((record) => action.ids?.includes(record.id)) : [];
+  const sourceRecords = action?.type === "retry-failed" ? failedRecords : records;
+  const selectedRecords = action?.ids ? sourceRecords.filter((record) => action.ids?.includes(record.id)) : [];
   const count = action?.ids ? action.ids.length : 0;
   const points = action?.ids ? sumPoints(selectedRecords) : null;
-  const title = action?.type === "release-due" ? "確認發放所有到期獎勵點？" : "確認手動發放？";
+  const title = action?.type === "release-due"
+    ? "確認發放所有到期獎勵點？"
+    : action?.type === "retry-failed"
+      ? "確認重新發放失敗獎金？"
+      : "確認手動發放？";
   const description = action?.type === "release-due"
     ? "系統會呼叫既有 releaseDueRewards，只處理到期且仍為待發放狀態的獎金。"
-    : `系統會呼叫既有 manualReleaseRewards 發放 ${count} 筆待發放獎金，合計 ${formatNumber(points)} 點。已發放紀錄不會被再次發放。`;
+    : action?.type === "retry-failed"
+      ? `系統會呼叫既有 retryFailedBonusRewards 重新發放 ${count} 筆失敗獎金，合計 ${formatNumber(points)} 點。只有 failed 狀態紀錄會被重試。`
+      : `系統會呼叫既有 manualReleaseRewards 發放 ${count} 筆待發放獎金，合計 ${formatNumber(points)} 點。已發放紀錄不會被再次發放。`;
 
   return (
     <AlertDialog open={!!action} onOpenChange={onOpenChange}>
