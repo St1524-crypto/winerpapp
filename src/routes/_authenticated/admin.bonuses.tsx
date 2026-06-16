@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Coins, History, Loader2, RefreshCw, Send, WalletCards } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Coins, History, Loader2, RefreshCw, Search, Send, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
@@ -18,9 +18,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   getBonusOperationsData,
+  getBonusRecalculationDiagnostics,
   manualReleaseRewards,
   releaseDueRewards,
   retryFailedBonusRewards,
@@ -46,6 +49,13 @@ type ConfirmAction =
   | { type: "release-one"; ids: string[] }
   | { type: "release-due"; ids: null }
   | { type: "retry-failed"; ids: string[] };
+
+type DiagnosticsForm = {
+  orderId: string;
+  memberId: string;
+  dateFrom: string;
+  dateTo: string;
+};
 
 const TYPE_LABEL: Record<string, string> = {
   referral: "推薦獎勵",
@@ -97,6 +107,14 @@ function Guard() {
 function BonusOperationsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
+  const [diagnosticsForm, setDiagnosticsForm] = useState<DiagnosticsForm>({
+    orderId: "",
+    memberId: "",
+    dateFrom: "",
+    dateTo: "",
+  });
+  const [diagnostics, setDiagnostics] = useState<any | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [selectedWaiting, setSelectedWaiting] = useState<Set<string>>(new Set());
   const [waiting, setWaiting] = useState<BonusRecordBundle>({ records: [], members: {} });
@@ -152,6 +170,31 @@ function BonusOperationsPage() {
       else next.delete(id);
       return next;
     });
+  }
+
+  async function runDiagnostics() {
+    const payload = {
+      orderId: diagnosticsForm.orderId.trim() || undefined,
+      memberId: diagnosticsForm.memberId.trim() || undefined,
+      dateFrom: diagnosticsForm.dateFrom || undefined,
+      dateTo: diagnosticsForm.dateTo || undefined,
+    };
+
+    if (!payload.orderId && !payload.memberId) {
+      toast.error("請輸入訂單 ID 或會員 ID");
+      return;
+    }
+
+    setDiagnosticsLoading(true);
+    try {
+      const result = await getBonusRecalculationDiagnostics({ data: payload });
+      setDiagnostics(result);
+      toast.success("補算診斷查詢完成");
+    } catch (error: any) {
+      toast.error(error?.message ?? "補算診斷查詢失敗");
+    } finally {
+      setDiagnosticsLoading(false);
+    }
   }
 
   async function executeConfirmedAction() {
@@ -211,6 +254,14 @@ function BonusOperationsPage() {
         selectedPoints={sumPoints(selectedWaitingRecords)}
         onReleaseSelected={() => setConfirmAction({ type: "release-selected", ids: Array.from(selectedWaiting) })}
         onReleaseDue={() => setConfirmAction({ type: "release-due", ids: null })}
+      />
+
+      <RecalculationDiagnosticsCard
+        form={diagnosticsForm}
+        loading={diagnosticsLoading}
+        result={diagnostics}
+        onChange={setDiagnosticsForm}
+        onSubmit={runDiagnostics}
       />
 
       <BonusRecordTable
@@ -295,6 +346,184 @@ function ManualOperationsCard({
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+function RecalculationDiagnosticsCard({
+  form,
+  loading,
+  result,
+  onChange,
+  onSubmit,
+}: {
+  form: DiagnosticsForm;
+  loading: boolean;
+  result: any | null;
+  onChange: (form: DiagnosticsForm) => void;
+  onSubmit: () => void;
+}) {
+  const orderDiagnostics = result?.orderDiagnostics;
+  const memberDiagnostics = result?.memberDiagnostics;
+  const orderRecords = result?.orderBonusRecords ?? [];
+  const recentMemberRecords = memberDiagnostics?.recent_bonus_records ?? [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">會員獎金補算診斷</CardTitle>
+        <CardDescription>
+          只查詢訂單或會員是否已有 bonus_records，用於補算前判斷漏算與重複風險，不會修改資料。
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <div className="space-y-2 xl:col-span-2">
+            <Label htmlFor="bonus-diagnostics-order">訂單 ID</Label>
+            <Input
+              id="bonus-diagnostics-order"
+              className="font-mono"
+              value={form.orderId}
+              onChange={(event) => onChange({ ...form, orderId: event.target.value })}
+              placeholder="sales_orders.id"
+            />
+          </div>
+          <div className="space-y-2 xl:col-span-2">
+            <Label htmlFor="bonus-diagnostics-member">會員 ID</Label>
+            <Input
+              id="bonus-diagnostics-member"
+              className="font-mono"
+              value={form.memberId}
+              onChange={(event) => onChange({ ...form, memberId: event.target.value })}
+              placeholder="profiles.id"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button className="w-full" onClick={onSubmit} disabled={loading}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+              查詢
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bonus-diagnostics-date-from">開始日期</Label>
+            <Input
+              id="bonus-diagnostics-date-from"
+              type="date"
+              value={form.dateFrom}
+              onChange={(event) => onChange({ ...form, dateFrom: event.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="bonus-diagnostics-date-to">結束日期</Label>
+            <Input
+              id="bonus-diagnostics-date-to"
+              type="date"
+              value={form.dateTo}
+              onChange={(event) => onChange({ ...form, dateTo: event.target.value })}
+            />
+          </div>
+        </div>
+
+        {result && (
+          <div className="space-y-4 rounded-md border p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={orderDiagnostics?.may_need_recalculation ? "destructive" : "secondary"}>
+                {orderDiagnostics?.may_need_recalculation ? "可能需要補算" : "未判定需補算"}
+              </Badge>
+              <Badge variant={orderDiagnostics?.duplicate_risk ? "destructive" : "outline"}>
+                {orderDiagnostics?.duplicate_risk ? "有重複風險" : "未發現重複風險"}
+              </Badge>
+              {memberDiagnostics?.has_failed_records && <Badge variant="destructive">會員有失敗紀錄</Badge>}
+              {memberDiagnostics?.has_unreleased_records && <Badge variant="secondary">會員有未發放紀錄</Badge>}
+            </div>
+
+            {result.order && (
+              <div className="grid gap-3 md:grid-cols-4">
+                <ReadOnlyField label="訂單編號" value={result.order.order_no ?? shortId(result.order.id)} />
+                <ReadOnlyField label="付款狀態" value={result.order.payment_status} />
+                <ReadOnlyField label="訂單類型" value={result.order.order_type} />
+                <ReadOnlyField label="訂單金額" value={formatNumber(result.order.total_amount)} />
+              </div>
+            )}
+
+            {orderDiagnostics && (
+              <div className="grid gap-3 md:grid-cols-4">
+                <ReadOnlyField label="訂單獎金筆數" value={orderDiagnostics.bonus_record_count} />
+                <ReadOnlyField label="診斷原因" value={orderDiagnostics.reason} />
+                <ReadOnlyField label="已有獎金紀錄" value={orderDiagnostics.has_bonus_records ? "是" : "否"} />
+                <ReadOnlyField label="重複風險數" value={orderDiagnostics.duplicate_risks?.length ?? 0} />
+              </div>
+            )}
+
+            {result.member && (
+              <div className="grid gap-3 md:grid-cols-4">
+                <ReadOnlyField label="會員名稱" value={result.member.name ?? "未命名會員"} />
+                <ReadOnlyField label="會員編號" value={result.member.member_no ?? shortId(result.member.id)} />
+                <ReadOnlyField label="會員狀態" value={result.member.member_status ?? "-"} />
+                <ReadOnlyField label="VIP" value={result.member.is_vip ? "是" : "否"} />
+              </div>
+            )}
+
+            {memberDiagnostics && (
+              <div className="grid gap-3 md:grid-cols-5">
+                <ReadOnlyField label="待結算" value={memberDiagnostics.summary?.pending ?? 0} />
+                <ReadOnlyField label="待發放" value={memberDiagnostics.summary?.waiting_release ?? 0} />
+                <ReadOnlyField label="已發放" value={memberDiagnostics.summary?.released ?? 0} />
+                <ReadOnlyField label="失敗" value={memberDiagnostics.summary?.failed ?? 0} />
+                <ReadOnlyField label="總點數" value={formatNumber(memberDiagnostics.summary?.total_points ?? 0)} />
+              </div>
+            )}
+
+            <MiniBonusRecordList title="訂單相關獎金紀錄" records={orderRecords} />
+            <MiniBonusRecordList title="會員最近獎金紀錄" records={recentMemberRecords} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReadOnlyField({ label, value }: { label: string; value: unknown }) {
+  return (
+    <div className="rounded-md bg-muted/50 p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 break-words text-sm font-medium">{value === null || value === undefined || value === "" ? "-" : String(value)}</div>
+    </div>
+  );
+}
+
+function MiniBonusRecordList({ title, records }: { title: string; records: any[] }) {
+  if (!records.length) return null;
+
+  return (
+    <div>
+      <div className="mb-2 text-sm font-medium">{title}</div>
+      <div className="overflow-x-auto rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>紀錄ID</TableHead>
+              <TableHead>獎金類型</TableHead>
+              <TableHead>狀態</TableHead>
+              <TableHead className="text-right">點數</TableHead>
+              <TableHead>建立時間</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {records.slice(0, 10).map((record) => (
+              <TableRow key={record.id}>
+                <TableCell className="font-mono text-xs">{shortId(record.id)}</TableCell>
+                <TableCell>{TYPE_LABEL[record.bonus_type] ?? record.bonus_type ?? "-"}</TableCell>
+                <TableCell>
+                  <StatusBadge status={record.status} />
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{formatNumber(record.bonus_points)}</TableCell>
+                <TableCell>{formatDateTime(record.created_at)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
 }
 
