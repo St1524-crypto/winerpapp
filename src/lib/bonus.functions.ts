@@ -1055,6 +1055,169 @@ export const getBonusOperationsData = createServerFn({ method: "GET" })
     };
   });
 
+const recalculationDiagnosticsSchema = z.object({
+  orderId: z.string().uuid().optional(),
+  memberId: z.string().uuid().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+}).refine((data) => data.orderId || data.memberId, {
+  message: "orderId or memberId is required",
+});
+
+function summarizeBonusRecords(rows: any[]) {
+  const byStatus = rows.reduce((acc: Record<string, number>, row: any) => {
+    const status = String(row.status ?? "unknown");
+    acc[status] = (acc[status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    total: rows.length,
+    pending: byStatus.pending ?? 0,
+    waiting_release: byStatus.waiting_release ?? 0,
+    released: byStatus.released ?? 0,
+    failed: byStatus.failed ?? 0,
+    settled: byStatus.settled ?? 0,
+    cancelled: byStatus.cancelled ?? 0,
+    total_points: rows.reduce((sum: number, row: any) => sum + Number(row.bonus_points ?? 0), 0),
+    by_status: byStatus,
+  };
+}
+
+function findDuplicateBonusRisk(rows: any[]) {
+  const seen = new Map<string, number>();
+  for (const row of rows) {
+    const key = [
+      row.source_order_id ?? "",
+      row.member_id ?? "",
+      row.bonus_type ?? "",
+      row.generation_level ?? 0,
+    ].join("|");
+    seen.set(key, (seen.get(key) ?? 0) + 1);
+  }
+  return Array.from(seen.entries())
+    .filter(([, count]) => count > 1)
+    .map(([key, count]) => ({ key, count }));
+}
+
+function needsOrderBonusRecalculation(order: any, records: any[]) {
+  if (!order) return false;
+  if (order.payment_status !== "paid") return false;
+  if (!order.user_id) return false;
+  if (order.order_type === "normal") return false;
+  return records.length === 0;
+}
+
+export const getBonusRecalculationDiagnostics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => recalculationDiagnosticsSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+
+    const result: Record<string, any> = {};
+
+    if (data.orderId) {
+      const { data: order, error: orderError } = await supabaseAdmin
+        .from("sales_orders")
+        .select("id, order_no, user_id, customer_name, payment_status, order_status, order_type, subtotal, total_amount, created_at, updated_at")
+        .eq("id", data.orderId)
+        .maybeSingle();
+      if (orderError) throw new Error(orderError.message);
+
+      let orderRecordsQuery = supabaseAdmin
+        .from("bonus_records")
+        .select("*")
+        .eq("source_order_id", data.orderId)
+        .order("created_at", { ascending: false });
+      if (data.dateFrom) orderRecordsQuery = orderRecordsQuery.gte("created_at", data.dateFrom);
+      if (data.dateTo) orderRecordsQuery = orderRecordsQuery.lte("created_at", data.dateTo);
+
+      const { data: orderRecords, error: orderRecordsError } = await orderRecordsQuery;
+      if (orderRecordsError) throw new Error(orderRecordsError.message);
+
+      const records = orderRecords ?? [];
+      const duplicateRisks = findDuplicateBonusRisk(records);
+
+      result.order = order
+        ? {
+          id: (order as any).id,
+          order_no: (order as any).order_no,
+          user_id: (order as any).user_id,
+          customer_name: (order as any).customer_name,
+          payment_status: (order as any).payment_status,
+          order_status: (order as any).order_status,
+          order_type: (order as any).order_type,
+          subtotal: Number((order as any).subtotal ?? 0),
+          total_amount: Number((order as any).total_amount ?? 0),
+          created_at: (order as any).created_at,
+          updated_at: (order as any).updated_at,
+        }
+        : null;
+      result.orderDiagnostics = {
+        has_bonus_records: records.length > 0,
+        bonus_record_count: records.length,
+        may_need_recalculation: needsOrderBonusRecalculation(order, records),
+        duplicate_risk: duplicateRisks.length > 0,
+        duplicate_risks: duplicateRisks,
+        reason: !order
+          ? "order_not_found"
+          : (order as any).payment_status !== "paid"
+            ? "order_not_paid"
+            : !(order as any).user_id
+              ? "order_has_no_member"
+              : (order as any).order_type === "normal"
+                ? "normal_order_not_bonus_eligible"
+                : records.length > 0
+                  ? "bonus_records_exist"
+                  : "paid_bonus_eligible_order_has_no_bonus_records",
+      };
+      result.orderBonusRecords = records;
+    }
+
+    if (data.memberId) {
+      const { data: member, error: memberError } = await supabaseAdmin
+        .from("profiles")
+        .select("id, name, member_no, email, is_vip, vip_expires_at, member_status, referred_by, created_at")
+        .eq("id", data.memberId)
+        .maybeSingle();
+      if (memberError) throw new Error(memberError.message);
+
+      let memberRecordsQuery = supabaseAdmin
+        .from("bonus_records")
+        .select("*")
+        .eq("member_id", data.memberId)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (data.dateFrom) memberRecordsQuery = memberRecordsQuery.gte("created_at", data.dateFrom);
+      if (data.dateTo) memberRecordsQuery = memberRecordsQuery.lte("created_at", data.dateTo);
+
+      const { data: memberRecords, error: memberRecordsError } = await memberRecordsQuery;
+      if (memberRecordsError) throw new Error(memberRecordsError.message);
+
+      const records = memberRecords ?? [];
+      const summary = summarizeBonusRecords(records);
+
+      result.member = member ?? null;
+      result.memberDiagnostics = {
+        summary,
+        recent_bonus_records: records.slice(0, 20),
+        has_failed_records: summary.failed > 0,
+        has_unreleased_records: summary.pending + summary.waiting_release + summary.settled > 0,
+      };
+    }
+
+    return {
+      ok: true,
+      filters: {
+        orderId: data.orderId ?? null,
+        memberId: data.memberId ?? null,
+        dateFrom: data.dateFrom ?? null,
+        dateTo: data.dateTo ?? null,
+      },
+      ...result,
+    };
+  });
+
 /* ───────────── 會員端：我的獎勵點 ───────────── */
 export const getMyBonusRecords = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
