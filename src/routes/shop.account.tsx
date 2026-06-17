@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { UserCircle, MapPin, ShoppingBag, LogOut, LayoutDashboard, Coins, Crown, Wallet } from "lucide-react";
+import { UserCircle, MapPin, ShoppingBag, LogOut, LayoutDashboard, Coins, Crown, Wallet, Store } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/shop/account")({
 const NAV = [
   { to: "/shop/account", label: "總覽", icon: LayoutDashboard, exact: true },
   { to: "/shop/account/profile", label: "個人資料", icon: UserCircle },
+  { to: "/shop/account/storefront", label: "個人品牌頁管理", icon: Store },
   { to: "/shop/account/addresses", label: "收件地址", icon: MapPin },
   { to: "/shop/account/orders", label: "我的訂單", icon: ShoppingBag },
   { to: "/shop/account/points", label: "我的點數 / 推薦", icon: Coins },
