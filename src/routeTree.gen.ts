@@ -27,6 +27,7 @@ import { Route as ShopProductsRouteImport } from './routes/shop.products'
 import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
 import { Route as ShopAccountRouteImport } from './routes/shop.account'
 import { Route as RPhoneRouteImport } from './routes/r.$phone'
+import { Route as MemberPageMemberNoRouteImport } from './routes/member-page.$memberNo'
 import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as LoginSlugRouteImport } from './routes/login.$slug'
 import { Route as GroupBuysIdRouteImport } from './routes/group-buys.$id'
@@ -66,6 +67,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
 import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wallet'
+import { Route as ShopAccountStorefrontRouteImport } from './routes/shop.account.storefront'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
 import { Route as ShopAccountOrdersRouteImport } from './routes/shop.account.orders'
@@ -181,6 +183,11 @@ const ShopAccountRoute = ShopAccountRouteImport.update({
 const RPhoneRoute = RPhoneRouteImport.update({
   id: '/r/$phone',
   path: '/r/$phone',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemberPageMemberNoRoute = MemberPageMemberNoRouteImport.update({
+  id: '/member-page/$memberNo',
+  path: '/member-page/$memberNo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MSlugRoute = MSlugRouteImport.update({
@@ -388,6 +395,11 @@ const ShopAccountWalletRoute = ShopAccountWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => ShopAccountRoute,
 } as any)
+const ShopAccountStorefrontRoute = ShopAccountStorefrontRouteImport.update({
+  id: '/storefront',
+  path: '/storefront',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
 const ShopAccountProfileRoute = ShopAccountProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -585,6 +597,7 @@ export interface FileRoutesByFullPath {
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
+  '/member-page/$memberNo': typeof MemberPageMemberNoRoute
   '/r/$phone': typeof RPhoneRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
@@ -615,6 +628,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -668,6 +682,7 @@ export interface FileRoutesByTo {
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
+  '/member-page/$memberNo': typeof MemberPageMemberNoRoute
   '/r/$phone': typeof RPhoneRoute
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/products': typeof ShopProductsRoute
@@ -697,6 +712,7 @@ export interface FileRoutesByTo {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -754,6 +770,7 @@ export interface FileRoutesById {
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
+  '/member-page/$memberNo': typeof MemberPageMemberNoRoute
   '/r/$phone': typeof RPhoneRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
@@ -784,6 +801,7 @@ export interface FileRoutesById {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -841,6 +859,7 @@ export interface FileRouteTypes {
     | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
+    | '/member-page/$memberNo'
     | '/r/$phone'
     | '/shop/account'
     | '/shop/checkout'
@@ -871,6 +890,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/storefront'
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -924,6 +944,7 @@ export interface FileRouteTypes {
     | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
+    | '/member-page/$memberNo'
     | '/r/$phone'
     | '/shop/checkout'
     | '/shop/products'
@@ -953,6 +974,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/storefront'
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -1009,6 +1031,7 @@ export interface FileRouteTypes {
     | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
+    | '/member-page/$memberNo'
     | '/r/$phone'
     | '/shop/account'
     | '/shop/checkout'
@@ -1039,6 +1062,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/storefront'
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -1068,6 +1092,7 @@ export interface RootRouteChildren {
   GroupBuysIdRoute: typeof GroupBuysIdRoute
   LoginSlugRoute: typeof LoginSlugRoute
   MSlugRoute: typeof MSlugRoute
+  MemberPageMemberNoRoute: typeof MemberPageMemberNoRoute
   RPhoneRoute: typeof RPhoneRoute
   UCodeRoute: typeof UCodeRoute
   GroupBuysIndexRoute: typeof GroupBuysIndexRoute
@@ -1204,6 +1229,13 @@ declare module '@tanstack/react-router' {
       path: '/r/$phone'
       fullPath: '/r/$phone'
       preLoaderRoute: typeof RPhoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/member-page/$memberNo': {
+      id: '/member-page/$memberNo'
+      path: '/member-page/$memberNo'
+      fullPath: '/member-page/$memberNo'
+      preLoaderRoute: typeof MemberPageMemberNoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/m/$slug': {
@@ -1477,6 +1509,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/shop/account/wallet'
       preLoaderRoute: typeof ShopAccountWalletRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
+    '/shop/account/storefront': {
+      id: '/shop/account/storefront'
+      path: '/storefront'
+      fullPath: '/shop/account/storefront'
+      preLoaderRoute: typeof ShopAccountStorefrontRouteImport
       parentRoute: typeof ShopAccountRoute
     }
     '/shop/account/profile': {
@@ -1852,6 +1891,7 @@ interface ShopAccountRouteChildren {
   ShopAccountOrdersRoute: typeof ShopAccountOrdersRouteWithChildren
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
+  ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRoute
   ShopAccountWalletRoute: typeof ShopAccountWalletRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
 }
@@ -1861,6 +1901,7 @@ const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountOrdersRoute: ShopAccountOrdersRouteWithChildren,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
+  ShopAccountStorefrontRoute: ShopAccountStorefrontRoute,
   ShopAccountWalletRoute: ShopAccountWalletRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
 }
@@ -1917,6 +1958,7 @@ const rootRouteChildren: RootRouteChildren = {
   GroupBuysIdRoute: GroupBuysIdRoute,
   LoginSlugRoute: LoginSlugRoute,
   MSlugRoute: MSlugRoute,
+  MemberPageMemberNoRoute: MemberPageMemberNoRoute,
   RPhoneRoute: RPhoneRoute,
   UCodeRoute: UCodeRoute,
   GroupBuysIndexRoute: GroupBuysIndexRoute,
