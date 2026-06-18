@@ -573,11 +573,12 @@ async function releaseRecords(recordIds: string[] | null) {
     .from("bonus_records")
     .select("id, member_id, bonus_points, bonus_type")
     .eq("status", "waiting_release");
-  const { data: list } = recordIds
-    ? await query.in("id", recordIds)
+  const { data: listRaw } = recordIds
+    ? await query.in("id", recordIds as readonly string[])
     : await query.lte("release_date", new Date().toISOString().slice(0, 10));
+  const list = (listRaw ?? []) as Array<any>;
 
-  if (!list || list.length === 0) return { released: 0, points: 0 };
+  if (list.length === 0) return { released: 0, points: 0 };
 
   let totalPts = 0;
   for (const r of list) {
