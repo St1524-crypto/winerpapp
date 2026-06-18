@@ -372,7 +372,7 @@ export const runDailySettlement = createServerFn({ method: "POST" })
         status: "processing",
         created_by: context.userId,
       }).select("id").single();
-    if (bErr) throw new Error(bErr.message);
+    if (bErr) throw new Error((bErr as any).message);
 
     const ids = pending.map((r: any) => r.id);
     await supabaseAdmin
@@ -474,7 +474,7 @@ export const runMonthlySettlement = createServerFn({ method: "POST" })
         status: "processing",
         created_by: context.userId,
       }).select("id").single();
-    if (bErr) throw new Error(bErr.message);
+    if (bErr) throw new Error((bErr as any).message);
 
     let granted = 0;
     let totalPts = 0;
