@@ -158,6 +158,7 @@ function MemberStorefrontPage() {
                   <CardTitle className="text-base">{video.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
+                  <VideoEmbed url={video.video_url} title={video.title} />
                   <a href={video.video_url} target="_blank" rel="noreferrer" className="inline-flex items-center text-sm text-primary hover:underline">
                     開啟影片 <ArrowRight className="ml-1 h-4 w-4" />
                   </a>
@@ -171,6 +172,70 @@ function MemberStorefrontPage() {
       </main>
     </div>
   );
+}
+
+function VideoEmbed({ url, title }: { url?: string | null; title?: string }) {
+  const embedUrl = getVideoEmbedUrl(url);
+
+  if (!embedUrl) {
+    return (
+      <div className="mb-3 flex aspect-video items-center justify-center rounded-md bg-muted text-muted-foreground">
+        <Play className="h-8 w-8" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-3 overflow-hidden rounded-md bg-muted">
+      <iframe
+        src={embedUrl}
+        title={title || "影片展示"}
+        className="aspect-video w-full"
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+      />
+    </div>
+  );
+}
+
+function getVideoEmbedUrl(value?: string | null) {
+  if (!value) return "";
+
+  try {
+    const url = new URL(value);
+    const host = url.hostname.replace(/^www\./, "");
+
+    if (host === "youtu.be") {
+      const videoId = url.pathname.split("/").filter(Boolean)[0];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+    }
+
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      if (url.pathname.startsWith("/shorts/")) {
+        const videoId = url.pathname.split("/").filter(Boolean)[1];
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+      }
+      if (url.pathname.startsWith("/embed/")) return value;
+      const videoId = url.searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+    }
+
+    if (host === "facebook.com" || host === "m.facebook.com" || host === "fb.watch") {
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(value)}&show_text=false&width=560`;
+    }
+
+    if (host === "tiktok.com" || host.endsWith(".tiktok.com")) {
+      const parts = url.pathname.split("/").filter(Boolean);
+      const videoIndex = parts.indexOf("video");
+      const videoId = videoIndex >= 0 ? parts[videoIndex + 1] : "";
+      return videoId ? `https://www.tiktok.com/embed/v2/${videoId}` : "";
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
 }
 
 function SocialLinks({ profile }: { profile: any }) {
