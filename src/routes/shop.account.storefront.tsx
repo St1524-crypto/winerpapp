@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Copy, Eye, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Copy, Eye, ImageIcon, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
 import {
   deleteMyCustomProduct,
   deleteMyStorefrontVideo,
@@ -243,10 +244,20 @@ function StorefrontManagerPage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="頭像網址">
-              <Input value={profile.profile_avatar} onChange={(e) => setProfile({ ...profile, profile_avatar: e.target.value })} placeholder="https://..." />
+              <ImageUrlUploadField
+                value={profile.profile_avatar}
+                onChange={(value) => setProfile({ ...profile, profile_avatar: value })}
+                storageFolder="storefront/avatars"
+                previewClassName="h-20 w-20 rounded-full"
+              />
             </Field>
             <Field label="封面圖網址">
-              <Input value={profile.profile_cover} onChange={(e) => setProfile({ ...profile, profile_cover: e.target.value })} placeholder="https://..." />
+              <ImageUrlUploadField
+                value={profile.profile_cover}
+                onChange={(value) => setProfile({ ...profile, profile_cover: value })}
+                storageFolder="storefront/covers"
+                previewClassName="h-20 w-full rounded-md"
+              />
             </Field>
             <Field label="個人品牌名稱">
               <Input value={profile.brand_name} onChange={(e) => setProfile({ ...profile, brand_name: e.target.value })} placeholder="例如：源晶健康顧問" />
@@ -343,7 +354,12 @@ function StorefrontManagerPage() {
               <Input value={customForm.title} onChange={(e) => setCustomForm({ ...customForm, title: e.target.value })} />
             </Field>
             <Field label="圖片網址">
-              <Input value={customForm.image_url} onChange={(e) => setCustomForm({ ...customForm, image_url: e.target.value })} placeholder="https://..." />
+              <ImageUrlUploadField
+                value={customForm.image_url}
+                onChange={(value) => setCustomForm({ ...customForm, image_url: value })}
+                storageFolder="storefront/custom-products"
+                previewClassName="h-20 w-full rounded-md"
+              />
             </Field>
             <Field label="影片網址">
               <Input value={customForm.video_url} onChange={(e) => setCustomForm({ ...customForm, video_url: e.target.value })} placeholder="https://..." />
@@ -445,6 +461,81 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function ImageUrlUploadField({
+  value,
+  onChange,
+  storageFolder,
+  previewClassName,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  storageFolder: string;
+  previewClassName: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function uploadFile(file?: File) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("請選擇圖片檔案");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("圖片不可超過 5MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${storageFolder}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { cacheControl: "3600", upsert: false });
+
+      if (error) throw error;
+
+      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      onChange(data.publicUrl);
+      toast.success("圖片已上傳");
+    } catch (error: any) {
+      toast.error(error?.message ?? "圖片上傳失敗");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder="https://..." />
+        <Button type="button" variant="outline" onClick={() => inputRef.current?.click()} disabled={uploading}>
+          {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+          上傳
+        </Button>
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(event) => uploadFile(event.target.files?.[0])}
+      />
+      <div className={`${previewClassName} overflow-hidden border bg-muted`}>
+        {value ? (
+          <img src={value} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+            <ImageIcon className="h-5 w-5" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ContentTable({ rows, onEdit, onDelete }: { rows: any[]; onEdit: (row: any) => void; onDelete: (id: string) => void }) {
   if (!rows.length) return <p className="rounded-md border border-dashed py-8 text-center text-sm text-muted-foreground">尚未新增自訂商品</p>;
 
@@ -518,4 +609,3 @@ function formatDate(value: unknown) {
   const date = new Date(String(value));
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("zh-TW", { hour12: false });
 }
-
