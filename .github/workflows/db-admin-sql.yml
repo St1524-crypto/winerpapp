@@ -185,8 +185,13 @@ jobs:
             exit 1
           fi
 
-          if [[ "$DB_URL" != *"$PROJECT_REF"* ]]; then
-            echo "Database URL does not appear to target the expected project ref." >&2
+          if [[ "$DB_URL" != postgresql://* && "$DB_URL" != postgres://* ]]; then
+            echo "Database URL must use the PostgreSQL URL format." >&2
+            exit 1
+          fi
+
+          if [[ "$DB_URL" != *"pooler.supabase.com"* ]]; then
+            echo "Database URL must use a Supabase pooler host." >&2
             exit 1
           fi
 

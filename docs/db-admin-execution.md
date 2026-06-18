@@ -108,7 +108,10 @@ postgresql://postgres.<project-ref>:<db-password>@<pooler-host>:6543/postgres?ss
 ```
 
 Use the session pooler URL if Supabase provides both session and transaction
-pooler options for the project.
+pooler options for the project. Some Supabase pooler URLs may not include the
+project ref in the URL text; the workflow validates that the URL is a PostgreSQL
+URL, does not use the direct `db.<project-ref>.supabase.co:5432` host, and uses a
+`pooler.supabase.com` host.
 
 ## Rollback Expectations
 
