@@ -557,10 +557,13 @@ export type Database = {
           bonus_type: string
           created_at: string
           fail_reason: string | null
+          failed_at: string | null
           generation_level: number | null
           id: string
           member_id: string
+          release_attempts: number
           release_date: string | null
+          release_source: string | null
           released_at: string | null
           required_points_checked: boolean
           required_points_passed: boolean
@@ -578,10 +581,13 @@ export type Database = {
           bonus_type: string
           created_at?: string
           fail_reason?: string | null
+          failed_at?: string | null
           generation_level?: number | null
           id?: string
           member_id: string
+          release_attempts?: number
           release_date?: string | null
+          release_source?: string | null
           released_at?: string | null
           required_points_checked?: boolean
           required_points_passed?: boolean
@@ -599,10 +605,13 @@ export type Database = {
           bonus_type?: string
           created_at?: string
           fail_reason?: string | null
+          failed_at?: string | null
           generation_level?: number | null
           id?: string
           member_id?: string
+          release_attempts?: number
           release_date?: string | null
+          release_source?: string | null
           released_at?: string | null
           required_points_checked?: boolean
           required_points_passed?: boolean
@@ -2132,6 +2141,92 @@ export type Database = {
         }
         Relationships: []
       }
+      member_custom_products: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          member_id: string
+          purchase_url: string | null
+          title: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          member_id: string
+          purchase_url?: string | null
+          title: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          member_id?: string
+          purchase_url?: string | null
+          title?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_custom_products_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_featured_products: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_featured_products_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_points_wallet: {
         Row: {
           cash_balance: number
@@ -2158,6 +2253,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      member_videos: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          sort_order: number
+          title: string
+          updated_at: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_videos_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_responsibility_points: {
         Row: {
@@ -2677,27 +2810,36 @@ export type Database = {
           apply_date: string | null
           avatar_url: string | null
           birthday: string | null
+          brand_intro: string | null
+          brand_name: string | null
           created_at: string
           current_company_id: string | null
           email: string | null
+          facebook_url: string | null
           frozen_code: string | null
           id: string
           id_no: string | null
+          instagram_url: string | null
           is_dealer: boolean
           is_vip: boolean
           legacy_rank: string | null
+          line_url: string | null
           marketing_slug: string | null
           member_no: string | null
           member_status: string | null
           name: string | null
           nation: string | null
+          page_template: string
           phone: string | null
           placement_id: string | null
+          profile_avatar: string | null
+          profile_cover: string | null
           referral_code: string | null
           referred_by: string | null
           sex: string | null
           tel: string | null
           vip_expires_at: string | null
+          youtube_url: string | null
           zip_home: string | null
           zip_mail: string | null
         }
@@ -2707,27 +2849,36 @@ export type Database = {
           apply_date?: string | null
           avatar_url?: string | null
           birthday?: string | null
+          brand_intro?: string | null
+          brand_name?: string | null
           created_at?: string
           current_company_id?: string | null
           email?: string | null
+          facebook_url?: string | null
           frozen_code?: string | null
           id: string
           id_no?: string | null
+          instagram_url?: string | null
           is_dealer?: boolean
           is_vip?: boolean
           legacy_rank?: string | null
+          line_url?: string | null
           marketing_slug?: string | null
           member_no?: string | null
           member_status?: string | null
           name?: string | null
           nation?: string | null
+          page_template?: string
           phone?: string | null
           placement_id?: string | null
+          profile_avatar?: string | null
+          profile_cover?: string | null
           referral_code?: string | null
           referred_by?: string | null
           sex?: string | null
           tel?: string | null
           vip_expires_at?: string | null
+          youtube_url?: string | null
           zip_home?: string | null
           zip_mail?: string | null
         }
@@ -2737,27 +2888,36 @@ export type Database = {
           apply_date?: string | null
           avatar_url?: string | null
           birthday?: string | null
+          brand_intro?: string | null
+          brand_name?: string | null
           created_at?: string
           current_company_id?: string | null
           email?: string | null
+          facebook_url?: string | null
           frozen_code?: string | null
           id?: string
           id_no?: string | null
+          instagram_url?: string | null
           is_dealer?: boolean
           is_vip?: boolean
           legacy_rank?: string | null
+          line_url?: string | null
           marketing_slug?: string | null
           member_no?: string | null
           member_status?: string | null
           name?: string | null
           nation?: string | null
+          page_template?: string
           phone?: string | null
           placement_id?: string | null
+          profile_avatar?: string | null
+          profile_cover?: string | null
           referral_code?: string | null
           referred_by?: string | null
           sex?: string | null
           tel?: string | null
           vip_expires_at?: string | null
+          youtube_url?: string | null
           zip_home?: string | null
           zip_mail?: string | null
         }

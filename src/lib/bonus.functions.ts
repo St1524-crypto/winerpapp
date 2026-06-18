@@ -347,12 +347,13 @@ export const runDailySettlement = createServerFn({ method: "POST" })
       .toISOString().slice(0, 10);
 
     // 撈取 pending 的日獎金（推薦 / 復購 / 位階回饋）
-    const { data: pending } = await supabaseAdmin
+    const { data: pendingRaw } = await supabaseAdmin
       .from("bonus_records")
       .select("id, member_id, bonus_points")
       .in("bonus_type", ["referral", "repurchase", "rank_rebate"])
       .eq("status", "pending")
       .limit(5000);
+    const pending = (pendingRaw ?? []) as Array<{ id: string; member_id: string; bonus_points: number }>;
 
     if (!pending || pending.length === 0) {
       return { ok: true, count: 0, batch_id: null };
@@ -371,7 +372,7 @@ export const runDailySettlement = createServerFn({ method: "POST" })
         status: "processing",
         created_by: context.userId,
       }).select("id").single();
-    if (bErr) throw new Error(bErr.message);
+    if (bErr) throw new Error((bErr as any).message);
 
     const ids = pending.map((r: any) => r.id);
     await supabaseAdmin
@@ -473,7 +474,7 @@ export const runMonthlySettlement = createServerFn({ method: "POST" })
         status: "processing",
         created_by: context.userId,
       }).select("id").single();
-    if (bErr) throw new Error(bErr.message);
+    if (bErr) throw new Error((bErr as any).message);
 
     let granted = 0;
     let totalPts = 0;
@@ -572,11 +573,12 @@ async function releaseRecords(recordIds: string[] | null) {
     .from("bonus_records")
     .select("id, member_id, bonus_points, bonus_type")
     .eq("status", "waiting_release");
-  const { data: list } = recordIds
-    ? await query.in("id", recordIds)
+  const { data: listRaw } = recordIds
+    ? await query.in("id", recordIds as readonly string[])
     : await query.lte("release_date", new Date().toISOString().slice(0, 10));
+  const list = (listRaw ?? []) as Array<any>;
 
-  if (!list || list.length === 0) return { released: 0, points: 0 };
+  if (list.length === 0) return { released: 0, points: 0 };
 
   let totalPts = 0;
   for (const r of list) {
