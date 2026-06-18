@@ -164,25 +164,33 @@ jobs:
           TARGET_ENV: ${{ steps.validate.outputs.target_env }}
           PROJECT_REF: ${{ steps.validate.outputs.project_ref }}
           SQL_FILE: ${{ steps.validate.outputs.sql_file }}
-          STAGING_DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
-          PRODUCTION_DB_PASSWORD: ${{ secrets.SUPABASE_PRODUCTION_DB_PASSWORD }}
+          STAGING_DATABASE_URL: ${{ secrets.SUPABASE_STAGING_DATABASE_URL }}
+          PRODUCTION_DATABASE_URL: ${{ secrets.SUPABASE_PRODUCTION_DATABASE_URL }}
         run: |
           set -euo pipefail
 
           if [[ "$TARGET_ENV" == "production" ]]; then
-            DB_PASSWORD="$PRODUCTION_DB_PASSWORD"
+            DB_URL="$PRODUCTION_DATABASE_URL"
           else
-            DB_PASSWORD="$STAGING_DB_PASSWORD"
+            DB_URL="$STAGING_DATABASE_URL"
           fi
 
-          if [[ -z "${DB_PASSWORD:-}" ]]; then
-            echo "Missing database password secret for $TARGET_ENV." >&2
+          if [[ -z "${DB_URL:-}" ]]; then
+            echo "Missing database URL secret for $TARGET_ENV." >&2
             exit 1
           fi
 
-          DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_REF}.supabase.co:5432/postgres?sslmode=require"
+          if [[ "$DB_URL" == *"db.${PROJECT_REF}.supabase.co:5432"* ]]; then
+            echo "Direct database host is not allowed. Use the Supabase pooler database URL." >&2
+            exit 1
+          fi
 
-          echo "Executing SQL against $TARGET_ENV project ref $PROJECT_REF."
+          if [[ "$DB_URL" != *"$PROJECT_REF"* ]]; then
+            echo "Database URL does not appear to target the expected project ref." >&2
+            exit 1
+          fi
+
+          echo "Executing SQL against $TARGET_ENV project ref $PROJECT_REF using pooler URL secret."
           psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$SQL_FILE"
 
       - name: Completion

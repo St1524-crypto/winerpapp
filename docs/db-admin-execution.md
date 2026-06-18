@@ -91,10 +91,24 @@ The workflow should use GitHub Actions secrets, not local files:
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_STAGING_PROJECT_REF`
 - `SUPABASE_PRODUCTION_PROJECT_REF`
-- `SUPABASE_STAGING_DB_PASSWORD`
-- `SUPABASE_PRODUCTION_DB_PASSWORD`
+- `SUPABASE_STAGING_DATABASE_URL`
+- `SUPABASE_PRODUCTION_DATABASE_URL`
 
 The production project ref secret must resolve to `wvhvjdqbrftjggwwetwf`.
+
+Use Supabase pooler database URLs for `SUPABASE_STAGING_DATABASE_URL` and
+`SUPABASE_PRODUCTION_DATABASE_URL`. Do not use the direct database host format
+`db.<project-ref>.supabase.co:5432`; GitHub-hosted runners may fail to reach it
+and the workflow blocks that host for execution.
+
+Expected pooler URL shape:
+
+```text
+postgresql://postgres.<project-ref>:<db-password>@<pooler-host>:6543/postgres?sslmode=require
+```
+
+Use the session pooler URL if Supabase provides both session and transaction
+pooler options for the project.
 
 ## Rollback Expectations
 
