@@ -114,7 +114,7 @@ function MemberStorefrontPage() {
               <CardDescription className="text-white/70">免費註冊會員，升級 VIP 拼購主，打造自己的個人品牌與團隊收益。</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {["分享拼團", "推薦獎勵", "團購收益", "團隊發展", "個人品牌頁"].map((item) => (
+              {["分享拼購", "推廣獎勵", "團購收益", "分店招募", "個人品牌頁"].map((item) => (
                 <div key={item} className="flex items-center gap-3 rounded-lg bg-white/10 px-3 py-2">
                   <Sparkles className="h-4 w-4 text-primary" />
                   <span className="text-sm">{item}</span>
@@ -242,4 +242,3 @@ function CustomProductCard({ item }: { item: any }) {
 function EmptyState({ text }: { text: string }) {
   return <p className="col-span-full rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">{text}</p>;
 }
-
