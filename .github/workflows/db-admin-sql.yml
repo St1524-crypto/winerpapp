@@ -1,0 +1,192 @@
+name: DB Admin SQL
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target database environment
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      sql_file:
+        description: SQL file path under ops/sql/staging or ops/sql/production
+        required: true
+        type: string
+      validate_only:
+        description: Validate safety gates without executing SQL
+        required: true
+        default: true
+        type: boolean
+      confirm_production:
+        description: Required only for production execution
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  db-admin-sql:
+    name: Validate and run SQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Validate workflow inputs
+        id: validate
+        shell: bash
+        env:
+          TARGET_ENV: ${{ inputs.environment }}
+          SQL_FILE: ${{ inputs.sql_file }}
+          VALIDATE_ONLY: ${{ inputs.validate_only }}
+          CONFIRM_PRODUCTION: ${{ inputs.confirm_production }}
+          STAGING_PROJECT_REF: ${{ secrets.SUPABASE_STAGING_PROJECT_REF }}
+          PRODUCTION_PROJECT_REF: ${{ secrets.SUPABASE_PRODUCTION_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$TARGET_ENV" != "staging" && "$TARGET_ENV" != "production" ]]; then
+            echo "Invalid environment: $TARGET_ENV" >&2
+            exit 1
+          fi
+
+          if [[ "$SQL_FILE" = /* || "$SQL_FILE" == *".."* ]]; then
+            echo "SQL file must be a relative path without parent traversal." >&2
+            exit 1
+          fi
+
+          if [[ ! -f "$SQL_FILE" ]]; then
+            echo "SQL file does not exist: $SQL_FILE" >&2
+            exit 1
+          fi
+
+          if [[ "$TARGET_ENV" == "staging" ]]; then
+            if [[ "$SQL_FILE" != ops/sql/staging/*.sql ]]; then
+              echo "Staging SQL must live under ops/sql/staging/." >&2
+              exit 1
+            fi
+            PROJECT_REF="$STAGING_PROJECT_REF"
+          else
+            if [[ "$SQL_FILE" != ops/sql/production/*.sql ]]; then
+              echo "Production SQL must live under ops/sql/production/." >&2
+              exit 1
+            fi
+            PROJECT_REF="$PRODUCTION_PROJECT_REF"
+          fi
+
+          if [[ -z "${PROJECT_REF:-}" ]]; then
+            echo "Missing project ref secret for $TARGET_ENV." >&2
+            exit 1
+          fi
+
+          if [[ "$TARGET_ENV" == "production" ]]; then
+            if [[ "$PROJECT_REF" != "wvhvjdqbrftjggwwetwf" ]]; then
+              echo "Production project ref mismatch." >&2
+              exit 1
+            fi
+
+            if [[ "$CONFIRM_PRODUCTION" != "I understand this runs against production" ]]; then
+              echo "Production confirmation phrase is missing or incorrect." >&2
+              exit 1
+            fi
+
+            for required in \
+              "DB_ADMIN_EXECUTION_CHANNEL" \
+              "ENV: production" \
+              "SECTION: backup" \
+              "SECTION: apply" \
+              "SECTION: verify" \
+              "SECTION: rollback"; do
+              if ! grep -Fq -- "$required" "$SQL_FILE"; then
+                echo "Production SQL is missing required marker: $required" >&2
+                exit 1
+              fi
+            done
+          fi
+
+          lower_sql="$(tr '[:upper:]' '[:lower:]' < "$SQL_FILE")"
+
+          if grep -Eq 'drop[[:space:]]+database' <<< "$lower_sql"; then
+            echo "Blocked unsafe SQL: drop database." >&2
+            exit 1
+          fi
+
+          if grep -Eq '(^|[;[:space:]])truncate([[:space:]]|$)' <<< "$lower_sql"; then
+            echo "Blocked unsafe SQL: truncate." >&2
+            exit 1
+          fi
+
+          if grep -Eq 'delete[[:space:]]+from[^;]*;' <<< "$lower_sql"; then
+            while IFS= read -r stmt; do
+              if [[ "$stmt" == *"delete from"* && "$stmt" != *" where "* ]]; then
+                echo "Blocked unsafe SQL: delete without where." >&2
+                exit 1
+              fi
+            done < <(tr '\n' ' ' < "$SQL_FILE" | tr ';' '\n' | tr '[:upper:]' '[:lower:]')
+          fi
+
+          echo "target_env=$TARGET_ENV" >> "$GITHUB_OUTPUT"
+          echo "project_ref=$PROJECT_REF" >> "$GITHUB_OUTPUT"
+          echo "sql_file=$SQL_FILE" >> "$GITHUB_OUTPUT"
+          echo "validate_only=$VALIDATE_ONLY" >> "$GITHUB_OUTPUT"
+
+      - name: Print execution plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Environment: ${{ steps.validate.outputs.target_env }}"
+          echo "Project ref: ${{ steps.validate.outputs.project_ref }}"
+          echo "SQL file: ${{ steps.validate.outputs.sql_file }}"
+          echo "Validate only: ${{ steps.validate.outputs.validate_only }}"
+
+      - name: Stop after validation
+        if: ${{ inputs.validate_only }}
+        shell: bash
+        run: |
+          echo "Validation completed. SQL was not executed."
+
+      - name: Execute SQL
+        if: ${{ !inputs.validate_only }}
+        shell: bash
+        env:
+          TARGET_ENV: ${{ steps.validate.outputs.target_env }}
+          PROJECT_REF: ${{ steps.validate.outputs.project_ref }}
+          SQL_FILE: ${{ steps.validate.outputs.sql_file }}
+          STAGING_DB_PASSWORD: ${{ secrets.SUPABASE_STAGING_DB_PASSWORD }}
+          PRODUCTION_DB_PASSWORD: ${{ secrets.SUPABASE_PRODUCTION_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$TARGET_ENV" == "production" ]]; then
+            DB_PASSWORD="$PRODUCTION_DB_PASSWORD"
+          else
+            DB_PASSWORD="$STAGING_DB_PASSWORD"
+          fi
+
+          if [[ -z "${DB_PASSWORD:-}" ]]; then
+            echo "Missing database password secret for $TARGET_ENV." >&2
+            exit 1
+          fi
+
+          DB_URL="postgresql://postgres:${DB_PASSWORD}@db.${PROJECT_REF}.supabase.co:5432/postgres?sslmode=require"
+
+          echo "Executing SQL against $TARGET_ENV project ref $PROJECT_REF."
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$SQL_FILE"
+
+      - name: Completion
+        if: ${{ !inputs.validate_only }}
+        shell: bash
+        run: |
+          echo "SQL execution completed. Review backup, apply, verify, and rollback output above."
