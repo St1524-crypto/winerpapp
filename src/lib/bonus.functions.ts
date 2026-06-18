@@ -347,12 +347,13 @@ export const runDailySettlement = createServerFn({ method: "POST" })
       .toISOString().slice(0, 10);
 
     // 撈取 pending 的日獎金（推薦 / 復購 / 位階回饋）
-    const { data: pending } = await supabaseAdmin
+    const { data: pendingRaw } = await supabaseAdmin
       .from("bonus_records")
       .select("id, member_id, bonus_points")
       .in("bonus_type", ["referral", "repurchase", "rank_rebate"])
       .eq("status", "pending")
       .limit(5000);
+    const pending = (pendingRaw ?? []) as Array<{ id: string; member_id: string; bonus_points: number }>;
 
     if (!pending || pending.length === 0) {
       return { ok: true, count: 0, batch_id: null };
