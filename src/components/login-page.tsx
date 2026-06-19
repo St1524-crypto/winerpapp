@@ -25,7 +25,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [signupType, setSignupType] = useState<"email" | "phone">(memberMode ? "phone" : "email");
-  const [websiteId, setWebsiteId] = useState("ST");
+  const [websiteId, setWebsiteId] = useState("ST0985");
   const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -104,7 +104,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
     const activeCompany = selectedCompany ?? findCompanyByCode(websiteId, companies);
 
     if (mode === "signup" && !activeCompany) {
-      toast.error("註冊請使用公司專屬入口 /login/{公司名}");
+      toast.error("官網ID 填入錯誤，請確認公司官網ID後再註冊。");
       return;
     }
     setBusy(true);
@@ -113,16 +113,14 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         let loginEmail = identifier.trim();
         if (!loginEmail.includes("@")) {
           if (!activeCompany) {
-            throw new Error("請輸入正確的官網ID，例如 ST+統編後四碼");
+            throw new Error("官網ID 填入錯誤，請輸入正確的官網ID，例如 ST0985。");
           }
           const res = await resolveLoginEmail({
             data: { identifier: loginEmail, companyId: activeCompany.id },
           }).catch(() => ({ email: null }));
-          if (!res.email) throw new Error(
-            activeCompany
-              ? `此公司入口 (${activeCompany.company_name}) 找不到對應帳號`
-              : "找不到對應帳號",
-          );
+          if (!res.email) {
+            throw new Error(`會員ID 填入錯誤，${activeCompany.company_name} 查無此會員ID或行銷網址代稱。`);
+          }
           loginEmail = res.email;
         }
 
@@ -204,7 +202,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         setMode("signin");
       }
     } catch (err: any) {
-      toast.error(err.message ?? "操作失敗");
+      toast.error(getLoginErrorMessage(err, mode));
     } finally {
       setBusy(false);
     }
@@ -229,7 +227,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         onSignup={() => {
           const code = websiteId.trim();
           if (!code || code.toUpperCase() === "ST") {
-            toast.error("請先輸入官網ID，例如 ST+統編後四碼");
+            toast.error("官網ID 填入錯誤，請輸入完整官網ID，例如 ST0985。");
             return;
           }
           window.location.href = `/m/${encodeURIComponent(code)}?mode=signup`;
@@ -453,11 +451,37 @@ function findCompanyByCode(code: string, companies: PublicCompany[]) {
   const normalized = code.trim().toLowerCase();
   if (!normalized || normalized === "st") return null;
 
+  if (normalized === "st0985") {
+    const sourceCompany = companies.find((company) => {
+      const slug = company.slug.toLowerCase();
+      return company.company_name.includes("源晶") || slug.includes("source") || slug.includes("st0985");
+    });
+    if (sourceCompany) return sourceCompany;
+  }
+
   return companies.find((company) => {
     const slug = company.slug.toLowerCase();
     const name = company.company_name.toLowerCase();
     return slug === normalized || slug.includes(normalized) || normalized.includes(slug) || name.includes(normalized);
   }) ?? null;
+}
+
+function getLoginErrorMessage(error: any, mode: "signin" | "signup" | "forgot") {
+  const raw = String(error?.message ?? "");
+  if (/[\u4e00-\u9fff]/.test(raw)) return raw;
+
+  if (mode === "signin") {
+    if (/invalid login credentials|email not confirmed|invalid credentials/i.test(raw)) {
+      return "登入失敗：官網ID、會員ID或密碼填入錯誤，請重新確認。";
+    }
+    return "登入失敗：請確認官網ID、會員ID與密碼是否填寫正確。";
+  }
+
+  if (mode === "signup") {
+    return "免費註冊失敗：請確認必填欄位是否填寫正確。";
+  }
+
+  return "操作失敗：請確認 Email 欄位是否填寫正確。";
 }
 
 function CompanyCodeRequired({
@@ -498,7 +522,7 @@ function CompanyCodeRequired({
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight">會員登入</h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              請輸入公司官網ID與會員ID登入。官網ID 預設為 ST + 統編後四碼。
+              請輸入公司官網ID與會員ID登入。官網ID 預設為 ST0985，其它公司可自行更改。
             </p>
           </div>
 
@@ -510,11 +534,11 @@ function CompanyCodeRequired({
                 value={websiteId}
                 onChange={(event) => setWebsiteId(event.target.value.toUpperCase())}
                 required
-                placeholder="ST1234"
+                placeholder="ST0985"
                 autoComplete="organization"
                 className="font-mono"
               />
-              <p className="text-[11px] text-muted-foreground">預設格式：ST + 統編後四碼</p>
+              <p className="text-[11px] text-muted-foreground">預設：ST0985；其它公司請改為自己的官網ID</p>
             </div>
 
             <div className="space-y-2">
@@ -524,9 +548,10 @@ function CompanyCodeRequired({
                 value={identifier}
                 onChange={(event) => setIdentifier(event.target.value)}
                 required
-                placeholder="請輸入會員ID"
+                placeholder="會員編號或行銷網址代稱"
                 autoComplete="username"
               />
+              <p className="text-[11px] text-muted-foreground">可輸入會員編號，或個人品牌頁的行銷網址代稱。</p>
             </div>
 
             <div className="space-y-2">

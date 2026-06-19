@@ -3,8 +3,8 @@ import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /**
- * Resolve a login identifier (phone or member_no) into the auth email.
- * Optionally scope by companyId so a phone/member_no only matches users
+ * Resolve a login identifier (phone, member_no, or marketing_slug) into the auth email.
+ * Optionally scope by companyId so a phone/member_no/marketing_slug only matches users
  * bound to that company — keeps company portals isolated.
  */
 export const resolveLoginEmail = createServerFn({ method: "POST" })
@@ -21,21 +21,51 @@ export const resolveLoginEmail = createServerFn({ method: "POST" })
     if (id.includes("@")) return { email: id };
 
     const phone = id.replace(/[\s-]/g, "");
+    const upper = id.toUpperCase();
     const isMemberNo = /^M\d{6}$/i.test(id);
+    const isMarketingSlug = /^[A-Za-z0-9_-]{3,32}$/.test(id);
+    const isPhone = /^\+?\d{8,15}$/.test(phone);
 
-    let query = supabaseAdmin
-      .from("profiles")
-      .select("email, phone, member_no, current_company_id")
-      .limit(1);
+    const withCompanyScope = (query: any) => {
+      if (data.companyId) return query.eq("current_company_id", data.companyId);
+      return query;
+    };
+
+    let row: { email: string | null } | null = null;
+
     if (isMemberNo) {
-      query = query.eq("member_no", id.toUpperCase());
-    } else {
-      query = query.in("phone", [phone, `+${phone.replace(/^\+/, "")}`]);
+      const { data: byMemberNo } = await withCompanyScope(
+        supabaseAdmin
+          .from("profiles")
+          .select("email, current_company_id")
+          .eq("member_no", upper)
+          .limit(1),
+      ).maybeSingle();
+      row = byMemberNo ?? null;
     }
-    if (data.companyId) {
-      query = query.eq("current_company_id", data.companyId);
+
+    if (!row && isMarketingSlug) {
+      const { data: byMarketingSlug } = await withCompanyScope(
+        supabaseAdmin
+          .from("profiles")
+          .select("email, current_company_id")
+          .ilike("marketing_slug", id)
+          .limit(1),
+      ).maybeSingle();
+      row = byMarketingSlug ?? null;
     }
-    const { data: row } = await query.maybeSingle();
+
+    if (!row && isPhone) {
+      const { data: byPhone } = await withCompanyScope(
+        supabaseAdmin
+          .from("profiles")
+          .select("email, current_company_id")
+          .in("phone", [phone, `+${phone.replace(/^\+/, "")}`])
+          .limit(1),
+      ).maybeSingle();
+      row = byPhone ?? null;
+    }
+
     return { email: row?.email ?? null };
   });
 
