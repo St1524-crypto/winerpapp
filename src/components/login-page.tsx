@@ -25,6 +25,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [signupType, setSignupType] = useState<"email" | "phone">(memberMode ? "phone" : "email");
+  const [websiteId, setWebsiteId] = useState("ST");
   const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -100,7 +101,9 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (mode === "signup" && !selectedCompany) {
+    const activeCompany = selectedCompany ?? findCompanyByCode(websiteId, companies);
+
+    if (mode === "signup" && !activeCompany) {
       toast.error("註冊請使用公司專屬入口 /login/{公司名}");
       return;
     }
@@ -109,12 +112,15 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
       if (mode === "signin") {
         let loginEmail = identifier.trim();
         if (!loginEmail.includes("@")) {
+          if (!activeCompany) {
+            throw new Error("請輸入正確的官網ID，例如 ST+統編後四碼");
+          }
           const res = await resolveLoginEmail({
-            data: { identifier: loginEmail, companyId: selectedCompany?.id },
+            data: { identifier: loginEmail, companyId: activeCompany.id },
           }).catch(() => ({ email: null }));
           if (!res.email) throw new Error(
-            selectedCompany
-              ? `此公司入口 (${selectedCompany.company_name}) 找不到對應帳號`
+            activeCompany
+              ? `此公司入口 (${activeCompany.company_name}) 找不到對應帳號`
               : "找不到對應帳號",
           );
           loginEmail = res.email;
@@ -131,16 +137,16 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         await recordLoginAttempt({ data: { email: loginEmail, success: true, userId: uid } }).catch(() => {});
 
         // 若由公司入口進入，驗證使用者是否屬於該公司（super_admin 例外）
-        if (uid && selectedCompany) {
+        if (uid && activeCompany) {
           const userMeta = data.user?.app_metadata ?? {};
           const isSuper = Array.isArray((userMeta as any).roles)
             ? (userMeta as any).roles.includes("super_admin")
             : false;
           if (!isSuper) {
             const { companyId } = await getUserCompany({ data: { userId: uid } }).catch(() => ({ companyId: null }));
-            if (companyId && companyId !== selectedCompany.id) {
+            if (companyId && companyId !== activeCompany.id) {
               await supabase.auth.signOut();
-              throw new Error(`此帳號不屬於 ${selectedCompany.company_name}，請使用正確的公司入口`);
+              throw new Error(`此帳號不屬於 ${activeCompany.company_name}，請使用正確的公司入口`);
             }
           }
         }
@@ -162,8 +168,8 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           }
         }
 
-        toast.success(selectedCompany ? `已登入 ${selectedCompany.company_name}` : "登入成功");
-      } else if (mode === "signup" && selectedCompany) {
+        toast.success(activeCompany ? `已登入 ${activeCompany.company_name}` : "登入成功");
+      } else if (mode === "signup" && activeCompany) {
         let signupEmail = email.trim();
         const cleanPhone = phone.trim().replace(/[\s-]/g, "");
         if (signupType === "phone") {
@@ -174,11 +180,11 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           email: signupEmail,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard?company=${selectedCompany.slug}`,
+            emailRedirectTo: `${window.location.origin}/dashboard?company=${activeCompany.slug}`,
             data: {
               name,
               phone: signupType === "phone" ? cleanPhone : undefined,
-              company_slug: selectedCompany.slug,
+              company_slug: activeCompany.slug,
             },
           },
         });
@@ -188,7 +194,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           await bindSponsorByCode({ data: { code: refCode } }).catch(() => {});
           clearReferralCode();
         }
-        toast.success(`已於 ${selectedCompany.company_name} 完成註冊` + (signupType === "phone" ? "，可使用電話號碼登入" : "，請查收驗證信"));
+        toast.success(`已於 ${activeCompany.company_name} 完成註冊` + (signupType === "phone" ? "，可使用電話號碼登入" : "，請查收驗證信"));
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -207,7 +213,29 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
   // Generic login entry requires an explicit company code.
   if (!selectedCompany) {
-    return <CompanyCodeRequired logoUrl={logoUrl} />;
+    return (
+      <CompanyCodeRequired
+        logoUrl={logoUrl}
+        websiteId={websiteId}
+        setWebsiteId={setWebsiteId}
+        identifier={identifier}
+        setIdentifier={setIdentifier}
+        password={password}
+        setPassword={setPassword}
+        showPassword={showPassword}
+        setShowPassword={setShowPassword}
+        busy={busy}
+        onSubmit={submit}
+        onSignup={() => {
+          const code = websiteId.trim();
+          if (!code || code.toUpperCase() === "ST") {
+            toast.error("請先輸入官網ID，例如 ST+統編後四碼");
+            return;
+          }
+          window.location.href = `/m/${encodeURIComponent(code)}?mode=signup`;
+        }}
+      />
+    );
   }
 
   if (!selectedCompany) {
@@ -421,38 +449,124 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   );
 }
 
-function CompanyCodeRequired({ logoUrl }: { logoUrl?: string | null }) {
+function findCompanyByCode(code: string, companies: PublicCompany[]) {
+  const normalized = code.trim().toLowerCase();
+  if (!normalized || normalized === "st") return null;
+
+  return companies.find((company) => {
+    const slug = company.slug.toLowerCase();
+    const name = company.company_name.toLowerCase();
+    return slug === normalized || slug.includes(normalized) || normalized.includes(slug) || name.includes(normalized);
+  }) ?? null;
+}
+
+function CompanyCodeRequired({
+  logoUrl,
+  websiteId,
+  setWebsiteId,
+  identifier,
+  setIdentifier,
+  password,
+  setPassword,
+  showPassword,
+  setShowPassword,
+  busy,
+  onSubmit,
+  onSignup,
+}: {
+  logoUrl?: string | null;
+  websiteId: string;
+  setWebsiteId: (value: string) => void;
+  identifier: string;
+  setIdentifier: (value: string) => void;
+  password: string;
+  setPassword: (value: string) => void;
+  showPassword: boolean;
+  setShowPassword: (value: boolean) => void;
+  busy: boolean;
+  onSubmit: (event: React.FormEvent) => void;
+  onSignup: () => void;
+}) {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
       <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
-        <div className="w-full max-w-lg rounded-2xl border bg-card/85 p-8 text-center shadow-elegant backdrop-blur-xl">
+        <div className="w-full max-w-md rounded-2xl border bg-card/85 p-8 shadow-elegant backdrop-blur-xl">
           <div className="mb-5 inline-flex items-center justify-center">
             <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="bg-white shadow-glow ring-1 ring-primary/30" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">請使用公司專屬入口登入</h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            為保護各公司會員資料，登入入口已改為每家公司獨立網址，不再公開顯示合作廠商清單。
-          </p>
-          <div className="mt-6 rounded-xl border bg-background/70 p-4 text-left text-sm">
-            <div className="font-medium">網址規則</div>
-            <div className="mt-3 space-y-2 font-mono text-xs text-muted-foreground">
-              <div>會員入口：/m/公司代碼</div>
-              <div>一般入口：/login/公司代碼</div>
-              <div>管理員入口：/admin/login</div>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold tracking-tight">會員登入</h1>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              請輸入公司官網ID與會員ID登入。官網ID 預設為 ST + 統編後四碼。
+            </p>
+          </div>
+
+          <form onSubmit={onSubmit} className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="websiteId">官網ID</Label>
+              <Input
+                id="websiteId"
+                value={websiteId}
+                onChange={(event) => setWebsiteId(event.target.value.toUpperCase())}
+                required
+                placeholder="ST1234"
+                autoComplete="organization"
+                className="font-mono"
+              />
+              <p className="text-[11px] text-muted-foreground">預設格式：ST + 統編後四碼</p>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="identifier">會員ID</Label>
+              <Input
+                id="identifier"
+                value={identifier}
+                onChange={(event) => setIdentifier(event.target.value)}
+                required
+                placeholder="請輸入會員ID"
+                autoComplete="username"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">密碼</Label>
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                minLength={6}
+                placeholder="請輸入密碼"
+                autoComplete="current-password"
+              />
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={showPassword}
+                  onChange={(event) => setShowPassword(event.target.checked)}
+                  className="h-4 w-4 rounded border-border"
+                />
+                顯示密碼
+              </label>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button type="submit" disabled={busy} className="bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
+                {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                登入
+              </Button>
+              <Button type="button" variant="outline" onClick={onSignup}>
+                免費註冊
+              </Button>
+            </div>
+          </form>
+
+          <div className="mt-5 flex items-center justify-between text-xs">
+            <Link to="/admin/login" className="text-primary hover:underline">管理員登入</Link>
+            <Link to="/shop" className="text-muted-foreground hover:text-primary">返回商城</Link>
           </div>
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
-            <Button asChild>
-              <Link to="/admin/login">管理員登入</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/shop">返回商城</Link>
-            </Button>
-          </div>
-          <p className="mt-5 text-xs text-muted-foreground">
-            若不知道公司代碼，請洽公司管理員或客服取得專屬登入網址。
-          </p>
         </div>
       </main>
     </div>
