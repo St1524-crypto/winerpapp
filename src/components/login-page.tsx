@@ -72,8 +72,6 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           );
         if (fuzzy) setSelectedSlug(fuzzy.slug);
         else if (list.length === 1) setSelectedSlug(list[0].slug);
-      } else if (list.length === 1) {
-        setSelectedSlug(list[0].slug);
       }
     })();
     return () => { cancelled = true; };
@@ -207,7 +205,11 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   }
 
 
-  // ===== 無公司入口 → 左側合作廠商清單 + 右側引導 =====
+  // Generic login entry requires an explicit company code.
+  if (!selectedCompany) {
+    return <CompanyCodeRequired logoUrl={logoUrl} />;
+  }
+
   if (!selectedCompany) {
     return (
       <div className="relative min-h-screen overflow-hidden">
@@ -415,6 +417,44 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           © {new Date().getFullYear()} {selectedCompany.company_name} · 企業級 ERP 平台
         </p>
       </div>
+    </div>
+  );
+}
+
+function CompanyCodeRequired({ logoUrl }: { logoUrl?: string | null }) {
+  return (
+    <div className="relative min-h-screen overflow-hidden">
+      <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
+      <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
+        <div className="w-full max-w-lg rounded-2xl border bg-card/85 p-8 text-center shadow-elegant backdrop-blur-xl">
+          <div className="mb-5 inline-flex items-center justify-center">
+            <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="bg-white shadow-glow ring-1 ring-primary/30" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">請使用公司專屬入口登入</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            為保護各公司會員資料，登入入口已改為每家公司獨立網址，不再公開顯示合作廠商清單。
+          </p>
+          <div className="mt-6 rounded-xl border bg-background/70 p-4 text-left text-sm">
+            <div className="font-medium">網址規則</div>
+            <div className="mt-3 space-y-2 font-mono text-xs text-muted-foreground">
+              <div>會員入口：/m/公司代碼</div>
+              <div>一般入口：/login/公司代碼</div>
+              <div>管理員入口：/admin/login</div>
+            </div>
+          </div>
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <Button asChild>
+              <Link to="/admin/login">管理員登入</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/shop">返回商城</Link>
+            </Button>
+          </div>
+          <p className="mt-5 text-xs text-muted-foreground">
+            若不知道公司代碼，請洽公司管理員或客服取得專屬登入網址。
+          </p>
+        </div>
+      </main>
     </div>
   );
 }
