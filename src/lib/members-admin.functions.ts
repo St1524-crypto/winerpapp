@@ -19,6 +19,29 @@ function normalizePhone(p?: string | null) {
   return s || null;
 }
 
+async function assertMarketingSlugAvailable(userId: string, slug: string) {
+  const normalized = slug.trim();
+  if (!normalized) return;
+
+  const { data: bySlug } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .ilike("marketing_slug", normalized)
+    .neq("id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (bySlug?.id) throw new Error("行銷代碼已被其他會員使用，請更換。");
+
+  const { data: byMemberNo } = await supabaseAdmin
+    .from("profiles")
+    .select("id")
+    .ilike("member_no", normalized)
+    .neq("id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (byMemberNo?.id) throw new Error("行銷代碼不可與其他會員ID相同，請更換。");
+}
+
 // ============== Create a new member account ==============
 const CreateSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -100,10 +123,11 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     // Snapshot current profile for audit diff (marketing_slug)
     const { data: prior } = await supabaseAdmin
       .from("profiles")
-      .select("marketing_slug")
+      .select("marketing_slug, member_no")
       .eq("id", data.userId)
       .maybeSingle();
     const prevSlug = (prior as any)?.marketing_slug ?? null;
+    const memberNo = (prior as any)?.member_no ?? null;
 
     const phone = data.phone !== undefined ? normalizePhone(data.phone) : undefined;
     const profileUpdate: Record<string, any> = {};
@@ -111,7 +135,9 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     if (data.email !== undefined) profileUpdate.email = data.email || null;
     if (phone !== undefined) profileUpdate.phone = phone;
     if (data.marketingSlug !== undefined) {
-      profileUpdate.marketing_slug = data.marketingSlug ? data.marketingSlug.trim() : null;
+      const nextSlug = data.marketingSlug ? data.marketingSlug.trim() : memberNo;
+      if (nextSlug) await assertMarketingSlugAvailable(data.userId, nextSlug);
+      profileUpdate.marketing_slug = nextSlug || null;
     }
     if (data.id_no !== undefined) profileUpdate.id_no = data.id_no || null;
     if (data.apply_date !== undefined) profileUpdate.apply_date = data.apply_date || null;
@@ -145,7 +171,12 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
         .update(profileUpdate as any)
         .eq("id", data.userId);
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        if (/marketing_slug|member_no_marketing/i.test(error.message)) {
+          throw new Error("行銷代碼已和其它會員行銷代碼或會員ID重複，請更換。");
+        }
+        throw new Error(error.message);
+      }
     }
 
     // Sync auth user (email / password) if provided

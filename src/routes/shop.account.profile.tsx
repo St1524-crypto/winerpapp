@@ -19,6 +19,7 @@ function ProfilePage() {
   const [name, setName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [phone, setPhone] = useState<string | null>(null);
+  const [memberNo, setMemberNo] = useState<string | null>(null);
   const [marketingSlug, setMarketingSlug] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,13 +29,14 @@ function ProfilePage() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("name, avatar_url, phone, marketing_slug")
+        .select("name, avatar_url, phone, member_no, marketing_slug")
         .eq("id", user.id)
         .maybeSingle();
       setName(data?.name ?? "");
       setAvatarUrl(data?.avatar_url ?? "");
       setPhone(data?.phone ?? null);
-      setMarketingSlug((data as any)?.marketing_slug ?? "");
+      setMemberNo((data as any)?.member_no ?? null);
+      setMarketingSlug((data as any)?.marketing_slug ?? (data as any)?.member_no ?? "");
       setLoading(false);
     })();
   }, [user]);
@@ -54,7 +56,7 @@ function ProfilePage() {
       .eq("id", user.id)
       .maybeSingle();
     const prevSlug = ((prior as any)?.marketing_slug ?? null) as string | null;
-    const nextSlug = slug || null;
+    const nextSlug = slug || memberNo || null;
 
     const { error } = await supabase
       .from("profiles")
@@ -66,8 +68,8 @@ function ProfilePage() {
       .eq("id", user.id);
     setSaving(false);
     if (error) {
-      if (/duplicate|unique/i.test(error.message)) {
-        toast.error("此行銷代稱已被使用，請更換");
+      if (/duplicate|unique|行銷代碼|會員ID|marketing/i.test(error.message)) {
+        toast.error("此行銷代碼已和其它會員行銷代碼或會員ID重複，請更換。");
       } else {
         toast.error(error.message);
       }
@@ -96,7 +98,7 @@ function ProfilePage() {
 
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const seg = marketingSlug.trim() || phone || "";
+  const seg = marketingSlug.trim() || memberNo || "";
   const marketingUrl = seg ? `${origin}/r/${seg}` : "";
 
   if (loading) {

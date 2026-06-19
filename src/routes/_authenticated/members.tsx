@@ -170,7 +170,7 @@ function Page() {
     setShowFormPassword(false);
     setForm({
       name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "",
-      referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? "",
+      referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? m.member_no ?? "",
       id_no: m.id_no ?? "", apply_date: fmtDate(m.apply_date), sex: m.sex ?? "",
       addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday), vip_expires_at: fmtDate(m.vip_expires_at),
     });
