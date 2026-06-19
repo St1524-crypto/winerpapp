@@ -11,6 +11,7 @@ export const Route = createFileRoute("/reset-password")({ component: ResetPage }
 
 function ResetPage() {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
@@ -35,7 +36,16 @@ function ResetPage() {
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="pw">新密碼</Label>
-            <Input id="pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input id="pw" type={showPassword ? "text" : "password"} required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={showPassword}
+                onChange={(event) => setShowPassword(event.target.checked)}
+                className="h-4 w-4 rounded border-border"
+              />
+              顯示密碼
+            </label>
           </div>
           <Button type="submit" disabled={busy} className="w-full bg-gradient-primary text-primary-foreground">
             {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}更新密碼

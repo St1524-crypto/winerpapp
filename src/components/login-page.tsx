@@ -29,6 +29,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [refCode, setRefCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -383,7 +384,16 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                     <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
                   )}
                 </div>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
+                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={showPassword}
+                    onChange={(event) => setShowPassword(event.target.checked)}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                  顯示密碼
+                </label>
               </div>
             )}
 

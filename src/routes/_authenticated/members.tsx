@@ -53,10 +53,12 @@ function Page() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "" });
+  const [showFormPassword, setShowFormPassword] = useState(false);
 
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
   const [pwNew, setPwNew] = useState("");
+  const [showPwNew, setShowPwNew] = useState(false);
   const [pwForceChange, setPwForceChange] = useState(true);
   const [pwResult, setPwResult] = useState<{ password?: string; email?: string | null; actionLink?: string | null } | null>(null);
   const [pwBusy, setPwBusy] = useState<null | "reset" | "temp" | "impersonate">(null);
@@ -159,11 +161,13 @@ function Page() {
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
     setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "" });
+    setShowFormPassword(false);
     setCreateOpen(true);
   }
   function fmtDate(d?: string | null) { if (!d) return ""; return d.length >= 10 ? d.slice(0, 10) : d; }
   function openEditProfile(m: Member) {
     setEditProfile(m);
+    setShowFormPassword(false);
     setForm({
       name: m.name ?? "", email: m.email ?? "", phone: m.phone ?? "", password: "",
       referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? "",
@@ -253,6 +257,7 @@ function Page() {
   function openPasswordTools(m: Member) {
     setPwTarget(m);
     setPwNew("");
+    setShowPwNew(false);
     setPwForceChange(true);
     setPwResult(null);
   }
@@ -558,7 +563,14 @@ function Page() {
             <div className="space-y-1"><Label>姓名 *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="王小明" /></div>
             <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@example.com" /></div>
             <div className="space-y-1"><Label>電話號碼</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="0912345678" /></div>
-            <div className="space-y-1"><Label>初始密碼 *</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="至少 6 碼" /></div>
+            <div className="space-y-1">
+              <Label>初始密碼 *</Label>
+              <Input type={showFormPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="至少 6 碼" />
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Checkbox checked={showFormPassword} onCheckedChange={(value) => setShowFormPassword(!!value)} />
+                顯示密碼
+              </label>
+            </div>
             <p className="text-[11px] text-muted-foreground">Email 與電話至少需填一項；系統會自動產生會員編號（M 開頭 6 位數字）。</p>
           </div>
           <DialogFooter>
@@ -619,7 +631,14 @@ function Page() {
                 <p className="text-[11px] text-muted-foreground">留空＝非 VIP；到期後將無法領取獎勵點。</p>
               </div>
               <div className="pt-2 border-t border-border" />
-              <div className="space-y-1"><Label>重設密碼 (留空則不變更)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" /></div>
+              <div className="space-y-1">
+                <Label>重設密碼 (留空則不變更)</Label>
+                <Input type={showFormPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox checked={showFormPassword} onCheckedChange={(value) => setShowFormPassword(!!value)} />
+                  顯示密碼
+                </label>
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -678,9 +697,13 @@ function Page() {
               <div className="space-y-2">
                 <Label>方式一：直接指定新密碼</Label>
                 <div className="flex gap-2">
-                  <Input type="text" value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder="至少 6 碼" />
+                  <Input type={showPwNew ? "text" : "password"} value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder="至少 6 碼" />
                   <Button onClick={() => doResetPassword(false)} disabled={pwBusy !== null || pwNew.length < 6} className="bg-gradient-primary shrink-0">重設</Button>
                 </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox checked={showPwNew} onCheckedChange={(value) => setShowPwNew(!!value)} />
+                  顯示密碼
+                </label>
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Checkbox checked={pwForceChange} onCheckedChange={(v) => setPwForceChange(!!v)} />
                   下次登入時要求會員自行變更密碼
