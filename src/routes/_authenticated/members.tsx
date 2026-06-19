@@ -633,11 +633,12 @@ function Page() {
               <div className="pt-2 border-t border-border" />
               <div className="space-y-1">
                 <Label>重設密碼 (留空則不變更)</Label>
-                <Input type={showFormPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="•••••" />
+                <Input type={showFormPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="輸入新密碼；留空則不變更" />
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Checkbox checked={showFormPassword} onCheckedChange={(value) => setShowFormPassword(!!value)} />
                   顯示密碼
                 </label>
+                <p className="text-[11px] text-muted-foreground">只能顯示正在輸入的新密碼；系統無法查看會員既有原始密碼。</p>
               </div>
             </div>
           )}
