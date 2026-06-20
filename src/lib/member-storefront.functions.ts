@@ -82,6 +82,12 @@ function normalizeVideo(data: z.infer<typeof videoSchema>, memberId: string) {
   };
 }
 
+function applyPublicProfileFilters(query: ReturnType<typeof supabaseAdmin.from>) {
+  return query
+    .is("frozen_code", null)
+    .or("member_status.is.null,member_status.eq.active");
+}
+
 async function getStorefrontByMember(memberId: string) {
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
@@ -134,28 +140,51 @@ export const getMemberStorefront = createServerFn({ method: "POST" })
     const upper = raw.toUpperCase();
 
     let profile: { id: string } | null = null;
-    const { data: byNo, error: byNoError } = await supabaseAdmin
+    const { data: byNo, error: byNoError } = await applyPublicProfileFilters(supabaseAdmin
       .from("profiles")
       .select("id")
       .eq("member_no", upper)
-      .is("frozen_code", null)
-      .or("member_status.is.null,member_status.eq.active")
+    )
       .limit(1)
       .maybeSingle();
     if (byNoError) throw new Error(byNoError.message);
     profile = byNo;
 
     if (!profile) {
-      const { data: bySlug, error: bySlugError } = await supabaseAdmin
+      const { data: bySlug, error: bySlugError } = await applyPublicProfileFilters(supabaseAdmin
         .from("profiles")
         .select("id")
         .ilike("marketing_slug", raw)
-        .is("frozen_code", null)
-        .or("member_status.is.null,member_status.eq.active")
+      )
         .limit(1)
         .maybeSingle();
       if (bySlugError) throw new Error(bySlugError.message);
       profile = bySlug;
+    }
+
+    if (!profile) {
+      const { data: byReferralCode, error: byReferralCodeError } = await applyPublicProfileFilters(supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("referral_code", upper)
+      )
+        .limit(1)
+        .maybeSingle();
+      if (byReferralCodeError) throw new Error(byReferralCodeError.message);
+      profile = byReferralCode;
+    }
+
+    if (!profile && /^[0-9+\-\s()]{6,20}$/.test(raw)) {
+      const digits = raw.replace(/\D/g, "");
+      const { data: byPhone, error: byPhoneError } = await applyPublicProfileFilters(supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("phone", digits)
+      )
+        .limit(1)
+        .maybeSingle();
+      if (byPhoneError) throw new Error(byPhoneError.message);
+      profile = byPhone;
     }
 
     if (!profile?.id) return { found: false as const };
