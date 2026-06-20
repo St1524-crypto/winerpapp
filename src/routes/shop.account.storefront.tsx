@@ -488,19 +488,26 @@ function ImageUrlUploadField({
 
     setUploading(true);
     try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) throw new Error("請先登入後再上傳圖片");
+
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${storageFolder}/${crypto.randomUUID()}.${ext}`;
+      const folder = storageFolder.replace(/^\/+|\/+$/g, "");
+      const path = `${userData.user.id}/${folder}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage
-        .from("product-images")
+        .from("avatars")
         .upload(path, file, { cacheControl: "3600", upsert: false });
 
       if (error) throw error;
 
-      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
       onChange(data.publicUrl);
       toast.success("圖片已上傳");
     } catch (error: any) {
-      toast.error(error?.message ?? "圖片上傳失敗");
+      const message = /row-level security|permission|policy/i.test(error?.message ?? "")
+        ? "權限不足，請重新登入後再上傳圖片。"
+        : error?.message ?? "圖片上傳失敗";
+      toast.error(message);
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
