@@ -4271,6 +4271,7 @@ export type Database = {
           page_template: string | null
           profile_avatar: string | null
           profile_cover: string | null
+          referral_code: string | null
           youtube_url: string | null
         }
         Insert: {
@@ -4289,6 +4290,7 @@ export type Database = {
           page_template?: string | null
           profile_avatar?: string | null
           profile_cover?: string | null
+          referral_code?: string | null
           youtube_url?: string | null
         }
         Update: {
@@ -4307,6 +4309,7 @@ export type Database = {
           page_template?: string | null
           profile_avatar?: string | null
           profile_cover?: string | null
+          referral_code?: string | null
           youtube_url?: string | null
         }
         Relationships: []
