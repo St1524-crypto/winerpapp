@@ -2814,6 +2814,7 @@ export type Database = {
           brand_name: string | null
           created_at: string
           current_company_id: string | null
+          display_name: string | null
           email: string | null
           facebook_url: string | null
           frozen_code: string | null
@@ -2853,6 +2854,7 @@ export type Database = {
           brand_name?: string | null
           created_at?: string
           current_company_id?: string | null
+          display_name?: string | null
           email?: string | null
           facebook_url?: string | null
           frozen_code?: string | null
@@ -2892,6 +2894,7 @@ export type Database = {
           brand_name?: string | null
           created_at?: string
           current_company_id?: string | null
+          display_name?: string | null
           email?: string | null
           facebook_url?: string | null
           frozen_code?: string | null

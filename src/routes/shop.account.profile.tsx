@@ -1,38 +1,86 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Loader2, Copy } from "lucide-react";
+import { Copy, ImageIcon, Loader2, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/shop/account/profile")({ component: ProfilePage });
 
 const SLUG_RE = /^[A-Za-z0-9_-]{3,32}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function defaultDisplayName(name: string) {
+  const trimmed = name.trim();
+  return Array.from(trimmed).slice(0, 2).join("");
+}
+
+function normalizePhoneSlug(phone: string | null) {
+  const normalized = (phone ?? "").replace(/[\s-]/g, "").replace(/^\+/, "");
+  return SLUG_RE.test(normalized) ? normalized : "";
+}
+
+function friendlyProfileError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+
+  if (/marketing_slug_format_invalid|check constraint|format/i.test(message)) {
+    return "行銷網址代稱格式錯誤，請輸入 3-32 字元，可含 A-Z、a-z、0-9、_、-。";
+  }
+  if (/duplicate|unique|marketing_slug_conflict|member_no_marketing_slug_conflict|already/i.test(message)) {
+    return "行銷網址代稱已和其他會員的行銷代稱或會員ID重複，請更換。";
+  }
+  if (/email/i.test(message) && /invalid/i.test(message)) {
+    return "Email 格式錯誤，請確認後再儲存。";
+  }
+  if (/email/i.test(message) && /already|exists|registered/i.test(message)) {
+    return "此 Email 已被其他帳號使用，請更換。";
+  }
+  if (/permission|policy|rls|not authorized/i.test(message)) {
+    return "權限不足，無法儲存會員資料。";
+  }
+
+  return message || "儲存失敗，請確認欄位內容後再試一次。";
+}
 
 function ProfilePage() {
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [phone, setPhone] = useState<string | null>(null);
   const [memberNo, setMemberNo] = useState<string | null>(null);
   const [marketingSlug, setMarketingSlug] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase
+      setLoading(true);
+      const { data, error } = await supabase
         .from("profiles")
-        .select("name, avatar_url, phone, member_no, marketing_slug")
+        .select("name, display_name, email, avatar_url, phone, member_no, marketing_slug")
         .eq("id", user.id)
         .maybeSingle();
-      setName(data?.name ?? "");
+
+      if (error) {
+        toast.error(friendlyProfileError(error));
+        setLoading(false);
+        return;
+      }
+
+      const loadedName = data?.name ?? "";
+      setName(loadedName);
+      setDisplayName((data as any)?.display_name ?? defaultDisplayName(loadedName));
+      setEmail(data?.email ?? user.email ?? "");
       setAvatarUrl(data?.avatar_url ?? "");
       setPhone(data?.phone ?? null);
       setMemberNo((data as any)?.member_no ?? null);
@@ -41,65 +89,130 @@ function ProfilePage() {
     })();
   }, [user]);
 
-  async function save() {
-    if (!user) return;
-    const slug = marketingSlug.trim();
-    if (slug && !SLUG_RE.test(slug)) {
-      toast.error("行銷代稱僅可含英數字、底線或連字號，長度 3-32");
+  async function uploadAvatar(file?: File) {
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("請上傳圖片檔。");
       return;
     }
-    setSaving(true);
-    // Snapshot prior slug for audit diff
-    const { data: prior } = await supabase
-      .from("profiles")
-      .select("marketing_slug")
-      .eq("id", user.id)
-      .maybeSingle();
-    const prevSlug = ((prior as any)?.marketing_slug ?? null) as string | null;
-    const nextSlug = slug || memberNo || null;
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        name,
-        avatar_url: avatarUrl || null,
-        marketing_slug: nextSlug,
-      } as any)
-      .eq("id", user.id);
-    setSaving(false);
-    if (error) {
-      if (/duplicate|unique|行銷代碼|會員ID|marketing/i.test(error.message)) {
-        toast.error("此行銷代碼已和其它會員行銷代碼或會員ID重複，請更換。");
-      } else {
-        toast.error(error.message);
-      }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("圖片不可超過 5MB。");
       return;
     }
-    toast.success("個人資料已更新");
 
-    // Audit log: marketing_slug change by user themselves
-    if ((prevSlug ?? null) !== (nextSlug ?? null)) {
-      await supabase.from("audit_logs").insert({
-        user_id: user.id,
-        entity: "profiles.marketing_slug",
-        entity_id: user.id,
-        action: "marketing_slug_changed",
-        metadata: {
-          source: "self",
-          actor_id: user.id,
-          target_user_id: user.id,
-          before: prevSlug,
-          after: nextSlug,
-          changed_at: new Date().toISOString(),
-        },
-      } as any);
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `profiles/avatars/${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { cacheControl: "3600", upsert: false });
+      if (error) throw error;
+
+      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      setAvatarUrl(data.publicUrl);
+      toast.success("頭像已上傳，請按儲存套用。");
+    } catch (error) {
+      toast.error(friendlyProfileError(error));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
+  async function save() {
+    if (!user) return;
+
+    const nextName = name.trim();
+    const nextDisplayName = displayName.trim() || defaultDisplayName(nextName);
+    const nextEmail = email.trim();
+    const slug = marketingSlug.trim();
+    const fallbackSlug = normalizePhoneSlug(phone) || memberNo || "";
+    const nextSlug = slug || fallbackSlug || null;
+
+    if (!nextName) {
+      toast.error("請輸入名稱。");
+      return;
+    }
+    if (!nextDisplayName) {
+      toast.error("請輸入對外匿稱。");
+      return;
+    }
+    if (!EMAIL_RE.test(nextEmail)) {
+      toast.error("Email 格式錯誤，請確認後再儲存。");
+      return;
+    }
+    if (nextSlug && !SLUG_RE.test(nextSlug)) {
+      toast.error("行銷網址代稱格式錯誤，請輸入 3-32 字元，可含 A-Z、a-z、0-9、_、-。");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { data: prior } = await supabase
+        .from("profiles")
+        .select("marketing_slug, email")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const prevSlug = ((prior as any)?.marketing_slug ?? null) as string | null;
+      const prevEmail = ((prior as any)?.email ?? user.email ?? null) as string | null;
+
+      if (nextEmail !== (user.email ?? "") && nextEmail !== prevEmail) {
+        const { error: authError } = await supabase.auth.updateUser({ email: nextEmail });
+        if (authError) throw authError;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          name: nextName,
+          display_name: nextDisplayName,
+          email: nextEmail,
+          avatar_url: avatarUrl.trim() || null,
+          marketing_slug: nextSlug,
+        } as any)
+        .eq("id", user.id);
+      if (error) throw error;
+
+      setName(nextName);
+      setDisplayName(nextDisplayName);
+      setEmail(nextEmail);
+      setMarketingSlug(nextSlug ?? "");
+
+      if ((prevSlug ?? null) !== (nextSlug ?? null)) {
+        await supabase.from("audit_logs").insert({
+          user_id: user.id,
+          entity: "profiles.marketing_slug",
+          entity_id: user.id,
+          action: "marketing_slug_changed",
+          metadata: {
+            source: "self",
+            actor_id: user.id,
+            target_user_id: user.id,
+            before: prevSlug,
+            after: nextSlug,
+            changed_at: new Date().toISOString(),
+          },
+        } as any);
+      }
+
+      toast.success(
+        nextEmail !== (user.email ?? "")
+          ? "個人資料已儲存。若系統要求 Email 驗證，請到新信箱完成確認。"
+          : "個人資料已儲存。",
+      );
+    } catch (error) {
+      toast.error(friendlyProfileError(error));
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const seg = marketingSlug.trim() || memberNo || "";
-  const marketingUrl = seg ? `${origin}/r/${seg}` : "";
+  const seg = marketingSlug.trim() || normalizePhoneSlug(phone) || memberNo || "";
+  const marketingUrl = seg ? `${origin}/r/${seg}` : `${origin}/r/`;
+  const avatarFallback = (displayName || name || user?.email || "?").charAt(0).toUpperCase();
 
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
@@ -107,58 +220,95 @@ function ProfilePage() {
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base">個人資料</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle className="text-base">個人資料</CardTitle>
+        <CardDescription>管理會員中心顯示資料、登入 Email 與行銷網址。</CardDescription>
+      </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <Avatar className="h-20 w-20">
             {avatarUrl && <AvatarImage src={avatarUrl} />}
-            <AvatarFallback className="text-lg">{(name || user?.email || "?").charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarFallback className="text-lg">{avatarFallback}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
-            <Label className="text-xs">頭像網址</Label>
-            <Input value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://..." />
+            <Label>頭像圖片</Label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input value={avatarUrl} onChange={(event) => setAvatarUrl(event.target.value)} placeholder="https://..." />
+              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                上傳
+              </Button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(event) => uploadAvatar(event.target.files?.[0])}
+            />
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+              <ImageIcon className="h-3 w-3" />
+              可貼上圖片網址，也可上傳 JPG / PNG / WebP 圖檔，單檔上限 5MB。
+            </p>
           </div>
         </div>
-        <div className="space-y-2">
-          <Label>名稱</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="請輸入名稱" />
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>名稱</Label>
+            <Input value={name} onChange={(event) => {
+              const value = event.target.value;
+              setName(value);
+              if (!displayName.trim()) setDisplayName(defaultDisplayName(value));
+            }} placeholder="請輸入名稱" />
+          </div>
+          <div className="space-y-2">
+            <Label>對外匿稱</Label>
+            <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder={defaultDisplayName(name) || "例如：源晶"} />
+            <p className="text-xs text-muted-foreground">未填寫時，預設使用名稱前兩個字。</p>
+          </div>
         </div>
+
         <div className="space-y-2">
           <Label>Email</Label>
-          <Input value={user?.email ?? ""} disabled />
-          <p className="text-xs text-muted-foreground">Email 無法修改</p>
+          <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" />
+          <p className="text-xs text-muted-foreground">修改 Email 後，系統可能會要求到新信箱完成驗證。</p>
         </div>
+
         <div className="space-y-2">
           <Label>行銷網址代稱</Label>
           <Input
             value={marketingSlug}
-            onChange={(e) => setMarketingSlug(e.target.value)}
+            onChange={(event) => setMarketingSlug(event.target.value)}
             placeholder="例如 alice-wang"
           />
           <p className="text-xs text-muted-foreground">
-            3-32 字元，可含 A-Z a-z 0-9 _ -；留空則使用您的電話作為行銷網址。
+            3-32 字元，可含 A-Z a-z 0-9 _ -；留空則使用您的電話作為行銷網址，若無電話則使用會員ID。
           </p>
-          {marketingUrl && (
-            <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
-              <code className="flex-1 text-xs break-all">{marketingUrl}</code>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(marketingUrl);
-                    toast.success("行銷網址已複製");
-                  } catch { toast.error("複製失敗"); }
-                }}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
+            <code className="flex-1 text-xs break-all">{marketingUrl}</code>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(marketingUrl);
+                  toast.success("行銷網址已複製。");
+                } catch {
+                  toast.error("複製失敗，請手動複製。");
+                }
+              }}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
+
         <div className="flex justify-end">
-          <Button onClick={save} disabled={saving} className="bg-gradient-to-r from-primary to-primary/70">
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}儲存
+          <Button onClick={save} disabled={saving || uploading} className="bg-gradient-to-r from-primary to-primary/70">
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            儲存
           </Button>
         </div>
       </CardContent>

@@ -85,7 +85,7 @@ function normalizeVideo(data: z.infer<typeof videoSchema>, memberId: string) {
 async function getStorefrontByMember(memberId: string) {
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
-    .select("id, name, member_no, marketing_slug, avatar_url, profile_avatar, profile_cover, brand_name, brand_intro, line_url, facebook_url, instagram_url, youtube_url, page_template, is_vip")
+    .select("id, name, display_name, member_no, marketing_slug, avatar_url, profile_avatar, profile_cover, brand_name, brand_intro, line_url, facebook_url, instagram_url, youtube_url, page_template, is_vip")
     .eq("id", memberId)
     .maybeSingle();
   if (profileError) throw new Error(profileError.message);

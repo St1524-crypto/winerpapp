@@ -40,7 +40,7 @@ function MemberStorefrontPage() {
 
   const profile = data?.found ? data.profile : null;
   const ref = profile?.id ?? "";
-  const displayName = profile?.brand_name || profile?.name || profile?.member_no || "源晶會員";
+  const displayName = profile?.brand_name || profile?.display_name || profile?.name || profile?.member_no || "源晶會員";
   const avatar = profile?.profile_avatar || profile?.avatar_url || "";
   const template = profile?.page_template || "A";
   const templateClass = useMemo(() => {
