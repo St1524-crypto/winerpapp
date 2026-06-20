@@ -82,10 +82,10 @@ function normalizeVideo(data: z.infer<typeof videoSchema>, memberId: string) {
   };
 }
 
-function applyPublicProfileFilters(query: ReturnType<typeof supabaseAdmin.from>) {
-  return query
+function applyPublicProfileFilters<T>(query: T): T {
+  return (query as any)
     .is("frozen_code", null)
-    .or("member_status.is.null,member_status.eq.active");
+    .or("member_status.is.null,member_status.eq.active") as T;
 }
 
 async function getStorefrontByMember(memberId: string) {
