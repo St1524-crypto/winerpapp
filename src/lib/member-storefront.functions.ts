@@ -94,7 +94,7 @@ async function getStorefrontByMember(memberId: string) {
   const [featuredRes, customRes, videosRes] = await Promise.all([
     supabaseAdmin
       .from("member_featured_products")
-      .select("id, product_id, sort_order, products(id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, wholesale_price, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs)")
+      .select("id, product_id, sort_order, products(id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs)")
       .eq("member_id", memberId)
       .order("sort_order", { ascending: true })
       .limit(20),
@@ -138,6 +138,8 @@ export const getMemberStorefront = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("member_no", upper)
+      .is("frozen_code", null)
+      .or("member_status.is.null,member_status.eq.active")
       .limit(1)
       .maybeSingle();
     if (byNoError) throw new Error(byNoError.message);
@@ -148,6 +150,8 @@ export const getMemberStorefront = createServerFn({ method: "POST" })
         .from("profiles")
         .select("id")
         .ilike("marketing_slug", raw)
+        .is("frozen_code", null)
+        .or("member_status.is.null,member_status.eq.active")
         .limit(1)
         .maybeSingle();
       if (bySlugError) throw new Error(bySlugError.message);
