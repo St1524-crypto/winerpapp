@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Copy, ImageIcon, Loader2, Upload } from "lucide-react";
+import { saveMyAccountProfile } from "@/lib/profile.functions";
 
 export const Route = createFileRoute("/shop/account/profile")({ component: ProfilePage });
 
@@ -149,59 +150,23 @@ function ProfilePage() {
 
     setSaving(true);
     try {
-      const { data: prior } = await supabase
-        .from("profiles")
-        .select("marketing_slug, email")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const prevSlug = ((prior as any)?.marketing_slug ?? null) as string | null;
-      const prevEmail = ((prior as any)?.email ?? user.email ?? null) as string | null;
-
-      if (nextEmail !== (user.email ?? "") && nextEmail !== prevEmail) {
-        const { error: authError } = await supabase.auth.updateUser({ email: nextEmail });
-        if (authError) throw authError;
-      }
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
+      const result = await saveMyAccountProfile({
+        data: {
           name: nextName,
-          display_name: nextDisplayName,
+          displayName: nextDisplayName,
           email: nextEmail,
-          avatar_url: avatarUrl.trim() || null,
-          marketing_slug: nextSlug,
-        } as any)
-        .eq("id", user.id);
-      if (error) throw error;
+          avatarUrl,
+          marketingSlug: slug,
+        },
+      });
 
-      setName(nextName);
-      setDisplayName(nextDisplayName);
-      setEmail(nextEmail);
-      setMarketingSlug(nextSlug ?? "");
+      setName(result.profile.name);
+      setDisplayName(result.profile.display_name);
+      setEmail(result.profile.email);
+      setAvatarUrl(result.profile.avatar_url ?? "");
+      setMarketingSlug(result.profile.marketing_slug ?? "");
 
-      if ((prevSlug ?? null) !== (nextSlug ?? null)) {
-        await supabase.from("audit_logs").insert({
-          user_id: user.id,
-          entity: "profiles.marketing_slug",
-          entity_id: user.id,
-          action: "marketing_slug_changed",
-          metadata: {
-            source: "self",
-            actor_id: user.id,
-            target_user_id: user.id,
-            before: prevSlug,
-            after: nextSlug,
-            changed_at: new Date().toISOString(),
-          },
-        } as any);
-      }
-
-      toast.success(
-        nextEmail !== (user.email ?? "")
-          ? "個人資料已儲存。若系統要求 Email 驗證，請到新信箱完成確認。"
-          : "個人資料已儲存。",
-      );
+      toast.success(result.emailChanged ? "個人資料已儲存，Email 已更新。" : "個人資料已儲存。");
     } catch (error) {
       toast.error(friendlyProfileError(error));
     } finally {
