@@ -104,13 +104,13 @@ function ProfilePage() {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `profiles/avatars/${user.id}/${crypto.randomUUID()}.${ext}`;
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage
-        .from("product-images")
+        .from("avatars")
         .upload(path, file, { cacheControl: "3600", upsert: false });
       if (error) throw error;
 
-      const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
       setAvatarUrl(data.publicUrl);
       toast.success("頭像已上傳，請按儲存套用。");
     } catch (error) {
