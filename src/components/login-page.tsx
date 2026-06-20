@@ -468,9 +468,12 @@ function findCompanyByCode(code: string, companies: PublicCompany[]) {
 
 function getLoginErrorMessage(error: any, mode: "signin" | "signup" | "forgot") {
   const raw = String(error?.message ?? "");
-  if (/[\u4e00-\u9fff]/.test(raw)) return raw;
+  const code = String(error?.code ?? "");
+  const detail = String(error?.detail ?? "");
+  const all = `${raw} ${detail} ${code}`.toLowerCase();
 
   if (mode === "signin") {
+    if (/[\u4e00-\u9fff]/.test(raw)) return raw;
     if (/invalid login credentials|email not confirmed|invalid credentials/i.test(raw)) {
       return "登入失敗：官網ID、會員ID或密碼填入錯誤，請重新確認。";
     }
@@ -478,9 +481,19 @@ function getLoginErrorMessage(error: any, mode: "signin" | "signup" | "forgot") 
   }
 
   if (mode === "signup") {
+    if (code === "23505" || all.includes("duplicate") || all.includes("already exists") || all.includes("already registered") || all.includes("user already")) {
+      if (all.includes("phone")) return "免費註冊失敗：此電話號碼已註冊過，請改用登入或更換電話號碼。";
+      if (all.includes("email")) return "免費註冊失敗：此 Email 已註冊過，請改用登入或更換 Email。";
+      if (all.includes("marketing_slug") || all.includes("member_no")) return "免費註冊失敗：會員編號或行銷代稱已被使用。";
+      return "免費註冊失敗：此帳號已存在，請改用登入。";
+    }
+    if (all.includes("password")) return "免費註冊失敗：密碼不符合規則（至少 6 碼）。";
+    if (all.includes("rate limit")) return "免費註冊失敗：嘗試次數過多，請稍後再試。";
+    if (/[\u4e00-\u9fff]/.test(raw)) return raw;
     return "免費註冊失敗：請確認必填欄位是否填寫正確。";
   }
 
+  if (/[\u4e00-\u9fff]/.test(raw)) return raw;
   return "操作失敗：請確認 Email 欄位是否填寫正確。";
 }
 
