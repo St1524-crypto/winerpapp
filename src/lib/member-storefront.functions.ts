@@ -84,8 +84,8 @@ function normalizeVideo(data: z.infer<typeof videoSchema>, memberId: string) {
 
 function applyPublicProfileFilters<T>(query: T): T {
   return (query as any)
-    .is("frozen_code", null)
-    .or("member_status.is.null,member_status.eq.active") as T;
+    .or("frozen_code.is.null,frozen_code.eq.N")
+    .or("member_status.is.null,member_status.eq.active,member_status.eq.正式會員") as T;
 }
 
 async function getStorefrontByMember(memberId: string) {
