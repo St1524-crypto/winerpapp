@@ -77,23 +77,23 @@ function MemberStorefrontPage() {
           <img src={profile.profile_cover} alt={`${displayName} 封面`} className="absolute inset-0 h-full w-full object-cover opacity-40" />
         ) : null}
         <div className="absolute inset-0 bg-black/35" />
-        <div className="relative container mx-auto grid min-h-[520px] gap-8 px-4 py-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="max-w-3xl space-y-6">
+        <div className="relative container mx-auto grid gap-6 px-4 py-8 md:min-h-[520px] md:gap-8 md:py-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="max-w-3xl space-y-4 md:space-y-6">
             <Badge className="border-white/20 bg-white/15 text-white hover:bg-white/20">Personal Storefront</Badge>
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20 border-2 border-white/60">
+            <div className="flex items-center gap-3 md:gap-4">
+              <Avatar className="h-16 w-16 shrink-0 border-2 border-white/60 md:h-20 md:w-20">
                 {avatar && <AvatarImage src={avatar} />}
                 <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
               </Avatar>
-              <div>
-                <p className="text-sm text-white/70">{profile.member_no}</p>
-                <h1 className="text-3xl font-bold tracking-tight md:text-5xl">{displayName}</h1>
+              <div className="min-w-0">
+                <p className="text-xs text-white/70 md:text-sm">{profile.member_no}</p>
+                <h1 className="truncate text-2xl font-bold tracking-tight md:text-5xl">{displayName}</h1>
               </div>
             </div>
-            <p className="max-w-2xl text-base leading-7 text-white/80 md:text-lg">
+            <p className="max-w-2xl text-sm leading-6 text-white/80 md:text-lg md:leading-7">
               {profile.brand_intro || "歡迎來到我的源晶個人品牌頁，這裡整理了我的精選商品、影片與 VIP 拼購主招募資訊。"}
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
               <Button asChild size="lg" className="rounded-full">
                 <a href={`/login?mode=signup&ref=${encodeURIComponent(ref)}`}>
                   免費註冊 <UserPlus className="ml-2 h-4 w-4" />
@@ -109,17 +109,19 @@ function MemberStorefrontPage() {
           </div>
 
           <Card className="border-white/15 bg-white/10 text-white backdrop-blur">
-            <CardHeader>
-              <CardTitle>立即加入好處多多樂拼購</CardTitle>
-              <CardDescription className="text-white/70">免費註冊會員，升級 VIP 拼購主，打造自己的個人品牌與團隊收益。</CardDescription>
+            <CardHeader className="pb-3 md:pb-6">
+              <CardTitle className="text-lg md:text-xl">立即加入好處多多樂拼購</CardTitle>
+              <CardDescription className="text-sm text-white/70">免費註冊會員，升級 VIP 拼購主，打造自己的個人品牌與團隊收益。</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {["分享拼購", "推廣獎勵", "團購收益", "分店招募", "個人品牌頁"].map((item) => (
-                <div key={item} className="flex items-center gap-3 rounded-lg bg-white/10 px-3 py-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span className="text-sm">{item}</span>
-                </div>
-              ))}
+            <CardContent className="space-y-2 md:space-y-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
+                {["分享拼購", "推廣獎勵", "團購收益", "分店招募", "個人品牌頁"].map((item) => (
+                  <div key={item} className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2">
+                    <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="truncate text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
               <Button asChild className="mt-3 w-full">
                 <a href={`/shop/vip?ref=${encodeURIComponent(ref)}`}>
                   立即升級VIP <ArrowRight className="ml-2 h-4 w-4" />
@@ -130,49 +132,56 @@ function MemberStorefrontPage() {
         </div>
       </section>
 
-      <main className="container mx-auto space-y-12 px-4 py-10">
-        <SectionTitle icon={ShoppingBag} title="精選商品" desc="會員親自推薦的源晶商城商品" />
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {(data.featuredProducts ?? []).length ? (
-            data.featuredProducts.map((product: Product) => <ProductCard key={product.id} product={product} />)
-          ) : (
-            <EmptyState text="尚未設定精選商品" />
-          )}
-        </div>
+      <main className="container mx-auto space-y-8 px-4 py-8 md:space-y-12 md:py-10">
+        <section>
+          <SectionTitle icon={ShoppingBag} title="精選商品" desc="會員親自推薦的源晶商城商品" />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            {(data.featuredProducts ?? []).length ? (
+              data.featuredProducts.map((product: Product) => <ProductCard key={product.id} product={product} />)
+            ) : (
+              <EmptyState text="尚未設定精選商品" />
+            )}
+          </div>
+        </section>
 
-        <SectionTitle icon={Sparkles} title="自訂商品展示" desc="會員自售或外部連結商品" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {(data.customProducts ?? []).length ? (
-            data.customProducts.map((item: any) => <CustomProductCard key={item.id} item={item} />)
-          ) : (
-            <EmptyState text="尚未新增自訂商品" />
-          )}
-        </div>
+        <section>
+          <SectionTitle icon={Sparkles} title="自訂商品展示" desc="會員自售或外部連結商品" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(data.customProducts ?? []).length ? (
+              data.customProducts.map((item: any) => <CustomProductCard key={item.id} item={item} />)
+            ) : (
+              <EmptyState text="尚未新增自訂商品" />
+            )}
+          </div>
+        </section>
 
-        <SectionTitle icon={Play} title="影片展示" desc="YouTube、TikTok、Facebook Reel、Shorts 都可分享" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {(data.videos ?? []).length ? (
-            data.videos.map((video: any) => (
-              <Card key={video.id}>
-                <CardHeader>
-                  <CardTitle className="text-base">{video.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <VideoEmbed url={video.video_url} title={video.title} />
-                  <a href={video.video_url} target="_blank" rel="noreferrer" className="inline-flex items-center text-sm text-primary hover:underline">
-                    開啟影片 <ArrowRight className="ml-1 h-4 w-4" />
-                  </a>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <EmptyState text="尚未新增影片" />
-          )}
-        </div>
+        <section>
+          <SectionTitle icon={Play} title="影片展示" desc="YouTube、TikTok、Facebook Reel、Shorts 都可分享" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(data.videos ?? []).length ? (
+              data.videos.map((video: any) => (
+                <Card key={video.id}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">{video.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <VideoEmbed url={video.video_url} title={video.title} />
+                    <a href={video.video_url} target="_blank" rel="noreferrer" className="inline-flex items-center text-sm text-primary hover:underline">
+                      開啟影片 <ArrowRight className="ml-1 h-4 w-4" />
+                    </a>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <EmptyState text="尚未新增影片" />
+            )}
+          </div>
+        </section>
       </main>
     </div>
   );
 }
+
 
 function VideoEmbed({ url, title }: { url?: string | null; title?: string }) {
   const embedUrl = getVideoEmbedUrl(url);
