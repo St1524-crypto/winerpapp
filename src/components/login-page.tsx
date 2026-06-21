@@ -528,34 +528,35 @@ function CompanyCodeRequired({
     <div className="login-light relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
       <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md rounded-2xl border bg-card/85 p-8 shadow-elegant backdrop-blur-xl">
-          <div className="mb-5 inline-flex items-center justify-center">
-            <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="bg-white shadow-glow ring-1 ring-primary/30" />
-          </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-primary">會員登入</h1>
-            <p className="mt-2 text-sm leading-6 text-foreground/80">
-              請輸入公司官網ID與會員ID登入。官網ID 預設為 ST0985，其它公司可自行更改。
-            </p>
-          </div>
-
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="websiteId" className="text-foreground font-bold text-base flex items-center gap-1.5">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
-                官網ID
-              </Label>
-              <Input
-                id="websiteId"
-                value={websiteId}
-                onChange={(event) => setWebsiteId(event.target.value.toUpperCase())}
-                required
-                placeholder="ST0985"
-                autoComplete="organization"
-                className="font-mono"
-              />
-              <p className="text-[11px] text-foreground/70">預設：ST0985；其它公司請改為自己的官網ID</p>
+        <div className="w-full max-w-md">
+          <div className="rounded-2xl border bg-card/85 p-8 shadow-elegant backdrop-blur-xl">
+            <div className="mb-5 inline-flex items-center justify-center">
+              <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="bg-white shadow-glow ring-1 ring-primary/30" />
             </div>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold tracking-tight text-primary">會員登入</h1>
+              <p className="mt-2 text-sm leading-6 text-foreground/80">
+                請輸入公司官網ID與會員ID登入。官網ID 預設為 ST0985，其它公司可自行更改。
+              </p>
+            </div>
+
+            <form onSubmit={onSubmit} className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="websiteId" className="text-foreground font-bold text-base flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  官網ID
+                </Label>
+                <Input
+                  id="websiteId"
+                  value={websiteId}
+                  onChange={(event) => setWebsiteId(event.target.value.toUpperCase())}
+                  required
+                  placeholder="ST0985"
+                  autoComplete="organization"
+                  className="font-mono"
+                />
+                <p className="text-[11px] text-foreground/70">預設：ST0985；其它公司請改為自己的官網ID</p>
+              </div>
 
             <div className="space-y-2">
               <Label htmlFor="identifier" className="text-primary">會員ID</Label>
