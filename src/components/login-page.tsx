@@ -541,7 +541,7 @@ function CompanyCodeRequired({
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="websiteId" className="text-primary">官網ID</Label>
+              <Label htmlFor="websiteId" className="text-foreground font-bold">官網ID</Label>
               <Input
                 id="websiteId"
                 value={websiteId}
@@ -595,7 +595,7 @@ function CompanyCodeRequired({
                 {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 登入
               </Button>
-              <Button type="button" variant="outline" onClick={onSignup}>
+              <Button type="button" variant="outline" onClick={onSignup} className="text-foreground font-bold border-primary/40 hover:bg-primary/5">
                 免費註冊
               </Button>
             </div>
