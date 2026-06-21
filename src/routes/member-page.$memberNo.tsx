@@ -71,7 +71,7 @@ function MemberStorefrontPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-blue-700 via-blue-800 to-blue-950 text-white">
       <section className={`relative overflow-hidden bg-gradient-to-br ${templateClass} text-white`}>
         {profile.profile_cover ? (
           <img src={profile.profile_cover} alt={`${displayName} 封面`} className="absolute inset-0 h-full w-full object-cover opacity-40" />
