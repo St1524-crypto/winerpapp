@@ -542,7 +542,7 @@ function CompanyCodeRequired({
               required
               placeholder="ST0985"
               autoComplete="organization"
-              className="font-mono bg-white placeholder:text-black"
+              className="font-mono bg-white !placeholder:text-black"
             />
             <p className="text-[11px] text-foreground/70 mt-1.5">預設：ST0985；其它公司請改為自己的官網ID</p>
           </div>
