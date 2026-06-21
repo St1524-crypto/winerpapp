@@ -533,8 +533,8 @@ function CompanyCodeRequired({
             <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="bg-white shadow-glow ring-1 ring-primary/30" />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight">會員登入</h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            <h1 className="text-2xl font-bold tracking-tight text-primary">會員登入</h1>
+            <p className="mt-2 text-sm leading-6 text-foreground/80">
               請輸入公司官網ID與會員ID登入。官網ID 預設為 ST0985，其它公司可自行更改。
             </p>
           </div>
