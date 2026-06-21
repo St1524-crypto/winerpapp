@@ -366,7 +366,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="王小明" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="refCode">推薦碼（選填）</Label>
+                  <Label htmlFor="refCode" className="text-primary">推薦碼（選填）</Label>
                   <Input id="refCode" value={refCode} onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="例：A1B2C3D4" className="font-mono" />
                 </div>
               </>
@@ -374,32 +374,32 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
             {mode === "signin" && (
               <div className="space-y-2">
-                <Label htmlFor="identifier">{memberMode ? "行動電話 / 會員編號" : "Email / 電話 / 會員編號"}</Label>
+                <Label htmlFor="identifier" className="text-primary">{memberMode ? "行動電話 / 會員編號" : "Email / 電話 / 會員編號"}</Label>
                 <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder={memberMode ? "例：0912345678" : "僅限本公司帳號"} inputMode={memberMode ? "tel" : undefined} />
                 {memberMode && (
-                  <p className="text-[11px] text-muted-foreground">會員可使用註冊時的行動電話或系統會員編號 (M 開頭) 登入。</p>
+                  <p className="text-[11px] text-foreground/70">會員可使用註冊時的行動電話或系統會員編號 (M 開頭) 登入。</p>
                 )}
               </div>
             )}
 
             {mode === "signup" && signupType === "email" && (
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-primary">Email</Label>
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
               </div>
             )}
 
             {mode === "signup" && signupType === "phone" && (
               <div className="space-y-2">
-                <Label htmlFor="phone">電話號碼</Label>
+                <Label htmlFor="phone" className="text-primary">電話號碼</Label>
                 <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="0912345678" />
-                <p className="text-[11px] text-muted-foreground">註冊後系統將自動產生會員編號，可使用電話號碼直接登入。</p>
+                <p className="text-[11px] text-foreground/70">註冊後系統將自動產生會員編號，可使用電話號碼直接登入。</p>
               </div>
             )}
 
             {mode === "forgot" && (
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-primary">Email</Label>
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
               </div>
             )}
@@ -407,7 +407,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
             {mode !== "forgot" && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">密碼</Label>
+                  <Label htmlFor="password" className="text-primary">密碼</Label>
                   {mode === "signin" && (
                     <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
                   )}
