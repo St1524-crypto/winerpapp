@@ -362,11 +362,11 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                     className={`flex-1 py-1.5 text-xs rounded-md border ${signupType === "phone" ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground"}`}>電話註冊</button>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="name">姓名</Label>
+                  <Label htmlFor="name" className="text-primary">姓名</Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="王小明" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="refCode">推薦碼（選填）</Label>
+                  <Label htmlFor="refCode" className="text-primary">推薦碼（選填）</Label>
                   <Input id="refCode" value={refCode} onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="例：A1B2C3D4" className="font-mono" />
                 </div>
               </>
@@ -374,32 +374,32 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
             {mode === "signin" && (
               <div className="space-y-2">
-                <Label htmlFor="identifier">{memberMode ? "行動電話 / 會員編號" : "Email / 電話 / 會員編號"}</Label>
+                <Label htmlFor="identifier" className="text-primary">{memberMode ? "行動電話 / 會員編號" : "Email / 電話 / 會員編號"}</Label>
                 <Input id="identifier" value={identifier} onChange={(e) => setIdentifier(e.target.value)} required placeholder={memberMode ? "例：0912345678" : "僅限本公司帳號"} inputMode={memberMode ? "tel" : undefined} />
                 {memberMode && (
-                  <p className="text-[11px] text-muted-foreground">會員可使用註冊時的行動電話或系統會員編號 (M 開頭) 登入。</p>
+                  <p className="text-[11px] text-foreground/70">會員可使用註冊時的行動電話或系統會員編號 (M 開頭) 登入。</p>
                 )}
               </div>
             )}
 
             {mode === "signup" && signupType === "email" && (
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-primary">Email</Label>
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
               </div>
             )}
 
             {mode === "signup" && signupType === "phone" && (
               <div className="space-y-2">
-                <Label htmlFor="phone">電話號碼</Label>
+                <Label htmlFor="phone" className="text-primary">電話號碼</Label>
                 <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="0912345678" />
-                <p className="text-[11px] text-muted-foreground">註冊後系統將自動產生會員編號，可使用電話號碼直接登入。</p>
+                <p className="text-[11px] text-foreground/70">註冊後系統將自動產生會員編號，可使用電話號碼直接登入。</p>
               </div>
             )}
 
             {mode === "forgot" && (
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-primary">Email</Label>
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
               </div>
             )}
@@ -407,13 +407,13 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
             {mode !== "forgot" && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">密碼</Label>
+                  <Label htmlFor="password" className="text-primary">密碼</Label>
                   {mode === "signin" && (
                     <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
                   )}
                 </div>
                 <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <label className="flex items-center gap-2 text-xs text-foreground/70">
                   <input
                     type="checkbox"
                     checked={showPassword}
@@ -439,7 +439,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           <Link to="/shop" className="text-sm text-primary hover:underline">回首頁</Link>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-4">
+        <p className="text-center text-xs text-foreground/60 mt-4">
           © {new Date().getFullYear()} {selectedCompany.company_name} · 企業級 ERP 平台
         </p>
       </div>
@@ -533,15 +533,15 @@ function CompanyCodeRequired({
             <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="bg-white shadow-glow ring-1 ring-primary/30" />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight">會員登入</h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            <h1 className="text-2xl font-bold tracking-tight text-primary">會員登入</h1>
+            <p className="mt-2 text-sm leading-6 text-foreground/80">
               請輸入公司官網ID與會員ID登入。官網ID 預設為 ST0985，其它公司可自行更改。
             </p>
           </div>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="websiteId">官網ID</Label>
+              <Label htmlFor="websiteId" className="text-primary">官網ID</Label>
               <Input
                 id="websiteId"
                 value={websiteId}
@@ -551,11 +551,11 @@ function CompanyCodeRequired({
                 autoComplete="organization"
                 className="font-mono"
               />
-              <p className="text-[11px] text-muted-foreground">預設：ST0985；其它公司請改為自己的官網ID</p>
+              <p className="text-[11px] text-foreground/70">預設：ST0985；其它公司請改為自己的官網ID</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="identifier">會員ID</Label>
+              <Label htmlFor="identifier" className="text-primary">會員ID</Label>
               <Input
                 id="identifier"
                 value={identifier}
@@ -564,11 +564,11 @@ function CompanyCodeRequired({
                 placeholder="會員編號或行銷網址代稱"
                 autoComplete="username"
               />
-              <p className="text-[11px] text-muted-foreground">可輸入會員編號，或個人品牌頁的行銷網址代稱。</p>
+              <p className="text-[11px] text-foreground/70">可輸入會員編號，或個人品牌頁的行銷網址代稱。</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">密碼</Label>
+              <Label htmlFor="password" className="text-primary">密碼</Label>
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -579,7 +579,7 @@ function CompanyCodeRequired({
                 placeholder="請輸入密碼"
                 autoComplete="current-password"
               />
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <label className="flex items-center gap-2 text-xs text-foreground/70">
                 <input
                   type="checkbox"
                   checked={showPassword}
@@ -603,7 +603,7 @@ function CompanyCodeRequired({
 
           <div className="mt-5 flex items-center justify-between text-xs">
             <Link to="/admin/login" className="text-primary hover:underline">管理員登入</Link>
-            <Link to="/shop" className="text-muted-foreground hover:text-primary">返回商城</Link>
+            <Link to="/shop" className="text-foreground/60 hover:text-primary">返回商城</Link>
           </div>
         </div>
       </main>
