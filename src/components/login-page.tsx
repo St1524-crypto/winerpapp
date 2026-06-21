@@ -525,7 +525,7 @@ function CompanyCodeRequired({
   onSignup: () => void;
 }) {
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="login-light relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
       <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
         <div className="w-full max-w-md rounded-2xl border bg-card/85 p-8 shadow-elegant backdrop-blur-xl">
