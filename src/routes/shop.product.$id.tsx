@@ -95,18 +95,18 @@ function ProductDetail() {
   const hasTiers = tiers.length > 0;
 
   return (
-    <div className="container mx-auto px-4 py-6 md:py-10">
+    <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-10 pb-28 md:pb-10">
       {/* breadcrumb */}
-      <nav className="text-xs text-muted-foreground flex items-center gap-1 mb-6">
-        <Link to="/shop">首頁</Link><ChevronRight className="h-3 w-3" />
-        <Link to="/shop/products">商品</Link><ChevronRight className="h-3 w-3" />
-        <span className="text-foreground truncate">{product.name}</span>
+      <nav className="text-xs text-muted-foreground flex items-center gap-1 mb-3 md:mb-6 min-w-0 overflow-hidden">
+        <Link to="/shop" className="shrink-0">首頁</Link><ChevronRight className="h-3 w-3 shrink-0" />
+        <Link to="/shop/products" className="shrink-0">商品</Link><ChevronRight className="h-3 w-3 shrink-0" />
+        <span className="text-foreground truncate min-w-0">{product.name}</span>
       </nav>
 
-      <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+      <div className="grid md:grid-cols-2 gap-5 md:gap-8 lg:gap-12">
         {/* Gallery */}
-        <div className="space-y-3">
-          <div className="aspect-square rounded-2xl overflow-hidden bg-muted border border-border/60">
+        <div className="space-y-3 -mx-3 sm:mx-0">
+          <div className="aspect-square sm:rounded-2xl overflow-hidden bg-muted sm:border sm:border-border/60">
             {gallery[activeImg] ? (
               <img src={gallery[activeImg].image_url} alt={product.name} className="h-full w-full object-cover" />
             ) : (
@@ -114,7 +114,7 @@ function ProductDetail() {
             )}
           </div>
           {gallery.length > 1 && (
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-2 px-3 sm:px-0">
               {gallery.map((g, i) => (
                 <button key={g.id} onClick={() => setActiveImg(i)} className={`aspect-square rounded-lg overflow-hidden border-2 ${i === activeImg ? "border-primary" : "border-border/60"}`}>
                   <img src={g.image_url} alt="" className="h-full w-full object-cover" />
@@ -125,73 +125,74 @@ function ProductDetail() {
         </div>
 
         {/* Info */}
-        <div className="space-y-5">
-          <div className="flex items-center gap-2">
+        <div className="space-y-4 md:space-y-5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {product.featured && <Badge className="bg-gradient-to-r from-primary to-primary/70 border-0">熱銷</Badge>}
             {product.category && <Badge variant="secondary">{product.category}</Badge>}
             {outOfStock ? <Badge variant="destructive">已售完</Badge> : product.stock < 10 ? <Badge variant="outline" className="border-amber-500 text-amber-500">僅剩 {product.stock} 件</Badge> : <Badge variant="outline" className="border-emerald-500 text-emerald-500">現貨</Badge>}
           </div>
 
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold leading-tight">{product.name}</h1>
-            <p className="text-sm text-muted-foreground mt-2">SKU: {product.sku}</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight break-words">{product.name}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 break-all">SKU: {product.sku}</p>
           </div>
 
           {product.short_description && <p className="text-sm text-muted-foreground leading-relaxed">{product.short_description}</p>}
 
-          <div className="flex items-baseline gap-3 py-2 border-y border-border/60">
-            <span className="text-3xl md:text-4xl font-bold text-primary tabular-nums">NT$ {effPrice.toLocaleString()}</span>
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2 border-y border-border/60">
+            <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary tabular-nums">NT$ {effPrice.toLocaleString()}</span>
             {pricing.tier && (
               <>
-                <span className="text-sm text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</span>
                 <Badge variant="outline" className="border-primary text-primary"><Sparkles className="h-3 w-3 mr-1" />批發價</Badge>
               </>
             )}
             {showDealer && (
               <>
-                <span className="text-sm text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</span>
                 <Badge variant="outline" className="border-emerald-500 text-emerald-600">經銷價</Badge>
               </>
             )}
           </div>
 
           {hasTiers && (
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-2">
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 sm:p-4 space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <Sparkles className="h-4 w-4 text-primary" /> 批發階梯（買越多越省）
+                <Sparkles className="h-4 w-4 text-primary shrink-0" /> 批發階梯（買越多越省）
               </div>
               <div className="space-y-1">
                 {tiers.map((t) => {
                   const active = pricing.tier?.id === t.id;
                   return (
-                    <div key={t.id ?? `${t.min_qty}`} className={`flex items-center justify-between text-sm rounded-md px-2 py-1 ${active ? "bg-primary text-primary-foreground" : ""}`}>
-                      <span>
+                    <div key={t.id ?? `${t.min_qty}`} className={`flex items-center justify-between gap-2 text-xs sm:text-sm rounded-md px-2 py-1 ${active ? "bg-primary text-primary-foreground" : ""}`}>
+                      <span className="shrink-0">
                         {t.min_qty}{t.max_qty == null ? "+" : `–${t.max_qty}`} 件
                       </span>
-                      <span className="tabular-nums">
-                        NT$ {Number(t.unit_price).toLocaleString()} / 件
-                        <span className={`ml-3 ${active ? "" : "text-amber-600"}`}>+{t.unit_reward_points} 點/件</span>
+                      <span className="tabular-nums text-right">
+                        NT$ {Number(t.unit_price).toLocaleString()}<span className="hidden sm:inline"> / 件</span>
+                        <span className={`ml-2 sm:ml-3 ${active ? "" : "text-amber-600"}`}>+{t.unit_reward_points}點</span>
                       </span>
                     </div>
                   );
                 })}
               </div>
               <p className="text-xs text-muted-foreground">
-                目前數量 {qty} 件 → 單件 NT$ {effPrice.toLocaleString()}，本次共得 {pricing.totalReward} 獎勵點。
+                目前 {qty} 件 → 單件 NT$ {effPrice.toLocaleString()}，共得 {pricing.totalReward} 點。
               </p>
             </div>
           )}
 
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground w-12">數量</span>
+              <span className="text-sm text-muted-foreground w-10 sm:w-12 shrink-0">數量</span>
               <div className="flex items-center border rounded-lg">
-                <Button variant="ghost" size="icon" onClick={() => setQty(Math.max(1, qty - 1))}><Minus className="h-4 w-4" /></Button>
-                <span className="w-12 text-center tabular-nums">{qty}</span>
-                <Button variant="ghost" size="icon" onClick={() => setQty(Math.min(product.stock, qty + 1))}><Plus className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setQty(Math.max(1, qty - 1))}><Minus className="h-4 w-4" /></Button>
+                <span className="w-10 sm:w-12 text-center tabular-nums">{qty}</span>
+                <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setQty(Math.min(product.stock, qty + 1))}><Plus className="h-4 w-4" /></Button>
               </div>
             </div>
-            <div className="flex gap-3">
+            {/* Desktop / tablet actions */}
+            <div className="hidden sm:flex gap-3">
               <Button size="lg" className="flex-1" disabled={outOfStock} onClick={() => addItem(product.id, qty)}>
                 <ShoppingCart className="h-4 w-4 mr-2" /> 加入購物車
               </Button>
@@ -201,9 +202,14 @@ function ProductDetail() {
               <Button size="lg" variant="outline" className="px-3"><Heart className="h-4 w-4" /></Button>
               <ShareProductButtons productId={product.id} productName={product.name} />
             </div>
+            {/* Mobile: secondary actions inline (primary CTA in sticky bar) */}
+            <div className="flex sm:hidden gap-2">
+              <Button variant="outline" size="sm" className="flex-1"><Heart className="h-4 w-4 mr-1" /> 收藏</Button>
+              <ShareProductButtons productId={product.id} productName={product.name} />
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 pt-2">
+          <div className="grid grid-cols-3 gap-2 pt-1 sm:pt-2">
             <Feature icon={Truck} label="滿 2000 免運" />
             <Feature icon={Shield} label="品質保證" />
             <Feature icon={RotateCcw} label="14 天退換" />
@@ -212,7 +218,7 @@ function ProductDetail() {
           {product.description && (
             <div className="pt-4 border-t border-border/60">
               <h3 className="text-sm font-semibold mb-2">商品描述</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{product.description}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">{product.description}</p>
             </div>
           )}
         </div>
@@ -220,13 +226,27 @@ function ProductDetail() {
 
       {/* Related */}
       {related.length > 0 && (
-        <section className="mt-16">
-          <h2 className="text-xl md:text-2xl font-bold mb-4">推薦商品</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="mt-10 md:mt-16">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 md:mb-4">推薦商品</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {related.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
         </section>
       )}
+
+      {/* Mobile sticky CTA bar */}
+      <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-background/95 backdrop-blur border-t border-border px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] flex items-center gap-2 shadow-[0_-2px_8px_-4px_rgba(0,0,0,0.15)]">
+        <div className="flex flex-col leading-tight min-w-0 mr-1">
+          <span className="text-[10px] text-muted-foreground">售價</span>
+          <span className="text-base font-bold text-primary tabular-nums truncate">NT$ {effPrice.toLocaleString()}</span>
+        </div>
+        <Button className="flex-1" disabled={outOfStock} onClick={() => addItem(product.id, qty)}>
+          <ShoppingCart className="h-4 w-4 mr-1" /> 加入購物車
+        </Button>
+        <Button variant="secondary" disabled={outOfStock} onClick={() => addItem(product.id, qty)}>
+          立即購買
+        </Button>
+      </div>
     </div>
   );
 }
