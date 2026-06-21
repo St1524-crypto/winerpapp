@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,10 +28,37 @@ export function CompanyLogo({
   fallbackClassName,
   size = "md",
 }: CompanyLogoProps) {
-  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  const hasSrc = typeof src === "string" && src.trim().length > 0;
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">(
+    hasSrc ? "loading" : "loaded",
+  );
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  // Reset status when src changes
+  useEffect(() => {
+    if (!hasSrc) {
+      setStatus("loaded");
+      return;
+    }
+    setStatus("loading");
+  }, [src, hasSrc]);
+
+  // If image is already cached, onLoad may not fire — check complete
+  useEffect(() => {
+    if (!hasSrc) return;
+    const el = imgRef.current;
+    if (el && el.complete) {
+      if (el.naturalWidth > 0) setStatus("loaded");
+      else setStatus("error");
+    }
+    // Safety timeout: stop spinning after 8s
+    const t = window.setTimeout(() => {
+      setStatus((s) => (s === "loading" ? "error" : s));
+    }, 8000);
+    return () => window.clearTimeout(t);
+  }, [src, hasSrc]);
 
   const initial = fallbackInitial ?? alt.charAt(0);
-  const hasSrc = typeof src === "string" && src.trim().length > 0;
 
   return (
     <div
@@ -41,25 +68,25 @@ export function CompanyLogo({
         className,
       )}
     >
-      {/* Loading spinner */}
       {hasSrc && status === "loading" && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted/40">
           <Loader2 className="h-1/2 w-1/2 animate-spin text-muted-foreground" />
         </div>
       )}
 
-      {/* Actual image */}
       {hasSrc && status !== "error" && (
         <img
-          src={src}
+          ref={imgRef}
+          src={src as string}
           alt={alt}
+          loading="eager"
+          decoding="async"
           onLoad={() => setStatus("loaded")}
           onError={() => setStatus("error")}
           className={cn("h-full w-full object-contain", imgClassName)}
         />
       )}
 
-      {/* Fallback: gradient initial letter */}
       {(!hasSrc || status === "error") && (
         <div
           className={cn(
