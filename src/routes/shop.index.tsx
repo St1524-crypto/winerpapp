@@ -40,23 +40,35 @@ function ShopHome() {
 
   return (
     <div className="flex flex-col">
-      {/* Hero — Pingoluck-inspired dark gradient with festive glow */}
+      {/* Hero — Modern tech-inspired blue gradient with glow */}
       <section
         className="relative overflow-hidden"
         style={{
           background: `
-            radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.55 0.20 30 / 0.7), transparent 70%),
-            radial-gradient(ellipse 60% 50% at 100% 30%, oklch(0.70 0.18 45 / 0.4), transparent 65%),
-            radial-gradient(ellipse 70% 50% at 0% 60%, oklch(0.50 0.22 25 / 0.5), transparent 70%),
-            radial-gradient(ellipse 90% 60% at 50% 100%, oklch(0.60 0.20 40 / 0.5), transparent 70%),
-            linear-gradient(180deg, oklch(0.32 0.12 25) 0%, oklch(0.26 0.10 25) 50%, oklch(0.22 0.09 25) 100%)
+            radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.62 0.20 255 / 0.55), transparent 70%),
+            radial-gradient(ellipse 60% 50% at 100% 30%, oklch(0.70 0.18 230 / 0.45), transparent 65%),
+            radial-gradient(ellipse 70% 50% at 0% 60%, oklch(0.55 0.22 270 / 0.45), transparent 70%),
+            radial-gradient(ellipse 90% 60% at 50% 100%, oklch(0.60 0.20 240 / 0.45), transparent 70%),
+            linear-gradient(180deg, oklch(0.22 0.10 260) 0%, oklch(0.18 0.09 255) 50%, oklch(0.14 0.07 255) 100%)
           `,
         }}
       >
+        {/* Subtle grid overlay for tech feel */}
+        <div
+          className="absolute inset-0 opacity-[0.12] pointer-events-none"
+          style={{
+            backgroundImage:
+              'linear-gradient(oklch(0.85 0.05 240 / 0.5) 1px, transparent 1px), linear-gradient(90deg, oklch(0.85 0.05 240 / 0.5) 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+            maskImage: 'radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent 80%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent 80%)',
+          }}
+        />
+
         {/* Floating light orbs */}
-        <div className="absolute top-10 left-[10%] w-40 h-40 rounded-full bg-primary/20 blur-3xl animate-pulse" />
-        <div className="absolute top-20 right-[15%] w-32 h-32 rounded-full bg-primary/15 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-10 left-[30%] w-24 h-24 rounded-full bg-primary/10 blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-10 left-[10%] w-40 h-40 rounded-full bg-[oklch(0.65_0.22_255_/_0.35)] blur-3xl animate-pulse" />
+        <div className="absolute top-20 right-[15%] w-32 h-32 rounded-full bg-[oklch(0.70_0.18_230_/_0.30)] blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-10 left-[30%] w-24 h-24 rounded-full bg-[oklch(0.60_0.22_275_/_0.28)] blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
 
         <div className="relative container mx-auto px-4 py-16 md:py-24">
           {/* Top badge */}
