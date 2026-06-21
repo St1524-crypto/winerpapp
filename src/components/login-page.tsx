@@ -531,7 +531,7 @@ function CompanyCodeRequired({
         <div className="w-full max-w-md space-y-4">
           {/* 官網ID 置頂區塊 */}
           <div className="rounded-2xl border border-primary/40 bg-primary/5 p-5 shadow-elegant backdrop-blur-xl">
-            <Label htmlFor="websiteId" className="text-foreground font-bold text-base flex items-center gap-1.5 mb-2">
+            <Label htmlFor="websiteId" className="text-black font-bold text-base flex items-center gap-1.5 mb-2">
               <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
               官網ID
             </Label>
