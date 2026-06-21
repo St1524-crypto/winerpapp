@@ -44,9 +44,9 @@ function MemberStorefrontPage() {
   const avatar = profile?.profile_avatar || profile?.avatar_url || "";
   const template = profile?.page_template || "A";
   const templateClass = useMemo(() => {
-    if (template === "B") return "from-emerald-950 via-slate-900 to-zinc-950";
-    if (template === "C") return "from-amber-950 via-red-950 to-stone-950";
-    if (template === "D") return "from-indigo-950 via-slate-950 to-fuchsia-950";
+    if (template === "B") return "from-blue-500 via-blue-700 to-blue-950";
+    if (template === "C") return "from-sky-600 via-blue-700 to-blue-900";
+    if (template === "D") return "from-blue-700 via-blue-800 to-indigo-900";
     return "from-blue-600 via-blue-700 to-blue-900";
   }, [template]);
 
