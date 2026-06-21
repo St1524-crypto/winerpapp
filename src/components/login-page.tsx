@@ -541,7 +541,7 @@ function CompanyCodeRequired({
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="websiteId">官網ID</Label>
+              <Label htmlFor="websiteId" className="text-primary">官網ID</Label>
               <Input
                 id="websiteId"
                 value={websiteId}
@@ -551,11 +551,11 @@ function CompanyCodeRequired({
                 autoComplete="organization"
                 className="font-mono"
               />
-              <p className="text-[11px] text-muted-foreground">預設：ST0985；其它公司請改為自己的官網ID</p>
+              <p className="text-[11px] text-foreground/70">預設：ST0985；其它公司請改為自己的官網ID</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="identifier">會員ID</Label>
+              <Label htmlFor="identifier" className="text-primary">會員ID</Label>
               <Input
                 id="identifier"
                 value={identifier}
@@ -564,11 +564,11 @@ function CompanyCodeRequired({
                 placeholder="會員編號或行銷網址代稱"
                 autoComplete="username"
               />
-              <p className="text-[11px] text-muted-foreground">可輸入會員編號，或個人品牌頁的行銷網址代稱。</p>
+              <p className="text-[11px] text-foreground/70">可輸入會員編號，或個人品牌頁的行銷網址代稱。</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">密碼</Label>
+              <Label htmlFor="password" className="text-primary">密碼</Label>
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -579,7 +579,7 @@ function CompanyCodeRequired({
                 placeholder="請輸入密碼"
                 autoComplete="current-password"
               />
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <label className="flex items-center gap-2 text-xs text-foreground/70">
                 <input
                   type="checkbox"
                   checked={showPassword}
