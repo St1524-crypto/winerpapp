@@ -1317,8 +1317,9 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                 ) : (
                   <Command>
                     <CommandInput
-                      placeholder="輸入關鍵字搜尋..."
-                      onValueChange={(v) => setQaName(v)}
+                      placeholder="輸入姓名／電話／Email／編號搜尋..."
+                      value={searchTerm}
+                      onValueChange={(v) => { setSearchTerm(v); setQaName(v); }}
                     />
                     <CommandList>
                       {customersQ.isLoading && membersQ.isLoading && dealersQ.isLoading && vendorsQ.isLoading ? (
