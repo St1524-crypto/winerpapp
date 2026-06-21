@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -801,33 +801,53 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const qc = useQueryClient();
   const { currentCompanyId } = useCurrentCompany();
 
+  // 統一搜尋字串（CommandInput），debounce 後丟到後端做 ilike 搜尋
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 250);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  // 將關鍵字轉為 PostgREST or() 字串中安全的片段（去除 , 與括號）
+  const escLike = (s: string) => s.replace(/[(),*]/g, " ").trim();
+
   const customersQ = useQuery({
-    queryKey: ["customers-picker", currentCompanyId],
+    queryKey: ["customers-picker", currentCompanyId, debouncedSearch],
     enabled: open && !!currentCompanyId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("customers")
         .select("id,name,email,phone,company")
-        .eq("company_id", currentCompanyId!)
-        .order("updated_at", { ascending: false })
-        .limit(200);
+        .eq("company_id", currentCompanyId!);
+      const s = escLike(debouncedSearch);
+      if (s) {
+        const like = `%${s}%`;
+        q = q.or(`name.ilike.${like},email.ilike.${like},phone.ilike.${like},company.ilike.${like}`);
+      }
+      const { data, error } = await q.order("updated_at", { ascending: false }).limit(s ? 100 : 200);
       if (error) throw new Error(error.message);
       return data ?? [];
     },
   });
 
-  // 會員（profiles）— 限本公司
+  // 會員（profiles）— 限本公司；有關鍵字時改後端搜尋（姓名/電話/Email/編號）
   const membersQ = useQuery({
-    queryKey: ["members-picker", currentCompanyId],
+    queryKey: ["members-picker", currentCompanyId, debouncedSearch],
     enabled: open && !!currentCompanyId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const s = escLike(debouncedSearch);
+      let q = supabase
         .from("profiles")
         .select("id,name,email,phone,member_no,is_vip,is_dealer,addr_mail,addr_home")
-        .eq("current_company_id", currentCompanyId!)
-        .not("phone", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(300);
+        .eq("current_company_id", currentCompanyId!);
+      if (s) {
+        const like = `%${s}%`;
+        q = q.or(`name.ilike.${like},email.ilike.${like},phone.ilike.${like},member_no.ilike.${like}`);
+      } else {
+        q = q.not("phone", "is", null);
+      }
+      const { data, error } = await q.order("created_at", { ascending: false }).limit(s ? 100 : 300);
       if (error) throw new Error(error.message);
       return data ?? [];
     },
@@ -835,16 +855,20 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
   // 經銷商
   const dealersQ = useQuery({
-    queryKey: ["dealers-picker", currentCompanyId],
+    queryKey: ["dealers-picker", currentCompanyId, debouncedSearch],
     enabled: open && !!currentCompanyId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("dealers")
         .select("id,code,name,contact,phone,email,address,status")
         .eq("company_id", currentCompanyId!)
-        .eq("status", "active")
-        .order("updated_at", { ascending: false })
-        .limit(200);
+        .eq("status", "active");
+      const s = escLike(debouncedSearch);
+      if (s) {
+        const like = `%${s}%`;
+        q = q.or(`name.ilike.${like},contact.ilike.${like},phone.ilike.${like},email.ilike.${like},code.ilike.${like}`);
+      }
+      const { data, error } = await q.order("updated_at", { ascending: false }).limit(s ? 100 : 200);
       if (error) throw new Error(error.message);
       return data ?? [];
     },
@@ -852,16 +876,20 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
   // 廠商
   const vendorsQ = useQuery({
-    queryKey: ["vendors-picker", currentCompanyId],
+    queryKey: ["vendors-picker", currentCompanyId, debouncedSearch],
     enabled: open && !!currentCompanyId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("vendors")
         .select("id,code,name,contact,phone,email,address,status")
         .eq("company_id", currentCompanyId!)
-        .eq("status", "active")
-        .order("updated_at", { ascending: false })
-        .limit(200);
+        .eq("status", "active");
+      const s = escLike(debouncedSearch);
+      if (s) {
+        const like = `%${s}%`;
+        q = q.or(`name.ilike.${like},contact.ilike.${like},phone.ilike.${like},email.ilike.${like},code.ilike.${like}`);
+      }
+      const { data, error } = await q.order("updated_at", { ascending: false }).limit(s ? 100 : 200);
       if (error) throw new Error(error.message);
       return data ?? [];
     },
@@ -1289,8 +1317,9 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                 ) : (
                   <Command>
                     <CommandInput
-                      placeholder="輸入關鍵字搜尋..."
-                      onValueChange={(v) => setQaName(v)}
+                      placeholder="輸入姓名／電話／Email／編號搜尋..."
+                      value={searchTerm}
+                      onValueChange={(v) => { setSearchTerm(v); setQaName(v); }}
                     />
                     <CommandList>
                       {customersQ.isLoading && membersQ.isLoading && dealersQ.isLoading && vendorsQ.isLoading ? (
