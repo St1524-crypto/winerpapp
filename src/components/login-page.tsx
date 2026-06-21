@@ -320,7 +320,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
   // ===== 已選擇公司 → 顯示登入/註冊表單 =====
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
+    <div className="login-light relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{ backgroundImage: "linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
@@ -425,7 +425,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
               </div>
             )}
 
-            <Button type="submit" disabled={busy} className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
+            <Button type="submit" disabled={busy} className="w-full bg-primary hover:opacity-90 text-primary-foreground shadow-glow">
               {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {mode === "signin" ? `登入 ${selectedCompany.company_name}` : mode === "signup" ? "建立帳號" : "寄送重設信"}
             </Button>
@@ -525,7 +525,7 @@ function CompanyCodeRequired({
   onSignup: () => void;
 }) {
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="login-light relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
       <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
         <div className="w-full max-w-md rounded-2xl border bg-card/85 p-8 shadow-elegant backdrop-blur-xl">
@@ -591,7 +591,7 @@ function CompanyCodeRequired({
             </div>
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Button type="submit" disabled={busy} className="bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
+              <Button type="submit" disabled={busy} className="bg-primary hover:opacity-90 text-primary-foreground shadow-glow">
                 {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 登入
               </Button>
