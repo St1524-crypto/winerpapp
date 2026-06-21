@@ -595,7 +595,7 @@ function CompanyCodeRequired({
                 {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 登入
               </Button>
-              <Button type="button" variant="outline" onClick={onSignup}>
+              <Button type="button" variant="outline" onClick={onSignup} className="text-foreground font-bold border-primary/40 hover:bg-primary/5">
                 免費註冊
               </Button>
             </div>
