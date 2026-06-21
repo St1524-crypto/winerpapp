@@ -541,7 +541,10 @@ function CompanyCodeRequired({
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="websiteId" className="text-foreground font-bold">官網ID</Label>
+              <Label htmlFor="websiteId" className="text-foreground font-bold text-base flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
+                官網ID
+              </Label>
               <Input
                 id="websiteId"
                 value={websiteId}
