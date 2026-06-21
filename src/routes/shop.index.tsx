@@ -92,7 +92,7 @@ function ShopHome() {
           <div className="flex flex-wrap justify-center gap-3 md:gap-4 mt-8">
             <Button
               size="lg"
-              className="rounded-full px-8 h-12 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25 border-0"
+              className="rounded-full px-8 h-12 text-base bg-gradient-to-r from-[oklch(0.62_0.22_255)] to-[oklch(0.70_0.18_240)] hover:opacity-90 text-white shadow-lg shadow-[oklch(0.55_0.22_260_/_0.45)] border-0"
               asChild
             >
               <Link to="/shop/products">立即購物 <ArrowRight className="h-4 w-4 ml-1" /></Link>
