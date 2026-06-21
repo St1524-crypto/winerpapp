@@ -413,7 +413,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                   )}
                 </div>
                 <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <label className="flex items-center gap-2 text-xs text-foreground/70">
                   <input
                     type="checkbox"
                     checked={showPassword}
@@ -439,7 +439,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           <Link to="/shop" className="text-sm text-primary hover:underline">回首頁</Link>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-4">
+        <p className="text-center text-xs text-foreground/60 mt-4">
           © {new Date().getFullYear()} {selectedCompany.company_name} · 企業級 ERP 平台
         </p>
       </div>
@@ -603,7 +603,7 @@ function CompanyCodeRequired({
 
           <div className="mt-5 flex items-center justify-between text-xs">
             <Link to="/admin/login" className="text-primary hover:underline">管理員登入</Link>
-            <Link to="/shop" className="text-muted-foreground hover:text-primary">返回商城</Link>
+            <Link to="/shop" className="text-foreground/60 hover:text-primary">返回商城</Link>
           </div>
         </div>
       </main>
