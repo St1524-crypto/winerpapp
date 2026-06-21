@@ -610,6 +610,7 @@ function CompanyCodeRequired({
             <Link to="/shop" className="text-foreground/60 hover:text-primary">返回商城</Link>
           </div>
         </div>
+      </div>
       </main>
     </div>
   );
