@@ -425,7 +425,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
               </div>
             )}
 
-            <Button type="submit" disabled={busy} className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
+            <Button type="submit" disabled={busy} className="w-full bg-primary hover:opacity-90 text-primary-foreground shadow-glow">
               {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {mode === "signin" ? `登入 ${selectedCompany.company_name}` : mode === "signup" ? "建立帳號" : "寄送重設信"}
             </Button>
