@@ -528,85 +528,88 @@ function CompanyCodeRequired({
     <div className="login-light relative min-h-screen overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
       <main className="relative flex min-h-screen items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md rounded-2xl border bg-card/85 p-8 shadow-elegant backdrop-blur-xl">
-          <div className="mb-5 inline-flex items-center justify-center">
-            <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="bg-white shadow-glow ring-1 ring-primary/30" />
-          </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-primary">會員登入</h1>
-            <p className="mt-2 text-sm leading-6 text-foreground/80">
-              請輸入公司官網ID與會員ID登入。官網ID 預設為 ST0985，其它公司可自行更改。
-            </p>
+        <div className="w-full max-w-md space-y-4">
+          {/* 官網ID 置頂區塊 */}
+          <div className="rounded-2xl border border-primary/40 bg-primary/5 p-5 shadow-elegant backdrop-blur-xl">
+            <Label htmlFor="websiteId" className="text-foreground font-bold text-base flex items-center gap-1.5 mb-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
+              官網ID
+            </Label>
+            <Input
+              id="websiteId"
+              value={websiteId}
+              onChange={(event) => setWebsiteId(event.target.value.toUpperCase())}
+              required
+              placeholder="ST0985"
+              autoComplete="organization"
+              className="font-mono bg-white"
+            />
+            <p className="text-[11px] text-foreground/70 mt-1.5">預設：ST0985；其它公司請改為自己的官網ID</p>
           </div>
 
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="websiteId" className="text-foreground font-bold text-base flex items-center gap-1.5">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
-                官網ID
-              </Label>
-              <Input
-                id="websiteId"
-                value={websiteId}
-                onChange={(event) => setWebsiteId(event.target.value.toUpperCase())}
-                required
-                placeholder="ST0985"
-                autoComplete="organization"
-                className="font-mono"
-              />
-              <p className="text-[11px] text-foreground/70">預設：ST0985；其它公司請改為自己的官網ID</p>
+          <div className="rounded-2xl border bg-card/85 p-8 shadow-elegant backdrop-blur-xl">
+            <div className="mb-4 inline-flex items-center justify-center">
+              <CompanyLogo src={logoUrl} alt="WinERP" size="xl" className="bg-white shadow-glow ring-1 ring-primary/30" />
+            </div>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold tracking-tight text-primary">會員登入</h1>
+              <p className="mt-2 text-sm leading-6 text-foreground/80">
+                請輸入公司官網ID與會員ID登入。官網ID 預設為 ST0985，其它公司可自行更改。
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="identifier" className="text-primary">會員ID</Label>
-              <Input
-                id="identifier"
-                value={identifier}
-                onChange={(event) => setIdentifier(event.target.value)}
-                required
-                placeholder="會員編號或行銷網址代稱"
-                autoComplete="username"
-              />
-              <p className="text-[11px] text-foreground/70">可輸入會員編號，或個人品牌頁的行銷網址代稱。</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-primary">密碼</Label>
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                minLength={6}
-                placeholder="請輸入密碼"
-                autoComplete="current-password"
-              />
-              <label className="flex items-center gap-2 text-xs text-foreground/70">
-                <input
-                  type="checkbox"
-                  checked={showPassword}
-                  onChange={(event) => setShowPassword(event.target.checked)}
-                  className="h-4 w-4 rounded border-border"
+            <form onSubmit={onSubmit} className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="identifier" className="text-primary">會員ID</Label>
+                <Input
+                  id="identifier"
+                  value={identifier}
+                  onChange={(event) => setIdentifier(event.target.value)}
+                  required
+                  placeholder="會員編號或行銷網址代稱"
+                  autoComplete="username"
                 />
-                顯示密碼
-              </label>
-            </div>
+                <p className="text-[11px] text-foreground/70">可輸入會員編號，或個人品牌頁的行銷網址代稱。</p>
+              </div>
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Button type="submit" disabled={busy} className="bg-primary hover:opacity-90 text-primary-foreground shadow-glow">
-                {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                登入
-              </Button>
-              <Button type="button" variant="outline" onClick={onSignup} className="text-foreground font-bold border-primary/40 hover:bg-primary/5">
-                免費註冊
-              </Button>
-            </div>
-          </form>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-primary">密碼</Label>
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="請輸入密碼"
+                  autoComplete="current-password"
+                />
+                <label className="flex items-center gap-2 text-xs text-foreground/70">
+                  <input
+                    type="checkbox"
+                    checked={showPassword}
+                    onChange={(event) => setShowPassword(event.target.checked)}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                  顯示密碼
+                </label>
+              </div>
 
-          <div className="mt-5 flex items-center justify-between text-xs">
-            <Link to="/admin/login" className="text-primary hover:underline">管理員登入</Link>
-            <Link to="/shop" className="text-foreground/60 hover:text-primary">返回商城</Link>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button type="submit" disabled={busy} className="bg-primary hover:opacity-90 text-primary-foreground shadow-glow">
+                  {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  登入
+                </Button>
+                <Button type="button" variant="outline" onClick={onSignup} className="text-foreground font-bold border-primary/40 hover:bg-primary/5">
+                  免費註冊
+                </Button>
+              </div>
+            </form>
+
+            <div className="mt-5 flex items-center justify-between text-xs">
+              <Link to="/admin/login" className="text-primary hover:underline">管理員登入</Link>
+              <Link to="/shop" className="text-foreground/60 hover:text-primary">返回商城</Link>
+            </div>
           </div>
         </div>
       </main>
