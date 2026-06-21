@@ -44,9 +44,9 @@ function MemberStorefrontPage() {
   const avatar = profile?.profile_avatar || profile?.avatar_url || "";
   const template = profile?.page_template || "A";
   const templateClass = useMemo(() => {
-    if (template === "B") return "from-emerald-950 via-slate-900 to-zinc-950";
-    if (template === "C") return "from-amber-950 via-red-950 to-stone-950";
-    if (template === "D") return "from-indigo-950 via-slate-950 to-fuchsia-950";
+    if (template === "B") return "from-blue-500 via-blue-700 to-blue-950";
+    if (template === "C") return "from-sky-600 via-blue-700 to-blue-900";
+    if (template === "D") return "from-blue-700 via-blue-800 to-indigo-900";
     return "from-blue-600 via-blue-700 to-blue-900";
   }, [template]);
 
@@ -71,7 +71,7 @@ function MemberStorefrontPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-blue-700 via-blue-800 to-blue-950 text-white">
       <section className={`relative overflow-hidden bg-gradient-to-br ${templateClass} text-white`}>
         {profile.profile_cover ? (
           <img src={profile.profile_cover} alt={`${displayName} 封面`} className="absolute inset-0 h-full w-full object-cover opacity-40" />
