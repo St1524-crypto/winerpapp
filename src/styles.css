@@ -118,6 +118,47 @@
   }
 }
 
+/* Login pages — clean white background with bright blue primary */
+.login-light {
+  --background: oklch(0.985 0.003 250);
+  --foreground: oklch(0.22 0.02 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.02 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.02 260);
+  --primary: oklch(0.58 0.20 260);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0.01 250);
+  --secondary-foreground: oklch(0.30 0.03 260);
+  --muted: oklch(0.94 0.005 250);
+  --muted-foreground: oklch(0.50 0.02 260);
+  --accent: oklch(0.94 0.02 250);
+  --accent-foreground: oklch(0.30 0.03 260);
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.99 0.01 85);
+  --success: oklch(0.62 0.15 150);
+  --success-foreground: oklch(0.99 0.01 85);
+  --warning: oklch(0.78 0.15 75);
+  --warning-foreground: oklch(0.25 0.05 60);
+  --border: oklch(0.90 0.005 250);
+  --input: oklch(0.94 0.005 250);
+  --ring: oklch(0.58 0.20 260);
+
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.20 260), oklch(0.65 0.18 260));
+  --gradient-surface: linear-gradient(180deg, oklch(1 0 0), oklch(0.97 0.005 250));
+  --gradient-festive: linear-gradient(135deg, oklch(0.55 0.20 260) 0%, oklch(0.65 0.18 260) 50%, oklch(0.75 0.16 260) 100%);
+  --shadow-elegant: 0 10px 30px -12px oklch(0.20 0.05 260 / 0.18);
+  --shadow-glow: 0 0 24px oklch(0.58 0.20 260 / 0.25);
+
+  color-scheme: light;
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 0% 0%, oklch(0.95 0.04 30 / 0.15), transparent 60%),
+    radial-gradient(ellipse 50% 35% at 100% 10%, oklch(0.94 0.04 85 / 0.12), transparent 60%),
+    linear-gradient(180deg, oklch(0.985 0.003 250) 0%, oklch(0.97 0.005 250) 100%);
+}
+
 /* Admin/operations console — soft light-gray theme for all authenticated pages */
 .admin-light {
   --background: oklch(0.985 0.003 250);
