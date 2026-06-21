@@ -591,7 +591,7 @@ function CompanyCodeRequired({
             </div>
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Button type="submit" disabled={busy} className="bg-gradient-primary hover:opacity-90 text-primary-foreground shadow-glow">
+              <Button type="submit" disabled={busy} className="bg-primary hover:opacity-90 text-primary-foreground shadow-glow">
                 {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 登入
               </Button>
