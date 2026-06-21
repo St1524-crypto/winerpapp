@@ -320,7 +320,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
   // ===== 已選擇公司 → 顯示登入/註冊表單 =====
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
+    <div className="login-light relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
       <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{ backgroundImage: "linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
