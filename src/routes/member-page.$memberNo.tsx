@@ -47,7 +47,7 @@ function MemberStorefrontPage() {
     if (template === "B") return "from-emerald-950 via-slate-900 to-zinc-950";
     if (template === "C") return "from-amber-950 via-red-950 to-stone-950";
     if (template === "D") return "from-indigo-950 via-slate-950 to-fuchsia-950";
-    return "from-slate-950 via-zinc-900 to-stone-950";
+    return "from-blue-600 via-blue-700 to-blue-900";
   }, [template]);
 
   if (loading) {
