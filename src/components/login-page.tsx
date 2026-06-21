@@ -362,7 +362,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                     className={`flex-1 py-1.5 text-xs rounded-md border ${signupType === "phone" ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground"}`}>電話註冊</button>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="name">姓名</Label>
+                  <Label htmlFor="name" className="text-primary">姓名</Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="王小明" />
                 </div>
                 <div className="space-y-2">
