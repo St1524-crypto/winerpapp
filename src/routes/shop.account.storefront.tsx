@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, Eye, ImageIcon, LayoutTemplate, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
+import { Copy, Eye, EyeOff, Globe, ImageIcon, LayoutTemplate, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
   upsertMyCustomProduct,
   upsertMyStorefrontVideo,
 } from "@/lib/member-storefront.functions";
+import { publishMyStorefrontPage, unpublishMyStorefrontPage } from "@/lib/storefront-templates.functions";
 
 type TemplateKey = "A" | "B" | "C" | "D";
 interface TemplateOption {
