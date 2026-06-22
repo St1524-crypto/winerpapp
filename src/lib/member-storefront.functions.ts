@@ -208,9 +208,27 @@ export const getMyStorefrontManagerData = createServerFn({ method: "GET" })
       .limit(100);
     if (error) throw new Error(error.message);
 
+    const { data: page, error: pageError } = await supabaseAdmin
+      .from("member_storefront_pages")
+      .select("id, content_json, applied_template_id, published_at, created_at, updated_at")
+      .eq("member_id", context.userId)
+      .maybeSingle();
+    if (pageError) throw new Error(pageError.message);
+
+    let templateName: string | null = null;
+    if (page?.applied_template_id) {
+      const { data: tpl } = await supabaseAdmin
+        .from("member_storefront_templates")
+        .select("name")
+        .eq("id", page.applied_template_id)
+        .maybeSingle();
+      templateName = tpl?.name ?? null;
+    }
+
     return {
       ...storefront,
       products: products ?? [],
+      page: page ? { ...page, templateName } : null,
     };
   });
 

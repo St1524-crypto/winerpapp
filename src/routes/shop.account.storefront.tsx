@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, Eye, ImageIcon, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
+import { Copy, Eye, ImageIcon, LayoutTemplate, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -86,6 +87,7 @@ function StorefrontManagerPage() {
   const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
   const [videoForm, setVideoForm] = useState<any>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<any>(null);
 
   const { roles, rolesLoaded } = useAuth();
   const { isDealer, loaded: dealerLoaded } = useDealerStatus();
@@ -135,6 +137,7 @@ function StorefrontManagerPage() {
       setSelectedProducts((data.featuredProducts ?? []).map((product: any) => product.id));
       setCustomProducts(data.customProducts ?? []);
       setVideos(data.videos ?? []);
+      setCurrentPage(data.page ?? null);
     } catch (error: any) {
       toast.error(error?.message ?? "讀取個人品牌頁資料失敗");
     } finally {
@@ -267,6 +270,56 @@ function StorefrontManagerPage() {
           <Button asChild variant="outline">
             <a href="/shop/account/storefront/templates">預覽版模效果</a>
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <LayoutTemplate className="h-4 w-4 text-primary" />
+            目前套用版模
+          </CardTitle>
+          <CardDescription>查看你個人品牌頁目前使用的版模與發布狀態。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-muted-foreground">版模名稱：</span>
+                <span className="font-medium">
+                  {currentPage?.templateName || (currentPage ? "自訂內容" : "尚未套用版模")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-muted-foreground">發布狀態：</span>
+                {currentPage?.published_at ? (
+                  <Badge variant="default">已發布</Badge>
+                ) : currentPage ? (
+                  <Badge variant="secondary">已套用，尚未發布</Badge>
+                ) : (
+                  <Badge variant="outline">未套用</Badge>
+                )}
+              </div>
+              {currentPage?.updated_at && (
+                <p className="text-xs text-muted-foreground">
+                  最後更新：{formatDate(currentPage.updated_at)}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" disabled={!storefrontPath}>
+                <a href={storefrontPath || "#"} target="_blank" rel="noreferrer">
+                  <Eye className="mr-2 h-4 w-4" />
+                  預覽頁面
+                </a>
+              </Button>
+              <Button asChild>
+                <a href="/shop/account/storefront/templates">
+                  {currentPage ? "更換版模" : "選擇版模"}
+                </a>
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
