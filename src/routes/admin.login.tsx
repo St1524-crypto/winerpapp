@@ -69,6 +69,10 @@ function AdminLoginPage() {
     e.preventDefault();
     setBusy(true);
     try {
+      const targetCompany = findCompanyByCode(websiteId, companies);
+      if (!targetCompany) {
+        throw new Error("官網ID 填入錯誤，請輸入正確的官網ID，例如 ST0985。");
+      }
       let loginEmail = identifier.trim();
       if (!loginEmail.includes("@")) {
         const res = await resolveLoginEmail({ data: { identifier: loginEmail } }).catch(() => ({ email: null }));
