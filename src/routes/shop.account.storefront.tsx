@@ -87,24 +87,26 @@ function StorefrontManagerPage() {
   const [videoForm, setVideoForm] = useState<any>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
 
-  const { roles } = useAuth();
-  const isDealer = useIsDealer();
+  const { roles, rolesLoaded } = useAuth();
+  const { isDealer, loaded: dealerLoaded } = useDealerStatus();
+  const { is_vip: isVip, loading: vipLoading } = useVipStatus();
   const isAdmin = roles.includes("super_admin") || roles.includes("admin");
   const isMember = roles.includes("member");
+  const allLoaded = rolesLoaded && dealerLoaded && !vipLoading;
   const allowedTemplates = useMemo(
-    () => TEMPLATE_OPTIONS.filter((o) => o.allow({ isAdmin, isDealer, isMember })),
-    [isAdmin, isDealer, isMember],
+    () => TEMPLATE_OPTIONS.filter((o) => o.allow({ isAdmin, isDealer, isVip, isMember })),
+    [isAdmin, isDealer, isVip, isMember],
   );
   const allowedKeys = useMemo(() => new Set(allowedTemplates.map((o) => o.value)), [allowedTemplates]);
 
-  // 若目前版型不在允許清單，自動回到 A 並提示
+  // 等角色、經銷商與 VIP 狀態載入完成後，再自動切回允許的版型，避免誤判
   useEffect(() => {
-    if (!profile?.page_template) return;
+    if (!allLoaded || !profile?.page_template) return;
     if (!allowedKeys.has(profile.page_template as TemplateKey)) {
       toast.warning(`你目前的角色不可使用「${profile.page_template}」版型，已自動切回 A 品牌型。`);
       setProfile((p: any) => ({ ...p, page_template: "A" }));
     }
-  }, [allowedKeys, profile?.page_template]);
+  }, [allLoaded, allowedKeys, profile?.page_template]);
 
 
   const storefrontPath = useMemo(() => {
