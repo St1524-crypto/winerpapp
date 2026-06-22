@@ -30,7 +30,7 @@ interface Metric { users: number; roles: number; products: number; orders: numbe
 
 function AdminPanel() {
   const { roles, user } = useAuth();
-  const isAdmin = roles.includes("super_admin");
+  const isAdmin = roles.includes("super_admin") || roles.includes("admin");
   const [m, setM] = useState<Metric | null>(null);
   const [activity, setActivity] = useState<ActivityRow[] | null>(null);
 
