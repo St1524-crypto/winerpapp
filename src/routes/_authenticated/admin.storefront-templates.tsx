@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -15,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, Upload } from "lucide-react";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 
 export const Route = createFileRoute("/_authenticated/admin/storefront-templates")({
@@ -249,37 +251,124 @@ function GalleryEditor({ value, onChange }: { value: GalleryItem[]; onChange: (v
   return (
     <div className="space-y-3">
       {items.map((it, i) => (
-        <div key={i} className="border rounded-md p-3 space-y-2 bg-muted/30">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">圖片 #{i + 1}</span>
-            <div className="flex gap-1">
-              <Button type="button" size="sm" variant="ghost" onClick={() => move(i, -1)} disabled={i === 0}>↑</Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => move(i, 1)} disabled={i === items.length - 1}>↓</Button>
-              <Button type="button" size="sm" variant="destructive" onClick={() => remove(i)}>刪除</Button>
-            </div>
-          </div>
-          <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto] items-start">
-            <Input
-              placeholder="圖片網址"
-              value={it.image || ""}
-              onChange={(e) => update(i, { image: e.target.value })}
-            />
-            <Input
-              placeholder="說明文字"
-              value={it.caption || ""}
-              onChange={(e) => update(i, { caption: e.target.value })}
-            />
-            {it.image && (
-              <img src={it.image} alt={`圖片${i + 1}`} className="h-12 w-12 object-cover rounded" />
-            )}
-          </div>
-        </div>
+        <GalleryRow
+          key={i}
+          index={i}
+          item={it}
+          total={items.length}
+          onUpdate={(patch) => update(i, patch)}
+          onMoveUp={() => move(i, -1)}
+          onMoveDown={() => move(i, 1)}
+          onRemove={() => remove(i)}
+        />
       ))}
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{items.length} / {MAX_GALLERY}</span>
         <Button type="button" size="sm" variant="outline" onClick={add} disabled={items.length >= MAX_GALLERY}>
           新增圖片
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function GalleryRow({
+  index,
+  item,
+  total,
+  onUpdate,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}: {
+  index: number;
+  item: GalleryItem;
+  total: number;
+  onUpdate: (patch: Partial<GalleryItem>) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function handleUpload(file: File) {
+    if (!/^image\/(jpe?g|png)$/i.test(file.type)) {
+      toast.error("僅支援 JPG / PNG 圖檔");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("檔案超過 5MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `storefront-templates/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
+      onUpdate({ image: pub.publicUrl });
+      toast.success("已上傳");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="border rounded-md p-3 space-y-2 bg-muted/30">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">圖片 #{index + 1}</span>
+        <div className="flex gap-1">
+          <Button type="button" size="sm" variant="ghost" onClick={onMoveUp} disabled={index === 0}>↑</Button>
+          <Button type="button" size="sm" variant="ghost" onClick={onMoveDown} disabled={index === total - 1}>↓</Button>
+          <Button type="button" size="sm" variant="destructive" onClick={onRemove}>刪除</Button>
+        </div>
+      </div>
+      <div className="grid gap-2 md:grid-cols-[96px_1fr_1fr] items-start">
+        <div className="space-y-1">
+          {item.image ? (
+            <img src={item.image} alt={`圖片${index + 1}`} className="h-24 w-24 object-cover rounded border" />
+          ) : (
+            <div className="h-24 w-24 rounded border border-dashed flex items-center justify-center text-xs text-muted-foreground">無圖</div>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleUpload(f);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="w-24"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Upload className="h-3 w-3 mr-1" />上傳</>}
+          </Button>
+        </div>
+        <Input
+          placeholder="圖片網址（可直接貼上或上傳）"
+          value={item.image || ""}
+          onChange={(e) => onUpdate({ image: e.target.value })}
+        />
+        <Input
+          placeholder="說明文字"
+          value={item.caption || ""}
+          onChange={(e) => onUpdate({ caption: e.target.value })}
+        />
       </div>
     </div>
   );
