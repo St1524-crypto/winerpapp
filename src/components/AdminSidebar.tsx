@@ -10,7 +10,7 @@ import { ROLE_LABELS } from "@/lib/nav";
 import {
   Crown, LayoutDashboard, Users, ShieldCheck, Shield, Settings, Bell, FileClock,
   Package, Tag, Boxes, ShoppingCart, Truck, UserCircle, Wallet, ArrowLeft, Database, KeyRound, Building2, Store,
-  Share2, TrendingUp, Coins,
+  Share2, TrendingUp, Coins, LayoutTemplate,
 } from "lucide-react";
 
 interface AdminNavItem { title: string; url: string; icon: any; roles?: string[]; }
@@ -55,6 +55,12 @@ const GROUPS: AdminNavGroup[] = [
       { title: "獎金營運中心", url: "/admin/bonuses", icon: Coins, roles: ["super_admin", "admin"] },
       { title: "獎金管理中心", url: "/admin/bonus-center", icon: Coins, roles: ["super_admin", "admin", "finance"] },
       { title: "我的推廣收益", url: "/my-referrals", icon: Share2 },
+    ],
+  },
+  {
+    label: "會員品牌頁",
+    items: [
+      { title: "品牌頁版模管理", url: "/admin/storefront-templates", icon: LayoutTemplate },
     ],
   },
   {
