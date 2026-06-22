@@ -553,9 +553,6 @@ function CompanyCodeRequired({
             </div>
             <div className="text-center">
               <h1 className="text-2xl font-bold tracking-tight text-primary">會員登入</h1>
-              <p className="mt-2 text-sm leading-6 text-foreground/80">
-                請輸入公司官網ID與會員ID登入。官網ID 預設為 ST0985，其它公司可自行更改。
-              </p>
             </div>
 
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
