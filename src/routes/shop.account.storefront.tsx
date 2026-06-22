@@ -307,13 +307,21 @@ function StorefrontManagerPage() {
               <Select value={profile.page_template} onValueChange={(value) => setProfile({ ...profile, page_template: value })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="A">A 品牌型</SelectItem>
-                  <SelectItem value="B">B 電商型</SelectItem>
-                  <SelectItem value="C">C 招商型</SelectItem>
-                  <SelectItem value="D">D 影音型</SelectItem>
+                  {allowedTemplates.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                可用版型：{allowedTemplates.map((o) => o.label).join("、") || "—"}
+                {!isAdmin && !isDealer && (
+                  <span className="ml-1 text-amber-600">（升級為經銷商可解鎖 B 電商型 / C 招商型）</span>
+                )}
+              </p>
             </Field>
+
             <div className="md:col-span-2">
               <Field label="品牌介紹">
                 <Textarea rows={4} value={profile.brand_intro} onChange={(e) => setProfile({ ...profile, brand_intro: e.target.value })} />
