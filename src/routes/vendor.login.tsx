@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Building2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
+import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
 import { getPortalRouteForRoles, isVendorPortalRole } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
