@@ -111,33 +111,37 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
     setBusy(true);
     try {
       if (mode === "signin") {
-        let loginEmail = identifier.trim();
-        if (!loginEmail.includes("@")) {
-          if (!activeCompany) {
-            throw new Error("官網ID 填入錯誤，請輸入正確的官網ID，例如 ST0985。");
-          }
-          const res = await resolveLoginEmail({
-            data: { identifier: loginEmail, companyId: activeCompany.id },
-          }).catch(() => ({ email: null }));
-          if (!res.email) {
-            throw new Error(`會員ID 填入錯誤，${activeCompany.company_name} 查無此會員ID或行銷網址代稱。`);
-          }
-          loginEmail = res.email;
+        const rawIdentifier = identifier.trim();
+        if (!rawIdentifier.includes("@") && !activeCompany) {
+          throw new Error("官網ID 填入錯誤，請輸入正確的官網ID，例如 ST0985。");
         }
 
-        const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-        if (error) {
-          await recordLoginAttempt({ data: { email: loginEmail, success: false, failureReason: error.message } }).catch(() => {});
-          throw error;
-        }
-        const session = data.session;
-        const uid = data.user?.id;
+        const signInRes = await signInWithIdentifier({
+          data: {
+            identifier: rawIdentifier,
+            password,
+            companyId: activeCompany?.id,
+          },
+        }).catch(() => ({ ok: false as const, error: "invalid_credentials" }));
 
-        await recordLoginAttempt({ data: { email: loginEmail, success: true, userId: uid } }).catch(() => {});
+        if (!signInRes.ok) {
+          await recordLoginAttempt({ data: { email: rawIdentifier, success: false, failureReason: signInRes.error } }).catch(() => {});
+          if (!rawIdentifier.includes("@") && activeCompany) {
+            throw new Error(`登入失敗，請確認 ${activeCompany.company_name} 的會員ID／行銷網址代稱與密碼。`);
+          }
+          throw new Error("登入失敗，請確認帳號與密碼。");
+        }
+
+        const { data: setData, error: setErr } = await supabase.auth.setSession(signInRes.session);
+        if (setErr) throw setErr;
+        const session = setData.session;
+        const uid = signInRes.userId;
+
+        await recordLoginAttempt({ data: { email: rawIdentifier, success: true, userId: uid } }).catch(() => {});
 
         // 若由公司入口進入，驗證使用者是否屬於該公司（super_admin 例外）
         if (uid && activeCompany) {
-          const userMeta = data.user?.app_metadata ?? {};
+          const userMeta = signInRes.appMetadata ?? {};
           const isSuper = Array.isArray((userMeta as any).roles)
             ? (userMeta as any).roles.includes("super_admin")
             : false;
