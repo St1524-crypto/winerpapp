@@ -221,6 +221,18 @@ export const publishMyStorefrontPage = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const unpublishMyStorefrontPage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { error } = await context.supabase
+      .from("member_storefront_pages")
+      .update({ published_at: null })
+      .eq("member_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 // ============= Member custom templates =============
 
 const customInputSchema = z.object({
