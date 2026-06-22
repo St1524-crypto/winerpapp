@@ -87,6 +87,7 @@ function StorefrontManagerPage() {
   const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
   const [videoForm, setVideoForm] = useState<any>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<any>(null);
 
   const { roles, rolesLoaded } = useAuth();
   const { isDealer, loaded: dealerLoaded } = useDealerStatus();
