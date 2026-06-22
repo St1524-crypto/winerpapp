@@ -142,6 +142,18 @@ function AdminLoginPage() {
         </div>
         <form onSubmit={submit} className="rounded-xl border bg-card p-6 shadow-elegant space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="websiteId">官網ID</Label>
+            <Input
+              id="websiteId"
+              value={websiteId}
+              onChange={(e) => setWebsiteId(e.target.value)}
+              placeholder="ST0985"
+              required
+              style={{ color: "oklch(0.22 0.02 260)" }}
+            />
+            <p className="text-[11px] text-muted-foreground">預設：ST0985 → 源晶管理介面；其它公司請改為自己的官網ID</p>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="identifier">帳號 (Email 或員工編號)</Label>
             <Input
               id="identifier"
