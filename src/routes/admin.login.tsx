@@ -13,13 +13,43 @@ import { getPortalRouteForRoles, isAdminPortalRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/admin/login")({ component: AdminLoginPage });
 
+type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
+
+function findCompanyByCode(code: string, companies: PublicCompany[]) {
+  const normalized = code.trim().toLowerCase();
+  if (!normalized || normalized === "st") return null;
+  if (normalized === "st0985") {
+    const sourceCompany = companies.find((company) => {
+      const slug = company.slug.toLowerCase();
+      return company.company_name.includes("源晶") || slug.includes("source") || slug.includes("st0985");
+    });
+    if (sourceCompany) return sourceCompany;
+  }
+  return companies.find((company) => {
+    const slug = company.slug.toLowerCase();
+    const name = company.company_name.toLowerCase();
+    return slug === normalized || slug.includes(normalized) || normalized.includes(slug) || name.includes(normalized);
+  }) ?? null;
+}
+
 function AdminLoginPage() {
   const { user, loading, roles, rolesLoaded } = useAuth();
   const navigate = useNavigate();
+  const [websiteId, setWebsiteId] = useState("ST0985");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [companies, setCompanies] = useState<PublicCompany[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.rpc("get_public_companies");
+      if (!cancelled) setCompanies((data ?? []) as PublicCompany[]);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (loading || !user || !rolesLoaded || busy) return;
@@ -39,6 +69,10 @@ function AdminLoginPage() {
     e.preventDefault();
     setBusy(true);
     try {
+      const targetCompany = findCompanyByCode(websiteId, companies);
+      if (!targetCompany) {
+        throw new Error("官網ID 填入錯誤，請輸入正確的官網ID，例如 ST0985。");
+      }
       let loginEmail = identifier.trim();
       if (!loginEmail.includes("@")) {
         const res = await resolveLoginEmail({ data: { identifier: loginEmail } }).catch(() => ({ email: null }));
@@ -61,6 +95,12 @@ function AdminLoginPage() {
         navigate({ to: getPortalRouteForRoles(userRoles as any) });
         return;
       }
+
+      // 切換到指定的公司租戶
+      if (uid) {
+        await supabase.from("profiles").update({ current_company_id: targetCompany.id }).eq("id", uid);
+      }
+
 
       const session = data.session;
       if (session && uid) {
@@ -101,6 +141,18 @@ function AdminLoginPage() {
           <p className="text-sm text-muted-foreground mt-2">後台系統入口，僅供授權人員使用</p>
         </div>
         <form onSubmit={submit} className="rounded-xl border bg-card p-6 shadow-elegant space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="websiteId">官網ID</Label>
+            <Input
+              id="websiteId"
+              value={websiteId}
+              onChange={(e) => setWebsiteId(e.target.value)}
+              placeholder="ST0985"
+              required
+              style={{ color: "oklch(0.22 0.02 260)" }}
+            />
+            <p className="text-[11px] text-muted-foreground">預設：ST0985 → 源晶管理介面；其它公司請改為自己的官網ID</p>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="identifier">帳號 (Email 或員工編號)</Label>
             <Input
