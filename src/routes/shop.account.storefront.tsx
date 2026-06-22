@@ -13,7 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { useIsDealer } from "@/hooks/use-dealer";
+import { useDealerStatus } from "@/hooks/use-dealer";
+import { useVipStatus } from "@/hooks/use-wallet";
 import {
   deleteMyCustomProduct,
   deleteMyStorefrontVideo,
@@ -30,13 +31,13 @@ interface TemplateOption {
   label: string;
   desc: string;
   /** 是否允許目前使用者選擇此版型 */
-  allow: (ctx: { isAdmin: boolean; isDealer: boolean; isMember: boolean }) => boolean;
+  allow: (ctx: { isAdmin: boolean; isDealer: boolean; isVip: boolean; isMember: boolean }) => boolean;
 }
 
 const TEMPLATE_OPTIONS: TemplateOption[] = [
   { value: "A", label: "A 品牌型", desc: "所有會員皆可使用", allow: () => true },
-  { value: "B", label: "B 電商型", desc: "經銷商 / 管理員", allow: ({ isAdmin, isDealer }) => isAdmin || isDealer },
-  { value: "C", label: "C 招商型", desc: "經銷商 / 管理員", allow: ({ isAdmin, isDealer }) => isAdmin || isDealer },
+  { value: "B", label: "B 電商型", desc: "經銷商 / 管理員 / VIP", allow: ({ isAdmin, isDealer, isVip }) => isAdmin || isDealer || isVip },
+  { value: "C", label: "C 招商型", desc: "經銷商 / 管理員 / VIP", allow: ({ isAdmin, isDealer, isVip }) => isAdmin || isDealer || isVip },
   { value: "D", label: "D 影音型", desc: "所有會員皆可使用", allow: () => true },
 ];
 
