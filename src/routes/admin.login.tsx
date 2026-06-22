@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
-import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
+import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
 import { getPortalRouteForRoles, isAdminPortalRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/admin/login")({ component: AdminLoginPage });
