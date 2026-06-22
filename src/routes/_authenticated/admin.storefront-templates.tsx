@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import ForbiddenScreen from "@/components/ForbiddenScreen";
+import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 
 export const Route = createFileRoute("/_authenticated/admin/storefront-templates")({
   component: AdminStorefrontTemplatesPage,

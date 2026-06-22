@@ -78,6 +78,7 @@ import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_au
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
+import { Route as AuthenticatedAdminStorefrontTemplatesRouteImport } from './routes/_authenticated/admin.storefront-templates'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
@@ -456,6 +457,12 @@ const AuthenticatedB2bAccountsRoute =
     path: '/b2b/accounts',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminStorefrontTemplatesRoute =
+  AuthenticatedAdminStorefrontTemplatesRouteImport.update({
+    id: '/admin/storefront-templates',
+    path: '/admin/storefront-templates',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminSecurityRoute =
   AuthenticatedAdminSecurityRouteImport.update({
     id: '/admin/security',
@@ -618,6 +625,7 @@ export interface FileRoutesByFullPath {
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
+  '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -702,6 +710,7 @@ export interface FileRoutesByTo {
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
+  '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -791,6 +800,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
+  '/_authenticated/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -880,6 +890,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/role-manager'
     | '/admin/security'
+    | '/admin/storefront-templates'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
     | '/finance/payable'
@@ -964,6 +975,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/role-manager'
     | '/admin/security'
+    | '/admin/storefront-templates'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
     | '/finance/payable'
@@ -1052,6 +1064,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/role-manager'
     | '/_authenticated/admin/security'
+    | '/_authenticated/admin/storefront-templates'
     | '/_authenticated/b2b/accounts'
     | '/_authenticated/finance/bank-accounts'
     | '/_authenticated/finance/payable'
@@ -1588,6 +1601,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedB2bAccountsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/storefront-templates': {
+      id: '/_authenticated/admin/storefront-templates'
+      path: '/admin/storefront-templates'
+      fullPath: '/admin/storefront-templates'
+      preLoaderRoute: typeof AuthenticatedAdminStorefrontTemplatesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/security': {
       id: '/_authenticated/admin/security'
       path: '/admin/security'
@@ -1823,6 +1843,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
+  AuthenticatedAdminStorefrontTemplatesRoute: typeof AuthenticatedAdminStorefrontTemplatesRoute
   AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -1867,6 +1888,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
+  AuthenticatedAdminStorefrontTemplatesRoute:
+    AuthenticatedAdminStorefrontTemplatesRoute,
   AuthenticatedB2bAccountsRoute: AuthenticatedB2bAccountsRouteWithChildren,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
