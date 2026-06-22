@@ -88,7 +88,7 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
         expires_at: signIn.session.expires_at ?? null,
       },
       userId: signIn.user.id,
-      appMetadata: (signIn.user.app_metadata ?? {}) as Record<string, unknown>,
+      appMetadata: JSON.parse(JSON.stringify(signIn.user.app_metadata ?? {})) as Record<string, any>,
     };
   });
 
