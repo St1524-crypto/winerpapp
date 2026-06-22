@@ -250,7 +250,28 @@ function StorefrontManagerPage() {
 
   return (
     <div className="space-y-6">
+      <Card className="border-primary/40 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ImageIcon className="h-4 w-4 text-primary" />
+            一鍵套用品牌頁版模
+          </CardTitle>
+          <CardDescription>
+            管理員已預設多款專業版模（如「個人品牌行銷版模(一頁式)」），可直接預覽並一鍵套用到您的個人品牌頁；VIP 會員亦可建立並套用自訂版模。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button asChild>
+            <a href="/shop/account/storefront/templates">前往選擇版模</a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href="/shop/account/storefront/templates">預覽版模效果</a>
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
+
         <CardHeader>
           <CardTitle className="text-base">個人品牌頁</CardTitle>
           <CardDescription>管理你的公開品牌首頁、推薦註冊連結、VIP 招募頁與展示內容。</CardDescription>
