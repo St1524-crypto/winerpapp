@@ -2268,6 +2268,45 @@ export type Database = {
         }
         Relationships: []
       }
+      member_storefront_custom_templates: {
+        Row: {
+          content_json: Json
+          cover_image: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          member_id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          content_json?: Json
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          member_id: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          content_json?: Json
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          member_id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       member_storefront_pages: {
         Row: {
           applied_template_id: string | null

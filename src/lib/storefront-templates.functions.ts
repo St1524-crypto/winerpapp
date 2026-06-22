@@ -220,3 +220,154 @@ export const publishMyStorefrontPage = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============= Member custom templates =============
+
+const customInputSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
+  cover_image: z.string().trim().max(500).optional().or(z.literal("")),
+  content_json: z.any().optional(),
+  sort_order: z.number().int().min(0).max(99999).default(0),
+  is_active: z.boolean().default(true),
+});
+
+export const listMyCustomTemplates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("member_storefront_custom_templates")
+      .select("*")
+      .eq("member_id", context.userId)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const createMyCustomTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => customInputSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("member_storefront_custom_templates")
+      .insert({
+        member_id: context.userId,
+        name: data.name.trim(),
+        description: data.description?.trim() || null,
+        cover_image: data.cover_image?.trim() || null,
+        content_json: data.content_json ?? {},
+        sort_order: data.sort_order,
+        is_active: data.is_active,
+      })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const updateMyCustomTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    customInputSchema.partial().extend({ id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { id, ...rest } = data;
+    const payload: Record<string, unknown> = {};
+    if (rest.name !== undefined) payload.name = rest.name.trim();
+    if (rest.description !== undefined) payload.description = rest.description?.trim() || null;
+    if (rest.cover_image !== undefined) payload.cover_image = rest.cover_image?.trim() || null;
+    if (rest.content_json !== undefined) payload.content_json = rest.content_json;
+    if (rest.sort_order !== undefined) payload.sort_order = rest.sort_order;
+    if (rest.is_active !== undefined) payload.is_active = rest.is_active;
+    const { data: row, error } = await context.supabase
+      .from("member_storefront_custom_templates")
+      .update(payload as any)
+      .eq("id", id)
+      .eq("member_id", context.userId)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const deleteMyCustomTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => idSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("member_storefront_custom_templates")
+      .delete()
+      .eq("id", data.id)
+      .eq("member_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const applyMyCustomTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => idSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: tpl, error: tplErr } = await context.supabase
+      .from("member_storefront_custom_templates")
+      .select("id, content_json, member_id")
+      .eq("id", data.id)
+      .eq("member_id", context.userId)
+      .maybeSingle();
+    if (tplErr) throw new Error(tplErr.message);
+    if (!tpl) throw new Error("找不到自訂版模");
+
+    const deepCopied = JSON.parse(JSON.stringify(tpl.content_json ?? {}));
+
+    const { data: existing } = await context.supabase
+      .from("member_storefront_pages")
+      .select("id")
+      .eq("member_id", context.userId)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await context.supabase
+        .from("member_storefront_pages")
+        .update({ content_json: deepCopied, applied_template_id: null })
+        .eq("member_id", context.userId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await context.supabase
+        .from("member_storefront_pages")
+        .insert({ member_id: context.userId, content_json: deepCopied, applied_template_id: null });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const saveCurrentPageAsCustomTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      name: z.string().trim().min(1).max(120),
+      description: z.string().trim().max(2000).optional().or(z.literal("")),
+      cover_image: z.string().trim().max(500).optional().or(z.literal("")),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: page, error: pageErr } = await context.supabase
+      .from("member_storefront_pages")
+      .select("content_json")
+      .eq("member_id", context.userId)
+      .maybeSingle();
+    if (pageErr) throw new Error(pageErr.message);
+    const content = JSON.parse(JSON.stringify(page?.content_json ?? {}));
+    const { data: row, error } = await context.supabase
+      .from("member_storefront_custom_templates")
+      .insert({
+        member_id: context.userId,
+        name: data.name.trim(),
+        description: data.description?.trim() || null,
+        cover_image: data.cover_image?.trim() || null,
+        content_json: content,
+      })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
