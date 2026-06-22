@@ -337,6 +337,21 @@ function StorefrontManagerPage() {
               )}
             </div>
             <div className="flex flex-wrap gap-2">
+              {currentPage && (
+                <>
+                  {currentPage.published_at ? (
+                    <Button variant="outline" onClick={unpublishPage} disabled={publishing}>
+                      {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <EyeOff className="mr-2 h-4 w-4" />}
+                      取消發布
+                    </Button>
+                  ) : (
+                    <Button onClick={publishPage} disabled={publishing}>
+                      {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Globe className="mr-2 h-4 w-4" />}
+                      發布
+                    </Button>
+                  )}
+                </>
+              )}
               <Button asChild variant="outline" disabled={!storefrontPath}>
                 <a href={storefrontPath || "#"} target="_blank" rel="noreferrer">
                   <Eye className="mr-2 h-4 w-4" />
