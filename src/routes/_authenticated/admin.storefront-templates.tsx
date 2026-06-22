@@ -159,8 +159,23 @@ function AdminStorefrontTemplatesPage() {
               <Switch checked={editing.is_default ?? false} onCheckedChange={(v) => setEditing({ ...editing, is_default: v })} />
               <Label>設為預設</Label>
             </div>
+            <div className="space-y-2">
+              <Label>圖片區塊（最多 7 張，含說明）</Label>
+              <GalleryEditor
+                value={(() => {
+                  let cj: any = editing.content_json;
+                  if (typeof cj === "string") { try { cj = JSON.parse(cj); } catch { cj = {}; } }
+                  return Array.isArray(cj?.gallery) ? cj.gallery : [];
+                })()}
+                onChange={(gallery) => {
+                  let cj: any = editing.content_json;
+                  if (typeof cj === "string") { try { cj = JSON.parse(cj); } catch { cj = {}; } }
+                  setEditing({ ...editing, content_json: { ...(cj || {}), gallery } });
+                }}
+              />
+            </div>
             <div>
-              <Label>content_json</Label>
+              <Label>content_json (進階)</Label>
               <Textarea
                 rows={10}
                 className="font-mono text-xs"
