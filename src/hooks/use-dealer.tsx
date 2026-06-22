@@ -18,10 +18,13 @@ export function useDealerStatus(): { isDealer: boolean; loaded: boolean } {
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled) {
-          setIsDealer(!!(data as any)?.is_dealer);
-          setLoaded(true);
-        }
+        if (!cancelled) setIsDealer(!!(data as any)?.is_dealer);
+      })
+      .catch(() => {
+        if (!cancelled) setIsDealer(false);
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
       });
     return () => { cancelled = true; };
   }, [user?.id]);
