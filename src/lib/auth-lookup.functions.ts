@@ -1,72 +1,95 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /**
- * Resolve a login identifier (phone, member_no, or marketing_slug) into the auth email.
- * Optionally scope by companyId so a phone/member_no/marketing_slug only matches users
- * bound to that company — keeps company portals isolated.
+ * Resolve a login identifier (phone, member_no, marketing_slug, or email) and
+ * perform the password sign-in entirely server-side. Returns only the session
+ * tokens — never the resolved email — so anonymous callers cannot enumerate
+ * registered users by phone / member_no / marketing_slug.
  */
-export const resolveLoginEmail = createServerFn({ method: "POST" })
+export const signInWithIdentifier = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
       .object({
         identifier: z.string().trim().min(3).max(64),
+        password: z.string().min(1).max(200),
         companyId: z.string().uuid().optional(),
       })
       .parse(d),
   )
   .handler(async ({ data }) => {
     const id = data.identifier.trim();
-    if (id.includes("@")) return { email: id };
+    let email: string | null = null;
 
-    const phone = id.replace(/[\s-]/g, "");
-    const upper = id.toUpperCase();
-    const isMemberNo = /^M\d{6}$/i.test(id);
-    const isMarketingSlug = /^[A-Za-z0-9_-]{3,32}$/.test(id);
-    const isPhone = /^\+?\d{8,15}$/.test(phone);
+    if (id.includes("@")) {
+      email = id;
+    } else {
+      const phone = id.replace(/[\s-]/g, "");
+      const upper = id.toUpperCase();
+      const isMemberNo = /^M\d{6}$/i.test(id);
+      const isMarketingSlug = /^[A-Za-z0-9_-]{3,32}$/.test(id);
+      const isPhone = /^\+?\d{8,15}$/.test(phone);
 
-    const withCompanyScope = (query: any) => {
-      if (data.companyId) return query.eq("current_company_id", data.companyId);
-      return query;
+      const withCompanyScope = (query: any) => {
+        if (data.companyId) return query.eq("current_company_id", data.companyId);
+        return query;
+      };
+
+      let row: { email: string | null } | null = null;
+
+      if (isMemberNo) {
+        const { data: byMemberNo } = await withCompanyScope(
+          supabaseAdmin.from("profiles").select("email, current_company_id").eq("member_no", upper).limit(1),
+        ).maybeSingle();
+        row = byMemberNo ?? null;
+      }
+      if (!row && isMarketingSlug) {
+        const { data: byMarketingSlug } = await withCompanyScope(
+          supabaseAdmin.from("profiles").select("email, current_company_id").ilike("marketing_slug", id).limit(1),
+        ).maybeSingle();
+        row = byMarketingSlug ?? null;
+      }
+      if (!row && isPhone) {
+        const { data: byPhone } = await withCompanyScope(
+          supabaseAdmin
+            .from("profiles")
+            .select("email, current_company_id")
+            .in("phone", [phone, `+${phone.replace(/^\+/, "")}`])
+            .limit(1),
+        ).maybeSingle();
+        row = byPhone ?? null;
+      }
+      email = row?.email ?? null;
+    }
+
+    if (!email) {
+      return { ok: false as const, error: "invalid_credentials" };
+    }
+
+    const pub = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false, storage: undefined } },
+    );
+    const { data: signIn, error } = await pub.auth.signInWithPassword({
+      email,
+      password: data.password,
+    });
+    if (error || !signIn.session || !signIn.user) {
+      return { ok: false as const, error: "invalid_credentials" };
+    }
+    return {
+      ok: true as const,
+      session: {
+        access_token: signIn.session.access_token,
+        refresh_token: signIn.session.refresh_token,
+        expires_at: signIn.session.expires_at ?? null,
+      },
+      userId: signIn.user.id,
+      appMetadata: (signIn.user.app_metadata ?? {}) as Record<string, unknown>,
     };
-
-    let row: { email: string | null } | null = null;
-
-    if (isMemberNo) {
-      const { data: byMemberNo } = await withCompanyScope(
-        supabaseAdmin
-          .from("profiles")
-          .select("email, current_company_id")
-          .eq("member_no", upper)
-          .limit(1),
-      ).maybeSingle();
-      row = byMemberNo ?? null;
-    }
-
-    if (!row && isMarketingSlug) {
-      const { data: byMarketingSlug } = await withCompanyScope(
-        supabaseAdmin
-          .from("profiles")
-          .select("email, current_company_id")
-          .ilike("marketing_slug", id)
-          .limit(1),
-      ).maybeSingle();
-      row = byMarketingSlug ?? null;
-    }
-
-    if (!row && isPhone) {
-      const { data: byPhone } = await withCompanyScope(
-        supabaseAdmin
-          .from("profiles")
-          .select("email, current_company_id")
-          .in("phone", [phone, `+${phone.replace(/^\+/, "")}`])
-          .limit(1),
-      ).maybeSingle();
-      row = byPhone ?? null;
-    }
-
-    return { email: row?.email ?? null };
   });
 
 /**
