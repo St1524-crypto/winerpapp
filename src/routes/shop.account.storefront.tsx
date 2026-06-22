@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { useIsDealer } from "@/hooks/use-dealer";
 import {
   deleteMyCustomProduct,
   deleteMyStorefrontVideo,
@@ -21,6 +23,22 @@ import {
   upsertMyCustomProduct,
   upsertMyStorefrontVideo,
 } from "@/lib/member-storefront.functions";
+
+type TemplateKey = "A" | "B" | "C" | "D";
+interface TemplateOption {
+  value: TemplateKey;
+  label: string;
+  desc: string;
+  /** 是否允許目前使用者選擇此版型 */
+  allow: (ctx: { isAdmin: boolean; isDealer: boolean; isMember: boolean }) => boolean;
+}
+
+const TEMPLATE_OPTIONS: TemplateOption[] = [
+  { value: "A", label: "A 品牌型", desc: "所有會員皆可使用", allow: () => true },
+  { value: "B", label: "B 電商型", desc: "經銷商 / 管理員", allow: ({ isAdmin, isDealer }) => isAdmin || isDealer },
+  { value: "C", label: "C 招商型", desc: "經銷商 / 管理員", allow: ({ isAdmin, isDealer }) => isAdmin || isDealer },
+  { value: "D", label: "D 影音型", desc: "所有會員皆可使用", allow: () => true },
+];
 
 export const Route = createFileRoute("/shop/account/storefront")({
   component: StorefrontManagerPage,
