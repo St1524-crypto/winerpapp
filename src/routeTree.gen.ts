@@ -78,6 +78,7 @@ import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_au
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
+import { Route as AuthenticatedAdminStorefrontTemplatesRouteImport } from './routes/_authenticated/admin.storefront-templates'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
@@ -87,6 +88,7 @@ import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminBonusesRouteImport } from './routes/_authenticated/admin.bonuses'
 import { Route as AuthenticatedAdminBonusCenterRouteImport } from './routes/_authenticated/admin.bonus-center'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
+import { Route as ShopAccountStorefrontTemplatesRouteImport } from './routes/shop.account.storefront.templates'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksBonusDailyTickRouteImport } from './routes/api/public/hooks/bonus-daily-tick'
@@ -456,6 +458,12 @@ const AuthenticatedB2bAccountsRoute =
     path: '/b2b/accounts',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminStorefrontTemplatesRoute =
+  AuthenticatedAdminStorefrontTemplatesRouteImport.update({
+    id: '/admin/storefront-templates',
+    path: '/admin/storefront-templates',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminSecurityRoute =
   AuthenticatedAdminSecurityRouteImport.update({
     id: '/admin/security',
@@ -509,6 +517,12 @@ const AuthenticatedAdminAuditLogsRoute =
     id: '/admin/audit-logs',
     path: '/admin/audit-logs',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const ShopAccountStorefrontTemplatesRoute =
+  ShopAccountStorefrontTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => ShopAccountStorefrontRoute,
   } as any)
 const ShopAccountOrdersIdRoute = ShopAccountOrdersIdRouteImport.update({
   id: '/$id',
@@ -618,6 +632,7 @@ export interface FileRoutesByFullPath {
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
+  '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -628,7 +643,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
-  '/shop/account/storefront': typeof ShopAccountStorefrontRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -642,6 +657,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
+  '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 export interface FileRoutesByTo {
@@ -702,6 +718,7 @@ export interface FileRoutesByTo {
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
+  '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -712,7 +729,7 @@ export interface FileRoutesByTo {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
-  '/shop/account/storefront': typeof ShopAccountStorefrontRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -726,6 +743,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
+  '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 export interface FileRoutesById {
@@ -791,6 +809,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
+  '/_authenticated/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -801,7 +820,7 @@ export interface FileRoutesById {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
-  '/shop/account/storefront': typeof ShopAccountStorefrontRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -815,6 +834,7 @@ export interface FileRoutesById {
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
+  '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/_authenticated/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 export interface FileRouteTypes {
@@ -880,6 +900,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/role-manager'
     | '/admin/security'
+    | '/admin/storefront-templates'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
     | '/finance/payable'
@@ -904,6 +925,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
+    | '/shop/account/storefront/templates'
     | '/admin/bonuses/batches/$batchId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -964,6 +986,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/role-manager'
     | '/admin/security'
+    | '/admin/storefront-templates'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
     | '/finance/payable'
@@ -988,6 +1011,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
+    | '/shop/account/storefront/templates'
     | '/admin/bonuses/batches/$batchId'
   id:
     | '__root__'
@@ -1052,6 +1076,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/role-manager'
     | '/_authenticated/admin/security'
+    | '/_authenticated/admin/storefront-templates'
     | '/_authenticated/b2b/accounts'
     | '/_authenticated/finance/bank-accounts'
     | '/_authenticated/finance/payable'
@@ -1076,6 +1101,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
+    | '/shop/account/storefront/templates'
     | '/_authenticated/admin/bonuses/batches/$batchId'
   fileRoutesById: FileRoutesById
 }
@@ -1588,6 +1614,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedB2bAccountsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/storefront-templates': {
+      id: '/_authenticated/admin/storefront-templates'
+      path: '/admin/storefront-templates'
+      fullPath: '/admin/storefront-templates'
+      preLoaderRoute: typeof AuthenticatedAdminStorefrontTemplatesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/security': {
       id: '/_authenticated/admin/security'
       path: '/admin/security'
@@ -1650,6 +1683,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/audit-logs'
       preLoaderRoute: typeof AuthenticatedAdminAuditLogsRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/shop/account/storefront/templates': {
+      id: '/shop/account/storefront/templates'
+      path: '/templates'
+      fullPath: '/shop/account/storefront/templates'
+      preLoaderRoute: typeof ShopAccountStorefrontTemplatesRouteImport
+      parentRoute: typeof ShopAccountStorefrontRoute
     }
     '/shop/account/orders/$id': {
       id: '/shop/account/orders/$id'
@@ -1823,6 +1863,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
+  AuthenticatedAdminStorefrontTemplatesRoute: typeof AuthenticatedAdminStorefrontTemplatesRoute
   AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -1867,6 +1908,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
+  AuthenticatedAdminStorefrontTemplatesRoute:
+    AuthenticatedAdminStorefrontTemplatesRoute,
   AuthenticatedB2bAccountsRoute: AuthenticatedB2bAccountsRouteWithChildren,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
@@ -1886,12 +1929,25 @@ const ShopAccountOrdersRouteChildren: ShopAccountOrdersRouteChildren = {
 const ShopAccountOrdersRouteWithChildren =
   ShopAccountOrdersRoute._addFileChildren(ShopAccountOrdersRouteChildren)
 
+interface ShopAccountStorefrontRouteChildren {
+  ShopAccountStorefrontTemplatesRoute: typeof ShopAccountStorefrontTemplatesRoute
+}
+
+const ShopAccountStorefrontRouteChildren: ShopAccountStorefrontRouteChildren = {
+  ShopAccountStorefrontTemplatesRoute: ShopAccountStorefrontTemplatesRoute,
+}
+
+const ShopAccountStorefrontRouteWithChildren =
+  ShopAccountStorefrontRoute._addFileChildren(
+    ShopAccountStorefrontRouteChildren,
+  )
+
 interface ShopAccountRouteChildren {
   ShopAccountAddressesRoute: typeof ShopAccountAddressesRoute
   ShopAccountOrdersRoute: typeof ShopAccountOrdersRouteWithChildren
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
-  ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRoute
+  ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRouteWithChildren
   ShopAccountWalletRoute: typeof ShopAccountWalletRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
 }
@@ -1901,7 +1957,7 @@ const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountOrdersRoute: ShopAccountOrdersRouteWithChildren,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
-  ShopAccountStorefrontRoute: ShopAccountStorefrontRoute,
+  ShopAccountStorefrontRoute: ShopAccountStorefrontRouteWithChildren,
   ShopAccountWalletRoute: ShopAccountWalletRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
 }

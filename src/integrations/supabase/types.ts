@@ -2268,6 +2268,97 @@ export type Database = {
         }
         Relationships: []
       }
+      member_storefront_pages: {
+        Row: {
+          applied_template_id: string | null
+          content_json: Json
+          created_at: string
+          id: string
+          member_id: string
+          published_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          applied_template_id?: string | null
+          content_json?: Json
+          created_at?: string
+          id?: string
+          member_id: string
+          published_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applied_template_id?: string | null
+          content_json?: Json
+          created_at?: string
+          id?: string
+          member_id?: string
+          published_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_storefront_pages_applied_template_id_fkey"
+            columns: ["applied_template_id"]
+            isOneToOne: false
+            referencedRelation: "member_storefront_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_storefront_pages_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_storefront_pages_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "public_member_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_storefront_templates: {
+        Row: {
+          content_json: Json
+          cover_image: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          content_json?: Json
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          content_json?: Json
+          cover_image?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       member_videos: {
         Row: {
           created_at: string

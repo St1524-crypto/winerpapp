@@ -233,6 +233,9 @@ function StorefrontManagerPage() {
             <Copy className="mr-2 h-4 w-4" />
             複製
           </Button>
+          <Button asChild>
+            <a href="/shop/account/storefront/templates">選擇版模</a>
+          </Button>
         </CardContent>
       </Card>
 
