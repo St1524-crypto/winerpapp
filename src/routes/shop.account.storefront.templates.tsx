@@ -77,7 +77,7 @@ function MemberStorefrontTemplatesPage() {
 
   async function handlePublish() {
     try {
-      await publish({});
+      await publish();
       toast.success("已發布品牌頁");
     } catch (e: any) {
       toast.error(e.message);
