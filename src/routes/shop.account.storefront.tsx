@@ -274,6 +274,56 @@ function StorefrontManagerPage() {
       </Card>
 
       <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <LayoutTemplate className="h-4 w-4 text-primary" />
+            目前套用版模
+          </CardTitle>
+          <CardDescription>查看你個人品牌頁目前使用的版模與發布狀態。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-muted-foreground">版模名稱：</span>
+                <span className="font-medium">
+                  {currentPage?.templateName || (currentPage ? "自訂內容" : "尚未套用版模")}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-muted-foreground">發布狀態：</span>
+                {currentPage?.published_at ? (
+                  <Badge variant="default">已發布</Badge>
+                ) : currentPage ? (
+                  <Badge variant="secondary">已套用，尚未發布</Badge>
+                ) : (
+                  <Badge variant="outline">未套用</Badge>
+                )}
+              </div>
+              {currentPage?.updated_at && (
+                <p className="text-xs text-muted-foreground">
+                  最後更新：{formatDate(currentPage.updated_at)}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" disabled={!storefrontPath}>
+                <a href={storefrontPath || "#"} target="_blank" rel="noreferrer">
+                  <Eye className="mr-2 h-4 w-4" />
+                  預覽頁面
+                </a>
+              </Button>
+              <Button asChild>
+                <a href="/shop/account/storefront/templates">
+                  {currentPage ? "更換版模" : "選擇版模"}
+                </a>
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
 
         <CardHeader>
           <CardTitle className="text-base">個人品牌頁</CardTitle>
