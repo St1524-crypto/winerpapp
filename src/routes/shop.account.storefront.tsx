@@ -249,6 +249,34 @@ function StorefrontManagerPage() {
     }
   }
 
+  async function publishPage() {
+    if (!currentPage) return;
+    setPublishing(true);
+    try {
+      await publishMyStorefrontPage();
+      toast.success("品牌頁已發布");
+      setCurrentPage((page: any) => (page ? { ...page, published_at: new Date().toISOString() } : page));
+    } catch (error: any) {
+      toast.error(error?.message ?? "發布失敗");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function unpublishPage() {
+    if (!currentPage) return;
+    setPublishing(true);
+    try {
+      await unpublishMyStorefrontPage();
+      toast.success("品牌頁已取消發布");
+      setCurrentPage((page: any) => (page ? { ...page, published_at: null } : page));
+    } catch (error: any) {
+      toast.error(error?.message ?? "取消發布失敗");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
