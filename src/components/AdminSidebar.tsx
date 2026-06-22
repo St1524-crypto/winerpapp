@@ -58,6 +58,12 @@ const GROUPS: AdminNavGroup[] = [
     ],
   },
   {
+    label: "會員品牌頁",
+    items: [
+      { title: "品牌頁版模管理", url: "/admin/storefront-templates", icon: LayoutTemplate },
+    ],
+  },
+  {
     label: "系統與工具",
     items: [
       { title: "系統設定", url: "/settings", icon: Settings },
