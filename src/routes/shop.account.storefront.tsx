@@ -319,8 +319,8 @@ function StorefrontManagerPage() {
               </Select>
               <p className="mt-1 text-xs text-muted-foreground">
                 可用版型：{allowedTemplates.map((o) => o.label).join("、") || "—"}
-                {!isAdmin && !isDealer && (
-                  <span className="ml-1 text-amber-600">（升級為經銷商可解鎖 B 電商型 / C 招商型）</span>
+                {!isAdmin && !isDealer && !isVip && (
+                  <span className="ml-1 text-amber-600">（升級為經銷商或 VIP 可解鎖 B 電商型 / C 招商型）</span>
                 )}
               </p>
             </Field>
