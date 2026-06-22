@@ -329,6 +329,35 @@ function MemberStorefrontTemplatesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Template preview */}
+      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>預覽：{preview?.tpl.name}</DialogTitle>
+          </DialogHeader>
+          {preview?.tpl.cover_image && (
+            <img src={preview.tpl.cover_image} alt={preview.tpl.name} className="w-full max-h-56 object-cover rounded" />
+          )}
+          {preview?.tpl.description && (
+            <p className="text-sm text-muted-foreground">{preview.tpl.description}</p>
+          )}
+          {preview && <StorefrontTemplatePreview content={preview.tpl.content_json} />}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreview(null)}>關閉</Button>
+            <Button
+              onClick={() => {
+                const p = preview!;
+                setPreview(null);
+                setConfirm({ tpl: p.tpl, isCustom: p.isCustom });
+              }}
+              disabled={!preview}
+            >
+              套用此版模
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit/Create custom template */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-2xl">
