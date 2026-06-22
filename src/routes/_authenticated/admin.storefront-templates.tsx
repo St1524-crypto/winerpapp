@@ -271,3 +271,105 @@ function GalleryEditor({ value, onChange }: { value: GalleryItem[]; onChange: (v
     </div>
   );
 }
+
+function GalleryRow({
+  index,
+  item,
+  total,
+  onUpdate,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}: {
+  index: number;
+  item: GalleryItem;
+  total: number;
+  onUpdate: (patch: Partial<GalleryItem>) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function handleUpload(file: File) {
+    if (!/^image\/(jpe?g|png)$/i.test(file.type)) {
+      toast.error("僅支援 JPG / PNG 圖檔");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("檔案超過 5MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `storefront-templates/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
+      onUpdate({ image: pub.publicUrl });
+      toast.success("已上傳");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="border rounded-md p-3 space-y-2 bg-muted/30">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">圖片 #{index + 1}</span>
+        <div className="flex gap-1">
+          <Button type="button" size="sm" variant="ghost" onClick={onMoveUp} disabled={index === 0}>↑</Button>
+          <Button type="button" size="sm" variant="ghost" onClick={onMoveDown} disabled={index === total - 1}>↓</Button>
+          <Button type="button" size="sm" variant="destructive" onClick={onRemove}>刪除</Button>
+        </div>
+      </div>
+      <div className="grid gap-2 md:grid-cols-[96px_1fr_1fr] items-start">
+        <div className="space-y-1">
+          {item.image ? (
+            <img src={item.image} alt={`圖片${index + 1}`} className="h-24 w-24 object-cover rounded border" />
+          ) : (
+            <div className="h-24 w-24 rounded border border-dashed flex items-center justify-center text-xs text-muted-foreground">無圖</div>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleUpload(f);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="w-24"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Upload className="h-3 w-3 mr-1" />上傳</>}
+          </Button>
+        </div>
+        <Input
+          placeholder="圖片網址（可直接貼上或上傳）"
+          value={item.image || ""}
+          onChange={(e) => onUpdate({ image: e.target.value })}
+        />
+        <Input
+          placeholder="說明文字"
+          value={item.caption || ""}
+          onChange={(e) => onUpdate({ caption: e.target.value })}
+        />
+      </div>
+    </div>
+  );
+}
