@@ -1,10 +1,31 @@
-# 公司管理 E2E 測試（Playwright）
+# E2E 測試（Playwright）
 
 涵蓋情境：
-- 新增公司（含必填驗證、Logo 上傳）
-- 編輯公司資料（名稱、電話）
-- 編輯時更換 Logo
-- 移除公司
+- **公司管理** (`admin-companies.spec.ts`)：新增 / 編輯 / 換 Logo / 刪除公司
+- **個人品牌頁版模** (`storefront-templates.spec.ts`)：管理員 / 經銷商 / VIP 三種角色
+  - `/shop/account/storefront` 「頁面版型」下拉是否顯示 A/B/C/D
+  - `/shop/account/storefront/templates` 自訂版模 CRUD、套用、發布
+
+## 個人品牌頁版模 — 必填環境變數
+
+```bash
+# 管理員（email 登入；可沿用 super admin）
+export E2E_ADMIN_EMAIL=$E2E_SUPER_ADMIN_EMAIL
+export E2E_ADMIN_PASSWORD=$E2E_SUPER_ADMIN_PASSWORD
+# 經銷商會員（行動電話或 M 開頭會員編號）
+export E2E_DEALER_MEMBER_NO=0912345678
+export E2E_DEALER_PASSWORD=********
+# VIP 會員
+export E2E_VIP_MEMBER_NO=0987654321
+export E2E_VIP_PASSWORD=********
+```
+
+任一組未設定，對應的 describe 會自動 `skip`，不會 fail。
+
+只跑版模 E2E：
+```bash
+bunx playwright test storefront-templates
+```
 
 ## 前置設定
 
