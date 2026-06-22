@@ -137,6 +137,7 @@ function StorefrontManagerPage() {
       setSelectedProducts((data.featuredProducts ?? []).map((product: any) => product.id));
       setCustomProducts(data.customProducts ?? []);
       setVideos(data.videos ?? []);
+      setCurrentPage(data.page ?? null);
     } catch (error: any) {
       toast.error(error?.message ?? "讀取個人品牌頁資料失敗");
     } finally {
