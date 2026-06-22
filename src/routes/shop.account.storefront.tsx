@@ -89,6 +89,7 @@ function StorefrontManagerPage() {
   const [videoForm, setVideoForm] = useState<any>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<any>(null);
+  const [publishing, setPublishing] = useState(false);
 
   const { roles, rolesLoaded } = useAuth();
   const { isDealer, loaded: dealerLoaded } = useDealerStatus();
