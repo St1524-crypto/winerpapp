@@ -13,7 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { useIsDealer } from "@/hooks/use-dealer";
+import { useDealerStatus } from "@/hooks/use-dealer";
+import { useVipStatus } from "@/hooks/use-wallet";
 import {
   deleteMyCustomProduct,
   deleteMyStorefrontVideo,
@@ -30,13 +31,13 @@ interface TemplateOption {
   label: string;
   desc: string;
   /** 是否允許目前使用者選擇此版型 */
-  allow: (ctx: { isAdmin: boolean; isDealer: boolean; isMember: boolean }) => boolean;
+  allow: (ctx: { isAdmin: boolean; isDealer: boolean; isVip: boolean; isMember: boolean }) => boolean;
 }
 
 const TEMPLATE_OPTIONS: TemplateOption[] = [
   { value: "A", label: "A 品牌型", desc: "所有會員皆可使用", allow: () => true },
-  { value: "B", label: "B 電商型", desc: "經銷商 / 管理員", allow: ({ isAdmin, isDealer }) => isAdmin || isDealer },
-  { value: "C", label: "C 招商型", desc: "經銷商 / 管理員", allow: ({ isAdmin, isDealer }) => isAdmin || isDealer },
+  { value: "B", label: "B 電商型", desc: "經銷商 / 管理員 / VIP", allow: ({ isAdmin, isDealer, isVip }) => isAdmin || isDealer || isVip },
+  { value: "C", label: "C 招商型", desc: "經銷商 / 管理員 / VIP", allow: ({ isAdmin, isDealer, isVip }) => isAdmin || isDealer || isVip },
   { value: "D", label: "D 影音型", desc: "所有會員皆可使用", allow: () => true },
 ];
 
@@ -86,24 +87,26 @@ function StorefrontManagerPage() {
   const [videoForm, setVideoForm] = useState<any>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
 
-  const { roles } = useAuth();
-  const isDealer = useIsDealer();
+  const { roles, rolesLoaded } = useAuth();
+  const { isDealer, loaded: dealerLoaded } = useDealerStatus();
+  const { is_vip: isVip, loading: vipLoading } = useVipStatus();
   const isAdmin = roles.includes("super_admin") || roles.includes("admin");
   const isMember = roles.includes("member");
+  const allLoaded = rolesLoaded && dealerLoaded && !vipLoading;
   const allowedTemplates = useMemo(
-    () => TEMPLATE_OPTIONS.filter((o) => o.allow({ isAdmin, isDealer, isMember })),
-    [isAdmin, isDealer, isMember],
+    () => TEMPLATE_OPTIONS.filter((o) => o.allow({ isAdmin, isDealer, isVip, isMember })),
+    [isAdmin, isDealer, isVip, isMember],
   );
   const allowedKeys = useMemo(() => new Set(allowedTemplates.map((o) => o.value)), [allowedTemplates]);
 
-  // 若目前版型不在允許清單，自動回到 A 並提示
+  // 等角色、經銷商與 VIP 狀態載入完成後，再自動切回允許的版型，避免誤判
   useEffect(() => {
-    if (!profile?.page_template) return;
+    if (!allLoaded || !profile?.page_template) return;
     if (!allowedKeys.has(profile.page_template as TemplateKey)) {
       toast.warning(`你目前的角色不可使用「${profile.page_template}」版型，已自動切回 A 品牌型。`);
       setProfile((p: any) => ({ ...p, page_template: "A" }));
     }
-  }, [allowedKeys, profile?.page_template]);
+  }, [allLoaded, allowedKeys, profile?.page_template]);
 
 
   const storefrontPath = useMemo(() => {
@@ -316,8 +319,8 @@ function StorefrontManagerPage() {
               </Select>
               <p className="mt-1 text-xs text-muted-foreground">
                 可用版型：{allowedTemplates.map((o) => o.label).join("、") || "—"}
-                {!isAdmin && !isDealer && (
-                  <span className="ml-1 text-amber-600">（升級為經銷商可解鎖 B 電商型 / C 招商型）</span>
+                {!isAdmin && !isDealer && !isVip && (
+                  <span className="ml-1 text-amber-600">（升級為經銷商或 VIP 可解鎖 B 電商型 / C 招商型）</span>
                 )}
               </p>
             </Field>
