@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { useIsDealer } from "@/hooks/use-dealer";
 import {
   deleteMyCustomProduct,
   deleteMyStorefrontVideo,
@@ -21,6 +23,22 @@ import {
   upsertMyCustomProduct,
   upsertMyStorefrontVideo,
 } from "@/lib/member-storefront.functions";
+
+type TemplateKey = "A" | "B" | "C" | "D";
+interface TemplateOption {
+  value: TemplateKey;
+  label: string;
+  desc: string;
+  /** 是否允許目前使用者選擇此版型 */
+  allow: (ctx: { isAdmin: boolean; isDealer: boolean; isMember: boolean }) => boolean;
+}
+
+const TEMPLATE_OPTIONS: TemplateOption[] = [
+  { value: "A", label: "A 品牌型", desc: "所有會員皆可使用", allow: () => true },
+  { value: "B", label: "B 電商型", desc: "經銷商 / 管理員", allow: ({ isAdmin, isDealer }) => isAdmin || isDealer },
+  { value: "C", label: "C 招商型", desc: "經銷商 / 管理員", allow: ({ isAdmin, isDealer }) => isAdmin || isDealer },
+  { value: "D", label: "D 影音型", desc: "所有會員皆可使用", allow: () => true },
+];
 
 export const Route = createFileRoute("/shop/account/storefront")({
   component: StorefrontManagerPage,
@@ -67,6 +85,26 @@ function StorefrontManagerPage() {
   const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
   const [videoForm, setVideoForm] = useState<any>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
+
+  const { roles } = useAuth();
+  const isDealer = useIsDealer();
+  const isAdmin = roles.includes("super_admin") || roles.includes("admin");
+  const isMember = roles.includes("member");
+  const allowedTemplates = useMemo(
+    () => TEMPLATE_OPTIONS.filter((o) => o.allow({ isAdmin, isDealer, isMember })),
+    [isAdmin, isDealer, isMember],
+  );
+  const allowedKeys = useMemo(() => new Set(allowedTemplates.map((o) => o.value)), [allowedTemplates]);
+
+  // 若目前版型不在允許清單，自動回到 A 並提示
+  useEffect(() => {
+    if (!profile?.page_template) return;
+    if (!allowedKeys.has(profile.page_template as TemplateKey)) {
+      toast.warning(`你目前的角色不可使用「${profile.page_template}」版型，已自動切回 A 品牌型。`);
+      setProfile((p: any) => ({ ...p, page_template: "A" }));
+    }
+  }, [allowedKeys, profile?.page_template]);
+
 
   const storefrontPath = useMemo(() => {
     const key = member?.marketing_slug || member?.member_no;
@@ -269,13 +307,21 @@ function StorefrontManagerPage() {
               <Select value={profile.page_template} onValueChange={(value) => setProfile({ ...profile, page_template: value })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="A">A 品牌型</SelectItem>
-                  <SelectItem value="B">B 電商型</SelectItem>
-                  <SelectItem value="C">C 招商型</SelectItem>
-                  <SelectItem value="D">D 影音型</SelectItem>
+                  {allowedTemplates.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                可用版型：{allowedTemplates.map((o) => o.label).join("、") || "—"}
+                {!isAdmin && !isDealer && (
+                  <span className="ml-1 text-amber-600">（升級為經銷商可解鎖 B 電商型 / C 招商型）</span>
+                )}
+              </p>
             </Field>
+
             <div className="md:col-span-2">
               <Field label="品牌介紹">
                 <Textarea rows={4} value={profile.brand_intro} onChange={(e) => setProfile({ ...profile, brand_intro: e.target.value })} />
