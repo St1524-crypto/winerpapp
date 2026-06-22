@@ -105,7 +105,7 @@ export const updateStorefrontTemplate = createServerFn({ method: "POST" })
     if (rest.is_default !== undefined) payload.is_default = rest.is_default;
     const { data: row, error } = await supabaseAdmin
       .from("member_storefront_templates")
-      .update(payload)
+      .update(payload as any)
       .eq("id", id)
       .select("*")
       .single();
