@@ -96,6 +96,12 @@ function AdminLoginPage() {
         return;
       }
 
+      // 切換到指定的公司租戶
+      if (uid) {
+        await supabase.from("profiles").update({ current_company_id: targetCompany.id }).eq("id", uid);
+      }
+
+
       const session = data.session;
       if (session && uid) {
         await recordSession({
