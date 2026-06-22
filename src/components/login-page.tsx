@@ -95,7 +95,8 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         navigate({ to: "/two-factor" });
         return;
       }
-      navigate({ to: getPortalRouteForRoles(roles) });
+      // 會員登入頁一律進入會員前台，管理員若要進後台請使用「管理員登入」
+      navigate({ to: "/shop/account" });
     }
   }, [user, loading, roles, rolesLoaded, navigate]);
 
