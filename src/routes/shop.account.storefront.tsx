@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, Eye, ImageIcon, LayoutTemplate, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
+import { Copy, Eye, EyeOff, Globe, ImageIcon, LayoutTemplate, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
   upsertMyCustomProduct,
   upsertMyStorefrontVideo,
 } from "@/lib/member-storefront.functions";
+import { publishMyStorefrontPage, unpublishMyStorefrontPage } from "@/lib/storefront-templates.functions";
 
 type TemplateKey = "A" | "B" | "C" | "D";
 interface TemplateOption {
@@ -88,6 +89,7 @@ function StorefrontManagerPage() {
   const [videoForm, setVideoForm] = useState<any>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<any>(null);
+  const [publishing, setPublishing] = useState(false);
 
   const { roles, rolesLoaded } = useAuth();
   const { isDealer, loaded: dealerLoaded } = useDealerStatus();
@@ -247,6 +249,34 @@ function StorefrontManagerPage() {
     }
   }
 
+  async function publishPage() {
+    if (!currentPage) return;
+    setPublishing(true);
+    try {
+      await publishMyStorefrontPage();
+      toast.success("品牌頁已發布");
+      setCurrentPage((page: any) => (page ? { ...page, published_at: new Date().toISOString() } : page));
+    } catch (error: any) {
+      toast.error(error?.message ?? "發布失敗");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function unpublishPage() {
+    if (!currentPage) return;
+    setPublishing(true);
+    try {
+      await unpublishMyStorefrontPage();
+      toast.success("品牌頁已取消發布");
+      setCurrentPage((page: any) => (page ? { ...page, published_at: null } : page));
+    } catch (error: any) {
+      toast.error(error?.message ?? "取消發布失敗");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   if (loading) {
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
@@ -307,6 +337,21 @@ function StorefrontManagerPage() {
               )}
             </div>
             <div className="flex flex-wrap gap-2">
+              {currentPage && (
+                <>
+                  {currentPage.published_at ? (
+                    <Button variant="outline" onClick={unpublishPage} disabled={publishing}>
+                      {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <EyeOff className="mr-2 h-4 w-4" />}
+                      取消發布
+                    </Button>
+                  ) : (
+                    <Button onClick={publishPage} disabled={publishing}>
+                      {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Globe className="mr-2 h-4 w-4" />}
+                      發布
+                    </Button>
+                  )}
+                </>
+              )}
               <Button asChild variant="outline" disabled={!storefrontPath}>
                 <a href={storefrontPath || "#"} target="_blank" rel="noreferrer">
                   <Eye className="mr-2 h-4 w-4" />
