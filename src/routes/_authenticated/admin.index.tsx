@@ -74,7 +74,7 @@ function AdminPanel() {
   }, [isAdmin]);
 
   if (!isAdmin) {
-    return <ForbiddenScreen requiredRoles={["super_admin"]} pageName="管理員控制中心" />;
+    return <ForbiddenScreen requiredRoles={["super_admin", "admin"]} pageName="管理員控制中心" />;
   }
 
   const sections: { title: string; desc: string; icon: any; to: string; tone: string }[] = [
