@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useBranding } from "@/hooks/use-branding";
 import { CompanyLogo } from "@/components/company-logo";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
-import { resolveLoginEmail, getUserCompany } from "@/lib/auth-lookup.functions";
+import { signInWithIdentifier, getUserCompany } from "@/lib/auth-lookup.functions";
 import { handleReferralSignup } from "@/lib/points.functions";
 import { bindSponsorByCode } from "@/lib/referral.functions";
 import { getReferralCode, clearReferralCode } from "@/lib/referral-tracking";
