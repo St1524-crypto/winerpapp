@@ -36,6 +36,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { StorefrontTemplatePreview } from "@/components/shop/StorefrontTemplatePreview";
+import { Eye } from "lucide-react";
 
 export const Route = createFileRoute("/shop/account/storefront/templates")({
   component: MemberStorefrontTemplatesPage,
@@ -70,6 +72,7 @@ function MemberStorefrontTemplatesPage() {
   const [confirm, setConfirm] = useState<{ tpl: Template; isCustom: boolean } | null>(null);
   const [appliedId, setAppliedId] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
+  const [preview, setPreview] = useState<{ tpl: Template; isCustom: boolean } | null>(null);
 
   // Edit/create dialog
   const [editing, setEditing] = useState<CustomTemplate | null>(null);
@@ -245,7 +248,12 @@ function MemberStorefrontTemplatesPage() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <p className="text-sm text-muted-foreground min-h-[3em]">{t.description}</p>
-                    <Button className="w-full" onClick={() => setConfirm({ tpl: t, isCustom: false })}>立即套用</Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1" onClick={() => setPreview({ tpl: t, isCustom: false })}>
+                        <Eye className="w-4 h-4 mr-1" />預覽
+                      </Button>
+                      <Button className="flex-1" onClick={() => setConfirm({ tpl: t, isCustom: false })}>立即套用</Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -277,6 +285,9 @@ function MemberStorefrontTemplatesPage() {
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground min-h-[3em]">{t.description}</p>
                   <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" onClick={() => setPreview({ tpl: t, isCustom: true })}>
+                      <Eye className="w-4 h-4 mr-1" />預覽
+                    </Button>
                     <Button className="flex-1" onClick={() => setConfirm({ tpl: t, isCustom: true })}>套用</Button>
                     <Button variant="outline" onClick={() => openEdit(t)}>編輯</Button>
                     <Button variant="destructive" onClick={() => handleDeleteMine(t)}>刪除</Button>
