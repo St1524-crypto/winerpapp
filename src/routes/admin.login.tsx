@@ -13,13 +13,43 @@ import { getPortalRouteForRoles, isAdminPortalRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/admin/login")({ component: AdminLoginPage });
 
+type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
+
+function findCompanyByCode(code: string, companies: PublicCompany[]) {
+  const normalized = code.trim().toLowerCase();
+  if (!normalized || normalized === "st") return null;
+  if (normalized === "st0985") {
+    const sourceCompany = companies.find((company) => {
+      const slug = company.slug.toLowerCase();
+      return company.company_name.includes("源晶") || slug.includes("source") || slug.includes("st0985");
+    });
+    if (sourceCompany) return sourceCompany;
+  }
+  return companies.find((company) => {
+    const slug = company.slug.toLowerCase();
+    const name = company.company_name.toLowerCase();
+    return slug === normalized || slug.includes(normalized) || normalized.includes(slug) || name.includes(normalized);
+  }) ?? null;
+}
+
 function AdminLoginPage() {
   const { user, loading, roles, rolesLoaded } = useAuth();
   const navigate = useNavigate();
+  const [websiteId, setWebsiteId] = useState("ST0985");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [companies, setCompanies] = useState<PublicCompany[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.rpc("get_public_companies");
+      if (!cancelled) setCompanies((data ?? []) as PublicCompany[]);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (loading || !user || !rolesLoaded || busy) return;
