@@ -6,9 +6,18 @@ import {
   applyStorefrontTemplate,
   getMyStorefrontPage,
   publishMyStorefrontPage,
+  listMyCustomTemplates,
+  createMyCustomTemplate,
+  updateMyCustomTemplate,
+  deleteMyCustomTemplate,
+  applyMyCustomTemplate,
+  saveCurrentPageAsCustomTemplate,
 } from "@/lib/storefront-templates.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -20,6 +29,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/shop/account/storefront/templates")({
   component: MemberStorefrontTemplatesPage,
@@ -33,24 +49,44 @@ type Template = {
   content_json: any;
 };
 
+type CustomTemplate = Template & { is_active: boolean; sort_order: number };
+
 function MemberStorefrontTemplatesPage() {
   const navigate = useNavigate();
   const list = useServerFn(listActiveStorefrontTemplates);
   const apply = useServerFn(applyStorefrontTemplate);
   const getPage = useServerFn(getMyStorefrontPage);
   const publish = useServerFn(publishMyStorefrontPage);
+  const listMine = useServerFn(listMyCustomTemplates);
+  const createMine = useServerFn(createMyCustomTemplate);
+  const updateMine = useServerFn(updateMyCustomTemplate);
+  const deleteMine = useServerFn(deleteMyCustomTemplate);
+  const applyMine = useServerFn(applyMyCustomTemplate);
+  const saveCurrent = useServerFn(saveCurrentPageAsCustomTemplate);
+
   const [items, setItems] = useState<Template[]>([]);
+  const [mine, setMine] = useState<CustomTemplate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [confirm, setConfirm] = useState<Template | null>(null);
+  const [confirm, setConfirm] = useState<{ tpl: Template; isCustom: boolean } | null>(null);
   const [appliedId, setAppliedId] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
+
+  // Edit/create dialog
+  const [editing, setEditing] = useState<CustomTemplate | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [form, setForm] = useState({ name: "", description: "", cover_image: "", content_json: "{}" });
+
+  // Save current page as template
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveForm, setSaveForm] = useState({ name: "", description: "", cover_image: "" });
 
   async function reload() {
     setLoading(true);
     try {
-      const [tpls, page] = await Promise.all([list(), getPage()]);
+      const [tpls, page, my] = await Promise.all([list(), getPage(), listMine()]);
       setItems(tpls as Template[]);
       setAppliedId((page as any)?.applied_template_id ?? null);
+      setMine(my as CustomTemplate[]);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -64,7 +100,11 @@ function MemberStorefrontTemplatesPage() {
     if (!confirm) return;
     setApplying(true);
     try {
-      await apply({ data: { id: confirm.id } });
+      if (confirm.isCustom) {
+        await applyMine({ data: { id: confirm.tpl.id } });
+      } else {
+        await apply({ data: { id: confirm.tpl.id } });
+      }
       toast.success("已套用版模");
       setConfirm(null);
       reload();
@@ -84,46 +124,170 @@ function MemberStorefrontTemplatesPage() {
     }
   }
 
+  function openCreate() {
+    setEditing(null);
+    setForm({ name: "", description: "", cover_image: "", content_json: "{}" });
+    setEditOpen(true);
+  }
+
+  function openEdit(t: CustomTemplate) {
+    setEditing(t);
+    setForm({
+      name: t.name,
+      description: t.description ?? "",
+      cover_image: t.cover_image ?? "",
+      content_json: JSON.stringify(t.content_json ?? {}, null, 2),
+    });
+    setEditOpen(true);
+  }
+
+  async function submitEdit() {
+    let parsed: any = {};
+    try {
+      parsed = form.content_json.trim() ? JSON.parse(form.content_json) : {};
+    } catch {
+      toast.error("content_json 格式錯誤");
+      return;
+    }
+    try {
+      if (editing) {
+        await updateMine({
+          data: {
+            id: editing.id,
+            name: form.name,
+            description: form.description,
+            cover_image: form.cover_image,
+            content_json: parsed,
+          },
+        });
+        toast.success("已更新版模");
+      } else {
+        await createMine({
+          data: {
+            name: form.name,
+            description: form.description,
+            cover_image: form.cover_image,
+            content_json: parsed,
+            sort_order: 0,
+            is_active: true,
+          },
+        });
+        toast.success("已新增自訂版模");
+      }
+      setEditOpen(false);
+      reload();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
+  async function handleDeleteMine(t: CustomTemplate) {
+    if (!window.confirm(`確定刪除「${t.name}」？`)) return;
+    try {
+      await deleteMine({ data: { id: t.id } });
+      toast.success("已刪除");
+      reload();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
+  async function submitSaveCurrent() {
+    if (!saveForm.name.trim()) {
+      toast.error("請輸入名稱");
+      return;
+    }
+    try {
+      await saveCurrent({ data: saveForm });
+      toast.success("已將目前品牌頁儲存為自訂版模");
+      setSaveOpen(false);
+      setSaveForm({ name: "", description: "", cover_image: "" });
+      reload();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto p-6 space-y-8">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold">選擇品牌頁版模</h1>
-          <p className="text-muted-foreground text-sm mt-1">挑選一個合適的行銷版模，立即套用到您的品牌頁。</p>
+          <p className="text-muted-foreground text-sm mt-1">先從管理員提供的版模選擇，或建立並套用您自己的版模。</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => navigate({ to: "/shop/account/storefront" })}>返回品牌頁</Button>
           <Button variant="outline" onClick={handlePublish}>發布</Button>
         </div>
       </div>
 
-      {loading ? (
-        <div>載入中…</div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {items.map((t) => {
-            const isCurrent = appliedId === t.id;
-            return (
-              <Card key={t.id} className={isCurrent ? "ring-2 ring-primary" : ""}>
+      {/* Admin templates */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">管理員預設版模</h2>
+        </div>
+        {loading ? (
+          <div>載入中…</div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {items.map((t) => {
+              const isCurrent = appliedId === t.id;
+              return (
+                <Card key={t.id} className={isCurrent ? "ring-2 ring-primary" : ""}>
+                  {t.cover_image && (
+                    <img src={t.cover_image} alt={t.name} className="w-full h-40 object-cover rounded-t" />
+                  )}
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>{t.name}</span>
+                      {isCurrent && <span className="text-xs text-primary">使用中</span>}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground min-h-[3em]">{t.description}</p>
+                    <Button className="w-full" onClick={() => setConfirm({ tpl: t, isCustom: false })}>立即套用</Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+            {items.length === 0 && <div className="text-muted-foreground">目前沒有預設版模。</div>}
+          </div>
+        )}
+      </section>
+
+      {/* Member custom templates */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-lg font-semibold">我的自訂版模</h2>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => setSaveOpen(true)}>將目前品牌頁存為版模</Button>
+            <Button onClick={openCreate}>新增自訂版模</Button>
+          </div>
+        </div>
+        {!loading && (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {mine.map((t) => (
+              <Card key={t.id}>
                 {t.cover_image && (
                   <img src={t.cover_image} alt={t.name} className="w-full h-40 object-cover rounded-t" />
                 )}
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{t.name}</span>
-                    {isCurrent && <span className="text-xs text-primary">使用中</span>}
-                  </CardTitle>
+                  <CardTitle>{t.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground min-h-[3em]">{t.description}</p>
-                  <Button className="w-full" onClick={() => setConfirm(t)}>立即套用</Button>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button className="flex-1" onClick={() => setConfirm({ tpl: t, isCustom: true })}>套用</Button>
+                    <Button variant="outline" onClick={() => openEdit(t)}>編輯</Button>
+                    <Button variant="destructive" onClick={() => handleDeleteMine(t)}>刪除</Button>
+                  </div>
                 </CardContent>
               </Card>
-            );
-          })}
-          {items.length === 0 && <div className="text-muted-foreground">目前沒有可用版模。</div>}
-        </div>
-      )}
+            ))}
+            {mine.length === 0 && <div className="text-muted-foreground">尚未建立自訂版模。</div>}
+          </div>
+        )}
+      </section>
 
       {appliedId && (
         <Card>
@@ -142,7 +306,7 @@ function MemberStorefrontTemplatesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>套用版模確認</AlertDialogTitle>
             <AlertDialogDescription>
-              套用「{confirm?.name}」會覆蓋目前品牌頁內容，是否繼續？
+              套用「{confirm?.tpl.name}」會覆蓋目前品牌頁內容，是否繼續？
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -153,6 +317,69 @@ function MemberStorefrontTemplatesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit/Create custom template */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing ? "編輯自訂版模" : "新增自訂版模"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>名稱</Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div>
+              <Label>描述</Label>
+              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </div>
+            <div>
+              <Label>封面圖網址</Label>
+              <Input value={form.cover_image} onChange={(e) => setForm({ ...form, cover_image: e.target.value })} />
+            </div>
+            <div>
+              <Label>content_json</Label>
+              <Textarea
+                rows={8}
+                className="font-mono text-xs"
+                value={form.content_json}
+                onChange={(e) => setForm({ ...form, content_json: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>取消</Button>
+            <Button onClick={submitEdit}>儲存</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save current page as template */}
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>將目前品牌頁存為自訂版模</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>名稱</Label>
+              <Input value={saveForm.name} onChange={(e) => setSaveForm({ ...saveForm, name: e.target.value })} />
+            </div>
+            <div>
+              <Label>描述</Label>
+              <Textarea value={saveForm.description} onChange={(e) => setSaveForm({ ...saveForm, description: e.target.value })} />
+            </div>
+            <div>
+              <Label>封面圖網址</Label>
+              <Input value={saveForm.cover_image} onChange={(e) => setSaveForm({ ...saveForm, cover_image: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveOpen(false)}>取消</Button>
+            <Button onClick={submitSaveCurrent}>儲存</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
