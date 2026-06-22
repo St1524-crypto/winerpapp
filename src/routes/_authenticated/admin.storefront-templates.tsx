@@ -18,7 +18,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Upload } from "lucide-react";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
-import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 
 export const Route = createFileRoute("/_authenticated/admin/storefront-templates")({
   component: AdminStorefrontTemplatesPage,
