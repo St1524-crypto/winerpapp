@@ -13,10 +13,13 @@ import {
  *  - /shop/account/storefront 「頁面版型」下拉在三種角色下顯示正確選項
  *  - /shop/account/storefront/templates 三種角色皆能套用預設版模、CRUD 自訂版模、發布
  *
- * 必填環境變數（任一組未設定，對應的 describe 會 skip）：
- *  - E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD            （管理員，email 登入）
- *  - E2E_DEALER_MEMBER_NO / E2E_DEALER_PASSWORD      （經銷商會員）
- *  - E2E_VIP_MEMBER_NO    / E2E_VIP_PASSWORD         （VIP 會員）
+ * 安全提醒：請使用「測試環境專用帳號」，勿使用正式高權限帳號。
+ *
+ * 必填環境變數（任一組未設定，對應的 describe 會 skip，不會 fail，
+ * 因此不會阻塞 build / preview / publish）：
+ *  - E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD            （測試用管理員，email 登入）
+ *  - E2E_DEALER_MEMBER_NO / E2E_DEALER_PASSWORD      （測試用經銷商會員）
+ *  - E2E_VIP_MEMBER_NO    / E2E_VIP_PASSWORD         （測試用 VIP 會員）
  */
 
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? process.env.E2E_SUPER_ADMIN_EMAIL;
