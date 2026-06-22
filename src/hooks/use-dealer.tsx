@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
-/** 取得目前登入會員是否為經銷商。未登入時為 false。 */
-export function useIsDealer(): boolean {
+/** 取得目前登入會員是否為經銷商，以及是否已載入完成。未登入時為 false。 */
+export function useDealerStatus(): { isDealer: boolean; loaded: boolean } {
   const { user } = useAuth();
   const [isDealer, setIsDealer] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!user) { setIsDealer(false); return; }
+    if (!user) { setIsDealer(false); setLoaded(true); return; }
+    setLoaded(false);
     let cancelled = false;
     supabase
       .from("profiles")
@@ -16,11 +18,20 @@ export function useIsDealer(): boolean {
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled) setIsDealer(!!(data as any)?.is_dealer);
+        if (!cancelled) {
+          setIsDealer(!!(data as any)?.is_dealer);
+          setLoaded(true);
+        }
       });
     return () => { cancelled = true; };
   }, [user?.id]);
 
+  return { isDealer, loaded };
+}
+
+/** 取得目前登入會員是否為經銷商。未登入時為 false。 */
+export function useIsDealer(): boolean {
+  const { isDealer } = useDealerStatus();
   return isDealer;
 }
 
