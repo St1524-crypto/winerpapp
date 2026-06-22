@@ -123,7 +123,7 @@ function GroupBuyDetail() {
               <ul className="space-y-2">
                 {orders.map((o: any) => (
                   <li key={o.id} className="flex items-center justify-between text-sm">
-                    <span>{o.profiles?.name ?? "會員"}（{o.profiles?.member_no}）× {o.quantity}</span>
+                    <span>會員 × {o.quantity}</span>
                     <Badge variant={o.status === "paid" ? "default" : "secondary"}>
                       {o.status === "paid" ? "已付款" : o.status === "pending_payment" ? "待付款" : o.status}
                     </Badge>
