@@ -88,6 +88,7 @@ import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminBonusesRouteImport } from './routes/_authenticated/admin.bonuses'
 import { Route as AuthenticatedAdminBonusCenterRouteImport } from './routes/_authenticated/admin.bonus-center'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
+import { Route as ShopAccountStorefrontTemplatesRouteImport } from './routes/shop.account.storefront.templates'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksBonusDailyTickRouteImport } from './routes/api/public/hooks/bonus-daily-tick'
@@ -517,6 +518,12 @@ const AuthenticatedAdminAuditLogsRoute =
     path: '/admin/audit-logs',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ShopAccountStorefrontTemplatesRoute =
+  ShopAccountStorefrontTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => ShopAccountStorefrontRoute,
+  } as any)
 const ShopAccountOrdersIdRoute = ShopAccountOrdersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -636,7 +643,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
-  '/shop/account/storefront': typeof ShopAccountStorefrontRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -650,6 +657,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
+  '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 export interface FileRoutesByTo {
@@ -721,7 +729,7 @@ export interface FileRoutesByTo {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
-  '/shop/account/storefront': typeof ShopAccountStorefrontRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -735,6 +743,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
+  '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 export interface FileRoutesById {
@@ -811,7 +820,7 @@ export interface FileRoutesById {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
-  '/shop/account/storefront': typeof ShopAccountStorefrontRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -825,6 +834,7 @@ export interface FileRoutesById {
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
+  '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/_authenticated/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 export interface FileRouteTypes {
@@ -915,6 +925,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
+    | '/shop/account/storefront/templates'
     | '/admin/bonuses/batches/$batchId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1000,6 +1011,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
+    | '/shop/account/storefront/templates'
     | '/admin/bonuses/batches/$batchId'
   id:
     | '__root__'
@@ -1089,6 +1101,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
+    | '/shop/account/storefront/templates'
     | '/_authenticated/admin/bonuses/batches/$batchId'
   fileRoutesById: FileRoutesById
 }
@@ -1671,6 +1684,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAuditLogsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/shop/account/storefront/templates': {
+      id: '/shop/account/storefront/templates'
+      path: '/templates'
+      fullPath: '/shop/account/storefront/templates'
+      preLoaderRoute: typeof ShopAccountStorefrontTemplatesRouteImport
+      parentRoute: typeof ShopAccountStorefrontRoute
+    }
     '/shop/account/orders/$id': {
       id: '/shop/account/orders/$id'
       path: '/$id'
@@ -1909,12 +1929,25 @@ const ShopAccountOrdersRouteChildren: ShopAccountOrdersRouteChildren = {
 const ShopAccountOrdersRouteWithChildren =
   ShopAccountOrdersRoute._addFileChildren(ShopAccountOrdersRouteChildren)
 
+interface ShopAccountStorefrontRouteChildren {
+  ShopAccountStorefrontTemplatesRoute: typeof ShopAccountStorefrontTemplatesRoute
+}
+
+const ShopAccountStorefrontRouteChildren: ShopAccountStorefrontRouteChildren = {
+  ShopAccountStorefrontTemplatesRoute: ShopAccountStorefrontTemplatesRoute,
+}
+
+const ShopAccountStorefrontRouteWithChildren =
+  ShopAccountStorefrontRoute._addFileChildren(
+    ShopAccountStorefrontRouteChildren,
+  )
+
 interface ShopAccountRouteChildren {
   ShopAccountAddressesRoute: typeof ShopAccountAddressesRoute
   ShopAccountOrdersRoute: typeof ShopAccountOrdersRouteWithChildren
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
-  ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRoute
+  ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRouteWithChildren
   ShopAccountWalletRoute: typeof ShopAccountWalletRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
 }
@@ -1924,7 +1957,7 @@ const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountOrdersRoute: ShopAccountOrdersRouteWithChildren,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
-  ShopAccountStorefrontRoute: ShopAccountStorefrontRoute,
+  ShopAccountStorefrontRoute: ShopAccountStorefrontRouteWithChildren,
   ShopAccountWalletRoute: ShopAccountWalletRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
 }
