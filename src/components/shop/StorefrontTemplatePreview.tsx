@@ -13,7 +13,6 @@ type Section = {
   limit?: number;
   items?: Array<{ title?: string; desc?: string; time?: string; url?: string; video_url?: string }>;
   videos?: Array<{ title?: string; url?: string; video_url?: string }>;
-  url?: string;
   video_url?: string;
   showFacebook?: boolean;
   showInstagram?: boolean;
