@@ -122,18 +122,44 @@ function SectionView({ s, gallery }: { s: Section; gallery?: Content["gallery"] 
           </div>
         </Block>
       );
-    case "videos":
+    case "videos": {
+      const urls = collectVideoUrls(s);
+      const isTitleUrl = s.title && isUrl(s.title);
       return (
-        <Block title={s.title || "精選影片"}>
-          <div className="grid grid-cols-2 gap-2">
-            {[0, 1].map((i) => (
-              <div key={i} className="aspect-video rounded border bg-muted/40 flex items-center justify-center">
-                <Play className="w-6 h-6 text-muted-foreground/60" />
-              </div>
-            ))}
-          </div>
+        <Block title={isTitleUrl ? "精選影片" : (s.title || "精選影片")}>
+          {urls.length > 0 ? (
+            <div className="grid sm:grid-cols-2 gap-3">
+              {urls.map((u, i) => {
+                const embed = toYouTubeEmbed(u);
+                return embed ? (
+                  <div key={i} className="aspect-video rounded border overflow-hidden bg-black">
+                    <iframe
+                      src={embed}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={`video-${i}`}
+                    />
+                  </div>
+                ) : (
+                  <a key={i} href={u} target="_blank" rel="noreferrer" className="aspect-video rounded border bg-muted/40 flex items-center justify-center hover:bg-muted">
+                    <Play className="w-6 h-6 text-muted-foreground/60" />
+                  </a>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {[0, 1].map((i) => (
+                <div key={i} className="aspect-video rounded border bg-muted/40 flex items-center justify-center">
+                  <Play className="w-6 h-6 text-muted-foreground/60" />
+                </div>
+              ))}
+            </div>
+          )}
         </Block>
       );
+    }
     case "event_info":
       return (
         <Block title={s.title || "活動資訊"}>
