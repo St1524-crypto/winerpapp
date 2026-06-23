@@ -8,6 +8,8 @@ type Section = {
   ctaText?: string;
   buttonText?: string;
   url?: string;
+  image?: string;
+  cover?: string;
   date?: string;
   location?: string;
   limit?: number;
