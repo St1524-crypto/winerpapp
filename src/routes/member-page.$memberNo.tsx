@@ -41,8 +41,18 @@ function MemberStorefrontPage() {
 
   const profile = data?.found ? data.profile : null;
   const ref = profile?.id ?? "";
-  const displayName = profile?.brand_name || profile?.display_name || profile?.name || profile?.member_no || "源晶會員";
+  const publishedContent = data?.publishedPage?.content_json && typeof data.publishedPage.content_json === "object"
+    ? data.publishedPage.content_json
+    : null;
+  const heroSection = Array.isArray(publishedContent?.sections)
+    ? publishedContent.sections.find((s: any) => s?.type === "hero")
+    : null;
+  const displayName = heroSection?.title
+    || profile?.brand_name || profile?.display_name || profile?.name || profile?.member_no || "源晶會員";
+  const heroSubtitle = heroSection?.subtitle || heroSection?.body || profile?.brand_intro
+    || "歡迎來到我的源晶個人品牌頁，這裡整理了我的精選商品、影片與 VIP 拼購主招募資訊。";
   const avatar = profile?.profile_avatar || profile?.avatar_url || "";
+  const coverImage = heroSection?.image || heroSection?.cover || heroSection?.url || profile?.profile_cover || "";
   const template = profile?.page_template || "A";
   const templateClass = useMemo(() => {
     if (template === "B") return "from-blue-500 via-blue-700 to-blue-950";
