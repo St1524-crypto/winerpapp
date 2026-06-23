@@ -444,8 +444,8 @@ function MemberStorefrontTemplatesPage() {
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
             <div>
-              <Label>封面圖網址</Label>
-              <Input value={form.cover_image} onChange={(e) => setForm({ ...form, cover_image: e.target.value })} />
+              <Label>封面圖</Label>
+              <CoverImageUploader value={form.cover_image} onChange={(url) => setForm({ ...form, cover_image: url })} />
             </div>
             <div>
               <Label>content_json</Label>
