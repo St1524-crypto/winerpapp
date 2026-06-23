@@ -480,8 +480,8 @@ function MemberStorefrontTemplatesPage() {
               <Textarea value={saveForm.description} onChange={(e) => setSaveForm({ ...saveForm, description: e.target.value })} />
             </div>
             <div>
-              <Label>封面圖網址</Label>
-              <Input value={saveForm.cover_image} onChange={(e) => setSaveForm({ ...saveForm, cover_image: e.target.value })} />
+              <Label>封面圖</Label>
+              <CoverImageUploader value={saveForm.cover_image} onChange={(url) => setSaveForm({ ...saveForm, cover_image: url })} />
             </div>
           </div>
           <DialogFooter>
