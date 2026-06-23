@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { StorefrontTemplatePreview } from "@/components/shop/StorefrontTemplatePreview";
 import { getMemberStorefront } from "@/lib/member-storefront.functions";
 import type { Product } from "@/types/product";
 
@@ -133,50 +134,58 @@ function MemberStorefrontPage() {
       </section>
 
       <main className="container mx-auto space-y-8 px-4 py-8 md:space-y-12 md:py-10">
-        <section>
-          <SectionTitle icon={ShoppingBag} title="精選商品" desc="會員親自推薦的源晶商城商品" />
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-            {(data.featuredProducts ?? []).length ? (
-              data.featuredProducts.map((product: Product) => <ProductCard key={product.id} product={product} />)
-            ) : (
-              <EmptyState text="尚未設定精選商品" />
-            )}
-          </div>
-        </section>
+        {data.publishedPage?.content_json ? (
+          <section className="rounded-xl bg-white p-4 text-foreground md:p-8">
+            <StorefrontTemplatePreview content={data.publishedPage.content_json} />
+          </section>
+        ) : (
+          <>
+            <section>
+              <SectionTitle icon={ShoppingBag} title="精選商品" desc="會員親自推薦的源晶商城商品" />
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+                {(data.featuredProducts ?? []).length ? (
+                  data.featuredProducts.map((product: Product) => <ProductCard key={product.id} product={product} />)
+                ) : (
+                  <EmptyState text="尚未設定精選商品" />
+                )}
+              </div>
+            </section>
 
-        <section>
-          <SectionTitle icon={Sparkles} title="自訂商品展示" desc="會員自售或外部連結商品" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(data.customProducts ?? []).length ? (
-              data.customProducts.map((item: any) => <CustomProductCard key={item.id} item={item} />)
-            ) : (
-              <EmptyState text="尚未新增自訂商品" />
-            )}
-          </div>
-        </section>
+            <section>
+              <SectionTitle icon={Sparkles} title="自訂商品展示" desc="會員自售或外部連結商品" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {(data.customProducts ?? []).length ? (
+                  data.customProducts.map((item: any) => <CustomProductCard key={item.id} item={item} />)
+                ) : (
+                  <EmptyState text="尚未新增自訂商品" />
+                )}
+              </div>
+            </section>
 
-        <section>
-          <SectionTitle icon={Play} title="影片展示" desc="YouTube、TikTok、Facebook Reel、Shorts 都可分享" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(data.videos ?? []).length ? (
-              data.videos.map((video: any) => (
-                <Card key={video.id}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">{video.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <VideoEmbed url={video.video_url} title={video.title} />
-                    <a href={video.video_url} target="_blank" rel="noreferrer" className="inline-flex items-center text-sm text-primary hover:underline">
-                      開啟影片 <ArrowRight className="ml-1 h-4 w-4" />
-                    </a>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <EmptyState text="尚未新增影片" />
-            )}
-          </div>
-        </section>
+            <section>
+              <SectionTitle icon={Play} title="影片展示" desc="YouTube、TikTok、Facebook Reel、Shorts 都可分享" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {(data.videos ?? []).length ? (
+                  data.videos.map((video: any) => (
+                    <Card key={video.id}>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">{video.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <VideoEmbed url={video.video_url} title={video.title} />
+                        <a href={video.video_url} target="_blank" rel="noreferrer" className="inline-flex items-center text-sm text-primary hover:underline">
+                          開啟影片 <ArrowRight className="ml-1 h-4 w-4" />
+                        </a>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <EmptyState text="尚未新增影片" />
+                )}
+              </div>
+            </section>
+          </>
+        )}
       </main>
     </div>
   );
