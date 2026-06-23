@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
-import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
+import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
 import { getPortalRouteForRoles, isAdminPortalRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/admin/login")({ component: AdminLoginPage });
@@ -73,20 +73,18 @@ function AdminLoginPage() {
       if (!targetCompany) {
         throw new Error("官網ID 填入錯誤，請輸入正確的官網ID，例如 ST0985。");
       }
-      let loginEmail = identifier.trim();
-      if (!loginEmail.includes("@")) {
-        const res = await resolveLoginEmail({ data: { identifier: loginEmail } }).catch(() => ({ email: null }));
-        if (!res.email) throw new Error("找不到對應帳號");
-        loginEmail = res.email;
+      const rawIdentifier = identifier.trim();
+      const signInRes = await signInWithIdentifier({
+        data: { identifier: rawIdentifier, password, companyId: targetCompany.id },
+      }).catch(() => ({ ok: false as const, error: "invalid_credentials" }));
+      if (!signInRes.ok) {
+        await recordLoginAttempt({ data: { email: rawIdentifier, success: false, failureReason: signInRes.error } }).catch(() => {});
+        throw new Error("登入失敗，請確認帳號與密碼。");
       }
-
-      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-      if (error) {
-        await recordLoginAttempt({ data: { email: loginEmail, success: false, failureReason: error.message } }).catch(() => {});
-        throw error;
-      }
-      const uid = data.user?.id;
-      await recordLoginAttempt({ data: { email: loginEmail, success: true, userId: uid } }).catch(() => {});
+      const { data, error } = await supabase.auth.setSession(signInRes.session);
+      if (error) throw error;
+      const uid = signInRes.userId;
+      await recordLoginAttempt({ data: { email: rawIdentifier, success: true, userId: uid } }).catch(() => {});
 
       // 角色驗證 (server-side)
       const { data: rolesRows } = await supabase.from("user_roles").select("role").eq("user_id", uid!);

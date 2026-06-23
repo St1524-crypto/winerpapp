@@ -35,9 +35,11 @@ export const getGroupBuy = createServerFn({ method: "GET" })
       .select("*,products(id,name,image,sku,description,price)")
       .eq("id", data.id).single();
     if (error || !gb) throw new Error("拼團不存在");
+    // Public endpoint: return only aggregate / non-PII order fields. Participant
+    // names and member_no are protected and must not leak to anonymous callers.
     const { data: orders } = await supabaseAdmin
       .from("group_buy_orders")
-      .select("id,user_id,quantity,status,created_at,profiles:user_id(name,member_no)")
+      .select("id,quantity,status,created_at")
       .eq("group_buy_id", data.id)
       .order("created_at");
     return { groupBuy: gb, orders: orders ?? [] };

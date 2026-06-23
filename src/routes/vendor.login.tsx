@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Building2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { resolveLoginEmail } from "@/lib/auth-lookup.functions";
+import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
 import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/security.functions";
 import { getPortalRouteForRoles, isVendorPortalRole } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
@@ -35,21 +35,19 @@ function VendorLoginPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      let loginEmail = identifier.trim();
-      if (!loginEmail.includes("@")) {
-        const res = await resolveLoginEmail({ data: { identifier: loginEmail } }).catch(() => ({ email: null }));
-        if (!res.email) throw new Error("Account not found");
-        loginEmail = res.email;
+      const rawIdentifier = identifier.trim();
+      const signInRes = await signInWithIdentifier({
+        data: { identifier: rawIdentifier, password },
+      }).catch(() => ({ ok: false as const, error: "invalid_credentials" }));
+      if (!signInRes.ok) {
+        await recordLoginAttempt({ data: { email: rawIdentifier, success: false, failureReason: signInRes.error } }).catch(() => {});
+        throw new Error("Login failed. Please check your credentials.");
       }
+      const { data, error } = await supabase.auth.setSession(signInRes.session);
+      if (error) throw error;
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-      if (error) {
-        await recordLoginAttempt({ data: { email: loginEmail, success: false, failureReason: error.message } }).catch(() => {});
-        throw error;
-      }
-
-      const uid = data.user?.id;
-      await recordLoginAttempt({ data: { email: loginEmail, success: true, userId: uid } }).catch(() => {});
+      const uid = signInRes.userId;
+      await recordLoginAttempt({ data: { email: rawIdentifier, success: true, userId: uid } }).catch(() => {});
 
       const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", uid!);
       const userRoles = (roleRows ?? []).map((row: { role: string }) => row.role);
