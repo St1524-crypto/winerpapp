@@ -26,6 +26,38 @@ type Content = {
   gallery?: Array<{ image?: string; caption?: string }>;
 };
 
+const URL_RE = /https?:\/\/[^\s]+/gi;
+function isUrl(s?: string) { return !!s && /^https?:\/\//i.test(s.trim()); }
+function extractUrls(s?: string): string[] {
+  if (!s) return [];
+  return s.match(URL_RE) ?? [];
+}
+function toYouTubeEmbed(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, "");
+    let id = "";
+    if (host === "youtu.be") id = u.pathname.slice(1);
+    else if (host.endsWith("youtube.com")) {
+      if (u.pathname === "/watch") id = u.searchParams.get("v") ?? "";
+      else if (u.pathname.startsWith("/embed/")) id = u.pathname.split("/")[2] ?? "";
+      else if (u.pathname.startsWith("/shorts/")) id = u.pathname.split("/")[2] ?? "";
+    }
+    if (!id) return null;
+    return `https://www.youtube.com/embed/${id}`;
+  } catch { return null; }
+}
+function collectVideoUrls(s: Section): string[] {
+  const out: string[] = [];
+  const push = (v?: string) => { if (v && isUrl(v)) out.push(v.trim()); };
+  push(s.url); push(s.video_url);
+  if (s.title && isUrl(s.title)) push(s.title);
+  extractUrls(s.body).forEach((u) => out.push(u));
+  (s.videos ?? []).forEach((v) => { push(v.url); push(v.video_url); if (v.title && isUrl(v.title)) push(v.title); });
+  (s.items ?? []).forEach((it) => { push(it.url); push(it.video_url); if (it.title && isUrl(it.title)) push(it.title); extractUrls(it.desc).forEach((u) => out.push(u)); });
+  return Array.from(new Set(out));
+}
+
 function Hero({ s }: { s: Section }) {
   return (
     <div className="rounded-lg bg-gradient-to-br from-primary/15 via-primary/5 to-background p-8 text-center border">
