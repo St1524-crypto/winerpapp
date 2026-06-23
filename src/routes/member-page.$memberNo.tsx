@@ -102,7 +102,7 @@ function MemberStorefrontPage() {
               </div>
             </div>
             <p className="max-w-2xl text-sm leading-6 text-white/80 md:text-lg md:leading-7">
-              {profile.brand_intro || "歡迎來到我的源晶個人品牌頁，這裡整理了我的精選商品、影片與 VIP 拼購主招募資訊。"}
+              {heroSubtitle}
             </p>
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
               <Button asChild size="lg" className="rounded-full">
