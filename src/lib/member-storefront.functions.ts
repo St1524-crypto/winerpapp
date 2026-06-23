@@ -125,11 +125,20 @@ async function getStorefrontByMember(memberId: string) {
     .map((row) => ({ ...row.products, storefront_sort_order: row.sort_order }))
     .filter((product) => product?.id && product.status === "active");
 
+  const { data: publishedPage, error: pageError } = await supabaseAdmin
+    .from("member_storefront_pages")
+    .select("content_json, published_at")
+    .eq("member_id", memberId)
+    .not("published_at", "is", null)
+    .maybeSingle();
+  if (pageError) throw new Error(pageError.message);
+
   return {
     profile,
     featuredProducts,
     customProducts: customRes.data ?? [],
     videos: videosRes.data ?? [],
+    publishedPage: publishedPage ?? null,
   };
 }
 
