@@ -43,7 +43,7 @@ const TEMPLATE_OPTIONS: TemplateOption[] = [
   { value: "D", label: "D 影音型", desc: "所有會員皆可使用", allow: () => true },
 ];
 
-export const Route = createFileRoute("/shop/account/storefront")({
+export const Route = createFileRoute("/shop/account/storefront/")({
   component: StorefrontManagerPage,
   head: () => ({ meta: [{ title: "個人品牌頁管理 — 源晶商城" }] }),
 });
