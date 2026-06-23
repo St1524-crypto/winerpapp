@@ -84,8 +84,8 @@ function MemberStorefrontPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-700 via-blue-800 to-blue-950 text-white">
       <section className={`relative overflow-hidden bg-gradient-to-br ${templateClass} text-white`}>
-        {profile.profile_cover ? (
-          <img src={profile.profile_cover} alt={`${displayName} 封面`} className="absolute inset-0 h-full w-full object-cover opacity-40" />
+        {coverImage ? (
+          <img src={coverImage} alt={`${displayName} 封面`} className="absolute inset-0 h-full w-full object-cover opacity-40" />
         ) : null}
         <div className="absolute inset-0 bg-black/35" />
         <div className="relative container mx-auto grid gap-6 px-4 py-8 md:min-h-[520px] md:gap-8 md:py-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
