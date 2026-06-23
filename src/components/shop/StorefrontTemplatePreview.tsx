@@ -11,7 +11,9 @@ type Section = {
   date?: string;
   location?: string;
   limit?: number;
-  items?: Array<{ title?: string; desc?: string; time?: string }>;
+  items?: Array<{ title?: string; desc?: string; time?: string; url?: string; video_url?: string }>;
+  videos?: Array<{ title?: string; url?: string; video_url?: string }>;
+  video_url?: string;
   showFacebook?: boolean;
   showInstagram?: boolean;
   showLine?: boolean;
@@ -23,6 +25,38 @@ type Content = {
   sections?: Section[];
   gallery?: Array<{ image?: string; caption?: string }>;
 };
+
+const URL_RE = /https?:\/\/[^\s]+/gi;
+function isUrl(s?: string) { return !!s && /^https?:\/\//i.test(s.trim()); }
+function extractUrls(s?: string): string[] {
+  if (!s) return [];
+  return s.match(URL_RE) ?? [];
+}
+function toYouTubeEmbed(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, "");
+    let id = "";
+    if (host === "youtu.be") id = u.pathname.slice(1);
+    else if (host.endsWith("youtube.com")) {
+      if (u.pathname === "/watch") id = u.searchParams.get("v") ?? "";
+      else if (u.pathname.startsWith("/embed/")) id = u.pathname.split("/")[2] ?? "";
+      else if (u.pathname.startsWith("/shorts/")) id = u.pathname.split("/")[2] ?? "";
+    }
+    if (!id) return null;
+    return `https://www.youtube.com/embed/${id}`;
+  } catch { return null; }
+}
+function collectVideoUrls(s: Section): string[] {
+  const out: string[] = [];
+  const push = (v?: string) => { if (v && isUrl(v)) out.push(v.trim()); };
+  push(s.url); push(s.video_url);
+  if (s.title && isUrl(s.title)) push(s.title);
+  extractUrls(s.body).forEach((u) => out.push(u));
+  (s.videos ?? []).forEach((v) => { push(v.url); push(v.video_url); if (v.title && isUrl(v.title)) push(v.title); });
+  (s.items ?? []).forEach((it) => { push(it.url); push(it.video_url); if (it.title && isUrl(it.title)) push(it.title); extractUrls(it.desc).forEach((u) => out.push(u)); });
+  return Array.from(new Set(out));
+}
 
 function Hero({ s }: { s: Section }) {
   return (
@@ -120,18 +154,44 @@ function SectionView({ s, gallery }: { s: Section; gallery?: Content["gallery"] 
           </div>
         </Block>
       );
-    case "videos":
+    case "videos": {
+      const urls = collectVideoUrls(s);
+      const isTitleUrl = s.title && isUrl(s.title);
       return (
-        <Block title={s.title || "精選影片"}>
-          <div className="grid grid-cols-2 gap-2">
-            {[0, 1].map((i) => (
-              <div key={i} className="aspect-video rounded border bg-muted/40 flex items-center justify-center">
-                <Play className="w-6 h-6 text-muted-foreground/60" />
-              </div>
-            ))}
-          </div>
+        <Block title={isTitleUrl ? "精選影片" : (s.title || "精選影片")}>
+          {urls.length > 0 ? (
+            <div className="grid sm:grid-cols-2 gap-3">
+              {urls.map((u, i) => {
+                const embed = toYouTubeEmbed(u);
+                return embed ? (
+                  <div key={i} className="aspect-video rounded border overflow-hidden bg-black">
+                    <iframe
+                      src={embed}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={`video-${i}`}
+                    />
+                  </div>
+                ) : (
+                  <a key={i} href={u} target="_blank" rel="noreferrer" className="aspect-video rounded border bg-muted/40 flex items-center justify-center hover:bg-muted">
+                    <Play className="w-6 h-6 text-muted-foreground/60" />
+                  </a>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {[0, 1].map((i) => (
+                <div key={i} className="aspect-video rounded border bg-muted/40 flex items-center justify-center">
+                  <Play className="w-6 h-6 text-muted-foreground/60" />
+                </div>
+              ))}
+            </div>
+          )}
         </Block>
       );
+    }
     case "event_info":
       return (
         <Block title={s.title || "活動資訊"}>
