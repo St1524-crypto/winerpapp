@@ -37,7 +37,77 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { StorefrontTemplatePreview } from "@/components/shop/StorefrontTemplatePreview";
-import { Eye } from "lucide-react";
+import { Eye, Upload, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useRef } from "react";
+
+function CoverImageUploader({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  async function handleFile(file: File) {
+    if (!/^image\/(jpe?g|png|webp|gif)$/i.test(file.type)) {
+      toast.error("僅支援 JPG / PNG / WEBP / GIF");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("檔案超過 5MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u.user?.id ?? "anon";
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `member-storefront-templates/${uid}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
+      onChange(pub.publicUrl);
+      toast.success("已上傳封面圖");
+    } finally {
+      setUploading(false);
+    }
+  }
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2 items-start">
+        {value ? (
+          <img src={value} alt="封面預覽" className="h-20 w-20 object-cover rounded border" />
+        ) : (
+          <div className="h-20 w-20 rounded border border-dashed flex items-center justify-center text-xs text-muted-foreground">無圖</div>
+        )}
+        <div className="flex-1 space-y-2">
+          <Input placeholder="封面圖網址（或上傳）" value={value} onChange={(e) => onChange(e.target.value)} />
+          <div className="flex gap-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+                e.target.value = "";
+              }}
+            />
+            <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading}>
+              {uploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
+              上傳圖片
+            </Button>
+            {value && (
+              <Button type="button" size="sm" variant="ghost" onClick={() => onChange("")}>清除</Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/shop/account/storefront/templates")({
   component: MemberStorefrontTemplatesPage,
@@ -374,8 +444,8 @@ function MemberStorefrontTemplatesPage() {
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
             <div>
-              <Label>封面圖網址</Label>
-              <Input value={form.cover_image} onChange={(e) => setForm({ ...form, cover_image: e.target.value })} />
+              <Label>封面圖</Label>
+              <CoverImageUploader value={form.cover_image} onChange={(url) => setForm({ ...form, cover_image: url })} />
             </div>
             <div>
               <Label>content_json</Label>
@@ -410,8 +480,8 @@ function MemberStorefrontTemplatesPage() {
               <Textarea value={saveForm.description} onChange={(e) => setSaveForm({ ...saveForm, description: e.target.value })} />
             </div>
             <div>
-              <Label>封面圖網址</Label>
-              <Input value={saveForm.cover_image} onChange={(e) => setSaveForm({ ...saveForm, cover_image: e.target.value })} />
+              <Label>封面圖</Label>
+              <CoverImageUploader value={saveForm.cover_image} onChange={(url) => setSaveForm({ ...saveForm, cover_image: url })} />
             </div>
           </div>
           <DialogFooter>
