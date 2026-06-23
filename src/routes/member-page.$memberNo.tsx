@@ -41,8 +41,18 @@ function MemberStorefrontPage() {
 
   const profile = data?.found ? data.profile : null;
   const ref = profile?.id ?? "";
-  const displayName = profile?.brand_name || profile?.display_name || profile?.name || profile?.member_no || "源晶會員";
+  const publishedContent = data?.publishedPage?.content_json && typeof data.publishedPage.content_json === "object"
+    ? data.publishedPage.content_json
+    : null;
+  const heroSection = Array.isArray(publishedContent?.sections)
+    ? publishedContent.sections.find((s: any) => s?.type === "hero")
+    : null;
+  const displayName = heroSection?.title
+    || profile?.brand_name || profile?.display_name || profile?.name || profile?.member_no || "源晶會員";
+  const heroSubtitle = heroSection?.subtitle || heroSection?.body || profile?.brand_intro
+    || "歡迎來到我的源晶個人品牌頁，這裡整理了我的精選商品、影片與 VIP 拼購主招募資訊。";
   const avatar = profile?.profile_avatar || profile?.avatar_url || "";
+  const coverImage = heroSection?.image || heroSection?.cover || heroSection?.url || profile?.profile_cover || "";
   const template = profile?.page_template || "A";
   const templateClass = useMemo(() => {
     if (template === "B") return "from-blue-500 via-blue-700 to-blue-950";
@@ -74,8 +84,8 @@ function MemberStorefrontPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-700 via-blue-800 to-blue-950 text-white">
       <section className={`relative overflow-hidden bg-gradient-to-br ${templateClass} text-white`}>
-        {profile.profile_cover ? (
-          <img src={profile.profile_cover} alt={`${displayName} 封面`} className="absolute inset-0 h-full w-full object-cover opacity-40" />
+        {coverImage ? (
+          <img src={coverImage} alt={`${displayName} 封面`} className="absolute inset-0 h-full w-full object-cover opacity-40" />
         ) : null}
         <div className="absolute inset-0 bg-black/35" />
         <div className="relative container mx-auto grid gap-6 px-4 py-8 md:min-h-[520px] md:gap-8 md:py-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
@@ -92,7 +102,7 @@ function MemberStorefrontPage() {
               </div>
             </div>
             <p className="max-w-2xl text-sm leading-6 text-white/80 md:text-lg md:leading-7">
-              {profile.brand_intro || "歡迎來到我的源晶個人品牌頁，這裡整理了我的精選商品、影片與 VIP 拼購主招募資訊。"}
+              {heroSubtitle}
             </p>
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
               <Button asChild size="lg" className="rounded-full">

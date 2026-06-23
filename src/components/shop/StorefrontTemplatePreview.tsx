@@ -8,6 +8,8 @@ type Section = {
   ctaText?: string;
   buttonText?: string;
   url?: string;
+  image?: string;
+  cover?: string;
   date?: string;
   location?: string;
   limit?: number;
@@ -168,7 +170,7 @@ function SectionView({ s, gallery }: { s: Section; gallery?: Content["gallery"] 
                     <iframe
                       src={embed}
                       className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowFullScreen
                       title={`video-${i}`}
                     />
