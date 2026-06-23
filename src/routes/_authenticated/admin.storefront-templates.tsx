@@ -162,6 +162,22 @@ function AdminStorefrontTemplatesPage() {
               <Label>設為預設</Label>
             </div>
             <div className="space-y-2">
+              <Label>版型 layout</Label>
+              <Input
+                placeholder="例如：social / event / sales"
+                value={(() => {
+                  let cj: any = editing.content_json;
+                  if (typeof cj === "string") { try { cj = JSON.parse(cj); } catch { cj = {}; } }
+                  return cj?.layout || "";
+                })()}
+                onChange={(e) => {
+                  let cj: any = editing.content_json;
+                  if (typeof cj === "string") { try { cj = JSON.parse(cj); } catch { cj = {}; } }
+                  setEditing({ ...editing, content_json: { ...(cj || {}), layout: e.target.value } });
+                }}
+              />
+            </div>
+            <div className="space-y-2">
               <Label>圖片區塊（最多 7 張，含說明）</Label>
               <GalleryEditor
                 value={(() => {
@@ -176,15 +192,30 @@ function AdminStorefrontTemplatesPage() {
                 }}
               />
             </div>
-            <div>
-              <Label>content_json (進階)</Label>
+            <div className="space-y-2">
+              <Label>內容區塊 sections（表單編輯）</Label>
+              <SectionsEditor
+                value={(() => {
+                  let cj: any = editing.content_json;
+                  if (typeof cj === "string") { try { cj = JSON.parse(cj); } catch { cj = {}; } }
+                  return Array.isArray(cj?.sections) ? cj.sections : [];
+                })()}
+                onChange={(sections) => {
+                  let cj: any = editing.content_json;
+                  if (typeof cj === "string") { try { cj = JSON.parse(cj); } catch { cj = {}; } }
+                  setEditing({ ...editing, content_json: { ...(cj || {}), sections } });
+                }}
+              />
+            </div>
+            <details>
+              <summary className="cursor-pointer text-sm text-muted-foreground">content_json (進階 / 原始 JSON)</summary>
               <Textarea
                 rows={10}
-                className="font-mono text-xs"
+                className="font-mono text-xs mt-2"
                 value={typeof editing.content_json === "string" ? editing.content_json : JSON.stringify(editing.content_json ?? {}, null, 2)}
                 onChange={(e) => setEditing({ ...editing, content_json: e.target.value })}
               />
-            </div>
+            </details>
             <div className="flex gap-2">
               <Button onClick={handleSave}>儲存</Button>
               <Button variant="outline" onClick={() => setEditing(null)}>取消</Button>
@@ -370,6 +401,165 @@ function GalleryRow({
           onChange={(e) => onUpdate({ caption: e.target.value })}
         />
       </div>
+    </div>
+  );
+}
+
+type SectionItem = {
+  type: string;
+  title?: string;
+  subtitle?: string;
+  body?: string;
+  ctaText?: string;
+  buttonText?: string;
+  url?: string;
+  date?: string;
+  location?: string;
+  limit?: number;
+  items?: Array<{ title?: string; desc?: string; time?: string }>;
+  showFacebook?: boolean;
+  showInstagram?: boolean;
+  showLine?: boolean;
+  showYoutube?: boolean;
+};
+
+const SECTION_TYPES: Array<{ value: string; label: string }> = [
+  { value: "hero", label: "Hero 主視覺" },
+  { value: "about", label: "關於我" },
+  { value: "services", label: "服務項目（列表）" },
+  { value: "agenda", label: "活動流程（列表）" },
+  { value: "featured_products", label: "精選商品" },
+  { value: "custom_products", label: "獨家推薦" },
+  { value: "social_links", label: "社群連結" },
+  { value: "videos", label: "精選影片" },
+  { value: "event_info", label: "活動資訊" },
+  { value: "cta", label: "行動呼籲 CTA" },
+  { value: "contact", label: "聯絡資訊" },
+];
+
+function SectionsEditor({ value, onChange }: { value: SectionItem[]; onChange: (v: SectionItem[]) => void }) {
+  const list: SectionItem[] = Array.isArray(value) ? value : [];
+  const update = (i: number, patch: Partial<SectionItem>) =>
+    onChange(list.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
+  const add = () => onChange([...list, { type: "hero", title: "" }]);
+  const remove = (i: number) => onChange(list.filter((_, idx) => idx !== i));
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= list.length) return;
+    const next = [...list];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+
+  return (
+    <div className="space-y-3">
+      {list.map((s, i) => (
+        <div key={i} className="border rounded-md p-3 space-y-2 bg-muted/20">
+          <div className="flex items-center justify-between gap-2">
+            <select
+              className="border rounded px-2 py-1 text-sm bg-background"
+              value={s.type}
+              onChange={(e) => update(i, { type: e.target.value })}
+            >
+              {SECTION_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            <div className="flex gap-1">
+              <Button type="button" size="sm" variant="ghost" onClick={() => move(i, -1)} disabled={i === 0}>↑</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => move(i, 1)} disabled={i === list.length - 1}>↓</Button>
+              <Button type="button" size="sm" variant="destructive" onClick={() => remove(i)}>刪除</Button>
+            </div>
+          </div>
+          <SectionFields section={s} onUpdate={(patch) => update(i, patch)} />
+        </div>
+      ))}
+      <Button type="button" size="sm" variant="outline" onClick={add}>新增區塊</Button>
+    </div>
+  );
+}
+
+function SectionFields({ section, onUpdate }: { section: SectionItem; onUpdate: (patch: Partial<SectionItem>) => void }) {
+  const t = section.type;
+  const needsTitle = ["hero", "about", "services", "agenda", "featured_products", "custom_products", "social_links", "videos", "event_info", "cta", "contact"].includes(t);
+  const needsBody = ["about", "event_info"].includes(t);
+  const needsSubtitle = t === "hero";
+  const needsCtaText = t === "hero";
+  const needsButton = t === "cta";
+  const needsUrl = t === "cta";
+  const needsDateLoc = t === "event_info";
+  const needsLimit = t === "featured_products";
+  const needsItems = t === "services" || t === "agenda";
+  const needsSocial = t === "social_links" || t === "contact";
+
+  return (
+    <div className="grid gap-2">
+      {needsTitle && (
+        <Input placeholder="標題" value={section.title || ""} onChange={(e) => onUpdate({ title: e.target.value })} />
+      )}
+      {needsSubtitle && (
+        <Input placeholder="副標題 / 小標" value={section.subtitle || ""} onChange={(e) => onUpdate({ subtitle: e.target.value })} />
+      )}
+      {needsBody && (
+        <Textarea placeholder="內文" rows={3} value={section.body || ""} onChange={(e) => onUpdate({ body: e.target.value })} />
+      )}
+      {needsCtaText && (
+        <Input placeholder="CTA 按鈕文字" value={section.ctaText || ""} onChange={(e) => onUpdate({ ctaText: e.target.value })} />
+      )}
+      {needsButton && (
+        <Input placeholder="按鈕文字" value={section.buttonText || ""} onChange={(e) => onUpdate({ buttonText: e.target.value })} />
+      )}
+      {needsUrl && (
+        <Input placeholder="連結網址" value={section.url || ""} onChange={(e) => onUpdate({ url: e.target.value })} />
+      )}
+      {needsDateLoc && (
+        <div className="grid grid-cols-2 gap-2">
+          <Input placeholder="日期 (例如 2026/06/27 14:00)" value={section.date || ""} onChange={(e) => onUpdate({ date: e.target.value })} />
+          <Input placeholder="地點" value={section.location || ""} onChange={(e) => onUpdate({ location: e.target.value })} />
+        </div>
+      )}
+      {needsLimit && (
+        <Input type="number" placeholder="顯示數量上限" value={section.limit ?? 6} onChange={(e) => onUpdate({ limit: Number(e.target.value) })} />
+      )}
+      {needsSocial && (
+        <div className="flex flex-wrap gap-3 text-sm">
+          <label className="flex items-center gap-1"><input type="checkbox" checked={!!section.showFacebook} onChange={(e) => onUpdate({ showFacebook: e.target.checked })} />Facebook</label>
+          <label className="flex items-center gap-1"><input type="checkbox" checked={!!section.showInstagram} onChange={(e) => onUpdate({ showInstagram: e.target.checked })} />Instagram</label>
+          <label className="flex items-center gap-1"><input type="checkbox" checked={!!section.showYoutube} onChange={(e) => onUpdate({ showYoutube: e.target.checked })} />YouTube</label>
+          <label className="flex items-center gap-1"><input type="checkbox" checked={!!section.showLine} onChange={(e) => onUpdate({ showLine: e.target.checked })} />LINE</label>
+        </div>
+      )}
+      {needsItems && (
+        <ItemsEditor type={t} items={section.items || []} onChange={(items) => onUpdate({ items })} />
+      )}
+    </div>
+  );
+}
+
+function ItemsEditor({ type, items, onChange }: { type: string; items: Array<{ title?: string; desc?: string; time?: string }>; onChange: (v: Array<{ title?: string; desc?: string; time?: string }>) => void }) {
+  const update = (i: number, patch: Partial<{ title: string; desc: string; time: string }>) =>
+    onChange(items.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
+  const add = () => onChange([...items, type === "agenda" ? { time: "", title: "" } : { title: "", desc: "" }]);
+  const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
+  return (
+    <div className="space-y-2">
+      {items.map((it, i) => (
+        <div key={i} className="flex gap-2 items-center">
+          {type === "agenda" ? (
+            <>
+              <Input className="w-32" placeholder="時間" value={it.time || ""} onChange={(e) => update(i, { time: e.target.value })} />
+              <Input placeholder="項目" value={it.title || ""} onChange={(e) => update(i, { title: e.target.value })} />
+            </>
+          ) : (
+            <>
+              <Input className="w-40" placeholder="標題" value={it.title || ""} onChange={(e) => update(i, { title: e.target.value })} />
+              <Input placeholder="說明" value={it.desc || ""} onChange={(e) => update(i, { desc: e.target.value })} />
+            </>
+          )}
+          <Button type="button" size="sm" variant="destructive" onClick={() => remove(i)}>×</Button>
+        </div>
+      ))}
+      <Button type="button" size="sm" variant="outline" onClick={add}>新增項目</Button>
     </div>
   );
 }
