@@ -215,7 +215,7 @@ function MemberStorefrontTemplatesPage() {
     <div className="container mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold">選擇品牌頁版模</h1>
+          <h1 className="text-2xl font-bold">個人品牌行銷版模版式</h1>
           <p className="text-muted-foreground text-sm mt-1">先從管理員提供的版模選擇，或建立並套用您自己的版模。</p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -227,7 +227,7 @@ function MemberStorefrontTemplatesPage() {
       {/* Admin templates */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">管理員預設版模</h2>
+          <h2 className="text-lg font-semibold">管理員預設版模組</h2>
         </div>
         {loading ? (
           <div>載入中…</div>
