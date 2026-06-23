@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { StorefrontTemplatePreview } from "@/components/shop/StorefrontTemplatePreview";
 import { getMemberStorefront } from "@/lib/member-storefront.functions";
 import type { Product } from "@/types/product";
 
