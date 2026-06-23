@@ -162,6 +162,22 @@ function AdminStorefrontTemplatesPage() {
               <Label>設為預設</Label>
             </div>
             <div className="space-y-2">
+              <Label>版型 layout</Label>
+              <Input
+                placeholder="例如：social / event / sales"
+                value={(() => {
+                  let cj: any = editing.content_json;
+                  if (typeof cj === "string") { try { cj = JSON.parse(cj); } catch { cj = {}; } }
+                  return cj?.layout || "";
+                })()}
+                onChange={(e) => {
+                  let cj: any = editing.content_json;
+                  if (typeof cj === "string") { try { cj = JSON.parse(cj); } catch { cj = {}; } }
+                  setEditing({ ...editing, content_json: { ...(cj || {}), layout: e.target.value } });
+                }}
+              />
+            </div>
+            <div className="space-y-2">
               <Label>圖片區塊（最多 7 張，含說明）</Label>
               <GalleryEditor
                 value={(() => {
@@ -176,15 +192,30 @@ function AdminStorefrontTemplatesPage() {
                 }}
               />
             </div>
-            <div>
-              <Label>content_json (進階)</Label>
+            <div className="space-y-2">
+              <Label>內容區塊 sections（表單編輯）</Label>
+              <SectionsEditor
+                value={(() => {
+                  let cj: any = editing.content_json;
+                  if (typeof cj === "string") { try { cj = JSON.parse(cj); } catch { cj = {}; } }
+                  return Array.isArray(cj?.sections) ? cj.sections : [];
+                })()}
+                onChange={(sections) => {
+                  let cj: any = editing.content_json;
+                  if (typeof cj === "string") { try { cj = JSON.parse(cj); } catch { cj = {}; } }
+                  setEditing({ ...editing, content_json: { ...(cj || {}), sections } });
+                }}
+              />
+            </div>
+            <details>
+              <summary className="cursor-pointer text-sm text-muted-foreground">content_json (進階 / 原始 JSON)</summary>
               <Textarea
                 rows={10}
-                className="font-mono text-xs"
+                className="font-mono text-xs mt-2"
                 value={typeof editing.content_json === "string" ? editing.content_json : JSON.stringify(editing.content_json ?? {}, null, 2)}
                 onChange={(e) => setEditing({ ...editing, content_json: e.target.value })}
               />
-            </div>
+            </details>
             <div className="flex gap-2">
               <Button onClick={handleSave}>儲存</Button>
               <Button variant="outline" onClick={() => setEditing(null)}>取消</Button>
