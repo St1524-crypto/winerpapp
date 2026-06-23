@@ -67,6 +67,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
 import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wallet'
+import { Route as ShopAccountStorefrontRouteImport } from './routes/shop.account.storefront'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
 import { Route as ShopAccountOrdersRouteImport } from './routes/shop.account.orders'
@@ -397,6 +398,11 @@ const ShopAccountWalletRoute = ShopAccountWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => ShopAccountRoute,
 } as any)
+const ShopAccountStorefrontRoute = ShopAccountStorefrontRouteImport.update({
+  id: '/storefront',
+  path: '/storefront',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
 const ShopAccountProfileRoute = ShopAccountProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -515,15 +521,15 @@ const AuthenticatedAdminAuditLogsRoute =
   } as any)
 const ShopAccountStorefrontIndexRoute =
   ShopAccountStorefrontIndexRouteImport.update({
-    id: '/storefront/',
-    path: '/storefront/',
-    getParentRoute: () => ShopAccountRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => ShopAccountStorefrontRoute,
   } as any)
 const ShopAccountStorefrontTemplatesRoute =
   ShopAccountStorefrontTemplatesRouteImport.update({
-    id: '/storefront/templates',
-    path: '/storefront/templates',
-    getParentRoute: () => ShopAccountRoute,
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => ShopAccountStorefrontRoute,
   } as any)
 const ShopAccountOrdersIdRoute = ShopAccountOrdersIdRouteImport.update({
   id: '/$id',
@@ -644,6 +650,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -821,6 +828,7 @@ export interface FileRoutesById {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -912,6 +920,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/storefront'
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -1088,6 +1097,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/storefront'
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -1538,6 +1548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopAccountWalletRouteImport
       parentRoute: typeof ShopAccountRoute
     }
+    '/shop/account/storefront': {
+      id: '/shop/account/storefront'
+      path: '/storefront'
+      fullPath: '/shop/account/storefront'
+      preLoaderRoute: typeof ShopAccountStorefrontRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
     '/shop/account/profile': {
       id: '/shop/account/profile'
       path: '/profile'
@@ -1680,17 +1697,17 @@ declare module '@tanstack/react-router' {
     }
     '/shop/account/storefront/': {
       id: '/shop/account/storefront/'
-      path: '/storefront'
+      path: '/'
       fullPath: '/shop/account/storefront/'
       preLoaderRoute: typeof ShopAccountStorefrontIndexRouteImport
-      parentRoute: typeof ShopAccountRoute
+      parentRoute: typeof ShopAccountStorefrontRoute
     }
     '/shop/account/storefront/templates': {
       id: '/shop/account/storefront/templates'
-      path: '/storefront/templates'
+      path: '/templates'
       fullPath: '/shop/account/storefront/templates'
       preLoaderRoute: typeof ShopAccountStorefrontTemplatesRouteImport
-      parentRoute: typeof ShopAccountRoute
+      parentRoute: typeof ShopAccountStorefrontRoute
     }
     '/shop/account/orders/$id': {
       id: '/shop/account/orders/$id'
@@ -1930,15 +1947,29 @@ const ShopAccountOrdersRouteChildren: ShopAccountOrdersRouteChildren = {
 const ShopAccountOrdersRouteWithChildren =
   ShopAccountOrdersRoute._addFileChildren(ShopAccountOrdersRouteChildren)
 
+interface ShopAccountStorefrontRouteChildren {
+  ShopAccountStorefrontTemplatesRoute: typeof ShopAccountStorefrontTemplatesRoute
+  ShopAccountStorefrontIndexRoute: typeof ShopAccountStorefrontIndexRoute
+}
+
+const ShopAccountStorefrontRouteChildren: ShopAccountStorefrontRouteChildren = {
+  ShopAccountStorefrontTemplatesRoute: ShopAccountStorefrontTemplatesRoute,
+  ShopAccountStorefrontIndexRoute: ShopAccountStorefrontIndexRoute,
+}
+
+const ShopAccountStorefrontRouteWithChildren =
+  ShopAccountStorefrontRoute._addFileChildren(
+    ShopAccountStorefrontRouteChildren,
+  )
+
 interface ShopAccountRouteChildren {
   ShopAccountAddressesRoute: typeof ShopAccountAddressesRoute
   ShopAccountOrdersRoute: typeof ShopAccountOrdersRouteWithChildren
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
+  ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRouteWithChildren
   ShopAccountWalletRoute: typeof ShopAccountWalletRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
-  ShopAccountStorefrontTemplatesRoute: typeof ShopAccountStorefrontTemplatesRoute
-  ShopAccountStorefrontIndexRoute: typeof ShopAccountStorefrontIndexRoute
 }
 
 const ShopAccountRouteChildren: ShopAccountRouteChildren = {
@@ -1946,10 +1977,9 @@ const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountOrdersRoute: ShopAccountOrdersRouteWithChildren,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
+  ShopAccountStorefrontRoute: ShopAccountStorefrontRouteWithChildren,
   ShopAccountWalletRoute: ShopAccountWalletRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
-  ShopAccountStorefrontTemplatesRoute: ShopAccountStorefrontTemplatesRoute,
-  ShopAccountStorefrontIndexRoute: ShopAccountStorefrontIndexRoute,
 }
 
 const ShopAccountRouteWithChildren = ShopAccountRoute._addFileChildren(
