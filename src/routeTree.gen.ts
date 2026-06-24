@@ -83,6 +83,7 @@ import { Route as AuthenticatedAdminVipUpgradePackagesRouteImport } from './rout
 import { Route as AuthenticatedAdminVipUpgradeBonusCapRouteImport } from './routes/_authenticated/admin.vip-upgrade-bonus-cap'
 import { Route as AuthenticatedAdminVipTiersRouteImport } from './routes/_authenticated/admin.vip-tiers'
 import { Route as AuthenticatedAdminVipBusinessBonusCapRouteImport } from './routes/_authenticated/admin.vip-business-bonus-cap'
+import { Route as AuthenticatedAdminVipBonusPoolsRouteImport } from './routes/_authenticated/admin.vip-bonus-pools'
 import { Route as AuthenticatedAdminStorefrontTemplatesRouteImport } from './routes/_authenticated/admin.storefront-templates'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
@@ -493,6 +494,12 @@ const AuthenticatedAdminVipBusinessBonusCapRoute =
     path: '/admin/vip-business-bonus-cap',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminVipBonusPoolsRoute =
+  AuthenticatedAdminVipBonusPoolsRouteImport.update({
+    id: '/admin/vip-bonus-pools',
+    path: '/admin/vip-bonus-pools',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminStorefrontTemplatesRoute =
   AuthenticatedAdminStorefrontTemplatesRouteImport.update({
     id: '/admin/storefront-templates',
@@ -674,6 +681,7 @@ export interface FileRoutesByFullPath {
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
+  '/admin/vip-bonus-pools': typeof AuthenticatedAdminVipBonusPoolsRoute
   '/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
   '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
   '/admin/vip-upgrade-bonus-cap': typeof AuthenticatedAdminVipUpgradeBonusCapRoute
@@ -766,6 +774,7 @@ export interface FileRoutesByTo {
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
+  '/admin/vip-bonus-pools': typeof AuthenticatedAdminVipBonusPoolsRoute
   '/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
   '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
   '/admin/vip-upgrade-bonus-cap': typeof AuthenticatedAdminVipUpgradeBonusCapRoute
@@ -862,6 +871,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
+  '/_authenticated/admin/vip-bonus-pools': typeof AuthenticatedAdminVipBonusPoolsRoute
   '/_authenticated/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
   '/_authenticated/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
   '/_authenticated/admin/vip-upgrade-bonus-cap': typeof AuthenticatedAdminVipUpgradeBonusCapRoute
@@ -959,6 +969,7 @@ export interface FileRouteTypes {
     | '/admin/role-manager'
     | '/admin/security'
     | '/admin/storefront-templates'
+    | '/admin/vip-bonus-pools'
     | '/admin/vip-business-bonus-cap'
     | '/admin/vip-tiers'
     | '/admin/vip-upgrade-bonus-cap'
@@ -1051,6 +1062,7 @@ export interface FileRouteTypes {
     | '/admin/role-manager'
     | '/admin/security'
     | '/admin/storefront-templates'
+    | '/admin/vip-bonus-pools'
     | '/admin/vip-business-bonus-cap'
     | '/admin/vip-tiers'
     | '/admin/vip-upgrade-bonus-cap'
@@ -1146,6 +1158,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/role-manager'
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/storefront-templates'
+    | '/_authenticated/admin/vip-bonus-pools'
     | '/_authenticated/admin/vip-business-bonus-cap'
     | '/_authenticated/admin/vip-tiers'
     | '/_authenticated/admin/vip-upgrade-bonus-cap'
@@ -1724,6 +1737,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminVipBusinessBonusCapRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/vip-bonus-pools': {
+      id: '/_authenticated/admin/vip-bonus-pools'
+      path: '/admin/vip-bonus-pools'
+      fullPath: '/admin/vip-bonus-pools'
+      preLoaderRoute: typeof AuthenticatedAdminVipBonusPoolsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/storefront-templates': {
       id: '/_authenticated/admin/storefront-templates'
       path: '/admin/storefront-templates'
@@ -1981,6 +2001,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedAdminStorefrontTemplatesRoute: typeof AuthenticatedAdminStorefrontTemplatesRoute
+  AuthenticatedAdminVipBonusPoolsRoute: typeof AuthenticatedAdminVipBonusPoolsRoute
   AuthenticatedAdminVipBusinessBonusCapRoute: typeof AuthenticatedAdminVipBusinessBonusCapRoute
   AuthenticatedAdminVipTiersRoute: typeof AuthenticatedAdminVipTiersRoute
   AuthenticatedAdminVipUpgradeBonusCapRoute: typeof AuthenticatedAdminVipUpgradeBonusCapRoute
@@ -2031,6 +2052,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
   AuthenticatedAdminStorefrontTemplatesRoute:
     AuthenticatedAdminStorefrontTemplatesRoute,
+  AuthenticatedAdminVipBonusPoolsRoute: AuthenticatedAdminVipBonusPoolsRoute,
   AuthenticatedAdminVipBusinessBonusCapRoute:
     AuthenticatedAdminVipBusinessBonusCapRoute,
   AuthenticatedAdminVipTiersRoute: AuthenticatedAdminVipTiersRoute,
