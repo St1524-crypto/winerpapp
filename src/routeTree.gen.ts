@@ -90,6 +90,7 @@ import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
 import { Route as AuthenticatedAdminReferralTreeRouteImport } from './routes/_authenticated/admin.referral-tree'
+import { Route as AuthenticatedAdminOperationsRouteImport } from './routes/_authenticated/admin.operations'
 import { Route as AuthenticatedAdminMemberSearchRouteImport } from './routes/_authenticated/admin.member-search'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
 import { Route as AuthenticatedAdminBonusesRouteImport } from './routes/_authenticated/admin.bonuses'
@@ -103,6 +104,10 @@ import { Route as ApiPublicHooksBonusDailyTickRouteImport } from './routes/api/p
 import { Route as ApiPublicCronExpireGroupBuysRouteImport } from './routes/api/public/cron/expire-group-buys'
 import { Route as ApiPublicAiRecruitRouteImport } from './routes/api/public/ai/recruit'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
+import { Route as AuthenticatedAdminOperationsTasksRouteImport } from './routes/_authenticated/admin.operations.tasks'
+import { Route as AuthenticatedAdminOperationsMembersRouteImport } from './routes/_authenticated/admin.operations.members'
+import { Route as AuthenticatedAdminOperationsAttendanceRouteImport } from './routes/_authenticated/admin.operations.attendance'
+import { Route as AuthenticatedAdminOperationsAssistantRouteImport } from './routes/_authenticated/admin.operations.assistant'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 import { Route as AuthenticatedAdminBonusesBatchesBatchIdRouteImport } from './routes/_authenticated/admin.bonuses.batches.$batchId'
 
@@ -537,6 +542,12 @@ const AuthenticatedAdminReferralTreeRoute =
     path: '/admin/referral-tree',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminOperationsRoute =
+  AuthenticatedAdminOperationsRouteImport.update({
+    id: '/admin/operations',
+    path: '/admin/operations',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminMemberSearchRoute =
   AuthenticatedAdminMemberSearchRouteImport.update({
     id: '/admin/member-search',
@@ -613,6 +624,30 @@ const AuthenticatedB2bAccountsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedB2bAccountsRoute,
   } as any)
+const AuthenticatedAdminOperationsTasksRoute =
+  AuthenticatedAdminOperationsTasksRouteImport.update({
+    id: '/tasks',
+    path: '/tasks',
+    getParentRoute: () => AuthenticatedAdminOperationsRoute,
+  } as any)
+const AuthenticatedAdminOperationsMembersRoute =
+  AuthenticatedAdminOperationsMembersRouteImport.update({
+    id: '/members',
+    path: '/members',
+    getParentRoute: () => AuthenticatedAdminOperationsRoute,
+  } as any)
+const AuthenticatedAdminOperationsAttendanceRoute =
+  AuthenticatedAdminOperationsAttendanceRouteImport.update({
+    id: '/attendance',
+    path: '/attendance',
+    getParentRoute: () => AuthenticatedAdminOperationsRoute,
+  } as any)
+const AuthenticatedAdminOperationsAssistantRoute =
+  AuthenticatedAdminOperationsAssistantRouteImport.update({
+    id: '/assistant',
+    path: '/assistant',
+    getParentRoute: () => AuthenticatedAdminOperationsRoute,
+  } as any)
 const AuthenticatedAdminCompaniesNewRoute =
   AuthenticatedAdminCompaniesNewRouteImport.update({
     id: '/new',
@@ -683,6 +718,7 @@ export interface FileRoutesByFullPath {
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
+  '/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -713,6 +749,10 @@ export interface FileRoutesByFullPath {
   '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
+  '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
+  '/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
+  '/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
+  '/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
@@ -777,6 +817,7 @@ export interface FileRoutesByTo {
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
+  '/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -806,6 +847,10 @@ export interface FileRoutesByTo {
   '/finance': typeof AuthenticatedFinanceIndexRoute
   '/shop/account': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
+  '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
+  '/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
+  '/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
+  '/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
@@ -875,6 +920,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/_authenticated/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
+  '/_authenticated/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
   '/_authenticated/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -905,6 +951,10 @@ export interface FileRoutesById {
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
+  '/_authenticated/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
+  '/_authenticated/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
+  '/_authenticated/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
+  '/_authenticated/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
@@ -974,6 +1024,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses'
     | '/admin/companies'
     | '/admin/member-search'
+    | '/admin/operations'
     | '/admin/referral-tree'
     | '/admin/referrals'
     | '/admin/role-manager'
@@ -1004,6 +1055,10 @@ export interface FileRouteTypes {
     | '/finance/'
     | '/shop/account/'
     | '/admin/companies/new'
+    | '/admin/operations/assistant'
+    | '/admin/operations/attendance'
+    | '/admin/operations/members'
+    | '/admin/operations/tasks'
     | '/b2b/accounts/$id'
     | '/api/public/ai/recruit'
     | '/api/public/cron/expire-group-buys'
@@ -1068,6 +1123,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses'
     | '/admin/companies'
     | '/admin/member-search'
+    | '/admin/operations'
     | '/admin/referral-tree'
     | '/admin/referrals'
     | '/admin/role-manager'
@@ -1097,6 +1153,10 @@ export interface FileRouteTypes {
     | '/finance'
     | '/shop/account'
     | '/admin/companies/new'
+    | '/admin/operations/assistant'
+    | '/admin/operations/attendance'
+    | '/admin/operations/members'
+    | '/admin/operations/tasks'
     | '/b2b/accounts/$id'
     | '/api/public/ai/recruit'
     | '/api/public/cron/expire-group-buys'
@@ -1165,6 +1225,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bonuses'
     | '/_authenticated/admin/companies'
     | '/_authenticated/admin/member-search'
+    | '/_authenticated/admin/operations'
     | '/_authenticated/admin/referral-tree'
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/role-manager'
@@ -1195,6 +1256,10 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/'
     | '/shop/account/'
     | '/_authenticated/admin/companies/new'
+    | '/_authenticated/admin/operations/assistant'
+    | '/_authenticated/admin/operations/attendance'
+    | '/_authenticated/admin/operations/members'
+    | '/_authenticated/admin/operations/tasks'
     | '/_authenticated/b2b/accounts/$id'
     | '/api/public/ai/recruit'
     | '/api/public/cron/expire-group-buys'
@@ -1799,6 +1864,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReferralTreeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/operations': {
+      id: '/_authenticated/admin/operations'
+      path: '/admin/operations'
+      fullPath: '/admin/operations'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/member-search': {
       id: '/_authenticated/admin/member-search'
       path: '/admin/member-search'
@@ -1890,6 +1962,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedB2bAccountsIdRouteImport
       parentRoute: typeof AuthenticatedB2bAccountsRoute
     }
+    '/_authenticated/admin/operations/tasks': {
+      id: '/_authenticated/admin/operations/tasks'
+      path: '/tasks'
+      fullPath: '/admin/operations/tasks'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsTasksRouteImport
+      parentRoute: typeof AuthenticatedAdminOperationsRoute
+    }
+    '/_authenticated/admin/operations/members': {
+      id: '/_authenticated/admin/operations/members'
+      path: '/members'
+      fullPath: '/admin/operations/members'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsMembersRouteImport
+      parentRoute: typeof AuthenticatedAdminOperationsRoute
+    }
+    '/_authenticated/admin/operations/attendance': {
+      id: '/_authenticated/admin/operations/attendance'
+      path: '/attendance'
+      fullPath: '/admin/operations/attendance'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsAttendanceRouteImport
+      parentRoute: typeof AuthenticatedAdminOperationsRoute
+    }
+    '/_authenticated/admin/operations/assistant': {
+      id: '/_authenticated/admin/operations/assistant'
+      path: '/assistant'
+      fullPath: '/admin/operations/assistant'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsAssistantRouteImport
+      parentRoute: typeof AuthenticatedAdminOperationsRoute
+    }
     '/_authenticated/admin/companies/new': {
       id: '/_authenticated/admin/companies/new'
       path: '/new'
@@ -1968,6 +2068,30 @@ const AuthenticatedAdminCompaniesRouteWithChildren =
     AuthenticatedAdminCompaniesRouteChildren,
   )
 
+interface AuthenticatedAdminOperationsRouteChildren {
+  AuthenticatedAdminOperationsAssistantRoute: typeof AuthenticatedAdminOperationsAssistantRoute
+  AuthenticatedAdminOperationsAttendanceRoute: typeof AuthenticatedAdminOperationsAttendanceRoute
+  AuthenticatedAdminOperationsMembersRoute: typeof AuthenticatedAdminOperationsMembersRoute
+  AuthenticatedAdminOperationsTasksRoute: typeof AuthenticatedAdminOperationsTasksRoute
+}
+
+const AuthenticatedAdminOperationsRouteChildren: AuthenticatedAdminOperationsRouteChildren =
+  {
+    AuthenticatedAdminOperationsAssistantRoute:
+      AuthenticatedAdminOperationsAssistantRoute,
+    AuthenticatedAdminOperationsAttendanceRoute:
+      AuthenticatedAdminOperationsAttendanceRoute,
+    AuthenticatedAdminOperationsMembersRoute:
+      AuthenticatedAdminOperationsMembersRoute,
+    AuthenticatedAdminOperationsTasksRoute:
+      AuthenticatedAdminOperationsTasksRoute,
+  }
+
+const AuthenticatedAdminOperationsRouteWithChildren =
+  AuthenticatedAdminOperationsRoute._addFileChildren(
+    AuthenticatedAdminOperationsRouteChildren,
+  )
+
 interface AuthenticatedB2bAccountsRouteChildren {
   AuthenticatedB2bAccountsIdRoute: typeof AuthenticatedB2bAccountsIdRoute
 }
@@ -2016,6 +2140,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminBonusesRoute: typeof AuthenticatedAdminBonusesRouteWithChildren
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
   AuthenticatedAdminMemberSearchRoute: typeof AuthenticatedAdminMemberSearchRoute
+  AuthenticatedAdminOperationsRoute: typeof AuthenticatedAdminOperationsRouteWithChildren
   AuthenticatedAdminReferralTreeRoute: typeof AuthenticatedAdminReferralTreeRoute
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
@@ -2067,6 +2192,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminCompaniesRoute:
     AuthenticatedAdminCompaniesRouteWithChildren,
   AuthenticatedAdminMemberSearchRoute: AuthenticatedAdminMemberSearchRoute,
+  AuthenticatedAdminOperationsRoute:
+    AuthenticatedAdminOperationsRouteWithChildren,
   AuthenticatedAdminReferralTreeRoute: AuthenticatedAdminReferralTreeRoute,
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
