@@ -78,6 +78,7 @@ import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_au
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
+import { Route as AuthenticatedAdminVipUpgradePackagesRouteImport } from './routes/_authenticated/admin.vip-upgrade-packages'
 import { Route as AuthenticatedAdminVipTiersRouteImport } from './routes/_authenticated/admin.vip-tiers'
 import { Route as AuthenticatedAdminStorefrontTemplatesRouteImport } from './routes/_authenticated/admin.storefront-templates'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
@@ -460,6 +461,12 @@ const AuthenticatedB2bAccountsRoute =
     path: '/b2b/accounts',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminVipUpgradePackagesRoute =
+  AuthenticatedAdminVipUpgradePackagesRouteImport.update({
+    id: '/admin/vip-upgrade-packages',
+    path: '/admin/vip-upgrade-packages',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminVipTiersRoute =
   AuthenticatedAdminVipTiersRouteImport.update({
     id: '/admin/vip-tiers',
@@ -648,6 +655,7 @@ export interface FileRoutesByFullPath {
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
+  '/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -736,6 +744,7 @@ export interface FileRoutesByTo {
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
+  '/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -828,6 +837,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/_authenticated/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
+  '/_authenticated/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -921,6 +931,7 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/admin/storefront-templates'
     | '/admin/vip-tiers'
+    | '/admin/vip-upgrade-packages'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
     | '/finance/payable'
@@ -1009,6 +1020,7 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/admin/storefront-templates'
     | '/admin/vip-tiers'
+    | '/admin/vip-upgrade-packages'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
     | '/finance/payable'
@@ -1100,6 +1112,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/storefront-templates'
     | '/_authenticated/admin/vip-tiers'
+    | '/_authenticated/admin/vip-upgrade-packages'
     | '/_authenticated/b2b/accounts'
     | '/_authenticated/finance/bank-accounts'
     | '/_authenticated/finance/payable'
@@ -1638,6 +1651,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedB2bAccountsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/vip-upgrade-packages': {
+      id: '/_authenticated/admin/vip-upgrade-packages'
+      path: '/admin/vip-upgrade-packages'
+      fullPath: '/admin/vip-upgrade-packages'
+      preLoaderRoute: typeof AuthenticatedAdminVipUpgradePackagesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/vip-tiers': {
       id: '/_authenticated/admin/vip-tiers'
       path: '/admin/vip-tiers'
@@ -1903,6 +1923,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedAdminStorefrontTemplatesRoute: typeof AuthenticatedAdminStorefrontTemplatesRoute
   AuthenticatedAdminVipTiersRoute: typeof AuthenticatedAdminVipTiersRoute
+  AuthenticatedAdminVipUpgradePackagesRoute: typeof AuthenticatedAdminVipUpgradePackagesRoute
   AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -1950,6 +1971,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminStorefrontTemplatesRoute:
     AuthenticatedAdminStorefrontTemplatesRoute,
   AuthenticatedAdminVipTiersRoute: AuthenticatedAdminVipTiersRoute,
+  AuthenticatedAdminVipUpgradePackagesRoute:
+    AuthenticatedAdminVipUpgradePackagesRoute,
   AuthenticatedB2bAccountsRoute: AuthenticatedB2bAccountsRouteWithChildren,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
