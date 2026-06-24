@@ -53,22 +53,24 @@ export const upsertBankAccount = createServerFn({ method: "POST" })
       .from("profiles").select("current_company_id").eq("id", context.userId).maybeSingle();
     const company_id = (data.company_id as string) ?? prof?.current_company_id;
     if (!company_id) throw new Error("no company");
-    const payload = { ...data, company_id };
-    if (payload.id) {
-      const { id, ...rest } = payload as { id: string };
+    const payload: Record<string, unknown> = { ...data, company_id };
+    const existingId = typeof payload.id === "string" ? payload.id : null;
+    const isDefault = payload.is_default === true;
+    if (existingId) {
+      delete payload.id;
       const { data: row, error } = await context.supabase
-        .from("quote_bank_accounts").update(rest as never).eq("id", id).select().single();
+        .from("quote_bank_accounts").update(payload as never).eq("id", existingId).select().single();
       if (error) throw error;
-      if ((payload as { is_default?: boolean }).is_default) {
+      if (isDefault) {
         await context.supabase.from("quote_bank_accounts")
-          .update({ is_default: false } as never).neq("id", id).eq("company_id", company_id);
+          .update({ is_default: false } as never).neq("id", existingId).eq("company_id", company_id);
       }
       return row;
     }
     const { data: row, error } = await context.supabase
       .from("quote_bank_accounts").insert(payload as never).select().single();
     if (error) throw error;
-    if ((payload as { is_default?: boolean }).is_default && row) {
+    if (isDefault && row) {
       await context.supabase.from("quote_bank_accounts")
         .update({ is_default: false } as never).neq("id", (row as { id: string }).id).eq("company_id", company_id);
     }
