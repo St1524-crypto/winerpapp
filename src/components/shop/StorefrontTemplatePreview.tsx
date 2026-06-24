@@ -256,13 +256,20 @@ export function StorefrontTemplatePreview({ content }: { content: any }) {
         <div className="text-xs text-muted-foreground">版型：{data.layout}</div>
       )}
       {data.gallery && data.gallery.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {data.gallery.slice(0, 6).map((g, i) => (
-            <div key={i} className="aspect-square rounded border overflow-hidden bg-muted/40">
-              {g.image ? (
-                <img src={g.image} alt={g.caption ?? ""} className="w-full h-full object-cover" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {data.gallery.slice(0, 7).map((g, i) => (
+            <figure key={i} className="rounded border overflow-hidden bg-muted/40 flex flex-col">
+              <div className="aspect-square">
+                {g.image ? (
+                  <img src={g.image} alt={g.caption ?? ""} className="w-full h-full object-cover" />
+                ) : null}
+              </div>
+              {g.caption ? (
+                <figcaption className="text-xs md:text-sm text-foreground px-2 py-2 bg-background/80">
+                  {g.caption}
+                </figcaption>
               ) : null}
-            </div>
+            </figure>
           ))}
         </div>
       )}
