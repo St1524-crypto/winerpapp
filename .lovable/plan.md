@@ -1,119 +1,107 @@
+## VIP 升級套組管理功能規劃
 
-# 好處多多樂拼購 AI 招商中心 — 實作計畫
+### 目標
+建立 V/S/T/E/A 五階 VIP 階級制度與會員可直接購買的升級套組，付款成功後自動升級並寫入紀錄。
 
-沿用現有 profiles / products / sales_orders / user_roles / company_id 多租戶基礎，新增四個獨立模組。
+---
 
-## 一、資料庫（migration）
+### DB 結構（新增）
 
-### 1. 拼團系統
-```text
-group_buys           團主檔
-  ├─ id, company_id, product_id, initiator_id (發起人)
-  ├─ unit_price, target_count (=6), current_count
-  ├─ status: open | completed | expired | refunded
-  ├─ started_at, expires_at (默認 +7 天)
-  └─ completed_at, winner_id (中獎者), winner_picked_at
+**1. `vip_tiers`** — VIP 階級主檔（admin 可編輯）
+- `code` (V/S/T/E/A, unique)
+- `name`、`sort_order`
+- `required_reward_points` (門檻)
+- `required_direct_vip` (直推 VIP 門檻)
+- `required_mentor_tier` + `required_mentor_count` (輔導下線)
+- `cashback_rate` (回饋率 %)
+- `revenue_share_rate` (營業分紅 %)
+- `upgrade_bonus_cap` (升級分紅上限)
+- `renewal_window_days` (續領週期，如 180)
+- `renewal_required_new_vip` (續領需新增 VIP 數)
+- `extra_config` (jsonb，存放開發專員小組等特殊規則)
+- `status` (active/inactive)
 
-group_buy_orders     參與單（最多每人 2 單）
-  ├─ id, group_buy_id, user_id, quantity (1-2)
-  ├─ sales_order_id (連結正式訂單)
-  ├─ payment_method: points | bank_transfer | mixed
-  ├─ points_used, cash_amount
-  ├─ status: pending_payment | paid | refunded
-  └─ created_at, paid_at
+**2. `vip_upgrade_packages`** — 升級套組
+- `tier_code` (對應 vip_tiers.code)
+- `name`、`description`
+- `price`、`bonus_points` (贈送獎勵點)
+- `duration_days` (有效天數，0=永久)
+- `sort_order`、`status`
 
-group_buy_settings   後台設定（每公司一筆）
-  ├─ winner_reward_pct DEFAULT 80   (中獎者購物點 %)
-  ├─ initiator_reward_pct DEFAULT 10 (發起人獎勵點 %)
-  ├─ default_duration_days DEFAULT 7
-  ├─ max_orders_per_user DEFAULT 2
-  └─ auto_refund_hours (未滿員自動退款，留欄位但不啟用)
-```
+**3. `vip_upgrade_orders`** — 升級訂單記錄
+- `user_id`、`package_id`、`tier_code`
+- `amount`、`payment_method`
+- `payment_status` (pending/paid/failed)
+- `paid_at`、`applied_at`
+- `previous_tier`、`new_tier`
+- `sales_order_id` (關聯既有 sales_orders，可選)
 
-規則 trigger：
-- `before insert on group_buy_orders`：檢查同人同團 ≤ 2 單、團未滿、未過期
-- `before insert on group_buys`：檢查同 product 沒有 status=open 的團
-- `after update on group_buys` → status 變 completed：呼叫 `private.settle_group_buy()` 隨機抽 winner、發放獎勵到 `reward_wallet_logs` + `member_points_wallet`
+**RLS**
+- `vip_tiers`：anon/authenticated SELECT active；admin/super_admin 全權
+- `vip_upgrade_packages`：authenticated SELECT active；admin/super_admin 全權
+- `vip_upgrade_orders`：本人 SELECT 自己；admin/super_admin 全權；service_role 寫入
 
-### 2. 獎勵點系統（沿用既有 wallet）
-- `reward_wallet_logs` 已存在；新增 `source_type` 值：`group_buy_winner` / `group_buy_initiator` / `referral` / `repurchase`
-- 新增 server fn：`spendPoints(orderId, amount)` 扣購物點付款
+**現有 profiles 欄位重用**：`vip_tier`(若無則新增 text)、`is_vip`、`vip_expires_at`
 
-### 3. Webhook 系統
-```text
-webhook_endpoints
-  ├─ id, company_id, name, url
-  ├─ bearer_token (隨機產生，後台可重 roll)
-  ├─ events text[] (member.created | order.created | group_buy.created | vip.upgraded)
-  ├─ active, created_at
+---
 
-webhook_deliveries   投遞紀錄（除錯用）
-  ├─ id, endpoint_id, event, payload jsonb
-  ├─ status_code, response_body, attempts
-  └─ delivered_at, error
-```
+### 階級資料種子（migration 內 insert）
+| Code | 獎勵點 | 直推 VIP | 輔導 | 回饋 | 營業分紅 | 升級上限 | 續領 |
+|---|---|---|---|---|---|---|---|
+| V | 800 | — | — | 5% | — | — | — |
+| S | 3500 | 10 | — | 10% | — | — | — |
+| T | 9000 | 20 | 3×S | 20% | — | — | — |
+| E | 21000 | 30 | 3×T | 40% | 5% | 36800 | 180d/1 VIP |
+| A | 70000 | 50 | — | 50% | 6% | 68000 | 180d/1 VIP（當月+10 觸發專員 5%） |
 
-事件觸發點（server fn 內，非同步 fire-and-forget）：
-- `handle_new_user` 後 → `member.created`
-- `create_sales_order_with_items` 完成 → `order.created`
-- group_buy 建立 → `group_buy.created`
-- VIP 升級訂單付款完成 → `vip.upgraded`
+---
 
-## 二、Server functions / routes
+### Server functions（新檔）`src/lib/vip-tiers.functions.ts`
+- `listVipTiers` (public)
+- `upsertVipTier` (admin)
+- `listVipUpgradePackages` (public, only active)
+- `upsertVipUpgradePackage` (admin)
+- `deleteVipUpgradePackage` (admin)
+- `purchaseVipUpgrade({ packageId })` (authenticated)
+  1. 建立 `vip_upgrade_orders` (pending)
+  2. 透過既有金流 → 標記 paid
+  3. **僅升不降**：若新階級 sort_order ≤ 現階級則只發贈點，不改 tier
+  4. 更新 `profiles.vip_tier` / `is_vip` / `vip_expires_at`
+  5. 寫 `audit_logs`
+  6. 發放 bonus_points 至 `member_points_wallet.reward_points`
+- `adminApplyVipUpgrade` (admin 手動)
 
-```text
-src/lib/group-buy.functions.ts
-  - listOpenGroupBuys({ companyId })
-  - getGroupBuy({ id })
-  - createGroupBuy({ productId, durationDays? })
-  - joinGroupBuy({ groupBuyId, quantity, paymentMethod, pointsUsed })
-  - settleGroupBuy({ id })   // admin 手動結算
-  - expireGroupBuys()         // pg_cron 每小時呼叫
+---
 
-src/lib/rewards.functions.ts
-  - getMyWallet()
-  - listMyRewardLogs()
-  - spendPoints({ amount, orderId })
+### Routes（新增）
+- `src/routes/_authenticated/admin.vip-tiers.tsx` — 階級 CRUD
+- `src/routes/_authenticated/admin.vip-upgrade-packages.tsx` — 套組 CRUD
+- `src/routes/shop.vip.tsx` — **改寫** 顯示按階級分組的套組，購買 → `purchaseVipUpgrade`
+- `src/routes/shop.account.vip.tsx` — 會員 VIP 現況、歷史升級紀錄
 
-src/lib/webhooks.functions.ts (admin)
-  - list/create/update/delete endpoints
-  - rerollToken({ id })
-  - listDeliveries({ endpointId })
+導覽：AdminSidebar 加入兩個 admin 連結。
 
-src/lib/webhooks.server.ts
-  - deliverWebhook(event, payload)  // fetch + Bearer + 寫 deliveries
+---
 
-src/routes/api/ai/recruit.ts (server route, /api/public/ai/recruit)
-  - POST { messages } → Lovable AI Gateway streamText
-  - system prompt 內含即時讀取的 VIP 方案、商品、獎勵設定
-```
+### 對既有流程的影響
+| 模組 | 影響 |
+|---|---|
+| `sales_orders` | 不動。升級走獨立 `vip_upgrade_orders`，可選關聯 |
+| `bonus_records` | 不動 |
+| `member_points_wallet` | 僅 INSERT 贈送獎勵點（既有 upgradeVip 已是同模式） |
+| `vip_plans` (舊) | 保留向下相容；新流程改用 `vip_upgrade_packages`。舊 `/shop/vip` 改為新版 |
+| `audit_logs` | 新增 `vip_upgrade` 動作類型 |
+| RLS / 既有政策 | 不動 |
 
-## 三、前台頁面
+**不會降級**：`purchaseVipUpgrade` 比對 sort_order，只允許升階。
 
-- `/group-buys` — 公開拼團列表（卡片：商品圖 / 進度 6 人 / 倒數 / 加入按鈕）
-- `/group-buys/$id` — 詳情頁（成員、剩餘名額、付款方式選擇：購物點 / 匯款 / 混合）
-- `/recruit` — AI 招商中心，公開頁面 + Chat UI（useChat 串 `/api/public/ai/recruit`）
-- 商品頁加「發起拼團」按鈕（VIP 會員可用）
+---
 
-## 四、後台頁面（admin）
-
-- `/group-buy-admin` — 拼團管理（列表、強制結算 / 退款、查看成員）
-- `/group-buy-settings` — 獎勵 % / 期限 / 限購設定
-- `/webhooks-admin` — Webhook endpoint 管理 + 投遞紀錄
-- 既有 `/rewards` 頁面擴充來源類型篩選
-
-## 五、技術細節
-
-- 抽中獎者：用 `ORDER BY random() LIMIT 1` 從付款完成的 participants 中挑，記錄到 `group_buys.winner_id`
-- 購物點付款：在 `joinGroupBuy` 內以交易（rpc function）同步扣 wallet 並建立 sales_order
-- AI 招商：`gemini-3-flash-preview`，system prompt 動態組合 VIP plans、active products、bonus settings 的簡述
-- Webhook security：Bearer Token 在 header `Authorization: Bearer <token>`，payload 加 `event`、`timestamp`、`data`
-- pg_cron 每小時跑 `expireGroupBuys`（呼叫 `/api/public/cron/expire-group-buys`，apikey 驗證）
-
-## 六、不在此次範圍
-
-- 不改既有 profiles / sales_orders / products 結構（只新增關聯表）
-- 不做拼團聊天室 / 分享圖
-- HMAC 簽章（先 Bearer，之後可加）
-
-完成後驗收：發起拼團 → 6 人加入 → 自動抽中獎者並發點 → Webhook 收到事件 → AI 招商頁能回答 VIP 制度問題。
+### 驗證計畫
+1. Admin 登入 → `/admin/vip-tiers` 編輯 V→A 五階
+2. `/admin/vip-upgrade-packages` 建立 V/S/T 套組
+3. 會員登入 `/shop/vip` → 購買 V 套組 → 確認 profile.vip_tier=V、wallet+獎勵點、audit_logs 新增
+4. 再買 V 套組（同階）→ 只發點不降級
+5. 買 S 套組 → 升級到 S
+6. `/shop/account/vip` 顯示現況 + 紀錄
+7. 非 admin 開 `/admin/vip-tiers` → 403

@@ -67,6 +67,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
 import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wallet'
+import { Route as ShopAccountVipRouteImport } from './routes/shop.account.vip'
 import { Route as ShopAccountStorefrontRouteImport } from './routes/shop.account.storefront'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
@@ -78,6 +79,8 @@ import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_au
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
+import { Route as AuthenticatedAdminVipUpgradePackagesRouteImport } from './routes/_authenticated/admin.vip-upgrade-packages'
+import { Route as AuthenticatedAdminVipTiersRouteImport } from './routes/_authenticated/admin.vip-tiers'
 import { Route as AuthenticatedAdminStorefrontTemplatesRouteImport } from './routes/_authenticated/admin.storefront-templates'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
@@ -398,6 +401,11 @@ const ShopAccountWalletRoute = ShopAccountWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => ShopAccountRoute,
 } as any)
+const ShopAccountVipRoute = ShopAccountVipRouteImport.update({
+  id: '/vip',
+  path: '/vip',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
 const ShopAccountStorefrontRoute = ShopAccountStorefrontRouteImport.update({
   id: '/storefront',
   path: '/storefront',
@@ -457,6 +465,18 @@ const AuthenticatedB2bAccountsRoute =
   AuthenticatedB2bAccountsRouteImport.update({
     id: '/b2b/accounts',
     path: '/b2b/accounts',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminVipUpgradePackagesRoute =
+  AuthenticatedAdminVipUpgradePackagesRouteImport.update({
+    id: '/admin/vip-upgrade-packages',
+    path: '/admin/vip-upgrade-packages',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminVipTiersRoute =
+  AuthenticatedAdminVipTiersRouteImport.update({
+    id: '/admin/vip-tiers',
+    path: '/admin/vip-tiers',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminStorefrontTemplatesRoute =
@@ -640,6 +660,8 @@ export interface FileRoutesByFullPath {
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
+  '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
+  '/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -651,6 +673,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
+  '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -727,6 +750,8 @@ export interface FileRoutesByTo {
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
+  '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
+  '/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -737,6 +762,7 @@ export interface FileRoutesByTo {
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -818,6 +844,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
+  '/_authenticated/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
+  '/_authenticated/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -829,6 +857,7 @@ export interface FileRoutesById {
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
+  '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
@@ -910,6 +939,8 @@ export interface FileRouteTypes {
     | '/admin/role-manager'
     | '/admin/security'
     | '/admin/storefront-templates'
+    | '/admin/vip-tiers'
+    | '/admin/vip-upgrade-packages'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
     | '/finance/payable'
@@ -921,6 +952,7 @@ export interface FileRouteTypes {
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/storefront'
+    | '/shop/account/vip'
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -997,6 +1029,8 @@ export interface FileRouteTypes {
     | '/admin/role-manager'
     | '/admin/security'
     | '/admin/storefront-templates'
+    | '/admin/vip-tiers'
+    | '/admin/vip-upgrade-packages'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
     | '/finance/payable'
@@ -1007,6 +1041,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/vip'
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -1087,6 +1122,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/role-manager'
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/storefront-templates'
+    | '/_authenticated/admin/vip-tiers'
+    | '/_authenticated/admin/vip-upgrade-packages'
     | '/_authenticated/b2b/accounts'
     | '/_authenticated/finance/bank-accounts'
     | '/_authenticated/finance/payable'
@@ -1098,6 +1135,7 @@ export interface FileRouteTypes {
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/storefront'
+    | '/shop/account/vip'
     | '/shop/account/wallet'
     | '/shop/category/$slug'
     | '/shop/product/$id'
@@ -1548,6 +1586,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopAccountWalletRouteImport
       parentRoute: typeof ShopAccountRoute
     }
+    '/shop/account/vip': {
+      id: '/shop/account/vip'
+      path: '/vip'
+      fullPath: '/shop/account/vip'
+      preLoaderRoute: typeof ShopAccountVipRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
     '/shop/account/storefront': {
       id: '/shop/account/storefront'
       path: '/storefront'
@@ -1623,6 +1668,20 @@ declare module '@tanstack/react-router' {
       path: '/b2b/accounts'
       fullPath: '/b2b/accounts'
       preLoaderRoute: typeof AuthenticatedB2bAccountsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/vip-upgrade-packages': {
+      id: '/_authenticated/admin/vip-upgrade-packages'
+      path: '/admin/vip-upgrade-packages'
+      fullPath: '/admin/vip-upgrade-packages'
+      preLoaderRoute: typeof AuthenticatedAdminVipUpgradePackagesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/vip-tiers': {
+      id: '/_authenticated/admin/vip-tiers'
+      path: '/admin/vip-tiers'
+      fullPath: '/admin/vip-tiers'
+      preLoaderRoute: typeof AuthenticatedAdminVipTiersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/storefront-templates': {
@@ -1882,6 +1941,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedAdminStorefrontTemplatesRoute: typeof AuthenticatedAdminStorefrontTemplatesRoute
+  AuthenticatedAdminVipTiersRoute: typeof AuthenticatedAdminVipTiersRoute
+  AuthenticatedAdminVipUpgradePackagesRoute: typeof AuthenticatedAdminVipUpgradePackagesRoute
   AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -1928,6 +1989,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
   AuthenticatedAdminStorefrontTemplatesRoute:
     AuthenticatedAdminStorefrontTemplatesRoute,
+  AuthenticatedAdminVipTiersRoute: AuthenticatedAdminVipTiersRoute,
+  AuthenticatedAdminVipUpgradePackagesRoute:
+    AuthenticatedAdminVipUpgradePackagesRoute,
   AuthenticatedB2bAccountsRoute: AuthenticatedB2bAccountsRouteWithChildren,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
@@ -1968,6 +2032,7 @@ interface ShopAccountRouteChildren {
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
   ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRouteWithChildren
+  ShopAccountVipRoute: typeof ShopAccountVipRoute
   ShopAccountWalletRoute: typeof ShopAccountWalletRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
 }
@@ -1978,6 +2043,7 @@ const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
   ShopAccountStorefrontRoute: ShopAccountStorefrontRouteWithChildren,
+  ShopAccountVipRoute: ShopAccountVipRoute,
   ShopAccountWalletRoute: ShopAccountWalletRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
 }
