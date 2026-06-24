@@ -88,20 +88,20 @@ function MemberStorefrontPage() {
           <img src={coverImage} alt={`${displayName} 封面`} className="absolute inset-0 h-full w-full object-cover opacity-40" />
         ) : null}
         <div className="absolute inset-0 bg-black/35" />
-        <div className="relative container mx-auto grid gap-6 px-4 py-8 md:min-h-[520px] md:gap-8 md:py-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="max-w-3xl space-y-4 md:space-y-6">
+        <div className="relative container mx-auto grid gap-5 px-4 py-6 md:min-h-[520px] md:gap-8 md:py-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="max-w-3xl space-y-3 md:space-y-6">
             <Badge className="border-white/20 bg-white/15 text-white hover:bg-white/20">Personal Storefront</Badge>
-            <div className="flex items-center gap-3 md:gap-4">
-              <Avatar className="h-16 w-16 shrink-0 border-2 border-white/60 md:h-20 md:w-20">
+            <div className="flex items-start gap-3 md:items-center md:gap-4">
+              <Avatar className="h-14 w-14 shrink-0 border-2 border-white/60 md:h-20 md:w-20">
                 {avatar && <AvatarImage src={avatar} />}
                 <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
               </Avatar>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-white/70 md:text-sm">{profile.member_no}</p>
-                <h1 className="truncate text-2xl font-bold tracking-tight md:text-5xl">{displayName}</h1>
+                <h1 className="text-xl font-bold leading-tight tracking-tight break-words md:text-5xl">{displayName}</h1>
               </div>
             </div>
-            <p className="max-w-2xl text-sm leading-6 text-white/80 md:text-lg md:leading-7">
+            <p className="max-w-2xl text-[15px] leading-6 text-white/85 md:text-lg md:leading-7 whitespace-pre-line break-words">
               {heroSubtitle}
             </p>
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
@@ -119,7 +119,7 @@ function MemberStorefrontPage() {
             <SocialLinks profile={profile} />
           </div>
 
-          <Card className="border-white/15 bg-white/10 text-white backdrop-blur">
+          <Card className="hidden md:block border-white/15 bg-white/10 text-white backdrop-blur">
             <CardHeader className="pb-3 md:pb-6">
               <CardTitle className="text-lg md:text-xl">立即加入好處多多樂拼購</CardTitle>
               <CardDescription className="text-sm text-white/70">免費註冊會員，升級 VIP 拼購主，打造自己的個人品牌與團隊收益。</CardDescription>
@@ -143,11 +143,13 @@ function MemberStorefrontPage() {
         </div>
       </section>
 
-      <main className="container mx-auto space-y-8 px-4 py-8 md:space-y-12 md:py-10">
+      <main className="container mx-auto space-y-6 px-3 py-6 md:space-y-12 md:px-4 md:py-10">
+
         {data.publishedPage?.content_json ? (
-          <section className="rounded-xl bg-white p-4 text-foreground md:p-8">
+          <section className="rounded-lg bg-white p-3 text-foreground md:rounded-xl md:p-8">
             <StorefrontTemplatePreview content={data.publishedPage.content_json} />
           </section>
+
         ) : (
           <>
             <section>
