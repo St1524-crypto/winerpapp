@@ -14,6 +14,72 @@ const templateInputSchema = z.object({
 
 const idSchema = z.object({ id: z.string().uuid() });
 
+function deepCloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value ?? {}));
+}
+
+function isBlankOrPlaceholder(value: unknown) {
+  if (typeof value !== "string") return true;
+  const text = value.trim();
+  if (!text) return true;
+  return [
+    "標題",
+    "關於我",
+    "簡單介紹自己",
+    "在每個平台與我相遇",
+    "追蹤我，獲得最新內容",
+  ].some((placeholder) => text.includes(placeholder));
+}
+
+function mergeTemplateMetadataIntoContent(content: any, template: { name?: string | null; description?: string | null }) {
+  const next: any = deepCloneJson(content ?? {});
+  const tplName = (template.name || "").trim();
+  const tplDesc = (template.description || "").trim();
+
+  if (tplName) {
+    next.template_name = tplName;
+    next.hero = next.hero && typeof next.hero === "object" ? next.hero : {};
+    next.hero.title = tplName;
+  }
+
+  if (tplDesc) {
+    next.hero = next.hero && typeof next.hero === "object" ? next.hero : {};
+    next.hero.subtitle = tplDesc;
+    next.about = next.about && typeof next.about === "object" ? next.about : {};
+    if (isBlankOrPlaceholder(next.about.content)) next.about.content = tplDesc;
+  }
+
+  if (Array.isArray(next.sections)) {
+    let hasHero = false;
+    next.sections = next.sections.map((s: any) => {
+      if (!s || typeof s !== "object") return s;
+      if (s.type === "hero") {
+        hasHero = true;
+        return {
+          ...s,
+          ...(tplName ? { title: tplName } : {}),
+          ...(tplDesc ? { subtitle: tplDesc } : {}),
+        };
+      }
+      if (s.type === "about") {
+        return {
+          ...s,
+          ...(tplDesc && isBlankOrPlaceholder(s.body) ? { body: tplDesc } : {}),
+        };
+      }
+      return s;
+    });
+
+    if (!hasHero && (tplName || tplDesc)) {
+      next.sections.unshift({ type: "hero", title: tplName, subtitle: tplDesc });
+    }
+  } else if (tplName || tplDesc) {
+    next.sections = [{ type: "hero", title: tplName, subtitle: tplDesc }];
+  }
+
+  return next;
+}
+
 async function ensureAdmin(context: { supabase: any; userId: string }) {
   const { data: isAdmin } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
@@ -153,46 +219,7 @@ export const applyStorefrontTemplate = createServerFn({ method: "POST" })
     if (tplErr) throw new Error(tplErr.message);
     if (!tpl || !tpl.is_active) throw new Error("版模不存在或已停用");
 
-    // Deep copy via JSON round-trip
-    const deepCopied: any = JSON.parse(JSON.stringify(tpl.content_json ?? {}));
-
-    // Merge template name/description into content_json so that future template
-    // edits do not retroactively change already-applied member pages.
-    const tplName = (tpl.name || "").trim();
-    const tplDesc = (tpl.description || "").trim();
-    if (tplName) {
-      deepCopied.template_name = deepCopied.template_name || tplName;
-      deepCopied.hero = deepCopied.hero || {};
-      if (!deepCopied.hero.title) deepCopied.hero.title = tplName;
-    }
-    if (tplDesc) {
-      deepCopied.hero = deepCopied.hero || {};
-      if (!deepCopied.hero.subtitle) deepCopied.hero.subtitle = tplDesc;
-      deepCopied.about = deepCopied.about || {};
-      if (!deepCopied.about.content) deepCopied.about.content = tplDesc;
-    }
-
-    // Also patch sections[] hero/about block if present (sections-driven layouts)
-    if (Array.isArray(deepCopied.sections)) {
-      deepCopied.sections = deepCopied.sections.map((s: any) => {
-        if (!s || typeof s !== "object") return s;
-        if (s.type === "hero") {
-          return {
-            ...s,
-            title: s.title || tplName || s.title,
-            subtitle: s.subtitle || tplDesc || s.subtitle,
-          };
-        }
-        if (s.type === "about") {
-          return {
-            ...s,
-            title: s.title || tplName || s.title,
-            body: s.body || tplDesc || s.body,
-          };
-        }
-        return s;
-      });
-    }
+    const deepCopied = mergeTemplateMetadataIntoContent(tpl.content_json ?? {}, tpl);
 
     const { data: existing } = await context.supabase
       .from("member_storefront_pages")
@@ -219,6 +246,35 @@ export const applyStorefrontTemplate = createServerFn({ method: "POST" })
         });
       if (error) throw new Error(error.message);
     }
+    return { ok: true };
+  });
+
+export const syncMyAppliedStorefrontTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: page, error: pageErr } = await context.supabase
+      .from("member_storefront_pages")
+      .select("id, content_json, applied_template_id")
+      .eq("member_id", context.userId)
+      .maybeSingle();
+    if (pageErr) throw new Error(pageErr.message);
+    if (!page?.applied_template_id) throw new Error("目前沒有套用中的管理員版模");
+
+    const { data: tpl, error: tplErr } = await context.supabase
+      .from("member_storefront_templates")
+      .select("id, name, description, is_active")
+      .eq("id", page.applied_template_id)
+      .maybeSingle();
+    if (tplErr) throw new Error(tplErr.message);
+    if (!tpl || !tpl.is_active) throw new Error("版模不存在或已停用");
+
+    const content = mergeTemplateMetadataIntoContent(page.content_json ?? {}, tpl);
+    const { error } = await context.supabase
+      .from("member_storefront_pages")
+      .update({ content_json: content })
+      .eq("id", page.id)
+      .eq("member_id", context.userId);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 
