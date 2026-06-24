@@ -66,12 +66,15 @@ import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
+import { Route as ShopAccountWorkbenchRouteImport } from './routes/shop.account.workbench'
 import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wallet'
 import { Route as ShopAccountVipRouteImport } from './routes/shop.account.vip'
+import { Route as ShopAccountTasksRouteImport } from './routes/shop.account.tasks'
 import { Route as ShopAccountStorefrontRouteImport } from './routes/shop.account.storefront'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
 import { Route as ShopAccountOrdersRouteImport } from './routes/shop.account.orders'
+import { Route as ShopAccountAttendanceRouteImport } from './routes/shop.account.attendance'
 import { Route as ShopAccountAddressesRouteImport } from './routes/shop.account.addresses'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
 import { Route as AuthenticatedFinanceTransactionsRouteImport } from './routes/_authenticated/finance.transactions'
@@ -405,6 +408,11 @@ const ShopCategorySlugRoute = ShopCategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => ShopRoute,
 } as any)
+const ShopAccountWorkbenchRoute = ShopAccountWorkbenchRouteImport.update({
+  id: '/workbench',
+  path: '/workbench',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
 const ShopAccountWalletRoute = ShopAccountWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -413,6 +421,11 @@ const ShopAccountWalletRoute = ShopAccountWalletRouteImport.update({
 const ShopAccountVipRoute = ShopAccountVipRouteImport.update({
   id: '/vip',
   path: '/vip',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
+const ShopAccountTasksRoute = ShopAccountTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
   getParentRoute: () => ShopAccountRoute,
 } as any)
 const ShopAccountStorefrontRoute = ShopAccountStorefrontRouteImport.update({
@@ -433,6 +446,11 @@ const ShopAccountPointsRoute = ShopAccountPointsRouteImport.update({
 const ShopAccountOrdersRoute = ShopAccountOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
+const ShopAccountAttendanceRoute = ShopAccountAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
   getParentRoute: () => ShopAccountRoute,
 } as any)
 const ShopAccountAddressesRoute = ShopAccountAddressesRouteImport.update({
@@ -737,12 +755,15 @@ export interface FileRoutesByFullPath {
   '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
+  '/shop/account/attendance': typeof ShopAccountAttendanceRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
+  '/shop/account/tasks': typeof ShopAccountTasksRoute
   '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
+  '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -836,11 +857,14 @@ export interface FileRoutesByTo {
   '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
+  '/shop/account/attendance': typeof ShopAccountAttendanceRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/tasks': typeof ShopAccountTasksRoute
   '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
+  '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -939,12 +963,15 @@ export interface FileRoutesById {
   '/_authenticated/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
+  '/shop/account/attendance': typeof ShopAccountAttendanceRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
+  '/shop/account/tasks': typeof ShopAccountTasksRoute
   '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
+  '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -1043,12 +1070,15 @@ export interface FileRouteTypes {
     | '/finance/transactions'
     | '/products/$productId'
     | '/shop/account/addresses'
+    | '/shop/account/attendance'
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/storefront'
+    | '/shop/account/tasks'
     | '/shop/account/vip'
     | '/shop/account/wallet'
+    | '/shop/account/workbench'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/admin/'
@@ -1142,11 +1172,14 @@ export interface FileRouteTypes {
     | '/finance/transactions'
     | '/products/$productId'
     | '/shop/account/addresses'
+    | '/shop/account/attendance'
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/tasks'
     | '/shop/account/vip'
     | '/shop/account/wallet'
+    | '/shop/account/workbench'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/admin'
@@ -1244,12 +1277,15 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/transactions'
     | '/_authenticated/products/$productId'
     | '/shop/account/addresses'
+    | '/shop/account/attendance'
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/storefront'
+    | '/shop/account/tasks'
     | '/shop/account/vip'
     | '/shop/account/wallet'
+    | '/shop/account/workbench'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/_authenticated/admin/'
@@ -1696,6 +1732,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopCategorySlugRouteImport
       parentRoute: typeof ShopRoute
     }
+    '/shop/account/workbench': {
+      id: '/shop/account/workbench'
+      path: '/workbench'
+      fullPath: '/shop/account/workbench'
+      preLoaderRoute: typeof ShopAccountWorkbenchRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
     '/shop/account/wallet': {
       id: '/shop/account/wallet'
       path: '/wallet'
@@ -1708,6 +1751,13 @@ declare module '@tanstack/react-router' {
       path: '/vip'
       fullPath: '/shop/account/vip'
       preLoaderRoute: typeof ShopAccountVipRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
+    '/shop/account/tasks': {
+      id: '/shop/account/tasks'
+      path: '/tasks'
+      fullPath: '/shop/account/tasks'
+      preLoaderRoute: typeof ShopAccountTasksRouteImport
       parentRoute: typeof ShopAccountRoute
     }
     '/shop/account/storefront': {
@@ -1736,6 +1786,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/shop/account/orders'
       preLoaderRoute: typeof ShopAccountOrdersRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
+    '/shop/account/attendance': {
+      id: '/shop/account/attendance'
+      path: '/attendance'
+      fullPath: '/shop/account/attendance'
+      preLoaderRoute: typeof ShopAccountAttendanceRouteImport
       parentRoute: typeof ShopAccountRoute
     }
     '/shop/account/addresses': {
@@ -2246,23 +2303,29 @@ const ShopAccountStorefrontRouteWithChildren =
 
 interface ShopAccountRouteChildren {
   ShopAccountAddressesRoute: typeof ShopAccountAddressesRoute
+  ShopAccountAttendanceRoute: typeof ShopAccountAttendanceRoute
   ShopAccountOrdersRoute: typeof ShopAccountOrdersRouteWithChildren
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
   ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRouteWithChildren
+  ShopAccountTasksRoute: typeof ShopAccountTasksRoute
   ShopAccountVipRoute: typeof ShopAccountVipRoute
   ShopAccountWalletRoute: typeof ShopAccountWalletRoute
+  ShopAccountWorkbenchRoute: typeof ShopAccountWorkbenchRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
 }
 
 const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountAddressesRoute: ShopAccountAddressesRoute,
+  ShopAccountAttendanceRoute: ShopAccountAttendanceRoute,
   ShopAccountOrdersRoute: ShopAccountOrdersRouteWithChildren,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
   ShopAccountStorefrontRoute: ShopAccountStorefrontRouteWithChildren,
+  ShopAccountTasksRoute: ShopAccountTasksRoute,
   ShopAccountVipRoute: ShopAccountVipRoute,
   ShopAccountWalletRoute: ShopAccountWalletRoute,
+  ShopAccountWorkbenchRoute: ShopAccountWorkbenchRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
 }
 
