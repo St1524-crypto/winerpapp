@@ -25,6 +25,18 @@ import {
   revokeSession,
   listMyLoginAttempts,
 } from "@/lib/security.functions";
+import { bulkResetMemberPasswords } from "@/lib/admin-bulk-password.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/security")({
   component: SecurityCenterPage,
@@ -48,6 +60,7 @@ function SecurityCenterPage() {
           <TabsTrigger value="2fa">2FA 雙重驗證</TabsTrigger>
           <TabsTrigger value="sessions">登入裝置</TabsTrigger>
           <TabsTrigger value="history">登入紀錄</TabsTrigger>
+          <TabsTrigger value="bulk">批次密碼</TabsTrigger>
         </TabsList>
         <TabsContent value="2fa" className="mt-6">
           <TwoFactorPanel />
@@ -57,6 +70,9 @@ function SecurityCenterPage() {
         </TabsContent>
         <TabsContent value="history" className="mt-6">
           <LoginHistoryPanel />
+        </TabsContent>
+        <TabsContent value="bulk" className="mt-6">
+          <BulkPasswordPanel />
         </TabsContent>
       </Tabs>
     </div>
@@ -436,6 +452,93 @@ function LoginHistoryPanel() {
               ))}
             </TableBody>
           </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============== Bulk Password Panel ==============
+function BulkPasswordPanel() {
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<{
+    total: number;
+    updated: number;
+    skipped: number;
+    failed: number;
+    errors: Array<{ id: string; message: string }>;
+  } | null>(null);
+
+  async function run() {
+    setRunning(true);
+    setResult(null);
+    try {
+      const res = await bulkResetMemberPasswords();
+      setResult(res as any);
+      toast.success(`完成：更新 ${res.updated} / 總 ${res.total}，失敗 ${res.failed}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "執行失敗");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <KeyRound className="h-5 w-5 text-primary" />
+          批次重設一般會員密碼
+        </CardTitle>
+        <CardDescription>
+          將所有 <b>role = member</b> 且有 <b>marketing_slug</b> 的會員密碼重設為 <code>st</code> + 行銷網址代稱。
+          沒有 marketing_slug 的會員會被跳過。此動作不可復原。
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" disabled={running}>
+              {running && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              開始批次重設
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>確認執行批次密碼重設？</AlertDialogTitle>
+              <AlertDialogDescription>
+                即將把所有一般會員 (role=member) 的密碼改為 <code>st</code> + 該會員的 marketing_slug。
+                預估會更新數千筆，請確認已通知會員後再執行。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>取消</AlertDialogCancel>
+              <AlertDialogAction onClick={run}>確認執行</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {result && (
+          <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-1">
+            <div>總目標筆數：<b>{result.total}</b></div>
+            <div>成功更新：<b className="text-green-600">{result.updated}</b></div>
+            <div>跳過（無 slug）：<b>{result.skipped}</b></div>
+            <div>失敗：<b className={result.failed ? "text-red-600" : ""}>{result.failed}</b></div>
+            {result.errors?.length > 0 && (
+              <details className="mt-2">
+                <summary className="cursor-pointer text-xs text-muted-foreground">
+                  顯示前 {result.errors.length} 筆錯誤
+                </summary>
+                <ul className="mt-2 text-xs space-y-1 max-h-60 overflow-auto">
+                  {result.errors.map((e, i) => (
+                    <li key={i} className="font-mono">
+                      {e.id.slice(0, 8)}…: {e.message}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
