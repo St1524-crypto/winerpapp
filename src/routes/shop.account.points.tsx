@@ -70,6 +70,7 @@ function PointsPage() {
       .catch(() => {})
       .finally(() => setTxLoading(false));
     getMyReferralStats().then((d) => setRef(d as any)).catch(() => {});
+    getMyLegacyBonus().then((d) => setLegacy(d as any)).catch(() => {});
   }, []);
 
   const shareLink = ref.referral_code
