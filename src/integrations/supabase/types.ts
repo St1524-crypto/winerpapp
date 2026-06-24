@@ -2999,6 +2999,7 @@ export type Database = {
           sex: string | null
           tel: string | null
           vip_expires_at: string | null
+          vip_tier: string | null
           youtube_url: string | null
           zip_home: string | null
           zip_mail: string | null
@@ -3040,6 +3041,7 @@ export type Database = {
           sex?: string | null
           tel?: string | null
           vip_expires_at?: string | null
+          vip_tier?: string | null
           youtube_url?: string | null
           zip_home?: string | null
           zip_mail?: string | null
@@ -3081,6 +3083,7 @@ export type Database = {
           sex?: string | null
           tel?: string | null
           vip_expires_at?: string | null
+          vip_tier?: string | null
           youtube_url?: string | null
           zip_home?: string | null
           zip_mail?: string | null
@@ -4182,6 +4185,184 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      vip_tiers: {
+        Row: {
+          cashback_rate: number
+          code: string
+          created_at: string
+          description: string | null
+          extra_config: Json
+          id: string
+          name: string
+          renewal_required_new_vip: number
+          renewal_window_days: number
+          required_direct_vip: number
+          required_mentor_count: number
+          required_mentor_tier: string | null
+          required_reward_points: number
+          revenue_share_rate: number
+          sort_order: number
+          status: string
+          updated_at: string
+          upgrade_bonus_cap: number
+        }
+        Insert: {
+          cashback_rate?: number
+          code: string
+          created_at?: string
+          description?: string | null
+          extra_config?: Json
+          id?: string
+          name: string
+          renewal_required_new_vip?: number
+          renewal_window_days?: number
+          required_direct_vip?: number
+          required_mentor_count?: number
+          required_mentor_tier?: string | null
+          required_reward_points?: number
+          revenue_share_rate?: number
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          upgrade_bonus_cap?: number
+        }
+        Update: {
+          cashback_rate?: number
+          code?: string
+          created_at?: string
+          description?: string | null
+          extra_config?: Json
+          id?: string
+          name?: string
+          renewal_required_new_vip?: number
+          renewal_window_days?: number
+          required_direct_vip?: number
+          required_mentor_count?: number
+          required_mentor_tier?: string | null
+          required_reward_points?: number
+          revenue_share_rate?: number
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          upgrade_bonus_cap?: number
+        }
+        Relationships: []
+      }
+      vip_upgrade_orders: {
+        Row: {
+          amount: number
+          applied_at: string | null
+          bonus_points: number
+          created_at: string
+          id: string
+          new_tier: string | null
+          notes: string | null
+          package_id: string | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_status: string
+          previous_tier: string | null
+          sales_order_id: string | null
+          tier_code: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          applied_at?: string | null
+          bonus_points?: number
+          created_at?: string
+          id?: string
+          new_tier?: string | null
+          notes?: string | null
+          package_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          previous_tier?: string | null
+          sales_order_id?: string | null
+          tier_code: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          applied_at?: string | null
+          bonus_points?: number
+          created_at?: string
+          id?: string
+          new_tier?: string | null
+          notes?: string | null
+          package_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          previous_tier?: string | null
+          sales_order_id?: string | null
+          tier_code?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_upgrade_orders_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "vip_upgrade_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vip_upgrade_packages: {
+        Row: {
+          bonus_points: number
+          created_at: string
+          description: string | null
+          duration_days: number
+          id: string
+          name: string
+          price: number
+          sort_order: number
+          status: string
+          tier_code: string
+          updated_at: string
+        }
+        Insert: {
+          bonus_points?: number
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          id?: string
+          name: string
+          price?: number
+          sort_order?: number
+          status?: string
+          tier_code: string
+          updated_at?: string
+        }
+        Update: {
+          bonus_points?: number
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+          status?: string
+          tier_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_upgrade_packages_tier_code_fkey"
+            columns: ["tier_code"]
+            isOneToOne: false
+            referencedRelation: "vip_tiers"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       warehouse_inventory: {
         Row: {
