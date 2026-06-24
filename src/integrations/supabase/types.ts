@@ -4397,6 +4397,8 @@ export type Database = {
           updated_at: string
           upgrade_bonus_cap: number
           upgrade_bonus_cap_amount: number | null
+          upgrade_bonus_cap_basis: string
+          upgrade_total_earnings_cap_amount: number
         }
         Insert: {
           business_bonus_cap_amount?: number
@@ -4420,6 +4422,8 @@ export type Database = {
           updated_at?: string
           upgrade_bonus_cap?: number
           upgrade_bonus_cap_amount?: number | null
+          upgrade_bonus_cap_basis?: string
+          upgrade_total_earnings_cap_amount?: number
         }
         Update: {
           business_bonus_cap_amount?: number
@@ -4443,6 +4447,8 @@ export type Database = {
           updated_at?: string
           upgrade_bonus_cap?: number
           upgrade_bonus_cap_amount?: number | null
+          upgrade_bonus_cap_basis?: string
+          upgrade_total_earnings_cap_amount?: number
         }
         Relationships: []
       }
@@ -4505,6 +4511,69 @@ export type Database = {
           tier_code?: string
           total_after?: number
           total_before?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vip_upgrade_bonus_total_earnings_ledger: {
+        Row: {
+          cap_amount: number
+          cap_basis: string
+          capped_amount: number
+          created_at: string
+          created_by: string | null
+          dedupe_key: string | null
+          id: string
+          included_types: Json
+          member_id: string
+          member_total_earnings_after: number
+          member_total_earnings_before: number
+          notes: string | null
+          original_bonus_amount: number
+          payable_amount: number
+          source_ref: string | null
+          status: string
+          tier_code: string
+          updated_at: string
+        }
+        Insert: {
+          cap_amount?: number
+          cap_basis?: string
+          capped_amount?: number
+          created_at?: string
+          created_by?: string | null
+          dedupe_key?: string | null
+          id?: string
+          included_types?: Json
+          member_id: string
+          member_total_earnings_after?: number
+          member_total_earnings_before?: number
+          notes?: string | null
+          original_bonus_amount?: number
+          payable_amount?: number
+          source_ref?: string | null
+          status: string
+          tier_code: string
+          updated_at?: string
+        }
+        Update: {
+          cap_amount?: number
+          cap_basis?: string
+          capped_amount?: number
+          created_at?: string
+          created_by?: string | null
+          dedupe_key?: string | null
+          id?: string
+          included_types?: Json
+          member_id?: string
+          member_total_earnings_after?: number
+          member_total_earnings_before?: number
+          notes?: string | null
+          original_bonus_amount?: number
+          payable_amount?: number
+          source_ref?: string | null
+          status?: string
+          tier_code?: string
           updated_at?: string
         }
         Relationships: []
@@ -4914,6 +4983,19 @@ export type Database = {
           total_before: number
         }[]
       }
+      calc_upgrade_bonus_total_earnings_release: {
+        Args: { _bonus_amount: number; _member_id: string; _tier_code: string }
+        Returns: {
+          cap_amount: number
+          cap_basis: string
+          capped_amount: number
+          member_total_earnings_after: number
+          member_total_earnings_before: number
+          original_bonus_amount: number
+          payable_amount: number
+          status: string
+        }[]
+      }
       calc_vip_bonus_pool_daily: {
         Args: {
           _daily_total_reward_points: number
@@ -5008,6 +5090,10 @@ export type Database = {
         Args: { _member_id: string }
         Returns: number
       }
+      get_member_total_earnings: {
+        Args: { _member_id: string }
+        Returns: number
+      }
       get_member_upgrade_bonus_cap: {
         Args: { _member_id: string }
         Returns: number
@@ -5044,6 +5130,11 @@ export type Database = {
           slug: string
         }[]
       }
+      get_tier_upgrade_total_earnings_cap: {
+        Args: { _tier_code: string }
+        Returns: number
+      }
+      get_upgrade_bonus_total_earnings_types: { Args: never; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

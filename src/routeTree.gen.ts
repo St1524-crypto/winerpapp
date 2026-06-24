@@ -80,6 +80,7 @@ import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authe
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
 import { Route as AuthenticatedAdminVipUpgradePackagesRouteImport } from './routes/_authenticated/admin.vip-upgrade-packages'
+import { Route as AuthenticatedAdminVipUpgradeBonusTotalEarningsRouteImport } from './routes/_authenticated/admin.vip-upgrade-bonus-total-earnings'
 import { Route as AuthenticatedAdminVipUpgradeBonusCapRouteImport } from './routes/_authenticated/admin.vip-upgrade-bonus-cap'
 import { Route as AuthenticatedAdminVipTiersRouteImport } from './routes/_authenticated/admin.vip-tiers'
 import { Route as AuthenticatedAdminVipBusinessBonusCapRouteImport } from './routes/_authenticated/admin.vip-business-bonus-cap'
@@ -476,6 +477,12 @@ const AuthenticatedAdminVipUpgradePackagesRoute =
     path: '/admin/vip-upgrade-packages',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminVipUpgradeBonusTotalEarningsRoute =
+  AuthenticatedAdminVipUpgradeBonusTotalEarningsRouteImport.update({
+    id: '/admin/vip-upgrade-bonus-total-earnings',
+    path: '/admin/vip-upgrade-bonus-total-earnings',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminVipUpgradeBonusCapRoute =
   AuthenticatedAdminVipUpgradeBonusCapRouteImport.update({
     id: '/admin/vip-upgrade-bonus-cap',
@@ -685,6 +692,7 @@ export interface FileRoutesByFullPath {
   '/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
   '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
   '/admin/vip-upgrade-bonus-cap': typeof AuthenticatedAdminVipUpgradeBonusCapRoute
+  '/admin/vip-upgrade-bonus-total-earnings': typeof AuthenticatedAdminVipUpgradeBonusTotalEarningsRoute
   '/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -778,6 +786,7 @@ export interface FileRoutesByTo {
   '/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
   '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
   '/admin/vip-upgrade-bonus-cap': typeof AuthenticatedAdminVipUpgradeBonusCapRoute
+  '/admin/vip-upgrade-bonus-total-earnings': typeof AuthenticatedAdminVipUpgradeBonusTotalEarningsRoute
   '/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -875,6 +884,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
   '/_authenticated/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
   '/_authenticated/admin/vip-upgrade-bonus-cap': typeof AuthenticatedAdminVipUpgradeBonusCapRoute
+  '/_authenticated/admin/vip-upgrade-bonus-total-earnings': typeof AuthenticatedAdminVipUpgradeBonusTotalEarningsRoute
   '/_authenticated/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -973,6 +983,7 @@ export interface FileRouteTypes {
     | '/admin/vip-business-bonus-cap'
     | '/admin/vip-tiers'
     | '/admin/vip-upgrade-bonus-cap'
+    | '/admin/vip-upgrade-bonus-total-earnings'
     | '/admin/vip-upgrade-packages'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
@@ -1066,6 +1077,7 @@ export interface FileRouteTypes {
     | '/admin/vip-business-bonus-cap'
     | '/admin/vip-tiers'
     | '/admin/vip-upgrade-bonus-cap'
+    | '/admin/vip-upgrade-bonus-total-earnings'
     | '/admin/vip-upgrade-packages'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
@@ -1162,6 +1174,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/vip-business-bonus-cap'
     | '/_authenticated/admin/vip-tiers'
     | '/_authenticated/admin/vip-upgrade-bonus-cap'
+    | '/_authenticated/admin/vip-upgrade-bonus-total-earnings'
     | '/_authenticated/admin/vip-upgrade-packages'
     | '/_authenticated/b2b/accounts'
     | '/_authenticated/finance/bank-accounts'
@@ -1716,6 +1729,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminVipUpgradePackagesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/vip-upgrade-bonus-total-earnings': {
+      id: '/_authenticated/admin/vip-upgrade-bonus-total-earnings'
+      path: '/admin/vip-upgrade-bonus-total-earnings'
+      fullPath: '/admin/vip-upgrade-bonus-total-earnings'
+      preLoaderRoute: typeof AuthenticatedAdminVipUpgradeBonusTotalEarningsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/vip-upgrade-bonus-cap': {
       id: '/_authenticated/admin/vip-upgrade-bonus-cap'
       path: '/admin/vip-upgrade-bonus-cap'
@@ -2005,6 +2025,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminVipBusinessBonusCapRoute: typeof AuthenticatedAdminVipBusinessBonusCapRoute
   AuthenticatedAdminVipTiersRoute: typeof AuthenticatedAdminVipTiersRoute
   AuthenticatedAdminVipUpgradeBonusCapRoute: typeof AuthenticatedAdminVipUpgradeBonusCapRoute
+  AuthenticatedAdminVipUpgradeBonusTotalEarningsRoute: typeof AuthenticatedAdminVipUpgradeBonusTotalEarningsRoute
   AuthenticatedAdminVipUpgradePackagesRoute: typeof AuthenticatedAdminVipUpgradePackagesRoute
   AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -2058,6 +2079,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminVipTiersRoute: AuthenticatedAdminVipTiersRoute,
   AuthenticatedAdminVipUpgradeBonusCapRoute:
     AuthenticatedAdminVipUpgradeBonusCapRoute,
+  AuthenticatedAdminVipUpgradeBonusTotalEarningsRoute:
+    AuthenticatedAdminVipUpgradeBonusTotalEarningsRoute,
   AuthenticatedAdminVipUpgradePackagesRoute:
     AuthenticatedAdminVipUpgradePackagesRoute,
   AuthenticatedB2bAccountsRoute: AuthenticatedB2bAccountsRouteWithChildren,
