@@ -67,14 +67,14 @@ export const getMyLegacyBonus = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data } = await context.supabase
       .from("profiles")
-      .select("legacy_bonus_total, member_no, updated_at")
+      .select("legacy_bonus_total, member_no")
       .eq("id", context.userId)
       .maybeSingle();
     return {
       legacy_bonus_total: Number((data as any)?.legacy_bonus_total ?? 0),
       member_no: (data as any)?.member_no ?? null,
       source: "歷史匯入：累計獎金.pdf",
-      imported_at: (data as any)?.updated_at ?? null,
+      imported_at: null as string | null,
     };
   });
 
