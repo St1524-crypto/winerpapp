@@ -146,9 +146,10 @@ function MemberStorefrontPage() {
       <main className="container mx-auto space-y-6 px-3 py-6 md:space-y-12 md:px-4 md:py-10">
 
         {data.publishedPage?.content_json ? (
-          <section className="rounded-xl bg-white p-4 text-foreground md:p-8">
+          <section className="rounded-lg bg-white p-3 text-foreground md:rounded-xl md:p-8">
             <StorefrontTemplatePreview content={data.publishedPage.content_json} />
           </section>
+
         ) : (
           <>
             <section>
