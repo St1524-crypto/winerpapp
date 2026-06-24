@@ -61,6 +61,23 @@ export const getMyWallet = createServerFn({ method: "GET" })
     };
   });
 
+// ---- 歷史累計獎金（由管理員從 累計獎金.pdf 匯入到 profiles.legacy_bonus_total）----
+export const getMyLegacyBonus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await supabaseAdmin
+      .from("profiles")
+      .select("legacy_bonus_total, member_no, updated_at")
+      .eq("id", context.userId)
+      .maybeSingle();
+    return {
+      legacy_bonus_total: Number((data as any)?.legacy_bonus_total ?? 0),
+      member_no: (data as any)?.member_no ?? null,
+      source: "歷史匯入：累計獎金.pdf",
+      imported_at: (data as any)?.updated_at ?? null,
+    };
+  });
+
 export const getMyPointTx = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
