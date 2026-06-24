@@ -136,7 +136,9 @@ function PointsPage() {
             {txLoading ? <Skeleton className="h-8 w-24" /> : (
               <div className="text-3xl font-bold tabular-nums text-primary">{totalEarnings.toLocaleString()}</div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">含系統上線前歷史累計獎金</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              匯入累計獎金 {(legacy.legacy_bonus_total ?? 0).toLocaleString()} + 新增獎勵點 {rewardEarningsSum.toLocaleString()}
+            </p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-success/10 to-transparent border-success/30">
