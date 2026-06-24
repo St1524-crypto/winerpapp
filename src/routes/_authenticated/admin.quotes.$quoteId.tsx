@@ -137,10 +137,10 @@ function QuoteDetailPage() {
               </div>
             )}
           </div>
-        )}
+        ) : null}
 
         {q.notes ? <div className="text-sm"><span className="font-semibold">備註：</span><span className="whitespace-pre-line">{String(q.notes)}</span></div> : null}
-        {comp.footer_text && <div className="text-xs text-gray-500 text-center border-t pt-3 whitespace-pre-line">{comp.footer_text}</div>}
+        {comp.footer_text ? <div className="text-xs text-gray-500 text-center border-t pt-3 whitespace-pre-line">{comp.footer_text}</div> : null}
       </Card>
     </div>
   );
