@@ -4206,6 +4206,7 @@ export type Database = {
           status: string
           updated_at: string
           upgrade_bonus_cap: number
+          upgrade_bonus_cap_amount: number | null
         }
         Insert: {
           cashback_rate?: number
@@ -4226,6 +4227,7 @@ export type Database = {
           status?: string
           updated_at?: string
           upgrade_bonus_cap?: number
+          upgrade_bonus_cap_amount?: number | null
         }
         Update: {
           cashback_rate?: number
@@ -4246,6 +4248,70 @@ export type Database = {
           status?: string
           updated_at?: string
           upgrade_bonus_cap?: number
+          upgrade_bonus_cap_amount?: number | null
+        }
+        Relationships: []
+      }
+      vip_upgrade_bonus_ledger: {
+        Row: {
+          bonus_amount: number
+          bonus_record_id: string | null
+          cap_amount: number
+          capped_amount: number
+          created_at: string
+          created_by: string | null
+          dedupe_key: string | null
+          id: string
+          member_id: string
+          notes: string | null
+          payable_amount: number
+          source_member_id: string | null
+          source_order_id: string | null
+          status: string
+          tier_code: string
+          total_after: number
+          total_before: number
+          updated_at: string
+        }
+        Insert: {
+          bonus_amount: number
+          bonus_record_id?: string | null
+          cap_amount: number
+          capped_amount: number
+          created_at?: string
+          created_by?: string | null
+          dedupe_key?: string | null
+          id?: string
+          member_id: string
+          notes?: string | null
+          payable_amount: number
+          source_member_id?: string | null
+          source_order_id?: string | null
+          status: string
+          tier_code: string
+          total_after: number
+          total_before: number
+          updated_at?: string
+        }
+        Update: {
+          bonus_amount?: number
+          bonus_record_id?: string | null
+          cap_amount?: number
+          capped_amount?: number
+          created_at?: string
+          created_by?: string | null
+          dedupe_key?: string | null
+          id?: string
+          member_id?: string
+          notes?: string | null
+          payable_amount?: number
+          source_member_id?: string | null
+          source_order_id?: string | null
+          status?: string
+          tier_code?: string
+          total_after?: number
+          total_before?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4630,6 +4696,18 @@ export type Database = {
       }
     }
     Functions: {
+      calc_upgrade_bonus_release: {
+        Args: { _bonus_amount: number; _member_id: string; _tier_code: string }
+        Returns: {
+          bonus_amount: number
+          cap_amount: number
+          capped_amount: number
+          payable_amount: number
+          status: string
+          total_after: number
+          total_before: number
+        }[]
+      }
       create_sales_order_with_items: {
         Args: { _items: Json; _order: Json; _payments?: Json }
         Returns: {
@@ -4697,6 +4775,18 @@ export type Database = {
           slug: string
         }[]
       }
+      get_member_upgrade_bonus_cap: {
+        Args: { _member_id: string }
+        Returns: number
+      }
+      get_member_upgrade_bonus_total: {
+        Args: { _member_id: string }
+        Returns: number
+      }
+      get_member_vip_tier_code: {
+        Args: { _member_id: string }
+        Returns: string
+      }
       get_product_costs: {
         Args: { _ids: string[] }
         Returns: {
@@ -4755,6 +4845,44 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      record_upgrade_bonus_release: {
+        Args: {
+          _bonus_amount: number
+          _bonus_record_id?: string
+          _dedupe_key?: string
+          _member_id: string
+          _notes?: string
+          _source_member_id?: string
+          _source_order_id?: string
+          _tier_code?: string
+        }
+        Returns: {
+          bonus_amount: number
+          bonus_record_id: string | null
+          cap_amount: number
+          capped_amount: number
+          created_at: string
+          created_by: string | null
+          dedupe_key: string | null
+          id: string
+          member_id: string
+          notes: string | null
+          payable_amount: number
+          source_member_id: string | null
+          source_order_id: string | null
+          status: string
+          tier_code: string
+          total_after: number
+          total_before: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vip_upgrade_bonus_ledger"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       set_default_address: { Args: { _address_id: string }; Returns: undefined }
       slugify_company_name: { Args: { _name: string }; Returns: string }
