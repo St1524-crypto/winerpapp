@@ -163,7 +163,6 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
         throw new Error("Forbidden: 僅超級管理員可修改歷史累計獎金");
       }
       profileUpdate.legacy_bonus_total = data.legacyBonusTotal;
-      profileUpdate.legacy_bonus_imported_at = new Date().toISOString();
     }
 
     if (data.clearReferrer) {
