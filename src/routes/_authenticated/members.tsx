@@ -212,6 +212,9 @@ function Page() {
           addr_home: form.addr_home,
           birthday: form.birthday,
           vip_expires_at: form.vip_expires_at,
+          ...(isSuperAdmin && form.legacy_bonus_total !== (editProfile.legacy_bonus_total != null ? String(editProfile.legacy_bonus_total) : "")
+            ? { legacyBonusTotal: form.legacy_bonus_total === "" ? 0 : Number(form.legacy_bonus_total) }
+            : {}),
         },
       });
       toast.success("資料已更新");
