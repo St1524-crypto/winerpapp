@@ -80,6 +80,13 @@ const GROUPS: AdminNavGroup[] = [
     ],
   },
   {
+    label: "報價單",
+    items: [
+      { title: "報價單管理", url: "/admin/quotes", icon: FileText, roles: ["super_admin", "admin", "finance", "sales"] },
+      { title: "報價單設定", url: "/admin/quote-settings", icon: Settings, roles: ["super_admin", "admin"] },
+    ],
+  },
+  {
     label: "系統與工具",
     items: [
       { title: "系統設定", url: "/settings", icon: Settings },
