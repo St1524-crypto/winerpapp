@@ -332,7 +332,7 @@ export const recordLoginAttempt = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
       .object({
-        email: z.string().email().max(255),
+        email: z.string().trim().min(1).max(255),
         success: z.boolean(),
         failureReason: z.string().max(200).optional(),
         userId: z.string().uuid().optional(),
