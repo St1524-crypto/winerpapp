@@ -56,6 +56,12 @@ function PointsPage() {
     total: 0,
     total_points: 0,
   });
+  const [legacy, setLegacy] = useState<{ legacy_bonus_total: number; member_no: string | null; source: string; imported_at: string | null }>({
+    legacy_bonus_total: 0,
+    member_no: null,
+    source: "歷史匯入：累計獎金.pdf",
+    imported_at: null,
+  });
 
   useEffect(() => {
     setTxLoading(true);
