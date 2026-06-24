@@ -36,6 +36,7 @@ const ROLE_COLORS: Record<AppRole, string> = {
 function Page() {
   const { roles: myRoles } = useAuth();
   const isAdmin = myRoles.includes("super_admin") || myRoles.includes("admin");
+  const isSuperAdmin = myRoles.includes("super_admin");
 
   const PAGE_SIZE = 15;
 
