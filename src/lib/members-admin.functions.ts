@@ -151,6 +151,21 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
       profileUpdate.is_vip = !!(data.vip_expires_at && new Date(data.vip_expires_at) > new Date());
     }
 
+    if (data.legacyBonusTotal !== undefined) {
+      // Only super_admin can edit historical bonus total
+      const { data: isSuper } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", context.userId)
+        .eq("role", "super_admin")
+        .limit(1);
+      if (!isSuper || isSuper.length === 0) {
+        throw new Error("Forbidden: 僅超級管理員可修改歷史累計獎金");
+      }
+      profileUpdate.legacy_bonus_total = data.legacyBonusTotal;
+      profileUpdate.legacy_bonus_imported_at = new Date().toISOString();
+    }
+
     if (data.clearReferrer) {
       profileUpdate.referred_by = null;
     } else if (data.referrerMemberNo && data.referrerMemberNo.trim()) {
