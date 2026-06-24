@@ -3452,6 +3452,289 @@ export type Database = {
           },
         ]
       }
+      quote_bank_accounts: {
+        Row: {
+          account_name: string
+          account_number: string
+          bank_code: string | null
+          bank_name: string
+          branch_name: string | null
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          bank_code?: string | null
+          bank_name: string
+          branch_name?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          bank_code?: string | null
+          bank_name?: string
+          branch_name?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_bank_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_company_settings: {
+        Row: {
+          address: string | null
+          company_id: string
+          company_name: string
+          company_name_en: string | null
+          created_at: string
+          email: string | null
+          fax: string | null
+          footer_text: string | null
+          header_note: string | null
+          id: string
+          line_id: string | null
+          logo_url: string | null
+          phone: string | null
+          representative: string | null
+          tax_id: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_id: string
+          company_name: string
+          company_name_en?: string | null
+          created_at?: string
+          email?: string | null
+          fax?: string | null
+          footer_text?: string | null
+          header_note?: string | null
+          id?: string
+          line_id?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          representative?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_id?: string
+          company_name?: string
+          company_name_en?: string | null
+          created_at?: string
+          email?: string | null
+          fax?: string | null
+          footer_text?: string | null
+          header_note?: string | null
+          id?: string
+          line_id?: string | null
+          logo_url?: string | null
+          phone?: string | null
+          representative?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_company_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_items: {
+        Row: {
+          created_at: string
+          discount: number
+          id: string
+          item_name: string
+          product_id: string | null
+          quantity: number
+          quote_id: string
+          sort_order: number
+          spec: string | null
+          subtotal: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          discount?: number
+          id?: string
+          item_name: string
+          product_id?: string | null
+          quantity?: number
+          quote_id: string
+          sort_order?: number
+          spec?: string | null
+          subtotal?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          discount?: number
+          id?: string
+          item_name?: string
+          product_id?: string | null
+          quantity?: number
+          quote_id?: string
+          sort_order?: number
+          spec?: string | null
+          subtotal?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          bank_account_id: string | null
+          bank_snapshot: Json
+          company_id: string
+          company_snapshot: Json
+          converted_at: string | null
+          converted_order_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_address: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          discount_amount: number
+          id: string
+          notes: string | null
+          payment_terms: string | null
+          public_token: string | null
+          quote_date: string
+          quote_no: string
+          salesperson_id: string | null
+          salesperson_name: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          bank_account_id?: string | null
+          bank_snapshot?: Json
+          company_id: string
+          company_snapshot?: Json
+          converted_at?: string | null
+          converted_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          discount_amount?: number
+          id?: string
+          notes?: string | null
+          payment_terms?: string | null
+          public_token?: string | null
+          quote_date?: string
+          quote_no: string
+          salesperson_id?: string | null
+          salesperson_name?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          bank_account_id?: string | null
+          bank_snapshot?: Json
+          company_id?: string
+          company_snapshot?: Json
+          converted_at?: string | null
+          converted_order_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          discount_amount?: number
+          id?: string
+          notes?: string | null
+          payment_terms?: string | null
+          public_token?: string | null
+          quote_date?: string
+          quote_no?: string
+          salesperson_id?: string | null
+          salesperson_name?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "quote_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rank_rebate_settings: {
         Row: {
           created_at: string
@@ -5266,6 +5549,7 @@ export type Database = {
       generate_customer_no: { Args: never; Returns: string }
       generate_member_no: { Args: never; Returns: string }
       generate_po_no: { Args: never; Returns: string }
+      generate_quote_no: { Args: never; Returns: string }
       generate_receipt_no: { Args: never; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
       generate_so_no: { Args: never; Returns: string }
