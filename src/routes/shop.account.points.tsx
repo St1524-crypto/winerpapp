@@ -80,7 +80,8 @@ function PointsPage() {
   // 收益 = 獎勵點正向異動
   const rewardEarnings = useMemo(() => tx.filter((t) => t.point_type === "reward" && t.amount > 0), [tx]);
 
-  const totalEarnings = useMemo(() => rewardEarnings.reduce((s, t) => s + t.amount, 0), [rewardEarnings]);
+  const rewardEarningsSum = useMemo(() => rewardEarnings.reduce((s, t) => s + t.amount, 0), [rewardEarnings]);
+  const totalEarnings = rewardEarningsSum + (legacy.legacy_bonus_total ?? 0);
 
   const todayKey = ymd(new Date());
   const monthKey = ym(new Date());
