@@ -19,7 +19,7 @@ import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
-interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; id_no?: string | null; apply_date?: string | null; sex?: string | null; addr_mail?: string | null; addr_home?: string | null; birthday?: string | null; vip_expires_at?: string | null; is_vip?: boolean | null; }
+interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; id_no?: string | null; apply_date?: string | null; sex?: string | null; addr_mail?: string | null; addr_home?: string | null; birthday?: string | null; vip_expires_at?: string | null; is_vip?: boolean | null; legacy_bonus_total?: number | null; }
 interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; current_tier?: string | null; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
@@ -36,6 +36,7 @@ const ROLE_COLORS: Record<AppRole, string> = {
 function Page() {
   const { roles: myRoles } = useAuth();
   const isAdmin = myRoles.includes("super_admin") || myRoles.includes("admin");
+  const isSuperAdmin = myRoles.includes("super_admin");
 
   const PAGE_SIZE = 15;
 
@@ -52,7 +53,7 @@ function Page() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
   const [showFormPassword, setShowFormPassword] = useState(false);
 
   // Password tools dialog state
@@ -75,7 +76,7 @@ function Page() {
     const to = from + PAGE_SIZE - 1;
     let q = supabase
       .from("profiles")
-      .select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip", { count: "exact" })
+      .select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip, legacy_bonus_total", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(from, to);
     if (search) {
@@ -160,7 +161,7 @@ function Page() {
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
     setShowFormPassword(false);
     setCreateOpen(true);
   }
@@ -173,6 +174,7 @@ function Page() {
       referrerMemberNo: m.referrer_member_no ?? "", marketingSlug: m.marketing_slug ?? m.member_no ?? "",
       id_no: m.id_no ?? "", apply_date: fmtDate(m.apply_date), sex: m.sex ?? "",
       addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday), vip_expires_at: fmtDate(m.vip_expires_at),
+      legacy_bonus_total: m.legacy_bonus_total != null ? String(m.legacy_bonus_total) : "",
     });
   }
 
@@ -210,6 +212,9 @@ function Page() {
           addr_home: form.addr_home,
           birthday: form.birthday,
           vip_expires_at: form.vip_expires_at,
+          ...(isSuperAdmin && form.legacy_bonus_total !== (editProfile.legacy_bonus_total != null ? String(editProfile.legacy_bonus_total) : "")
+            ? { legacyBonusTotal: form.legacy_bonus_total === "" ? 0 : Number(form.legacy_bonus_total) }
+            : {}),
         },
       });
       toast.success("資料已更新");
@@ -630,6 +635,22 @@ function Page() {
                 <Input type="date" value={form.vip_expires_at} onChange={(e) => setForm({ ...form, vip_expires_at: e.target.value })} />
                 <p className="text-[11px] text-muted-foreground">留空＝非 VIP；到期後將無法領取獎勵點。</p>
               </div>
+              {isSuperAdmin && (
+                <div className="space-y-1">
+                  <Label>歷史累計獎金（匯入）NT$</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    step={1}
+                    value={form.legacy_bonus_total}
+                    onChange={(e) => setForm({ ...form, legacy_bonus_total: e.target.value })}
+                    placeholder="0"
+                    className="font-mono"
+                  />
+                  <p className="text-[11px] text-muted-foreground">系統上線前歷史累計獎金，僅超級管理員可手動填入；會計入會員「累計總收益」。</p>
+                </div>
+              )}
               <div className="pt-2 border-t border-border" />
               <div className="space-y-1">
                 <Label>重設密碼 (留空則不變更)</Label>

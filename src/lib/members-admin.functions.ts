@@ -112,6 +112,7 @@ const UpdateSchema = z.object({
   addr_home: z.string().trim().max(255).optional().or(z.literal("")),
   birthday: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
   vip_expires_at: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
+  legacyBonusTotal: z.number().int().min(0).max(2147483647).optional(),
 });
 
 export const adminUpdateMember = createServerFn({ method: "POST" })
@@ -148,6 +149,20 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     if (data.vip_expires_at !== undefined) {
       profileUpdate.vip_expires_at = data.vip_expires_at ? data.vip_expires_at : null;
       profileUpdate.is_vip = !!(data.vip_expires_at && new Date(data.vip_expires_at) > new Date());
+    }
+
+    if (data.legacyBonusTotal !== undefined) {
+      // Only super_admin can edit historical bonus total
+      const { data: isSuper } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", context.userId)
+        .eq("role", "super_admin")
+        .limit(1);
+      if (!isSuper || isSuper.length === 0) {
+        throw new Error("Forbidden: 僅超級管理員可修改歷史累計獎金");
+      }
+      profileUpdate.legacy_bonus_total = data.legacyBonusTotal;
     }
 
     if (data.clearReferrer) {

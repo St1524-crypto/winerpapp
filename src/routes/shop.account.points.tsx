@@ -167,36 +167,6 @@ function PointsPage() {
             <p className="text-xs text-muted-foreground mt-1">{monthKey}</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-accent/10 to-transparent border-accent/40 sm:col-span-3">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
-              <Wallet className="h-4 w-4 text-accent-foreground" />歷史累計獎金（匯入）
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button type="button" className="ml-1 inline-flex items-center text-muted-foreground hover:text-foreground" aria-label="查看明細來源">
-                    <Info className="h-3.5 w-3.5" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 text-xs space-y-1.5">
-                  <div className="font-medium text-sm text-foreground">明細來源</div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">資料來源</span><span>{legacy.source}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">會員編號</span><span className="font-mono">{legacy.member_no ?? "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">匯入金額</span><span className="tabular-nums">NT$ {legacy.legacy_bonus_total.toLocaleString()}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">最後更新</span><span>{legacy.imported_at ? new Date(legacy.imported_at).toLocaleDateString() : "—"}</span></div>
-                  <p className="pt-1.5 mt-1.5 border-t border-border/40 text-muted-foreground leading-relaxed">
-                    本欄為系統上線前的歷史累計獎金，由管理員依「累計獎金.pdf」一次性匯入，不會自動更新。
-                  </p>
-                </PopoverContent>
-              </Popover>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold tabular-nums text-accent-foreground">
-              NT$ {legacy.legacy_bonus_total.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">系統上線前歷史累計獎金（一次性匯入）</p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* 錢包餘額 */}
