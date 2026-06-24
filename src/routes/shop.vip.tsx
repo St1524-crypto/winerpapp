@@ -37,7 +37,11 @@ function VipPage() {
     setBuying(pkgId);
     try {
       const r: any = await buyFn({ data: { packageId: pkgId } });
-      toast.success(r.upgraded ? `升級成功！現為 ${r.new_tier}` : "已加值（同階或低階，僅發放贈點）");
+      if (r.pending) {
+        toast.success("已送出升級申請，待管理員確認金流後生效");
+      } else {
+        toast.success(r.upgraded ? `升級成功！現為 ${r.new_tier}` : "已加值（同階或低階，僅發放贈點）");
+      }
       refresh();
     } catch (e: any) { toast.error(e.message ?? "購買失敗"); }
     finally { setBuying(null); }
