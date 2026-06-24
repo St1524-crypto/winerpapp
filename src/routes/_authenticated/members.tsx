@@ -161,7 +161,7 @@ function Page() {
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
     setShowFormPassword(false);
     setCreateOpen(true);
   }
