@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS legacy_bonus_total numeric NOT NULL DEFAULT 0;

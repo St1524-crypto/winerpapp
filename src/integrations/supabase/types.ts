@@ -2981,6 +2981,7 @@ export type Database = {
           instagram_url: string | null
           is_dealer: boolean
           is_vip: boolean
+          legacy_bonus_total: number
           legacy_rank: string | null
           line_url: string | null
           marketing_slug: string | null
@@ -3021,6 +3022,7 @@ export type Database = {
           instagram_url?: string | null
           is_dealer?: boolean
           is_vip?: boolean
+          legacy_bonus_total?: number
           legacy_rank?: string | null
           line_url?: string | null
           marketing_slug?: string | null
@@ -3061,6 +3063,7 @@ export type Database = {
           instagram_url?: string | null
           is_dealer?: boolean
           is_vip?: boolean
+          legacy_bonus_total?: number
           legacy_rank?: string | null
           line_url?: string | null
           marketing_slug?: string | null
