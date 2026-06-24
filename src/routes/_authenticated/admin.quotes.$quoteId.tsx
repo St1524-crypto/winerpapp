@@ -125,7 +125,7 @@ function QuoteDetailPage() {
           </tfoot>
         </table>
 
-        {(bank.bank_name || q.payment_terms) && (
+        {(bank.bank_name || q.payment_terms) ? (
           <div className="border-t pt-4 text-sm space-y-2">
             <div className="font-semibold">付款資訊</div>
             {q.payment_terms ? <div className="whitespace-pre-line">{String(q.payment_terms)}</div> : null}
