@@ -25,6 +25,18 @@ import {
   revokeSession,
   listMyLoginAttempts,
 } from "@/lib/security.functions";
+import { bulkResetMemberPasswords } from "@/lib/admin-bulk-password.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/security")({
   component: SecurityCenterPage,
@@ -48,6 +60,7 @@ function SecurityCenterPage() {
           <TabsTrigger value="2fa">2FA 雙重驗證</TabsTrigger>
           <TabsTrigger value="sessions">登入裝置</TabsTrigger>
           <TabsTrigger value="history">登入紀錄</TabsTrigger>
+          <TabsTrigger value="bulk">批次密碼</TabsTrigger>
         </TabsList>
         <TabsContent value="2fa" className="mt-6">
           <TwoFactorPanel />
@@ -57,6 +70,9 @@ function SecurityCenterPage() {
         </TabsContent>
         <TabsContent value="history" className="mt-6">
           <LoginHistoryPanel />
+        </TabsContent>
+        <TabsContent value="bulk" className="mt-6">
+          <BulkPasswordPanel />
         </TabsContent>
       </Tabs>
     </div>
