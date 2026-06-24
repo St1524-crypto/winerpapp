@@ -93,6 +93,7 @@ import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
 import { Route as AuthenticatedAdminReferralTreeRouteImport } from './routes/_authenticated/admin.referral-tree'
+import { Route as AuthenticatedAdminQuoteSettingsRouteImport } from './routes/_authenticated/admin.quote-settings'
 import { Route as AuthenticatedAdminOperationsRouteImport } from './routes/_authenticated/admin.operations'
 import { Route as AuthenticatedAdminMemberSearchRouteImport } from './routes/_authenticated/admin.member-search'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
@@ -100,6 +101,7 @@ import { Route as AuthenticatedAdminBonusesRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminBonusCenterRouteImport } from './routes/_authenticated/admin.bonus-center'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as ShopAccountStorefrontIndexRouteImport } from './routes/shop.account.storefront.index'
+import { Route as AuthenticatedAdminQuotesIndexRouteImport } from './routes/_authenticated/admin.quotes.index'
 import { Route as ShopAccountStorefrontTemplatesRouteImport } from './routes/shop.account.storefront.templates'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -107,6 +109,8 @@ import { Route as ApiPublicHooksBonusDailyTickRouteImport } from './routes/api/p
 import { Route as ApiPublicCronExpireGroupBuysRouteImport } from './routes/api/public/cron/expire-group-buys'
 import { Route as ApiPublicAiRecruitRouteImport } from './routes/api/public/ai/recruit'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
+import { Route as AuthenticatedAdminQuotesNewRouteImport } from './routes/_authenticated/admin.quotes.new'
+import { Route as AuthenticatedAdminQuotesQuoteIdRouteImport } from './routes/_authenticated/admin.quotes.$quoteId'
 import { Route as AuthenticatedAdminOperationsTasksRouteImport } from './routes/_authenticated/admin.operations.tasks'
 import { Route as AuthenticatedAdminOperationsMembersRouteImport } from './routes/_authenticated/admin.operations.members'
 import { Route as AuthenticatedAdminOperationsAttendanceRouteImport } from './routes/_authenticated/admin.operations.attendance'
@@ -560,6 +564,12 @@ const AuthenticatedAdminReferralTreeRoute =
     path: '/admin/referral-tree',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminQuoteSettingsRoute =
+  AuthenticatedAdminQuoteSettingsRouteImport.update({
+    id: '/admin/quote-settings',
+    path: '/admin/quote-settings',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminOperationsRoute =
   AuthenticatedAdminOperationsRouteImport.update({
     id: '/admin/operations',
@@ -602,6 +612,12 @@ const ShopAccountStorefrontIndexRoute =
     path: '/',
     getParentRoute: () => ShopAccountStorefrontRoute,
   } as any)
+const AuthenticatedAdminQuotesIndexRoute =
+  AuthenticatedAdminQuotesIndexRouteImport.update({
+    id: '/admin/quotes/',
+    path: '/admin/quotes/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ShopAccountStorefrontTemplatesRoute =
   ShopAccountStorefrontTemplatesRouteImport.update({
     id: '/templates',
@@ -641,6 +657,18 @@ const AuthenticatedB2bAccountsIdRoute =
     id: '/$id',
     path: '/$id',
     getParentRoute: () => AuthenticatedB2bAccountsRoute,
+  } as any)
+const AuthenticatedAdminQuotesNewRoute =
+  AuthenticatedAdminQuotesNewRouteImport.update({
+    id: '/admin/quotes/new',
+    path: '/admin/quotes/new',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminQuotesQuoteIdRoute =
+  AuthenticatedAdminQuotesQuoteIdRouteImport.update({
+    id: '/admin/quotes/$quoteId',
+    path: '/admin/quotes/$quoteId',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminOperationsTasksRoute =
   AuthenticatedAdminOperationsTasksRouteImport.update({
@@ -737,6 +765,7 @@ export interface FileRoutesByFullPath {
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
+  '/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -774,6 +803,8 @@ export interface FileRoutesByFullPath {
   '/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
   '/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
   '/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
+  '/admin/quotes/$quoteId': typeof AuthenticatedAdminQuotesQuoteIdRoute
+  '/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
@@ -781,6 +812,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
+  '/admin/quotes/': typeof AuthenticatedAdminQuotesIndexRoute
   '/shop/account/storefront/': typeof ShopAccountStorefrontIndexRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
@@ -839,6 +871,7 @@ export interface FileRoutesByTo {
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
+  '/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -875,6 +908,8 @@ export interface FileRoutesByTo {
   '/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
   '/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
   '/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
+  '/admin/quotes/$quoteId': typeof AuthenticatedAdminQuotesQuoteIdRoute
+  '/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
@@ -882,6 +917,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
+  '/admin/quotes': typeof AuthenticatedAdminQuotesIndexRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontIndexRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
@@ -945,6 +981,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/_authenticated/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/_authenticated/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
+  '/_authenticated/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
   '/_authenticated/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -982,6 +1019,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
   '/_authenticated/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
   '/_authenticated/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
+  '/_authenticated/admin/quotes/$quoteId': typeof AuthenticatedAdminQuotesQuoteIdRoute
+  '/_authenticated/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
@@ -989,6 +1028,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
+  '/_authenticated/admin/quotes/': typeof AuthenticatedAdminQuotesIndexRoute
   '/shop/account/storefront/': typeof ShopAccountStorefrontIndexRoute
   '/_authenticated/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
@@ -1052,6 +1092,7 @@ export interface FileRouteTypes {
     | '/admin/companies'
     | '/admin/member-search'
     | '/admin/operations'
+    | '/admin/quote-settings'
     | '/admin/referral-tree'
     | '/admin/referrals'
     | '/admin/role-manager'
@@ -1089,6 +1130,8 @@ export interface FileRouteTypes {
     | '/admin/operations/attendance'
     | '/admin/operations/members'
     | '/admin/operations/tasks'
+    | '/admin/quotes/$quoteId'
+    | '/admin/quotes/new'
     | '/b2b/accounts/$id'
     | '/api/public/ai/recruit'
     | '/api/public/cron/expire-group-buys'
@@ -1096,6 +1139,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
+    | '/admin/quotes/'
     | '/shop/account/storefront/'
     | '/admin/bonuses/batches/$batchId'
   fileRoutesByTo: FileRoutesByTo
@@ -1154,6 +1198,7 @@ export interface FileRouteTypes {
     | '/admin/companies'
     | '/admin/member-search'
     | '/admin/operations'
+    | '/admin/quote-settings'
     | '/admin/referral-tree'
     | '/admin/referrals'
     | '/admin/role-manager'
@@ -1190,6 +1235,8 @@ export interface FileRouteTypes {
     | '/admin/operations/attendance'
     | '/admin/operations/members'
     | '/admin/operations/tasks'
+    | '/admin/quotes/$quoteId'
+    | '/admin/quotes/new'
     | '/b2b/accounts/$id'
     | '/api/public/ai/recruit'
     | '/api/public/cron/expire-group-buys'
@@ -1197,6 +1244,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
+    | '/admin/quotes'
     | '/shop/account/storefront'
     | '/admin/bonuses/batches/$batchId'
   id:
@@ -1259,6 +1307,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/companies'
     | '/_authenticated/admin/member-search'
     | '/_authenticated/admin/operations'
+    | '/_authenticated/admin/quote-settings'
     | '/_authenticated/admin/referral-tree'
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/role-manager'
@@ -1296,6 +1345,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/operations/attendance'
     | '/_authenticated/admin/operations/members'
     | '/_authenticated/admin/operations/tasks'
+    | '/_authenticated/admin/quotes/$quoteId'
+    | '/_authenticated/admin/quotes/new'
     | '/_authenticated/b2b/accounts/$id'
     | '/api/public/ai/recruit'
     | '/api/public/cron/expire-group-buys'
@@ -1303,6 +1354,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
+    | '/_authenticated/admin/quotes/'
     | '/shop/account/storefront/'
     | '/_authenticated/admin/bonuses/batches/$batchId'
   fileRoutesById: FileRoutesById
@@ -1921,6 +1973,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReferralTreeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/quote-settings': {
+      id: '/_authenticated/admin/quote-settings'
+      path: '/admin/quote-settings'
+      fullPath: '/admin/quote-settings'
+      preLoaderRoute: typeof AuthenticatedAdminQuoteSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/operations': {
       id: '/_authenticated/admin/operations'
       path: '/admin/operations'
@@ -1970,6 +2029,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopAccountStorefrontIndexRouteImport
       parentRoute: typeof ShopAccountStorefrontRoute
     }
+    '/_authenticated/admin/quotes/': {
+      id: '/_authenticated/admin/quotes/'
+      path: '/admin/quotes'
+      fullPath: '/admin/quotes/'
+      preLoaderRoute: typeof AuthenticatedAdminQuotesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/shop/account/storefront/templates': {
       id: '/shop/account/storefront/templates'
       path: '/templates'
@@ -2018,6 +2084,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/b2b/accounts/$id'
       preLoaderRoute: typeof AuthenticatedB2bAccountsIdRouteImport
       parentRoute: typeof AuthenticatedB2bAccountsRoute
+    }
+    '/_authenticated/admin/quotes/new': {
+      id: '/_authenticated/admin/quotes/new'
+      path: '/admin/quotes/new'
+      fullPath: '/admin/quotes/new'
+      preLoaderRoute: typeof AuthenticatedAdminQuotesNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/quotes/$quoteId': {
+      id: '/_authenticated/admin/quotes/$quoteId'
+      path: '/admin/quotes/$quoteId'
+      fullPath: '/admin/quotes/$quoteId'
+      preLoaderRoute: typeof AuthenticatedAdminQuotesQuoteIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/operations/tasks': {
       id: '/_authenticated/admin/operations/tasks'
@@ -2198,6 +2278,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
   AuthenticatedAdminMemberSearchRoute: typeof AuthenticatedAdminMemberSearchRoute
   AuthenticatedAdminOperationsRoute: typeof AuthenticatedAdminOperationsRouteWithChildren
+  AuthenticatedAdminQuoteSettingsRoute: typeof AuthenticatedAdminQuoteSettingsRoute
   AuthenticatedAdminReferralTreeRoute: typeof AuthenticatedAdminReferralTreeRoute
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
@@ -2211,6 +2292,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminVipUpgradePackagesRoute: typeof AuthenticatedAdminVipUpgradePackagesRoute
   AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminQuotesQuoteIdRoute: typeof AuthenticatedAdminQuotesQuoteIdRoute
+  AuthenticatedAdminQuotesNewRoute: typeof AuthenticatedAdminQuotesNewRoute
+  AuthenticatedAdminQuotesIndexRoute: typeof AuthenticatedAdminQuotesIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -2251,6 +2335,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminMemberSearchRoute: AuthenticatedAdminMemberSearchRoute,
   AuthenticatedAdminOperationsRoute:
     AuthenticatedAdminOperationsRouteWithChildren,
+  AuthenticatedAdminQuoteSettingsRoute: AuthenticatedAdminQuoteSettingsRoute,
   AuthenticatedAdminReferralTreeRoute: AuthenticatedAdminReferralTreeRoute,
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
@@ -2269,6 +2354,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedAdminVipUpgradePackagesRoute,
   AuthenticatedB2bAccountsRoute: AuthenticatedB2bAccountsRouteWithChildren,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+  AuthenticatedAdminQuotesQuoteIdRoute: AuthenticatedAdminQuotesQuoteIdRoute,
+  AuthenticatedAdminQuotesNewRoute: AuthenticatedAdminQuotesNewRoute,
+  AuthenticatedAdminQuotesIndexRoute: AuthenticatedAdminQuotesIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
