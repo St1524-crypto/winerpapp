@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   listActiveStorefrontTemplates,
   applyStorefrontTemplate,
+  syncMyAppliedStorefrontTemplate,
   getMyStorefrontPage,
   publishMyStorefrontPage,
   listMyCustomTemplates,
@@ -127,6 +128,7 @@ function MemberStorefrontTemplatesPage() {
   const navigate = useNavigate();
   const list = useServerFn(listActiveStorefrontTemplates);
   const apply = useServerFn(applyStorefrontTemplate);
+  const syncApplied = useServerFn(syncMyAppliedStorefrontTemplate);
   const getPage = useServerFn(getMyStorefrontPage);
   const publish = useServerFn(publishMyStorefrontPage);
   const listMine = useServerFn(listMyCustomTemplates);
@@ -142,6 +144,7 @@ function MemberStorefrontTemplatesPage() {
   const [confirm, setConfirm] = useState<{ tpl: Template; isCustom: boolean } | null>(null);
   const [appliedId, setAppliedId] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [preview, setPreview] = useState<{ tpl: Template; isCustom: boolean } | null>(null);
 
   // Edit/create dialog
@@ -194,6 +197,19 @@ function MemberStorefrontTemplatesPage() {
       toast.success("已發布品牌頁");
     } catch (e: any) {
       toast.error(e.message);
+    }
+  }
+
+  async function handleSyncAppliedTemplate() {
+    setSyncing(true);
+    try {
+      await syncApplied();
+      toast.success("已同步目前使用版模內容");
+      reload();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -376,6 +392,9 @@ function MemberStorefrontTemplatesPage() {
           <CardContent className="flex gap-2 flex-wrap">
             <Button asChild variant="outline">
               <Link to="/shop/account/storefront">編輯品牌頁</Link>
+            </Button>
+            <Button variant="outline" onClick={handleSyncAppliedTemplate} disabled={syncing}>
+              {syncing ? "同步中…" : "同步目前使用版模內容"}
             </Button>
             <Button onClick={handlePublish}>發布品牌頁</Button>
           </CardContent>
