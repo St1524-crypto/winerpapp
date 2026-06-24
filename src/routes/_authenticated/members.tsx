@@ -635,6 +635,22 @@ function Page() {
                 <Input type="date" value={form.vip_expires_at} onChange={(e) => setForm({ ...form, vip_expires_at: e.target.value })} />
                 <p className="text-[11px] text-muted-foreground">留空＝非 VIP；到期後將無法領取獎勵點。</p>
               </div>
+              {isSuperAdmin && (
+                <div className="space-y-1">
+                  <Label>歷史累計獎金（匯入）NT$</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    step={1}
+                    value={form.legacy_bonus_total}
+                    onChange={(e) => setForm({ ...form, legacy_bonus_total: e.target.value })}
+                    placeholder="0"
+                    className="font-mono"
+                  />
+                  <p className="text-[11px] text-muted-foreground">系統上線前歷史累計獎金，僅超級管理員可手動填入；會計入會員「累計總收益」。</p>
+                </div>
+              )}
               <div className="pt-2 border-t border-border" />
               <div className="space-y-1">
                 <Label>重設密碼 (留空則不變更)</Label>
