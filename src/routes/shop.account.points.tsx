@@ -80,7 +80,8 @@ function PointsPage() {
   // 收益 = 獎勵點正向異動
   const rewardEarnings = useMemo(() => tx.filter((t) => t.point_type === "reward" && t.amount > 0), [tx]);
 
-  const totalEarnings = useMemo(() => rewardEarnings.reduce((s, t) => s + t.amount, 0), [rewardEarnings]);
+  const rewardEarningsSum = useMemo(() => rewardEarnings.reduce((s, t) => s + t.amount, 0), [rewardEarnings]);
+  const totalEarnings = rewardEarningsSum + (legacy.legacy_bonus_total ?? 0);
 
   const todayKey = ymd(new Date());
   const monthKey = ym(new Date());
@@ -135,7 +136,7 @@ function PointsPage() {
             {txLoading ? <Skeleton className="h-8 w-24" /> : (
               <div className="text-3xl font-bold tabular-nums text-primary">{totalEarnings.toLocaleString()}</div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">歷史累計獲得獎勵點</p>
+            <p className="text-xs text-muted-foreground mt-1">含系統上線前歷史累計獎金</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-success/10 to-transparent border-success/30">
