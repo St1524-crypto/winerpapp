@@ -4100,6 +4100,131 @@ export type Database = {
           },
         ]
       }
+      vip_bonus_pool_payouts: {
+        Row: {
+          bonus_amount: number
+          bonus_rate: number
+          cap_amount: number | null
+          capped_amount: number
+          created_at: string
+          created_by: string | null
+          daily_total_reward_points: number
+          eligible_member_count: number
+          id: string
+          member_id: string | null
+          notes: string | null
+          payable_amount: number
+          payout_date: string
+          pool_amount: number
+          pool_id: string
+          status: string
+          tier_code: string | null
+          total_after: number
+          total_before: number
+        }
+        Insert: {
+          bonus_amount?: number
+          bonus_rate?: number
+          cap_amount?: number | null
+          capped_amount?: number
+          created_at?: string
+          created_by?: string | null
+          daily_total_reward_points?: number
+          eligible_member_count?: number
+          id?: string
+          member_id?: string | null
+          notes?: string | null
+          payable_amount?: number
+          payout_date: string
+          pool_amount?: number
+          pool_id: string
+          status: string
+          tier_code?: string | null
+          total_after?: number
+          total_before?: number
+        }
+        Update: {
+          bonus_amount?: number
+          bonus_rate?: number
+          cap_amount?: number | null
+          capped_amount?: number
+          created_at?: string
+          created_by?: string | null
+          daily_total_reward_points?: number
+          eligible_member_count?: number
+          id?: string
+          member_id?: string | null
+          notes?: string | null
+          payable_amount?: number
+          payout_date?: string
+          pool_amount?: number
+          pool_id?: string
+          status?: string
+          tier_code?: string | null
+          total_after?: number
+          total_before?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_bonus_pool_payouts_pool_id_fkey"
+            columns: ["pool_id"]
+            isOneToOne: false
+            referencedRelation: "vip_bonus_pools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vip_bonus_pools: {
+        Row: {
+          apply_total_income_cap: boolean
+          bonus_rate: number
+          code: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          distribution_method: string
+          id: string
+          name: string
+          sort_order: number
+          status: string
+          tier_codes: string[]
+          total_income_cap_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          apply_total_income_cap?: boolean
+          bonus_rate?: number
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          distribution_method?: string
+          id?: string
+          name: string
+          sort_order?: number
+          status?: string
+          tier_codes?: string[]
+          total_income_cap_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          apply_total_income_cap?: boolean
+          bonus_rate?: number
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          distribution_method?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          status?: string
+          tier_codes?: string[]
+          total_income_cap_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vip_business_bonus_ledger: {
         Row: {
           bonus_amount: number
@@ -4787,6 +4912,21 @@ export type Database = {
           status: string
           total_after: number
           total_before: number
+        }[]
+      }
+      calc_vip_bonus_pool_daily: {
+        Args: {
+          _daily_total_reward_points: number
+          _eligible_member_count: number
+          _pool_id: string
+        }
+        Returns: {
+          bonus_rate: number
+          eligible_member_count: number
+          per_member_amount: number
+          pool_amount: number
+          pool_id: string
+          status: string
         }[]
       }
       create_sales_order_with_items: {
