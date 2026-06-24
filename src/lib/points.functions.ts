@@ -65,7 +65,7 @@ export const getMyWallet = createServerFn({ method: "GET" })
 export const getMyLegacyBonus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await supabaseAdmin
+    const { data } = await context.supabase
       .from("profiles")
       .select("legacy_bonus_total, member_no, updated_at")
       .eq("id", context.userId)
