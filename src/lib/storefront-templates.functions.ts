@@ -147,14 +147,52 @@ export const applyStorefrontTemplate = createServerFn({ method: "POST" })
     // Read template only if active
     const { data: tpl, error: tplErr } = await context.supabase
       .from("member_storefront_templates")
-      .select("id, content_json, is_active")
+      .select("id, name, description, content_json, is_active")
       .eq("id", data.id)
       .maybeSingle();
     if (tplErr) throw new Error(tplErr.message);
     if (!tpl || !tpl.is_active) throw new Error("版模不存在或已停用");
 
     // Deep copy via JSON round-trip
-    const deepCopied = JSON.parse(JSON.stringify(tpl.content_json ?? {}));
+    const deepCopied: any = JSON.parse(JSON.stringify(tpl.content_json ?? {}));
+
+    // Merge template name/description into content_json so that future template
+    // edits do not retroactively change already-applied member pages.
+    const tplName = (tpl.name || "").trim();
+    const tplDesc = (tpl.description || "").trim();
+    if (tplName) {
+      deepCopied.template_name = deepCopied.template_name || tplName;
+      deepCopied.hero = deepCopied.hero || {};
+      if (!deepCopied.hero.title) deepCopied.hero.title = tplName;
+    }
+    if (tplDesc) {
+      deepCopied.hero = deepCopied.hero || {};
+      if (!deepCopied.hero.subtitle) deepCopied.hero.subtitle = tplDesc;
+      deepCopied.about = deepCopied.about || {};
+      if (!deepCopied.about.content) deepCopied.about.content = tplDesc;
+    }
+
+    // Also patch sections[] hero/about block if present (sections-driven layouts)
+    if (Array.isArray(deepCopied.sections)) {
+      deepCopied.sections = deepCopied.sections.map((s: any) => {
+        if (!s || typeof s !== "object") return s;
+        if (s.type === "hero") {
+          return {
+            ...s,
+            title: s.title || tplName || s.title,
+            subtitle: s.subtitle || tplDesc || s.subtitle,
+          };
+        }
+        if (s.type === "about") {
+          return {
+            ...s,
+            title: s.title || tplName || s.title,
+            body: s.body || tplDesc || s.body,
+          };
+        }
+        return s;
+      });
+    }
 
     const { data: existing } = await context.supabase
       .from("member_storefront_pages")
