@@ -80,6 +80,7 @@ import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authe
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedB2bAccountsRouteImport } from './routes/_authenticated/b2b.accounts'
 import { Route as AuthenticatedAdminVipUpgradePackagesRouteImport } from './routes/_authenticated/admin.vip-upgrade-packages'
+import { Route as AuthenticatedAdminVipUpgradeBonusCapRouteImport } from './routes/_authenticated/admin.vip-upgrade-bonus-cap'
 import { Route as AuthenticatedAdminVipTiersRouteImport } from './routes/_authenticated/admin.vip-tiers'
 import { Route as AuthenticatedAdminStorefrontTemplatesRouteImport } from './routes/_authenticated/admin.storefront-templates'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
@@ -473,6 +474,12 @@ const AuthenticatedAdminVipUpgradePackagesRoute =
     path: '/admin/vip-upgrade-packages',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminVipUpgradeBonusCapRoute =
+  AuthenticatedAdminVipUpgradeBonusCapRouteImport.update({
+    id: '/admin/vip-upgrade-bonus-cap',
+    path: '/admin/vip-upgrade-bonus-cap',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminVipTiersRoute =
   AuthenticatedAdminVipTiersRouteImport.update({
     id: '/admin/vip-tiers',
@@ -661,6 +668,7 @@ export interface FileRoutesByFullPath {
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
+  '/admin/vip-upgrade-bonus-cap': typeof AuthenticatedAdminVipUpgradeBonusCapRoute
   '/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -751,6 +759,7 @@ export interface FileRoutesByTo {
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
+  '/admin/vip-upgrade-bonus-cap': typeof AuthenticatedAdminVipUpgradeBonusCapRoute
   '/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -845,6 +854,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/_authenticated/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
+  '/_authenticated/admin/vip-upgrade-bonus-cap': typeof AuthenticatedAdminVipUpgradeBonusCapRoute
   '/_authenticated/admin/vip-upgrade-packages': typeof AuthenticatedAdminVipUpgradePackagesRoute
   '/_authenticated/b2b/accounts': typeof AuthenticatedB2bAccountsRouteWithChildren
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -940,6 +950,7 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/admin/storefront-templates'
     | '/admin/vip-tiers'
+    | '/admin/vip-upgrade-bonus-cap'
     | '/admin/vip-upgrade-packages'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
@@ -1030,6 +1041,7 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/admin/storefront-templates'
     | '/admin/vip-tiers'
+    | '/admin/vip-upgrade-bonus-cap'
     | '/admin/vip-upgrade-packages'
     | '/b2b/accounts'
     | '/finance/bank-accounts'
@@ -1123,6 +1135,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/storefront-templates'
     | '/_authenticated/admin/vip-tiers'
+    | '/_authenticated/admin/vip-upgrade-bonus-cap'
     | '/_authenticated/admin/vip-upgrade-packages'
     | '/_authenticated/b2b/accounts'
     | '/_authenticated/finance/bank-accounts'
@@ -1677,6 +1690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminVipUpgradePackagesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/vip-upgrade-bonus-cap': {
+      id: '/_authenticated/admin/vip-upgrade-bonus-cap'
+      path: '/admin/vip-upgrade-bonus-cap'
+      fullPath: '/admin/vip-upgrade-bonus-cap'
+      preLoaderRoute: typeof AuthenticatedAdminVipUpgradeBonusCapRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/vip-tiers': {
       id: '/_authenticated/admin/vip-tiers'
       path: '/admin/vip-tiers'
@@ -1942,6 +1962,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedAdminStorefrontTemplatesRoute: typeof AuthenticatedAdminStorefrontTemplatesRoute
   AuthenticatedAdminVipTiersRoute: typeof AuthenticatedAdminVipTiersRoute
+  AuthenticatedAdminVipUpgradeBonusCapRoute: typeof AuthenticatedAdminVipUpgradeBonusCapRoute
   AuthenticatedAdminVipUpgradePackagesRoute: typeof AuthenticatedAdminVipUpgradePackagesRoute
   AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -1990,6 +2011,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminStorefrontTemplatesRoute:
     AuthenticatedAdminStorefrontTemplatesRoute,
   AuthenticatedAdminVipTiersRoute: AuthenticatedAdminVipTiersRoute,
+  AuthenticatedAdminVipUpgradeBonusCapRoute:
+    AuthenticatedAdminVipUpgradeBonusCapRoute,
   AuthenticatedAdminVipUpgradePackagesRoute:
     AuthenticatedAdminVipUpgradePackagesRoute,
   AuthenticatedB2bAccountsRoute: AuthenticatedB2bAccountsRouteWithChildren,
@@ -2113,13 +2136,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
