@@ -76,7 +76,7 @@ function Page() {
     const to = from + PAGE_SIZE - 1;
     let q = supabase
       .from("profiles")
-      .select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip", { count: "exact" })
+      .select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip, legacy_bonus_total", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(from, to);
     if (search) {
