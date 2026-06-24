@@ -2622,6 +2622,206 @@ export type Database = {
         }
         Relationships: []
       }
+      operation_ai_summaries: {
+        Row: {
+          content: Json
+          created_at: string
+          generated_by: string | null
+          id: string
+          summary_date: string
+          summary_type: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          generated_by?: string | null
+          id?: string
+          summary_date?: string
+          summary_type?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          generated_by?: string | null
+          id?: string
+          summary_date?: string
+          summary_type?: string
+        }
+        Relationships: []
+      }
+      operation_attendance_logs: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          log_type: Database["public"]["Enums"]["operation_attendance_type"]
+          logged_at: string
+          metadata: Json
+          note: string | null
+          user_agent: string | null
+          user_id: string
+          work_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          log_type: Database["public"]["Enums"]["operation_attendance_type"]
+          logged_at?: string
+          metadata?: Json
+          note?: string | null
+          user_agent?: string | null
+          user_id: string
+          work_date?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          log_type?: Database["public"]["Enums"]["operation_attendance_type"]
+          logged_at?: string
+          metadata?: Json
+          note?: string | null
+          user_agent?: string | null
+          user_id?: string
+          work_date?: string
+        }
+        Relationships: []
+      }
+      operation_participants: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          department: string | null
+          granted_by: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          op_role: Database["public"]["Enums"]["operation_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          department?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          op_role?: Database["public"]["Enums"]["operation_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          department?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          op_role?: Database["public"]["Enums"]["operation_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      operation_task_reports: {
+        Row: {
+          attachments: Json
+          content: string
+          created_at: string
+          id: string
+          reporter_id: string
+          status_snapshot:
+            | Database["public"]["Enums"]["operation_task_status"]
+            | null
+          task_id: string
+        }
+        Insert: {
+          attachments?: Json
+          content: string
+          created_at?: string
+          id?: string
+          reporter_id: string
+          status_snapshot?:
+            | Database["public"]["Enums"]["operation_task_status"]
+            | null
+          task_id: string
+        }
+        Update: {
+          attachments?: Json
+          content?: string
+          created_at?: string
+          id?: string
+          reporter_id?: string
+          status_snapshot?:
+            | Database["public"]["Enums"]["operation_task_status"]
+            | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operation_task_reports_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "operation_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operation_tasks: {
+        Row: {
+          assignee_id: string | null
+          company_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          description: string | null
+          due_at: string | null
+          id: string
+          metadata: Json
+          priority: Database["public"]["Enums"]["operation_task_priority"]
+          status: Database["public"]["Enums"]["operation_task_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          metadata?: Json
+          priority?: Database["public"]["Enums"]["operation_task_priority"]
+          status?: Database["public"]["Enums"]["operation_task_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          company_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          due_at?: string | null
+          id?: string
+          metadata?: Json
+          priority?: Database["public"]["Enums"]["operation_task_priority"]
+          status?: Database["public"]["Enums"]["operation_task_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           company_id: string
@@ -5106,6 +5306,10 @@ export type Database = {
         Args: { _member_id: string }
         Returns: string
       }
+      get_operation_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["operation_role"]
+      }
       get_product_costs: {
         Args: { _ids: string[] }
         Returns: {
@@ -5146,6 +5350,7 @@ export type Database = {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
+      is_operation_participant: { Args: { _user_id: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -5258,6 +5463,16 @@ export type Database = {
         | "vendor"
         | "member"
         | "admin"
+      operation_attendance_type: "check_in" | "check_out"
+      operation_role: "manager" | "staff" | "assistant" | "collaborator"
+      operation_task_priority: "low" | "normal" | "high" | "urgent"
+      operation_task_status:
+        | "pending"
+        | "in_progress"
+        | "submitted"
+        | "completed"
+        | "cancelled"
+        | "overdue"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5393,6 +5608,17 @@ export const Constants = {
         "vendor",
         "member",
         "admin",
+      ],
+      operation_attendance_type: ["check_in", "check_out"],
+      operation_role: ["manager", "staff", "assistant", "collaborator"],
+      operation_task_priority: ["low", "normal", "high", "urgent"],
+      operation_task_status: [
+        "pending",
+        "in_progress",
+        "submitted",
+        "completed",
+        "cancelled",
+        "overdue",
       ],
     },
   },

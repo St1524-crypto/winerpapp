@@ -66,12 +66,15 @@ import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
+import { Route as ShopAccountWorkbenchRouteImport } from './routes/shop.account.workbench'
 import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wallet'
 import { Route as ShopAccountVipRouteImport } from './routes/shop.account.vip'
+import { Route as ShopAccountTasksRouteImport } from './routes/shop.account.tasks'
 import { Route as ShopAccountStorefrontRouteImport } from './routes/shop.account.storefront'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
 import { Route as ShopAccountOrdersRouteImport } from './routes/shop.account.orders'
+import { Route as ShopAccountAttendanceRouteImport } from './routes/shop.account.attendance'
 import { Route as ShopAccountAddressesRouteImport } from './routes/shop.account.addresses'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
 import { Route as AuthenticatedFinanceTransactionsRouteImport } from './routes/_authenticated/finance.transactions'
@@ -90,6 +93,7 @@ import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
 import { Route as AuthenticatedAdminReferralTreeRouteImport } from './routes/_authenticated/admin.referral-tree'
+import { Route as AuthenticatedAdminOperationsRouteImport } from './routes/_authenticated/admin.operations'
 import { Route as AuthenticatedAdminMemberSearchRouteImport } from './routes/_authenticated/admin.member-search'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
 import { Route as AuthenticatedAdminBonusesRouteImport } from './routes/_authenticated/admin.bonuses'
@@ -103,6 +107,10 @@ import { Route as ApiPublicHooksBonusDailyTickRouteImport } from './routes/api/p
 import { Route as ApiPublicCronExpireGroupBuysRouteImport } from './routes/api/public/cron/expire-group-buys'
 import { Route as ApiPublicAiRecruitRouteImport } from './routes/api/public/ai/recruit'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
+import { Route as AuthenticatedAdminOperationsTasksRouteImport } from './routes/_authenticated/admin.operations.tasks'
+import { Route as AuthenticatedAdminOperationsMembersRouteImport } from './routes/_authenticated/admin.operations.members'
+import { Route as AuthenticatedAdminOperationsAttendanceRouteImport } from './routes/_authenticated/admin.operations.attendance'
+import { Route as AuthenticatedAdminOperationsAssistantRouteImport } from './routes/_authenticated/admin.operations.assistant'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 import { Route as AuthenticatedAdminBonusesBatchesBatchIdRouteImport } from './routes/_authenticated/admin.bonuses.batches.$batchId'
 
@@ -400,6 +408,11 @@ const ShopCategorySlugRoute = ShopCategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => ShopRoute,
 } as any)
+const ShopAccountWorkbenchRoute = ShopAccountWorkbenchRouteImport.update({
+  id: '/workbench',
+  path: '/workbench',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
 const ShopAccountWalletRoute = ShopAccountWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -408,6 +421,11 @@ const ShopAccountWalletRoute = ShopAccountWalletRouteImport.update({
 const ShopAccountVipRoute = ShopAccountVipRouteImport.update({
   id: '/vip',
   path: '/vip',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
+const ShopAccountTasksRoute = ShopAccountTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
   getParentRoute: () => ShopAccountRoute,
 } as any)
 const ShopAccountStorefrontRoute = ShopAccountStorefrontRouteImport.update({
@@ -428,6 +446,11 @@ const ShopAccountPointsRoute = ShopAccountPointsRouteImport.update({
 const ShopAccountOrdersRoute = ShopAccountOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
+const ShopAccountAttendanceRoute = ShopAccountAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
   getParentRoute: () => ShopAccountRoute,
 } as any)
 const ShopAccountAddressesRoute = ShopAccountAddressesRouteImport.update({
@@ -537,6 +560,12 @@ const AuthenticatedAdminReferralTreeRoute =
     path: '/admin/referral-tree',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminOperationsRoute =
+  AuthenticatedAdminOperationsRouteImport.update({
+    id: '/admin/operations',
+    path: '/admin/operations',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminMemberSearchRoute =
   AuthenticatedAdminMemberSearchRouteImport.update({
     id: '/admin/member-search',
@@ -613,6 +642,30 @@ const AuthenticatedB2bAccountsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedB2bAccountsRoute,
   } as any)
+const AuthenticatedAdminOperationsTasksRoute =
+  AuthenticatedAdminOperationsTasksRouteImport.update({
+    id: '/tasks',
+    path: '/tasks',
+    getParentRoute: () => AuthenticatedAdminOperationsRoute,
+  } as any)
+const AuthenticatedAdminOperationsMembersRoute =
+  AuthenticatedAdminOperationsMembersRouteImport.update({
+    id: '/members',
+    path: '/members',
+    getParentRoute: () => AuthenticatedAdminOperationsRoute,
+  } as any)
+const AuthenticatedAdminOperationsAttendanceRoute =
+  AuthenticatedAdminOperationsAttendanceRouteImport.update({
+    id: '/attendance',
+    path: '/attendance',
+    getParentRoute: () => AuthenticatedAdminOperationsRoute,
+  } as any)
+const AuthenticatedAdminOperationsAssistantRoute =
+  AuthenticatedAdminOperationsAssistantRouteImport.update({
+    id: '/assistant',
+    path: '/assistant',
+    getParentRoute: () => AuthenticatedAdminOperationsRoute,
+  } as any)
 const AuthenticatedAdminCompaniesNewRoute =
   AuthenticatedAdminCompaniesNewRouteImport.update({
     id: '/new',
@@ -683,6 +736,7 @@ export interface FileRoutesByFullPath {
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
+  '/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -701,18 +755,25 @@ export interface FileRoutesByFullPath {
   '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
+  '/shop/account/attendance': typeof ShopAccountAttendanceRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
+  '/shop/account/tasks': typeof ShopAccountTasksRoute
   '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
+  '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
+  '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
+  '/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
+  '/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
+  '/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
@@ -777,6 +838,7 @@ export interface FileRoutesByTo {
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
+  '/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -795,17 +857,24 @@ export interface FileRoutesByTo {
   '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
+  '/shop/account/attendance': typeof ShopAccountAttendanceRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/tasks': typeof ShopAccountTasksRoute
   '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
+  '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/finance': typeof AuthenticatedFinanceIndexRoute
   '/shop/account': typeof ShopAccountIndexRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
+  '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
+  '/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
+  '/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
+  '/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
@@ -875,6 +944,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/_authenticated/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
+  '/_authenticated/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
   '/_authenticated/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
@@ -893,18 +963,25 @@ export interface FileRoutesById {
   '/_authenticated/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
+  '/shop/account/attendance': typeof ShopAccountAttendanceRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
+  '/shop/account/tasks': typeof ShopAccountTasksRoute
   '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
+  '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
+  '/_authenticated/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
+  '/_authenticated/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
+  '/_authenticated/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
+  '/_authenticated/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
@@ -974,6 +1051,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses'
     | '/admin/companies'
     | '/admin/member-search'
+    | '/admin/operations'
     | '/admin/referral-tree'
     | '/admin/referrals'
     | '/admin/role-manager'
@@ -992,18 +1070,25 @@ export interface FileRouteTypes {
     | '/finance/transactions'
     | '/products/$productId'
     | '/shop/account/addresses'
+    | '/shop/account/attendance'
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/storefront'
+    | '/shop/account/tasks'
     | '/shop/account/vip'
     | '/shop/account/wallet'
+    | '/shop/account/workbench'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/admin/'
     | '/finance/'
     | '/shop/account/'
     | '/admin/companies/new'
+    | '/admin/operations/assistant'
+    | '/admin/operations/attendance'
+    | '/admin/operations/members'
+    | '/admin/operations/tasks'
     | '/b2b/accounts/$id'
     | '/api/public/ai/recruit'
     | '/api/public/cron/expire-group-buys'
@@ -1068,6 +1153,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses'
     | '/admin/companies'
     | '/admin/member-search'
+    | '/admin/operations'
     | '/admin/referral-tree'
     | '/admin/referrals'
     | '/admin/role-manager'
@@ -1086,17 +1172,24 @@ export interface FileRouteTypes {
     | '/finance/transactions'
     | '/products/$productId'
     | '/shop/account/addresses'
+    | '/shop/account/attendance'
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/tasks'
     | '/shop/account/vip'
     | '/shop/account/wallet'
+    | '/shop/account/workbench'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/admin'
     | '/finance'
     | '/shop/account'
     | '/admin/companies/new'
+    | '/admin/operations/assistant'
+    | '/admin/operations/attendance'
+    | '/admin/operations/members'
+    | '/admin/operations/tasks'
     | '/b2b/accounts/$id'
     | '/api/public/ai/recruit'
     | '/api/public/cron/expire-group-buys'
@@ -1165,6 +1258,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bonuses'
     | '/_authenticated/admin/companies'
     | '/_authenticated/admin/member-search'
+    | '/_authenticated/admin/operations'
     | '/_authenticated/admin/referral-tree'
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/role-manager'
@@ -1183,18 +1277,25 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/transactions'
     | '/_authenticated/products/$productId'
     | '/shop/account/addresses'
+    | '/shop/account/attendance'
     | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/storefront'
+    | '/shop/account/tasks'
     | '/shop/account/vip'
     | '/shop/account/wallet'
+    | '/shop/account/workbench'
     | '/shop/category/$slug'
     | '/shop/product/$id'
     | '/_authenticated/admin/'
     | '/_authenticated/finance/'
     | '/shop/account/'
     | '/_authenticated/admin/companies/new'
+    | '/_authenticated/admin/operations/assistant'
+    | '/_authenticated/admin/operations/attendance'
+    | '/_authenticated/admin/operations/members'
+    | '/_authenticated/admin/operations/tasks'
     | '/_authenticated/b2b/accounts/$id'
     | '/api/public/ai/recruit'
     | '/api/public/cron/expire-group-buys'
@@ -1631,6 +1732,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopCategorySlugRouteImport
       parentRoute: typeof ShopRoute
     }
+    '/shop/account/workbench': {
+      id: '/shop/account/workbench'
+      path: '/workbench'
+      fullPath: '/shop/account/workbench'
+      preLoaderRoute: typeof ShopAccountWorkbenchRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
     '/shop/account/wallet': {
       id: '/shop/account/wallet'
       path: '/wallet'
@@ -1643,6 +1751,13 @@ declare module '@tanstack/react-router' {
       path: '/vip'
       fullPath: '/shop/account/vip'
       preLoaderRoute: typeof ShopAccountVipRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
+    '/shop/account/tasks': {
+      id: '/shop/account/tasks'
+      path: '/tasks'
+      fullPath: '/shop/account/tasks'
+      preLoaderRoute: typeof ShopAccountTasksRouteImport
       parentRoute: typeof ShopAccountRoute
     }
     '/shop/account/storefront': {
@@ -1671,6 +1786,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/shop/account/orders'
       preLoaderRoute: typeof ShopAccountOrdersRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
+    '/shop/account/attendance': {
+      id: '/shop/account/attendance'
+      path: '/attendance'
+      fullPath: '/shop/account/attendance'
+      preLoaderRoute: typeof ShopAccountAttendanceRouteImport
       parentRoute: typeof ShopAccountRoute
     }
     '/shop/account/addresses': {
@@ -1799,6 +1921,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReferralTreeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/operations': {
+      id: '/_authenticated/admin/operations'
+      path: '/admin/operations'
+      fullPath: '/admin/operations'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/member-search': {
       id: '/_authenticated/admin/member-search'
       path: '/admin/member-search'
@@ -1890,6 +2019,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedB2bAccountsIdRouteImport
       parentRoute: typeof AuthenticatedB2bAccountsRoute
     }
+    '/_authenticated/admin/operations/tasks': {
+      id: '/_authenticated/admin/operations/tasks'
+      path: '/tasks'
+      fullPath: '/admin/operations/tasks'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsTasksRouteImport
+      parentRoute: typeof AuthenticatedAdminOperationsRoute
+    }
+    '/_authenticated/admin/operations/members': {
+      id: '/_authenticated/admin/operations/members'
+      path: '/members'
+      fullPath: '/admin/operations/members'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsMembersRouteImport
+      parentRoute: typeof AuthenticatedAdminOperationsRoute
+    }
+    '/_authenticated/admin/operations/attendance': {
+      id: '/_authenticated/admin/operations/attendance'
+      path: '/attendance'
+      fullPath: '/admin/operations/attendance'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsAttendanceRouteImport
+      parentRoute: typeof AuthenticatedAdminOperationsRoute
+    }
+    '/_authenticated/admin/operations/assistant': {
+      id: '/_authenticated/admin/operations/assistant'
+      path: '/assistant'
+      fullPath: '/admin/operations/assistant'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsAssistantRouteImport
+      parentRoute: typeof AuthenticatedAdminOperationsRoute
+    }
     '/_authenticated/admin/companies/new': {
       id: '/_authenticated/admin/companies/new'
       path: '/new'
@@ -1968,6 +2125,30 @@ const AuthenticatedAdminCompaniesRouteWithChildren =
     AuthenticatedAdminCompaniesRouteChildren,
   )
 
+interface AuthenticatedAdminOperationsRouteChildren {
+  AuthenticatedAdminOperationsAssistantRoute: typeof AuthenticatedAdminOperationsAssistantRoute
+  AuthenticatedAdminOperationsAttendanceRoute: typeof AuthenticatedAdminOperationsAttendanceRoute
+  AuthenticatedAdminOperationsMembersRoute: typeof AuthenticatedAdminOperationsMembersRoute
+  AuthenticatedAdminOperationsTasksRoute: typeof AuthenticatedAdminOperationsTasksRoute
+}
+
+const AuthenticatedAdminOperationsRouteChildren: AuthenticatedAdminOperationsRouteChildren =
+  {
+    AuthenticatedAdminOperationsAssistantRoute:
+      AuthenticatedAdminOperationsAssistantRoute,
+    AuthenticatedAdminOperationsAttendanceRoute:
+      AuthenticatedAdminOperationsAttendanceRoute,
+    AuthenticatedAdminOperationsMembersRoute:
+      AuthenticatedAdminOperationsMembersRoute,
+    AuthenticatedAdminOperationsTasksRoute:
+      AuthenticatedAdminOperationsTasksRoute,
+  }
+
+const AuthenticatedAdminOperationsRouteWithChildren =
+  AuthenticatedAdminOperationsRoute._addFileChildren(
+    AuthenticatedAdminOperationsRouteChildren,
+  )
+
 interface AuthenticatedB2bAccountsRouteChildren {
   AuthenticatedB2bAccountsIdRoute: typeof AuthenticatedB2bAccountsIdRoute
 }
@@ -2016,6 +2197,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminBonusesRoute: typeof AuthenticatedAdminBonusesRouteWithChildren
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
   AuthenticatedAdminMemberSearchRoute: typeof AuthenticatedAdminMemberSearchRoute
+  AuthenticatedAdminOperationsRoute: typeof AuthenticatedAdminOperationsRouteWithChildren
   AuthenticatedAdminReferralTreeRoute: typeof AuthenticatedAdminReferralTreeRoute
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
@@ -2067,6 +2249,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminCompaniesRoute:
     AuthenticatedAdminCompaniesRouteWithChildren,
   AuthenticatedAdminMemberSearchRoute: AuthenticatedAdminMemberSearchRoute,
+  AuthenticatedAdminOperationsRoute:
+    AuthenticatedAdminOperationsRouteWithChildren,
   AuthenticatedAdminReferralTreeRoute: AuthenticatedAdminReferralTreeRoute,
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
@@ -2119,23 +2303,29 @@ const ShopAccountStorefrontRouteWithChildren =
 
 interface ShopAccountRouteChildren {
   ShopAccountAddressesRoute: typeof ShopAccountAddressesRoute
+  ShopAccountAttendanceRoute: typeof ShopAccountAttendanceRoute
   ShopAccountOrdersRoute: typeof ShopAccountOrdersRouteWithChildren
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
   ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRouteWithChildren
+  ShopAccountTasksRoute: typeof ShopAccountTasksRoute
   ShopAccountVipRoute: typeof ShopAccountVipRoute
   ShopAccountWalletRoute: typeof ShopAccountWalletRoute
+  ShopAccountWorkbenchRoute: typeof ShopAccountWorkbenchRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
 }
 
 const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountAddressesRoute: ShopAccountAddressesRoute,
+  ShopAccountAttendanceRoute: ShopAccountAttendanceRoute,
   ShopAccountOrdersRoute: ShopAccountOrdersRouteWithChildren,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
   ShopAccountStorefrontRoute: ShopAccountStorefrontRouteWithChildren,
+  ShopAccountTasksRoute: ShopAccountTasksRoute,
   ShopAccountVipRoute: ShopAccountVipRoute,
   ShopAccountWalletRoute: ShopAccountWalletRoute,
+  ShopAccountWorkbenchRoute: ShopAccountWorkbenchRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
 }
 
