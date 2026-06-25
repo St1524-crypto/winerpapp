@@ -95,7 +95,7 @@ function ProductDetail() {
   const hasTiers = tiers.length > 0;
 
   return (
-    <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-10 pb-28 md:pb-10">
+    <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-10 pb-44 md:pb-10">
       {/* breadcrumb */}
       <nav className="text-xs text-muted-foreground flex items-center gap-1 mb-3 md:mb-6 min-w-0 overflow-hidden">
         <Link to="/shop" className="shrink-0">首頁</Link><ChevronRight className="h-3 w-3 shrink-0" />
