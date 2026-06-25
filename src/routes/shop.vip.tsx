@@ -4,10 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Check, Loader2 } from "lucide-react";
+import { Crown, Check, Loader2, Gift, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useVipStatus } from "@/hooks/use-wallet";
+import { useCart } from "@/hooks/use-cart";
 import { listVipTiers, listVipUpgradePackages, purchaseVipUpgrade } from "@/lib/vip-tiers.functions";
+import { listPublicAnnualFeeVipPackages } from "@/lib/annual-fee-vip.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/shop/vip")({
