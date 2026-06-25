@@ -35,13 +35,15 @@ export function useIsDealer(): boolean {
   return isDealer;
 }
 
-/** 根據是否為經銷商回傳購買單價：經銷商且有經銷價時用經銷價，否則用一般售價。 */
+/**
+ * 回傳購買單價。
+ * 注意：批發 / 經銷價現在透過伺服器端 RPC（quote_wholesale_price）在加入購物車與結帳時計算，
+ * client 端不再直接讀取 products.wholesale_price，因此這裡僅回傳基礎售價。
+ */
 export function getEffectivePrice(
-  product: { price: number; wholesale_price: number | null } | null | undefined,
-  isDealer: boolean,
+  product: { price: number; wholesale_price?: number | null } | null | undefined,
+  _isDealer: boolean,
 ): number {
   if (!product) return 0;
-  const ws = Number(product.wholesale_price ?? 0);
-  if (isDealer && ws > 0) return ws;
   return Number(product.price ?? 0);
 }
