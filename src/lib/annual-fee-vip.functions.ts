@@ -45,16 +45,37 @@ export const upsertAnnualFeeRule = createServerFn({ method: "POST" })
     await ensureAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const payload: any = { ...data };
-    if (!payload.id) delete payload.id;
-    const { data: row, error } = await supabaseAdmin
-      .from("annual_fee_vip_rules")
-      .upsert(payload, { onConflict: "sku" })
-      .select()
-      .single();
-    if (error) throw error;
+    const id = payload.id;
+    delete payload.id;
+
+    let row: any;
+    if (id) {
+      const { data: r, error } = await supabaseAdmin
+        .from("annual_fee_vip_rules")
+        .update(payload).eq("id", id).select().single();
+      if (error) throw error;
+      row = r;
+    } else {
+      const { data: existing } = await supabaseAdmin
+        .from("annual_fee_vip_rules")
+        .select("id").eq("sku", payload.sku).maybeSingle();
+      if (existing?.id) {
+        const { data: r, error } = await supabaseAdmin
+          .from("annual_fee_vip_rules")
+          .update(payload).eq("id", existing.id).select().single();
+        if (error) throw error;
+        row = r;
+      } else {
+        const { data: r, error } = await supabaseAdmin
+          .from("annual_fee_vip_rules")
+          .insert(payload).select().single();
+        if (error) throw error;
+        row = r;
+      }
+    }
     await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,
-      action: data.id ? "update" : "create",
+      action: id ? "update" : "create",
       entity: "annual_fee_vip_rule",
       entity_id: row.id,
       metadata: { sku: row.sku, upgrade_days: row.upgrade_days },

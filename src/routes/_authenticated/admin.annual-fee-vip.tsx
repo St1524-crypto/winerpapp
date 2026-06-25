@@ -229,10 +229,14 @@ function AnnualFeeVipAdmin() {
               <div className="space-y-1">
                 <Label>獎勵點</Label>
                 <Input
-                  type="number"
-                  min={0}
-                  value={editing.reward_points ?? 0}
-                  onChange={(e) => setEditing({ ...editing, reward_points: Number(e.target.value) })}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={editing.reward_points ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9]/g, "");
+                    setEditing({ ...editing, reward_points: v === "" ? (undefined as any) : Number(v) });
+                  }}
                 />
               </div>
 
@@ -240,9 +244,14 @@ function AnnualFeeVipAdmin() {
               <div className="space-y-1">
                 <Label>排序</Label>
                 <Input
-                  type="number"
-                  value={editing.sort_order ?? 0}
-                  onChange={(e) => setEditing({ ...editing, sort_order: Number(e.target.value) })}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="-?[0-9]*"
+                  value={editing.sort_order ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9-]/g, "");
+                    setEditing({ ...editing, sort_order: v === "" || v === "-" ? (undefined as any) : Number(v) });
+                  }}
                 />
               </div>
 
