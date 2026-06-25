@@ -109,6 +109,10 @@ function VipPackagesAdmin() {
               <div className="text-lg font-bold">NT$ {Number(r.price).toLocaleString()}</div>
               <div>贈送獎勵點：{r.bonus_points}</div>
               <div>有效期：{r.duration_days > 0 ? `${r.duration_days} 天` : "永久"}</div>
+              <div>購買方式：{r.product_id
+                ? <Badge variant="default" className="ml-1">加入購物車</Badge>
+                : <Badge variant="outline" className="ml-1">直接購買（pending）</Badge>}
+              </div>
               {r.description && <div className="text-muted-foreground">{r.description}</div>}
               <div className="flex gap-2 pt-2">
                 <Button size="sm" variant="outline" onClick={() => edit(r)}><Pencil className="h-3 w-3 mr-1" />編輯</Button>
