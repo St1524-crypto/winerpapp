@@ -45,9 +45,7 @@ function CheckoutPage() {
   const [useShopping, setUseShopping] = useState<number>(0);
   const [useDiscount, setUseDiscount] = useState<number>(0);
 
-  useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/login" });
-  }, [user, authLoading, navigate]);
+  // Guest checkout: no auto-redirect; render inline auth UI below.
 
   // Auto-apply default address whenever the list resolves or default changes
   useEffect(() => {
