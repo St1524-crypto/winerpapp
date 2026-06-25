@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package, MapPin, Lock, ExternalLink } from "lucide-react";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, SHIPPING_STATUS_LABELS, type SalesOrder, type SalesOrderItem } from "@/types/shop";
+import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/shop/account/orders/$id")({ component: OrderDetail });
 
@@ -16,6 +18,7 @@ function OrderDetail() {
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const upgradeTriggered = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -28,6 +31,36 @@ function OrderDetail() {
       setLoading(false);
     })();
   }, [id]);
+
+  // 付款成功後：自動觸發年費 VIP 升級 hook（冪等；非年費規則不影響流程）
+  useEffect(() => {
+    if (!order || upgradeTriggered.current) return;
+    if (order.payment_status !== "paid") return;
+    upgradeTriggered.current = true;
+    (async () => {
+      try {
+        const res: any = await processOrderAnnualFeeUpgrade({ data: { orderId: id } });
+        if (!res?.ok) return; // 不符合規則 → 靜默不影響原流程
+        const results = (res.results ?? []) as any[];
+        const applied = results.filter((r) => r.applied);
+        const skipped = results.filter((r) => r.skipped === "already_processed");
+        if (applied.length > 0) {
+          const pts = applied.reduce((s, r) => s + Number(r.granted_reward_points ?? 0), 0);
+          const hasGift = applied.some((r) => r.gift_product_id);
+          toast.success(
+            `已完成 VIP 升級${pts > 0 ? `；已發放獎勵點 ${pts}` : ""}${hasGift ? "；贈品將由客服確認出貨" : ""}`,
+          );
+        } else if (skipped.length > 0) {
+          toast.info("VIP 升級已完成，未重複處理");
+        }
+      } catch (err) {
+        // hook 失敗不可影響訂單狀態；記錄並提示客服
+        console.error("[annual-fee-upgrade] hook failed", err);
+        toast.warning("訂單付款成功，但 VIP 升級處理發生問題，請聯絡客服協助確認。");
+      }
+    })();
+  }, [order, id]);
+
 
   if (loading) return <Skeleton className="h-96" />;
   if (!order) {
