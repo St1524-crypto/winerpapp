@@ -1,0 +1,1 @@
+ALTER VIEW public.dealer_tiers_public_summary SET (security_invoker = on);
