@@ -271,7 +271,7 @@ export const upsertVipPackage = createServerFn({ method: "POST" })
     let anchorImage: string | null = null;
     let anchorCompanyId: string | null = null;
     // 從第一個綁定商品取得 company_id / image 作為來源
-    const firstGiftId = Array.isArray(product_ids) ? product_ids[0] : row.product_id;
+    const firstGiftId = items && items.length > 0 ? items[0].product_id : row.product_id;
     if (firstGiftId) {
       const { data: gp } = await supabaseAdmin
         .from("products")
