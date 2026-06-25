@@ -528,12 +528,34 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
     );
     if (productIds.length === 0) return { ok: false, reason: "no_items" };
 
-    const { data: pkgs } = await supabaseAdmin
+    // 找出所有「綁定了訂單中任一商品」的套組（去重）
+    // 1) 透過多商品綁定表
+    const { data: bindings } = await supabaseAdmin
+      .from("vip_upgrade_package_products")
+      .select("package_id")
+      .in("product_id", productIds);
+    const pkgIdsFromBindings = Array.from(
+      new Set((bindings ?? []).map((b: any) => b.package_id)),
+    );
+    // 2) 向下相容：仍以舊單一 product_id 查詢
+    let pkgs: any[] = [];
+    if (pkgIdsFromBindings.length > 0) {
+      const { data: a } = await supabaseAdmin
+        .from("vip_upgrade_packages")
+        .select("*")
+        .eq("status", "active")
+        .in("id", pkgIdsFromBindings);
+      pkgs = a ?? [];
+    }
+    const { data: legacy } = await supabaseAdmin
       .from("vip_upgrade_packages")
       .select("*")
       .eq("status", "active")
       .in("product_id", productIds);
-    if (!pkgs || pkgs.length === 0) return { ok: false, reason: "no_matching_package" };
+    for (const lp of legacy ?? []) {
+      if (!pkgs.some((x) => x.id === lp.id)) pkgs.push(lp);
+    }
+    if (pkgs.length === 0) return { ok: false, reason: "no_matching_package" };
 
     const { data: tiers } = await supabaseAdmin.from("vip_tiers").select("code, sort_order");
     const tierMap = new Map<string, number>((tiers ?? []).map((t: any) => [t.code, t.sort_order]));
