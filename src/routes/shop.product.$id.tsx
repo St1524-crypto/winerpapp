@@ -91,7 +91,7 @@ function ProductDetail() {
   const baseReward = Number((product as any).reward_points ?? 0);
   const pricing = applyWholesalePricing(baseEff, baseReward, tiers, qty);
   const effPrice = pricing.unitPrice;
-  const showDealer = !pricing.tier && isDealer && product.wholesale_price > 0 && product.wholesale_price < product.price;
+  const showDealer = false;
   const hasTiers = tiers.length > 0;
 
   return (

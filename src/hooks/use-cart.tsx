@@ -103,7 +103,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const db = getDb();
       const { data } = await db
         .from("cart_items")
-        .select("*, product:products(id, name, sku, price, wholesale_price, image, stock, status)")
+        .select("*, product:products(id, name, sku, price, image, stock, status)")
         .eq("cart_id", id)
         .order("created_at", { ascending: false });
       const itemList = (data ?? []) as unknown as CartItem[];

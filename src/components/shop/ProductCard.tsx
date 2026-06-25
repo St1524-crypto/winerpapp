@@ -10,7 +10,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
   const isDealer = useIsDealer();
   const price = getEffectivePrice(product, isDealer);
-  const showDealer = isDealer && product.wholesale_price > 0 && product.wholesale_price < product.price;
+  const showDealer = false;
   const outOfStock = product.stock <= 0;
 
   return (
