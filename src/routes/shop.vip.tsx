@@ -95,9 +95,7 @@ function VipPage() {
                 {g.items.map((p) => {
                   const products: any[] = (p.products ?? []).filter((x: any) => x && x.status === "active");
                   const hasProducts = products.length > 0;
-                  const displayPrice = hasProducts && products.length === 1
-                    ? Number(products[0].price)
-                    : Number(p.price);
+                  const displayPrice = Number(p.price);
                   return (
                   <Card key={p.id} className="relative overflow-hidden">
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-primary" />
