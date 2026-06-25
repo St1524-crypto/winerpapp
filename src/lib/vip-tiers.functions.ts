@@ -741,45 +741,59 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
         grantedPoints = pkg.bonus_points;
       }
 
-      // === 發放贈品商品：扣庫存 + 寫 inventory_logs ===
-      // 取出此套組綁定的贈品 product_id 清單（多商品優先，舊資料用 product_id）
-      const giftIds: string[] = [];
+      // === 發放贈品商品：依設定數量扣庫存 + 寫 inventory_logs ===
+      const giftItems: { product_id: string; quantity: number }[] = [];
       const { data: gifts } = await supabaseAdmin
         .from("vip_upgrade_package_products")
-        .select("product_id")
+        .select("product_id, quantity")
         .eq("package_id", pkg.id);
       for (const g of gifts ?? []) {
-        if ((g as any).product_id) giftIds.push((g as any).product_id);
+        if ((g as any).product_id) {
+          giftItems.push({
+            product_id: (g as any).product_id,
+            quantity: Math.max(1, Number((g as any).quantity ?? 1)),
+          });
+        }
       }
-      if (giftIds.length === 0 && pkg.product_id) giftIds.push(pkg.product_id);
+      if (giftItems.length === 0 && pkg.product_id) {
+        giftItems.push({ product_id: pkg.product_id, quantity: 1 });
+      }
       // 排除 anchor 自身（避免重複扣 anchor）
-      const filteredGiftIds = giftIds.filter((id) => id !== pkg.package_product_id);
+      const filteredGifts = giftItems.filter((g) => g.product_id !== pkg.package_product_id);
       const grantedGifts: any[] = [];
-      for (const gid of filteredGiftIds) {
+      for (const g of filteredGifts) {
         const { data: prod } = await supabaseAdmin
           .from("products")
           .select("id, stock, company_id, name")
-          .eq("id", gid)
+          .eq("id", g.product_id)
           .maybeSingle();
         if (!prod) continue;
+        const qty = g.quantity;
         const before_stock = Number((prod as any).stock ?? 0);
-        const after_stock = before_stock - 1;
+        const after_stock = before_stock - qty;
         await supabaseAdmin
           .from("products")
           .update({ stock: after_stock })
-          .eq("id", gid);
+          .eq("id", g.product_id);
         await supabaseAdmin.from("inventory_logs").insert({
-          product_id: gid,
+          product_id: g.product_id,
           type: "out",
-          quantity: 1,
+          quantity: qty,
           before_stock,
           after_stock,
-          reason: `VIP升級套組贈品出庫：${pkg.name}（訂單 ${(order as any).order_no}）`,
+          reason: `VIP升級套組贈品出庫：${pkg.name} x${qty}（訂單 ${(order as any).order_no}）`,
           operator_id: context.userId,
           company_id: (prod as any).company_id,
         });
-        grantedGifts.push({ product_id: gid, name: (prod as any).name, after_stock });
+        grantedGifts.push({
+          product_id: g.product_id,
+          name: (prod as any).name,
+          quantity: qty,
+          after_stock,
+        });
       }
+
+
 
 
       await supabaseAdmin.from("vip_package_upgrade_logs").insert({
