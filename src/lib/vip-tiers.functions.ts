@@ -39,7 +39,7 @@ export const listVipUpgradePackages = createServerFn({ method: "GET" }).handler(
   if (pkgIds.length) {
     const { data: bs } = await sb
       .from("vip_upgrade_package_products")
-      .select("package_id, product_id, sort_order")
+      .select("package_id, product_id, quantity, sort_order")
       .in("package_id", pkgIds)
       .order("sort_order");
     bindings = bs ?? [];
@@ -61,11 +61,14 @@ export const listVipUpgradePackages = createServerFn({ method: "GET" }).handler(
   return list.map((p) => {
     const productList = bindings
       .filter((b) => b.package_id === p.id)
-      .map((b) => pMap.get(b.product_id))
+      .map((b) => {
+        const prod = pMap.get(b.product_id);
+        return prod ? { ...prod, quantity: Number(b.quantity ?? 1) } : null;
+      })
       .filter(Boolean);
     if (productList.length === 0 && p.product_id) {
       const legacy = pMap.get(p.product_id);
-      if (legacy) productList.push(legacy);
+      if (legacy) productList.push({ ...legacy, quantity: 1 });
     }
     return {
       ...p,
@@ -74,6 +77,7 @@ export const listVipUpgradePackages = createServerFn({ method: "GET" }).handler(
     };
   });
 });
+
 
 /** Admin：列出全部階級（含停用） */
 export const adminListVipTiers = createServerFn({ method: "GET" })
