@@ -21,7 +21,7 @@ export const listVipTiers = createServerFn({ method: "GET" }).handler(async () =
   return data ?? [];
 });
 
-/** 公開：列出所有啟用中的升級套組 */
+/** 公開：列出所有啟用中的升級套組（含綁定商品資訊） */
 export const listVipUpgradePackages = createServerFn({ method: "GET" }).handler(async () => {
   const { createClient } = await import("@supabase/supabase-js");
   const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
@@ -33,7 +33,20 @@ export const listVipUpgradePackages = createServerFn({ method: "GET" }).handler(
     .eq("status", "active")
     .order("sort_order");
   if (error) throw error;
-  return data ?? [];
+  const list = (data ?? []) as any[];
+  const productIds = list.map((p) => p.product_id).filter(Boolean);
+  let pMap = new Map<string, any>();
+  if (productIds.length) {
+    const { data: prods } = await sb
+      .from("products")
+      .select("id, sku, name, price, image, status")
+      .in("id", productIds);
+    pMap = new Map((prods ?? []).map((p: any) => [p.id, p]));
+  }
+  return list.map((p) => ({
+    ...p,
+    product: p.product_id ? pMap.get(p.product_id) ?? null : null,
+  }));
 });
 
 /** Admin：列出全部階級（含停用） */
