@@ -177,6 +177,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
             unit_price: Number(t.unit_price) || 0,
             unit_reward_points: Math.max(0, Math.floor(Number(t.unit_reward_points) || 0)),
             sort_order: i,
+            visibility: (t.visibility ?? "all"),
           }));
         if (validTiers.length) {
           const { error: tErr } = await supabase.from("product_wholesale_tiers" as any).insert(validTiers);
