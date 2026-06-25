@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-packages
   head: () => ({ meta: [{ title: "VIP 升級套組 — winerp" }] }),
 });
 
-type BoundProduct = { id: string; name?: string; sku?: string; price?: number };
+type BoundProduct = { id: string; name?: string; sku?: string; price?: number; quantity: number };
 
 const empty = {
   id: "", tier_code: "V", name: "", description: "",
@@ -58,7 +58,10 @@ function VipPackagesAdmin() {
 
   function edit(r: any) {
     setForm({ ...empty, ...r, description: r.description ?? "" });
-    setBound((r.products ?? []) as BoundProduct[]);
+    setBound(((r.products ?? []) as any[]).map((p) => ({
+      id: p.id, name: p.name, sku: p.sku, price: p.price,
+      quantity: Math.max(1, Number(p.quantity ?? 1)),
+    })));
     setProductQuery(""); setProductResults([]);
     setOpen(true);
   }
@@ -74,10 +77,14 @@ function VipPackagesAdmin() {
       toast.info("此商品已加入");
       return;
     }
-    setBound([...bound, { id: p.id, name: p.name, sku: p.sku, price: p.price }]);
+    setBound([...bound, { id: p.id, name: p.name, sku: p.sku, price: p.price, quantity: 1 }]);
   }
   function removeBound(id: string) {
     setBound(bound.filter((b) => b.id !== id));
+  }
+  function setBoundQty(id: string, qty: number) {
+    const q = Math.max(1, Math.floor(qty || 1));
+    setBound(bound.map((b) => (b.id === id ? { ...b, quantity: q } : b)));
   }
 
   async function save() {
@@ -89,13 +96,14 @@ function VipPackagesAdmin() {
         duration_days: Math.max(0, Math.floor(Number(form.duration_days) || 0)),
         sort_order: Math.floor(Number(form.sort_order) || 0),
         description: form.description || null,
-        product_ids: bound.map((b) => b.id),
+        product_items: bound.map((b) => ({ product_id: b.id, quantity: b.quantity })),
       };
       if (!payload.id) delete payload.id;
       await saveFn({ data: payload });
       toast.success("已儲存"); setOpen(false); load();
     } catch (e: any) { toast.error(e.message); }
   }
+
 
   async function remove(id: string) {
     if (!confirm("確定刪除此套組？")) return;
@@ -175,15 +183,24 @@ function VipPackagesAdmin() {
               {bound.length > 0 ? (
                 <ul className="border rounded-md divide-y">
                   {bound.map((b, idx) => (
-                    <li key={b.id} className="flex items-center justify-between px-2 py-1 text-sm">
-                      <span className="truncate">
+                    <li key={b.id} className="flex items-center justify-between gap-2 px-2 py-1 text-sm">
+                      <span className="truncate flex-1">
                         <span className="text-muted-foreground mr-2">{idx + 1}.</span>
                         {b.name} <span className="text-muted-foreground">· {b.sku}</span>
-                        {typeof b.price === "number" && <span className="text-muted-foreground"> · NT$ {b.price}</span>}
                       </span>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeBound(b.id)}>
-                        <X className="h-3 w-3" />
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Label className="text-xs text-muted-foreground">數量</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          className="h-7 w-16"
+                          value={b.quantity}
+                          onChange={(e) => setBoundQty(b.id, Number(e.target.value))}
+                        />
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeBound(b.id)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </li>
                   ))}
                 </ul>
