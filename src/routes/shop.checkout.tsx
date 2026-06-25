@@ -182,8 +182,12 @@ function CheckoutPage() {
     }
   }
 
-  if (authLoading || !user) {
+  if (authLoading) {
     return <div className="container mx-auto px-4 py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!user) {
+    return <GuestAuthPanel />;
   }
 
   return (
