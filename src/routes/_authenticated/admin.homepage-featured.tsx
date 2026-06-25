@@ -47,27 +47,27 @@ function HomepageFeaturedAdmin() {
 
   async function doSearch() {
     setSearching(true);
-    const r = await search({ data: { search: query || undefined } });
+    const r: any = await search({ data: { search: query || undefined } });
     if (r.ok) setResults(r.items);
     else toast.error(r.error || "搜尋失敗");
     setSearching(false);
   }
 
   async function handleAdd(product_id: string) {
-    const r = await addFn({ data: { product_id } });
+    const r: any = await addFn({ data: { product_id } });
     if (r.ok) { toast.success("已加入精品推薦"); refresh(); }
     else toast.error(r.error || "加入失敗");
   }
 
   async function handleRemove(id: string) {
     if (!confirm("確定移除？")) return;
-    const r = await remove({ data: { id } });
+    const r: any = await remove({ data: { id } });
     if (r.ok) { toast.success("已移除"); refresh(); }
     else toast.error(r.error || "移除失敗");
   }
 
   async function handleToggle(id: string, is_active: boolean) {
-    const r = await toggle({ data: { id, is_active } });
+    const r: any = await toggle({ data: { id, is_active } });
     if (r.ok) refresh();
     else toast.error(r.error || "更新失敗");
   }
@@ -79,7 +79,7 @@ function HomepageFeaturedAdmin() {
     [next[idx], next[target]] = [next[target], next[idx]];
     setItems(next);
     const orders = next.map((it, i) => ({ id: it.id, sort_order: i }));
-    const r = await reorder({ data: { orders } });
+    const r: any = await reorder({ data: { orders } });
     if (!r.ok) { toast.error(r.error || "排序失敗"); refresh(); }
   }
 
