@@ -373,7 +373,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                 onClick={() => {
                   const last = form.tiers[form.tiers.length - 1];
                   const nextMin = last ? (last.max_qty ?? last.min_qty) + 1 : 1;
-                  setForm({ ...form, tiers: [...form.tiers, { min_qty: nextMin, max_qty: null, unit_price: 0, unit_reward_points: 0, sort_order: form.tiers.length }] });
+                  setForm({ ...form, tiers: [...form.tiers, { min_qty: nextMin, max_qty: null, unit_price: 0, unit_reward_points: 0, sort_order: form.tiers.length, visibility: "all" }] });
                 }}
               >
                 <Plus className="h-4 w-4 mr-1" /> 新增階梯
