@@ -197,7 +197,8 @@ export const processOrderAnnualFeeUpgrade = createServerFn({ method: "POST" })
         gift_product_id: rule.gift_product_id,
         gift_quantity: rule.gift_quantity ?? 0,
         status: "applied",
-        notes: `由管理員 ${context.userId} 確認付款後升級`,
+        notes: isOwner ? `會員 ${context.userId} 於前台付款後自動升級` : `由管理員 ${context.userId} 確認付款後升級`,
+
       });
 
       await supabaseAdmin.from("audit_logs").insert({
