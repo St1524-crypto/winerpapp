@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-packages
   head: () => ({ meta: [{ title: "VIP 升級套組 — winerp" }] }),
 });
 
-type BoundProduct = { id: string; name?: string; sku?: string; price?: number };
+type BoundProduct = { id: string; name?: string; sku?: string; price?: number; quantity: number };
 
 const empty = {
   id: "", tier_code: "V", name: "", description: "",
