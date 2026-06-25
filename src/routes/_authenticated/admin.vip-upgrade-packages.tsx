@@ -55,8 +55,17 @@ function VipPackagesAdmin() {
   }
   useEffect(() => { load(); }, []);
 
-  function edit(r: any) { setForm({ ...empty, ...r, description: r.description ?? "" }); setOpen(true); }
-  function add() { setForm({ ...empty }); setOpen(true); }
+  function edit(r: any) {
+    setForm({ ...empty, ...r, description: r.description ?? "", product_id: r.product_id ?? null });
+    setProductLabel(r.product_id ? "（已綁定商品）" : "");
+    setProductQuery(""); setProductResults([]);
+    setOpen(true);
+  }
+  function add() {
+    setForm({ ...empty });
+    setProductLabel(""); setProductQuery(""); setProductResults([]);
+    setOpen(true);
+  }
 
   async function save() {
     try {
