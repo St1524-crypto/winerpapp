@@ -4,6 +4,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AdminMobileNav } from "@/components/AdminMobileNav";
 import { AdminSidebar } from "@/components/AdminSidebar";
+import { AdminAIAssistantWidget } from "@/components/AdminAIAssistantWidget";
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentCompany } from "@/hooks/use-current-company";
@@ -175,6 +176,7 @@ function AuthLayout() {
           </main>
           <AdminMobileNav />
         </div>
+        {inAdmin && <AdminAIAssistantWidget />}
       </div>
     </SidebarProvider>
   );
