@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package, MapPin, Lock, ExternalLink } from "lucide-react";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, SHIPPING_STATUS_LABELS, type SalesOrder, type SalesOrderItem } from "@/types/shop";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
+import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/shop/account/orders/$id")({ component: OrderDetail });
