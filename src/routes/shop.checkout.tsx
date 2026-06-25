@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, MapPin, Check, ArrowLeft, Wallet, Percent } from "lucide-react";
+import { Loader2, MapPin, Check, ArrowLeft, Wallet, Percent, UserCheck, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -18,6 +18,8 @@ import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { buildShippingSnapshot } from "@/lib/order-snapshot";
 import { useWallet, useVipStatus } from "@/hooks/use-wallet";
 import { applyOrderPoints } from "@/lib/points.functions";
+import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
+import { quickRegisterAndSignIn } from "@/lib/checkout-register.functions";
 
 
 export const Route = createFileRoute("/shop/checkout")({
