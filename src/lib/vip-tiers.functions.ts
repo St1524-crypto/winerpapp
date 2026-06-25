@@ -153,7 +153,7 @@ export const adminListVipPackages = createServerFn({ method: "GET" })
     if (pkgIds.length) {
       const { data: bs } = await supabaseAdmin
         .from("vip_upgrade_package_products")
-        .select("package_id, product_id, sort_order")
+        .select("package_id, product_id, quantity, sort_order")
         .in("package_id", pkgIds)
         .order("sort_order");
       bindings = bs ?? [];
@@ -175,13 +175,21 @@ export const adminListVipPackages = createServerFn({ method: "GET" })
     return list.map((p) => {
       const productList = bindings
         .filter((b) => b.package_id === p.id)
-        .map((b) => pMap.get(b.product_id))
+        .map((b) => {
+          const prod = pMap.get(b.product_id);
+          return prod ? { ...prod, quantity: Number(b.quantity ?? 1) } : null;
+        })
         .filter(Boolean);
       if (productList.length === 0 && p.product_id) {
         const legacy = pMap.get(p.product_id);
-        if (legacy) productList.push(legacy);
+        if (legacy) productList.push({ ...legacy, quantity: 1 });
       }
-      return { ...p, products: productList, product_ids: productList.map((x: any) => x.id) };
+      return {
+        ...p,
+        products: productList,
+        product_ids: productList.map((x: any) => x.id),
+        product_items: productList.map((x: any) => ({ product_id: x.id, quantity: x.quantity })),
+      };
     });
   });
 
@@ -197,6 +205,9 @@ const pkgSchema = z.object({
   status: z.enum(["active", "inactive"]).default("active"),
   product_id: z.string().uuid().nullable().optional(),
   product_ids: z.array(z.string().uuid()).optional(),
+  product_items: z
+    .array(z.object({ product_id: z.string().uuid(), quantity: z.number().int().min(1).default(1) }))
+    .optional(),
 });
 
 export const upsertVipPackage = createServerFn({ method: "POST" })
@@ -205,12 +216,22 @@ export const upsertVipPackage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await ensureAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { product_ids, ...rest } = data as any;
+    const { product_ids, product_items, ...rest } = data as any;
     const payload: any = { ...rest };
     if (!payload.id) delete payload.id;
-    if (Array.isArray(product_ids)) {
-      payload.product_id = product_ids[0] ?? null;
+
+    // 合併 product_items 與 product_ids：優先採用 product_items（含 quantity）
+    let items: { product_id: string; quantity: number }[] | null = null;
+    if (Array.isArray(product_items)) {
+      items = product_items.map((it: any) => ({
+        product_id: it.product_id,
+        quantity: Math.max(1, Number(it.quantity ?? 1)),
+      }));
+    } else if (Array.isArray(product_ids)) {
+      items = product_ids.map((pid: string) => ({ product_id: pid, quantity: 1 }));
     }
+    if (items) payload.product_id = items[0]?.product_id ?? null;
+
     const { data: row, error } = await supabaseAdmin
       .from("vip_upgrade_packages")
       .upsert(payload)
@@ -218,16 +239,19 @@ export const upsertVipPackage = createServerFn({ method: "POST" })
       .single();
     if (error) throw error;
 
-    if (Array.isArray(product_ids)) {
+    if (items) {
       await supabaseAdmin
         .from("vip_upgrade_package_products")
         .delete()
         .eq("package_id", row.id);
-      if (product_ids.length > 0) {
-        const uniqueIds = Array.from(new Set(product_ids));
-        const rows = uniqueIds.map((pid, idx) => ({
+      if (items.length > 0) {
+        // 同商品去重，數量取最後值
+        const map = new Map<string, number>();
+        items.forEach((it) => map.set(it.product_id, it.quantity));
+        const rows = Array.from(map.entries()).map(([pid, qty], idx) => ({
           package_id: row.id,
           product_id: pid,
+          quantity: qty,
           sort_order: idx,
         }));
         const { error: insErr } = await supabaseAdmin
@@ -236,6 +260,8 @@ export const upsertVipPackage = createServerFn({ method: "POST" })
         if (insErr) throw insErr;
       }
     }
+
+
 
     // === 同步「套組收費商品」(anchor product) ===
     // 用途：套組金額 = 此商品售價；前台「加入購物車」實際只加這一個商品，
