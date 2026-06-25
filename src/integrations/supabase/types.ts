@@ -3041,6 +3041,7 @@ export type Database = {
           unit_price: number
           unit_reward_points: number
           updated_at: string
+          visibility: string
         }
         Insert: {
           created_at?: string
@@ -3052,6 +3053,7 @@ export type Database = {
           unit_price?: number
           unit_reward_points?: number
           updated_at?: string
+          visibility?: string
         }
         Update: {
           created_at?: string
@@ -3063,6 +3065,7 @@ export type Database = {
           unit_price?: number
           unit_reward_points?: number
           updated_at?: string
+          visibility?: string
         }
         Relationships: [
           {
@@ -5630,6 +5633,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_dealer: { Args: { _user_id: string }; Returns: boolean }
+      is_active_vip: { Args: { _user_id: string }; Returns: boolean }
       is_company_member: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
@@ -5650,6 +5655,17 @@ export type Database = {
           _old: Database["public"]["Tables"]["profiles"]["Row"]
         }
         Returns: boolean
+      }
+      quote_wholesale_price: {
+        Args: { _product_id: string; _qty: number }
+        Returns: {
+          applied: boolean
+          tier_max_qty: number
+          tier_min_qty: number
+          unit_price: number
+          unit_reward_points: number
+          visibility: string
+        }[]
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
