@@ -37,7 +37,8 @@ function ProductDetail() {
         supabase.from("product_images").select("*").eq("product_id", productId).order("sort_order"),
         logsQuery,
       ]);
-      const merged = p ? (await mergeProductCosts([p as any]))[0] : null;
+      const withCost = p ? (await mergeProductCosts([p as any]))[0] : null;
+      const merged = withCost ? (await mergeProductWholesalePrices([withCost as any]))[0] : null;
       setProduct(merged as Product | null);
       setImages((imgs ?? []) as ProductImage[]);
       setLogs((lg ?? []) as InventoryLog[]);
