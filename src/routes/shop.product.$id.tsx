@@ -235,7 +235,7 @@ function ProductDetail() {
       )}
 
       {/* Mobile sticky CTA bar */}
-      <div className="fixed bottom-0 inset-x-0 z-40 sm:hidden bg-background/95 backdrop-blur border-t border-border px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] flex items-center gap-2 shadow-[0_-2px_8px_-4px_rgba(0,0,0,0.15)]">
+      <div className="fixed bottom-16 inset-x-0 z-50 sm:hidden bg-background/95 backdrop-blur border-t border-border px-3 py-2 flex items-center gap-2 shadow-[0_-2px_8px_-4px_rgba(0,0,0,0.15)]">
         <div className="flex flex-col leading-tight min-w-0 mr-1">
           <span className="text-[10px] text-muted-foreground">售價</span>
           <span className="text-base font-bold text-primary tabular-nums truncate">NT$ {effPrice.toLocaleString()}</span>
