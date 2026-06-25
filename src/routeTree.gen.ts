@@ -101,6 +101,7 @@ import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminBonusesRouteImport } from './routes/_authenticated/admin.bonuses'
 import { Route as AuthenticatedAdminBonusCenterRouteImport } from './routes/_authenticated/admin.bonus-center'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
+import { Route as AuthenticatedAdminAnnualFeeVipRouteImport } from './routes/_authenticated/admin.annual-fee-vip'
 import { Route as ShopAccountStorefrontIndexRouteImport } from './routes/shop.account.storefront.index'
 import { Route as AuthenticatedAdminQuotesIndexRouteImport } from './routes/_authenticated/admin.quotes.index'
 import { Route as ShopAccountStorefrontTemplatesRouteImport } from './routes/shop.account.storefront.templates'
@@ -613,6 +614,12 @@ const AuthenticatedAdminAuditLogsRoute =
     path: '/admin/audit-logs',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminAnnualFeeVipRoute =
+  AuthenticatedAdminAnnualFeeVipRouteImport.update({
+    id: '/admin/annual-fee-vip',
+    path: '/admin/annual-fee-vip',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ShopAccountStorefrontIndexRoute =
   ShopAccountStorefrontIndexRouteImport.update({
     id: '/',
@@ -766,6 +773,7 @@ export interface FileRoutesByFullPath {
   '/group-buys/': typeof GroupBuysIndexRoute
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/admin/annual-fee-vip': typeof AuthenticatedAdminAnnualFeeVipRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
@@ -873,6 +881,7 @@ export interface FileRoutesByTo {
   '/group-buys': typeof GroupBuysIndexRoute
   '/login': typeof LoginIndexRoute
   '/shop': typeof ShopIndexRoute
+  '/admin/annual-fee-vip': typeof AuthenticatedAdminAnnualFeeVipRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
@@ -984,6 +993,7 @@ export interface FileRoutesById {
   '/group-buys/': typeof GroupBuysIndexRoute
   '/login/': typeof LoginIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/_authenticated/admin/annual-fee-vip': typeof AuthenticatedAdminAnnualFeeVipRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/_authenticated/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/_authenticated/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
@@ -1096,6 +1106,7 @@ export interface FileRouteTypes {
     | '/group-buys/'
     | '/login/'
     | '/shop/'
+    | '/admin/annual-fee-vip'
     | '/admin/audit-logs'
     | '/admin/bonus-center'
     | '/admin/bonuses'
@@ -1203,6 +1214,7 @@ export interface FileRouteTypes {
     | '/group-buys'
     | '/login'
     | '/shop'
+    | '/admin/annual-fee-vip'
     | '/admin/audit-logs'
     | '/admin/bonus-center'
     | '/admin/bonuses'
@@ -1313,6 +1325,7 @@ export interface FileRouteTypes {
     | '/group-buys/'
     | '/login/'
     | '/shop/'
+    | '/_authenticated/admin/annual-fee-vip'
     | '/_authenticated/admin/audit-logs'
     | '/_authenticated/admin/bonus-center'
     | '/_authenticated/admin/bonuses'
@@ -2042,6 +2055,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAuditLogsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/annual-fee-vip': {
+      id: '/_authenticated/admin/annual-fee-vip'
+      path: '/admin/annual-fee-vip'
+      fullPath: '/admin/annual-fee-vip'
+      preLoaderRoute: typeof AuthenticatedAdminAnnualFeeVipRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/shop/account/storefront/': {
       id: '/shop/account/storefront/'
       path: '/'
@@ -2292,6 +2312,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedVipPlansRoute: typeof AuthenticatedVipPlansRoute
   AuthenticatedWarehousesRoute: typeof AuthenticatedWarehousesRoute
   AuthenticatedWebhooksAdminRoute: typeof AuthenticatedWebhooksAdminRoute
+  AuthenticatedAdminAnnualFeeVipRoute: typeof AuthenticatedAdminAnnualFeeVipRoute
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
   AuthenticatedAdminBonusCenterRoute: typeof AuthenticatedAdminBonusCenterRoute
   AuthenticatedAdminBonusesRoute: typeof AuthenticatedAdminBonusesRouteWithChildren
@@ -2348,6 +2369,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedVipPlansRoute: AuthenticatedVipPlansRoute,
   AuthenticatedWarehousesRoute: AuthenticatedWarehousesRoute,
   AuthenticatedWebhooksAdminRoute: AuthenticatedWebhooksAdminRoute,
+  AuthenticatedAdminAnnualFeeVipRoute: AuthenticatedAdminAnnualFeeVipRoute,
   AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
   AuthenticatedAdminBonusCenterRoute: AuthenticatedAdminBonusCenterRoute,
   AuthenticatedAdminBonusesRoute: AuthenticatedAdminBonusesRouteWithChildren,
