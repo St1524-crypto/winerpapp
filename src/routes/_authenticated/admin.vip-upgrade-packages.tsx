@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Plus, Pencil, Trash2 } from "lucide-react";
+import { Crown, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   adminListVipPackages, upsertVipPackage, deleteVipPackage, adminListVipTiers,
+  searchProductsForVipPackage,
 } from "@/lib/vip-tiers.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-packages")({
