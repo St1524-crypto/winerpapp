@@ -344,3 +344,139 @@ function CheckoutPage() {
     </div>
   );
 }
+
+function GuestAuthPanel() {
+  const { count } = useCart();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [busy, setBusy] = useState(false);
+
+  // signin
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginPw, setLoginPw] = useState("");
+
+  // signup
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+
+  async function doLogin(e: React.FormEvent) {
+    e.preventDefault();
+    const id = loginPhone.trim().replace(/[\s-]/g, "");
+    if (!/^\+?\d{8,15}$/.test(id)) { toast.error("手機格式錯誤"); return; }
+    if (!loginPw) { toast.error("密碼錯誤，請重新輸入"); return; }
+    setBusy(true);
+    try {
+      const res = await signInWithIdentifier({ data: { identifier: id, password: loginPw } })
+        .catch(() => ({ ok: false as const, error: "invalid_credentials" }));
+      if (!res.ok) { toast.error("密碼錯誤，請重新輸入"); return; }
+      const { error } = await supabase.auth.setSession(res.session);
+      if (error) throw error;
+      toast.success("登入成功，繼續結帳");
+    } catch (err: any) {
+      toast.error(err.message ?? "登入失敗");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doRegister(e: React.FormEvent) {
+    e.preventDefault();
+    const cleanPhone = phone.trim().replace(/[\s-]/g, "");
+    if (!name.trim()) { toast.error("姓名不可空白"); return; }
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { toast.error("Email 格式錯誤"); return; }
+    if (!/^\+?\d{8,15}$/.test(cleanPhone)) { toast.error("手機格式錯誤"); return; }
+    if (!address.trim()) { toast.error("地址不可空白"); return; }
+    setBusy(true);
+    try {
+      const res = await quickRegisterAndSignIn({
+        data: { name: name.trim(), email: email.trim(), phone: cleanPhone, address: address.trim() },
+      }).catch(() => ({ ok: false as const, error: "create_failed" as const }));
+      if (!res.ok) {
+        if (res.error === "phone_exists") toast.error("此手機已是會員，請使用會員登入");
+        else if (res.error === "phone_invalid") toast.error("手機格式錯誤");
+        else toast.error("建立會員失敗，請聯絡客服");
+        return;
+      }
+      const { error } = await supabase.auth.setSession(res.session);
+      if (error) throw error;
+      toast.success("會員建立成功，繼續結帳");
+    } catch (err: any) {
+      toast.error(err.message ?? "建立會員失敗，請聯絡客服");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <Button asChild variant="ghost" size="sm" className="-ml-2 mb-4">
+        <Link to="/shop"><ArrowLeft className="h-4 w-4 mr-1" />返回商城</Link>
+      </Button>
+      <h1 className="text-2xl font-bold mb-2">結帳前完成身份驗證</h1>
+      <p className="text-sm text-muted-foreground mb-6">您目前購物車有 <b>{count}</b> 件商品。請選擇下方任一方式繼續結帳，購物車內容會自動保留。</p>
+
+      <div className="flex gap-2 mb-4">
+        <Button variant={mode === "signin" ? "default" : "outline"} className="flex-1" onClick={() => setMode("signin")}>
+          <UserCheck className="h-4 w-4 mr-2" />已是會員
+        </Button>
+        <Button variant={mode === "signup" ? "default" : "outline"} className="flex-1" onClick={() => setMode("signup")}>
+          <UserPlus className="h-4 w-4 mr-2" />新會員快速註冊
+        </Button>
+      </div>
+
+      {mode === "signin" ? (
+        <Card>
+          <CardHeader><CardTitle className="text-base">會員登入</CardTitle></CardHeader>
+          <CardContent>
+            <form onSubmit={doLogin} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label>手機號碼 *</Label>
+                <Input value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} placeholder="0912345678" autoComplete="tel" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>密碼 *</Label>
+                <Input type="password" value={loginPw} onChange={(e) => setLoginPw(e.target.value)} autoComplete="current-password" />
+              </div>
+              <Button type="submit" className="w-full" disabled={busy}>
+                {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}會員登入並繼續結帳
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">新會員快速註冊</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">預設密碼為 <code className="font-mono">st</code> + 您的行動電話，登入後可至會員中心修改。</p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={doRegister} className="space-y-3">
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>姓名 *</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="王小明" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>行動電話 *</Label>
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0912345678" autoComplete="tel" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Email *</Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>收件地址 *</Label>
+                <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="台北市信義區市府路 1 號" />
+              </div>
+              <Button type="submit" className="w-full" disabled={busy}>
+                {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}建立會員並繼續結帳
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
