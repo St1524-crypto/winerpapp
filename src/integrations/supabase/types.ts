@@ -299,7 +299,11 @@ export type Database = {
           id: string
           is_active: boolean
           notes: string | null
+          reward_points: number
+          show_on_vip_upgrade_page: boolean
           sku: string
+          sort_order: number
+          target_tier_code: string | null
           updated_at: string
           upgrade_days: number
         }
@@ -311,7 +315,11 @@ export type Database = {
           id?: string
           is_active?: boolean
           notes?: string | null
+          reward_points?: number
+          show_on_vip_upgrade_page?: boolean
           sku: string
+          sort_order?: number
+          target_tier_code?: string | null
           updated_at?: string
           upgrade_days?: number
         }
@@ -323,7 +331,11 @@ export type Database = {
           id?: string
           is_active?: boolean
           notes?: string | null
+          reward_points?: number
+          show_on_vip_upgrade_page?: boolean
           sku?: string
+          sort_order?: number
+          target_tier_code?: string | null
           updated_at?: string
           upgrade_days?: number
         }
