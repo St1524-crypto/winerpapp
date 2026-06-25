@@ -73,6 +73,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
             min_qty: t.min_qty, max_qty: t.max_qty,
             unit_price: Number(t.unit_price), unit_reward_points: Number(t.unit_reward_points),
             sort_order: t.sort_order,
+            visibility: (t.visibility ?? "all") as "all" | "vip" | "dealer",
           })) as WholesaleTier[];
           setForm((f) => ({ ...f, tiers }));
         });
@@ -176,6 +177,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
             unit_price: Number(t.unit_price) || 0,
             unit_reward_points: Math.max(0, Math.floor(Number(t.unit_reward_points) || 0)),
             sort_order: i,
+            visibility: (t.visibility ?? "all"),
           }));
         if (validTiers.length) {
           const { error: tErr } = await supabase.from("product_wholesale_tiers" as any).insert(validTiers);
@@ -371,7 +373,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                 onClick={() => {
                   const last = form.tiers[form.tiers.length - 1];
                   const nextMin = last ? (last.max_qty ?? last.min_qty) + 1 : 1;
-                  setForm({ ...form, tiers: [...form.tiers, { min_qty: nextMin, max_qty: null, unit_price: 0, unit_reward_points: 0, sort_order: form.tiers.length }] });
+                  setForm({ ...form, tiers: [...form.tiers, { min_qty: nextMin, max_qty: null, unit_price: 0, unit_reward_points: 0, sort_order: form.tiers.length, visibility: "all" }] });
                 }}
               >
                 <Plus className="h-4 w-4 mr-1" /> 新增階梯
@@ -386,10 +388,11 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
               <div className="space-y-2">
                 <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
                   <div className="col-span-2">起 (≥)</div>
-                  <div className="col-span-2">迄 (≤，空=無上限)</div>
-                  <div className="col-span-3">單件批發價</div>
-                  <div className="col-span-3">單件獎勵點</div>
-                  <div className="col-span-2"></div>
+                  <div className="col-span-2">迄 (≤)</div>
+                  <div className="col-span-2">單件批發價</div>
+                  <div className="col-span-2">單件獎勵點</div>
+                  <div className="col-span-3">可見對象</div>
+                  <div className="col-span-1"></div>
                 </div>
                 {form.tiers.map((t, i) => (
                   <div key={i} className="grid grid-cols-12 gap-2 items-center">
@@ -416,7 +419,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                       }}
                     />
                     <Input
-                      className="col-span-3"
+                      className="col-span-2"
                       type="number" min={0}
                       value={t.unit_price}
                       onChange={(e) => {
@@ -426,7 +429,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                       }}
                     />
                     <Input
-                      className="col-span-3"
+                      className="col-span-2"
                       type="number" min={0}
                       value={t.unit_reward_points}
                       onChange={(e) => {
@@ -435,9 +438,24 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                         setForm({ ...form, tiers: next });
                       }}
                     />
+                    <Select
+                      value={t.visibility ?? "all"}
+                      onValueChange={(v) => {
+                        const next = [...form.tiers];
+                        next[i] = { ...next[i], visibility: v as "all" | "vip" | "dealer" };
+                        setForm({ ...form, tiers: next });
+                      }}
+                    >
+                      <SelectTrigger className="col-span-3 h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部會員</SelectItem>
+                        <SelectItem value="vip">僅 VIP</SelectItem>
+                        <SelectItem value="dealer">僅經銷商</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Button
                       type="button" size="icon" variant="ghost"
-                      className="col-span-2 h-9 w-9 justify-self-end"
+                      className="col-span-1 h-9 w-9 justify-self-end"
                       onClick={() => setForm({ ...form, tiers: form.tiers.filter((_, j) => j !== i) })}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
