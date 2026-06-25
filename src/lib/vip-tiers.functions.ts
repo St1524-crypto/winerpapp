@@ -344,7 +344,7 @@ export const upsertVipPackage = createServerFn({ method: "POST" })
       metadata: {
         name: row.name,
         tier_code: row.tier_code,
-        product_count: (product_ids ?? []).length,
+        product_count: (items ?? []).length,
         anchor_product_id: anchorProductId,
       },
     });
