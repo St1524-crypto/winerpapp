@@ -21,7 +21,7 @@ export const listVipTiers = createServerFn({ method: "GET" }).handler(async () =
   return data ?? [];
 });
 
-/** 公開：列出所有啟用中的升級套組（含綁定商品資訊） */
+/** 公開：列出所有啟用中的升級套組（含綁定商品清單 — 支援多商品） */
 export const listVipUpgradePackages = createServerFn({ method: "GET" }).handler(async () => {
   const { createClient } = await import("@supabase/supabase-js");
   const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
@@ -34,19 +34,45 @@ export const listVipUpgradePackages = createServerFn({ method: "GET" }).handler(
     .order("sort_order");
   if (error) throw error;
   const list = (data ?? []) as any[];
-  const productIds = list.map((p) => p.product_id).filter(Boolean);
+  const pkgIds = list.map((p) => p.id);
+  let bindings: any[] = [];
+  if (pkgIds.length) {
+    const { data: bs } = await sb
+      .from("vip_upgrade_package_products")
+      .select("package_id, product_id, sort_order")
+      .in("package_id", pkgIds)
+      .order("sort_order");
+    bindings = bs ?? [];
+  }
+  const allProductIds = Array.from(
+    new Set([
+      ...bindings.map((b) => b.product_id),
+      ...list.map((p) => p.product_id).filter(Boolean),
+    ]),
+  );
   let pMap = new Map<string, any>();
-  if (productIds.length) {
+  if (allProductIds.length) {
     const { data: prods } = await sb
       .from("products")
       .select("id, sku, name, price, image, status")
-      .in("id", productIds);
+      .in("id", allProductIds);
     pMap = new Map((prods ?? []).map((p: any) => [p.id, p]));
   }
-  return list.map((p) => ({
-    ...p,
-    product: p.product_id ? pMap.get(p.product_id) ?? null : null,
-  }));
+  return list.map((p) => {
+    const productList = bindings
+      .filter((b) => b.package_id === p.id)
+      .map((b) => pMap.get(b.product_id))
+      .filter(Boolean);
+    if (productList.length === 0 && p.product_id) {
+      const legacy = pMap.get(p.product_id);
+      if (legacy) productList.push(legacy);
+    }
+    return {
+      ...p,
+      products: productList,
+      product: productList[0] ?? null,
+    };
+  });
 });
 
 /** Admin：列出全部階級（含停用） */
