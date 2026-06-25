@@ -783,6 +783,7 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
           new_tier: newTier,
           upgraded: willUpgrade,
           bonus_points: grantedPoints,
+          granted_gifts: grantedGifts,
         },
       });
 
@@ -793,6 +794,7 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
         new_tier: newTier,
         vip_expires_after: after,
         granted_bonus_points: grantedPoints,
+        granted_gifts: grantedGifts,
       });
     }
 
