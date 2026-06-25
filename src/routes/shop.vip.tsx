@@ -122,6 +122,61 @@ function VipPage() {
         ))}
       </div>
 
+      {annualPkgs.length > 0 && (
+        <div className="mt-12">
+          <div className="flex items-baseline gap-3 mb-3">
+            <h2 className="text-xl font-bold">年費升級套組</h2>
+            <Badge variant="secondary">購買年費商品自動升級 VIP</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">將年費商品加入購物車，結帳付款成功後系統自動升級 VIP 並發放獎勵點。</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {annualPkgs.map((p) => (
+              <Card key={p.id} className="relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-primary" />
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Crown className="h-5 w-5 text-primary" />
+                    {p.product?.name ?? p.sku}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="text-2xl font-bold">
+                    {p.product ? <>NT$ {Number(p.product.price).toLocaleString()}</> : <span className="text-base text-muted-foreground">商品已下架</span>}
+                    {p.upgrade_days > 0 && <span className="text-sm font-normal text-muted-foreground"> / {p.upgrade_days} 天</span>}
+                  </div>
+                  <ul className="space-y-1 text-sm">
+                    {p.target_tier_code && (
+                      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />升級至 {p.target_tier_code} 級 VIP</li>
+                    )}
+                    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />VIP 期限 +{p.upgrade_days} 天</li>
+                    {p.reward_points > 0 && (
+                      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />贈送 {p.reward_points} 獎勵點</li>
+                    )}
+                    {p.gift && (
+                      <li className="flex items-center gap-2"><Gift className="h-4 w-4 text-success" />贈品：{p.gift.name} × {p.gift_quantity ?? 1}</li>
+                    )}
+                  </ul>
+                  {p.notes && <p className="text-xs text-muted-foreground">{p.notes}</p>}
+                  <Button
+                    className="w-full bg-gradient-primary"
+                    disabled={!p.product || adding === p.id}
+                    onClick={() => addAnnualToCart(p)}
+                  >
+                    {adding === p.id
+                      ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      : <ShoppingCart className="h-4 w-4 mr-2" />}
+                    加入購物車
+                  </Button>
+                  {!user && (
+                    <p className="text-xs text-muted-foreground text-center">未登入也可加入；結帳時可登入或快速註冊</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="text-xs text-muted-foreground text-center mt-8">
         購買紀錄可於 <Link to="/shop/account/vip" className="text-primary underline">我的 VIP</Link> 查看
       </p>
