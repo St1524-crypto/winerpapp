@@ -107,6 +107,46 @@ export const searchProductsForGift = createServerFn({ method: "GET" })
     return rows ?? [];
   });
 
+/** 前台：列出已上架到 /shop/vip 的年費 VIP 套組（公開，不含敏感欄位） */
+export const listPublicAnnualFeeVipPackages = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rules, error } = await supabaseAdmin
+      .from("annual_fee_vip_rules")
+      .select("id, sku, upgrade_days, target_tier_code, reward_points, gift_product_id, gift_quantity, sort_order, notes")
+      .eq("is_active", true)
+      .eq("show_on_vip_upgrade_page", true)
+      .order("sort_order", { ascending: true });
+    if (error) throw error;
+    const list = rules ?? [];
+    const skus = list.map((r: any) => r.sku).filter(Boolean);
+    const giftIds = list.map((r: any) => r.gift_product_id).filter(Boolean);
+    const productsRes = skus.length
+      ? await supabaseAdmin.from("products").select("id, sku, name, price, image, status").in("sku", skus)
+      : { data: [] as any[] };
+    const giftsRes = giftIds.length
+      ? await supabaseAdmin.from("products").select("id, sku, name, image").in("id", giftIds)
+      : { data: [] as any[] };
+    const pBySku = new Map((productsRes.data ?? []).map((p: any) => [p.sku, p]));
+    const gById = new Map((giftsRes.data ?? []).map((p: any) => [p.id, p]));
+    return list.map((r: any) => {
+      const product: any = pBySku.get(r.sku) ?? null;
+      return {
+        id: r.id,
+        sku: r.sku,
+        upgrade_days: r.upgrade_days,
+        target_tier_code: r.target_tier_code,
+        reward_points: r.reward_points,
+        gift_quantity: r.gift_quantity,
+        notes: r.notes,
+        product: product && product.status === "active"
+          ? { id: product.id, sku: product.sku, name: product.name, price: Number(product.price ?? 0), image: product.image }
+          : null,
+        gift: r.gift_product_id ? gById.get(r.gift_product_id) ?? null : null,
+      };
+    });
+  });
+
 /**
  * 內部：訂單付款成功後，檢查是否含年費 SKU，若是則自動升級 VIP（冪等）。
  * 由其他 serverFn（確認付款流程）或管理端動作呼叫；
