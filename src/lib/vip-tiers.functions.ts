@@ -130,20 +130,6 @@ export const upsertVipTier = createServerFn({ method: "POST" })
     return row;
   });
 
-/** Admin：列出全部套組（含停用） */
-export const adminListVipPackages = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await ensureAdmin(context.supabase, context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("vip_upgrade_packages")
-      .select("*")
-      .order("tier_code")
-      .order("sort_order");
-    if (error) throw error;
-    return data ?? [];
-  });
 
 /** Admin：列出全部套組（含停用、含綁定商品清單） */
 export const adminListVipPackages = createServerFn({ method: "GET" })
