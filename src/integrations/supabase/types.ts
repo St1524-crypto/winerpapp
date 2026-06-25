@@ -1497,6 +1497,13 @@ export type Database = {
             referencedRelation: "dealer_tiers"
             referencedColumns: ["code"]
           },
+          {
+            foreignKeyName: "dealer_tier_status_current_tier_fkey"
+            columns: ["current_tier"]
+            isOneToOne: false
+            referencedRelation: "dealer_tiers_public_summary"
+            referencedColumns: ["code"]
+          },
         ]
       }
       dealer_tiers: {
@@ -2370,6 +2377,13 @@ export type Database = {
             foreignKeyName: "member_custom_products_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
+            referencedRelation: "profiles_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_custom_products_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
             referencedRelation: "public_member_profiles"
             referencedColumns: ["id"]
           },
@@ -2403,6 +2417,13 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_featured_products_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public_safe"
             referencedColumns: ["id"]
           },
           {
@@ -2534,6 +2555,13 @@ export type Database = {
             foreignKeyName: "member_storefront_pages_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: true
+            referencedRelation: "profiles_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_storefront_pages_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
             referencedRelation: "public_member_profiles"
             referencedColumns: ["id"]
           },
@@ -2618,6 +2646,13 @@ export type Database = {
             foreignKeyName: "member_videos_member_id_fkey"
             columns: ["member_id"]
             isOneToOne: false
+            referencedRelation: "profiles_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_videos_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
             referencedRelation: "public_member_profiles"
             referencedColumns: ["id"]
           },
@@ -2657,6 +2692,13 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_responsibility_points_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public_safe"
             referencedColumns: ["id"]
           },
           {
@@ -3490,6 +3532,13 @@ export type Database = {
             foreignKeyName: "profiles_placement_id_fkey"
             columns: ["placement_id"]
             isOneToOne: false
+            referencedRelation: "profiles_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_placement_id_fkey"
+            columns: ["placement_id"]
+            isOneToOne: false
             referencedRelation: "public_member_profiles"
             referencedColumns: ["id"]
           },
@@ -3498,6 +3547,13 @@ export type Database = {
             columns: ["referred_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_public_safe"
             referencedColumns: ["id"]
           },
           {
@@ -4003,6 +4059,13 @@ export type Database = {
             foreignKeyName: "referral_logs_buyer_id_fkey"
             columns: ["buyer_id"]
             isOneToOne: false
+            referencedRelation: "profiles_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_logs_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
             referencedRelation: "public_member_profiles"
             referencedColumns: ["id"]
           },
@@ -4018,6 +4081,13 @@ export type Database = {
             columns: ["referrer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_logs_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public_safe"
             referencedColumns: ["id"]
           },
           {
@@ -4415,6 +4485,13 @@ export type Database = {
             foreignKeyName: "sales_orders_created_by_id_fkey"
             columns: ["created_by_id"]
             isOneToOne: false
+            referencedRelation: "profiles_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_created_by_id_fkey"
+            columns: ["created_by_id"]
+            isOneToOne: false
             referencedRelation: "public_member_profiles"
             referencedColumns: ["id"]
           },
@@ -4436,6 +4513,13 @@ export type Database = {
             foreignKeyName: "sales_orders_referrer_id_fkey"
             columns: ["referrer_id"]
             isOneToOne: false
+            referencedRelation: "profiles_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
             referencedRelation: "public_member_profiles"
             referencedColumns: ["id"]
           },
@@ -4444,6 +4528,13 @@ export type Database = {
             columns: ["salesperson_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_orders_salesperson_id_fkey"
+            columns: ["salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public_safe"
             referencedColumns: ["id"]
           },
           {
@@ -5748,6 +5839,81 @@ export type Database = {
       }
     }
     Views: {
+      dealer_tiers_public_summary: {
+        Row: {
+          code: string | null
+          description: string | null
+          name: string | null
+          sort_order: number | null
+          status: string | null
+          tier_type: string | null
+        }
+        Insert: {
+          code?: string | null
+          description?: string | null
+          name?: string | null
+          sort_order?: number | null
+          status?: string | null
+          tier_type?: string | null
+        }
+        Update: {
+          code?: string | null
+          description?: string | null
+          name?: string | null
+          sort_order?: number | null
+          status?: string | null
+          tier_type?: string | null
+        }
+        Relationships: []
+      }
+      profiles_public_safe: {
+        Row: {
+          brand_intro: string | null
+          brand_name: string | null
+          display_name: string | null
+          facebook_url: string | null
+          id: string | null
+          instagram_url: string | null
+          line_url: string | null
+          marketing_slug: string | null
+          member_no: string | null
+          page_template: string | null
+          profile_avatar: string | null
+          profile_cover: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          brand_intro?: string | null
+          brand_name?: string | null
+          display_name?: string | null
+          facebook_url?: string | null
+          id?: string | null
+          instagram_url?: string | null
+          line_url?: string | null
+          marketing_slug?: string | null
+          member_no?: string | null
+          page_template?: string | null
+          profile_avatar?: string | null
+          profile_cover?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          brand_intro?: string | null
+          brand_name?: string | null
+          display_name?: string | null
+          facebook_url?: string | null
+          id?: string | null
+          instagram_url?: string | null
+          line_url?: string | null
+          marketing_slug?: string | null
+          member_no?: string | null
+          page_template?: string | null
+          profile_avatar?: string | null
+          profile_cover?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       public_member_profiles: {
         Row: {
           avatar_url: string | null
