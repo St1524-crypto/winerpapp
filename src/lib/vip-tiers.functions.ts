@@ -21,7 +21,7 @@ export const listVipTiers = createServerFn({ method: "GET" }).handler(async () =
   return data ?? [];
 });
 
-/** 公開：列出所有啟用中的升級套組（含綁定商品資訊） */
+/** 公開：列出所有啟用中的升級套組（含綁定商品清單 — 支援多商品） */
 export const listVipUpgradePackages = createServerFn({ method: "GET" }).handler(async () => {
   const { createClient } = await import("@supabase/supabase-js");
   const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
@@ -34,19 +34,45 @@ export const listVipUpgradePackages = createServerFn({ method: "GET" }).handler(
     .order("sort_order");
   if (error) throw error;
   const list = (data ?? []) as any[];
-  const productIds = list.map((p) => p.product_id).filter(Boolean);
+  const pkgIds = list.map((p) => p.id);
+  let bindings: any[] = [];
+  if (pkgIds.length) {
+    const { data: bs } = await sb
+      .from("vip_upgrade_package_products")
+      .select("package_id, product_id, sort_order")
+      .in("package_id", pkgIds)
+      .order("sort_order");
+    bindings = bs ?? [];
+  }
+  const allProductIds = Array.from(
+    new Set([
+      ...bindings.map((b) => b.product_id),
+      ...list.map((p) => p.product_id).filter(Boolean),
+    ]),
+  );
   let pMap = new Map<string, any>();
-  if (productIds.length) {
+  if (allProductIds.length) {
     const { data: prods } = await sb
       .from("products")
       .select("id, sku, name, price, image, status")
-      .in("id", productIds);
+      .in("id", allProductIds);
     pMap = new Map((prods ?? []).map((p: any) => [p.id, p]));
   }
-  return list.map((p) => ({
-    ...p,
-    product: p.product_id ? pMap.get(p.product_id) ?? null : null,
-  }));
+  return list.map((p) => {
+    const productList = bindings
+      .filter((b) => b.package_id === p.id)
+      .map((b) => pMap.get(b.product_id))
+      .filter(Boolean);
+    if (productList.length === 0 && p.product_id) {
+      const legacy = pMap.get(p.product_id);
+      if (legacy) productList.push(legacy);
+    }
+    return {
+      ...p,
+      products: productList,
+      product: productList[0] ?? null,
+    };
+  });
 });
 
 /** Admin：列出全部階級（含停用） */
@@ -104,7 +130,8 @@ export const upsertVipTier = createServerFn({ method: "POST" })
     return row;
   });
 
-/** Admin：列出全部套組（含停用） */
+
+/** Admin：列出全部套組（含停用、含綁定商品清單） */
 export const adminListVipPackages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -116,7 +143,42 @@ export const adminListVipPackages = createServerFn({ method: "GET" })
       .order("tier_code")
       .order("sort_order");
     if (error) throw error;
-    return data ?? [];
+    const list = (data ?? []) as any[];
+    const pkgIds = list.map((p) => p.id);
+    let bindings: any[] = [];
+    if (pkgIds.length) {
+      const { data: bs } = await supabaseAdmin
+        .from("vip_upgrade_package_products")
+        .select("package_id, product_id, sort_order")
+        .in("package_id", pkgIds)
+        .order("sort_order");
+      bindings = bs ?? [];
+    }
+    const allProductIds = Array.from(
+      new Set([
+        ...bindings.map((b) => b.product_id),
+        ...list.map((p) => p.product_id).filter(Boolean),
+      ]),
+    );
+    let pMap = new Map<string, any>();
+    if (allProductIds.length) {
+      const { data: prods } = await supabaseAdmin
+        .from("products")
+        .select("id, sku, name, price, status")
+        .in("id", allProductIds);
+      pMap = new Map((prods ?? []).map((p: any) => [p.id, p]));
+    }
+    return list.map((p) => {
+      const productList = bindings
+        .filter((b) => b.package_id === p.id)
+        .map((b) => pMap.get(b.product_id))
+        .filter(Boolean);
+      if (productList.length === 0 && p.product_id) {
+        const legacy = pMap.get(p.product_id);
+        if (legacy) productList.push(legacy);
+      }
+      return { ...p, products: productList, product_ids: productList.map((x: any) => x.id) };
+    });
   });
 
 const pkgSchema = z.object({
@@ -130,6 +192,7 @@ const pkgSchema = z.object({
   sort_order: z.number().int().default(0),
   status: z.enum(["active", "inactive"]).default("active"),
   product_id: z.string().uuid().nullable().optional(),
+  product_ids: z.array(z.string().uuid()).optional(),
 });
 
 export const upsertVipPackage = createServerFn({ method: "POST" })
@@ -138,20 +201,46 @@ export const upsertVipPackage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await ensureAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const payload: any = { ...data };
+    const { product_ids, ...rest } = data as any;
+    const payload: any = { ...rest };
     if (!payload.id) delete payload.id;
+    // keep legacy product_id in sync (first bound product)
+    if (Array.isArray(product_ids)) {
+      payload.product_id = product_ids[0] ?? null;
+    }
     const { data: row, error } = await supabaseAdmin
       .from("vip_upgrade_packages")
       .upsert(payload)
       .select()
       .single();
     if (error) throw error;
+
+    if (Array.isArray(product_ids)) {
+      // rebuild bindings
+      await supabaseAdmin
+        .from("vip_upgrade_package_products")
+        .delete()
+        .eq("package_id", row.id);
+      if (product_ids.length > 0) {
+        const uniqueIds = Array.from(new Set(product_ids));
+        const rows = uniqueIds.map((pid, idx) => ({
+          package_id: row.id,
+          product_id: pid,
+          sort_order: idx,
+        }));
+        const { error: insErr } = await supabaseAdmin
+          .from("vip_upgrade_package_products")
+          .insert(rows);
+        if (insErr) throw insErr;
+      }
+    }
+
     await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,
       action: data.id ? "update" : "create",
       entity: "vip_upgrade_package",
       entity_id: row.id,
-      metadata: { name: row.name, tier_code: row.tier_code },
+      metadata: { name: row.name, tier_code: row.tier_code, product_count: (product_ids ?? []).length },
     });
     return row;
   });
@@ -439,12 +528,34 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
     );
     if (productIds.length === 0) return { ok: false, reason: "no_items" };
 
-    const { data: pkgs } = await supabaseAdmin
+    // 找出所有「綁定了訂單中任一商品」的套組（去重）
+    // 1) 透過多商品綁定表
+    const { data: bindings } = await supabaseAdmin
+      .from("vip_upgrade_package_products")
+      .select("package_id")
+      .in("product_id", productIds);
+    const pkgIdsFromBindings = Array.from(
+      new Set((bindings ?? []).map((b: any) => b.package_id)),
+    );
+    // 2) 向下相容：仍以舊單一 product_id 查詢
+    let pkgs: any[] = [];
+    if (pkgIdsFromBindings.length > 0) {
+      const { data: a } = await supabaseAdmin
+        .from("vip_upgrade_packages")
+        .select("*")
+        .eq("status", "active")
+        .in("id", pkgIdsFromBindings);
+      pkgs = a ?? [];
+    }
+    const { data: legacy } = await supabaseAdmin
       .from("vip_upgrade_packages")
       .select("*")
       .eq("status", "active")
       .in("product_id", productIds);
-    if (!pkgs || pkgs.length === 0) return { ok: false, reason: "no_matching_package" };
+    for (const lp of legacy ?? []) {
+      if (!pkgs.some((x) => x.id === lp.id)) pkgs.push(lp);
+    }
+    if (pkgs.length === 0) return { ok: false, reason: "no_matching_package" };
 
     const { data: tiers } = await supabaseAdmin.from("vip_tiers").select("code, sort_order");
     const tierMap = new Map<string, number>((tiers ?? []).map((t: any) => [t.code, t.sort_order]));

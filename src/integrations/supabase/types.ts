@@ -5575,6 +5575,45 @@ export type Database = {
           },
         ]
       }
+      vip_upgrade_package_products: {
+        Row: {
+          created_at: string
+          id: string
+          package_id: string
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          package_id: string
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          package_id?: string
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_upgrade_package_products_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "vip_upgrade_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vip_upgrade_package_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vip_upgrade_packages: {
         Row: {
           bonus_points: number
