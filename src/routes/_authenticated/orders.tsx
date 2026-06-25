@@ -16,6 +16,7 @@ import { deleteSalesOrder } from "@/lib/orders-admin.functions";
 import { processOrderCommission } from "@/lib/referral.functions";
 import { processOrderPaymentBonus } from "@/lib/bonus.functions";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
+import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 
 /** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/升級獎金（失敗不擋主流程） */
 async function autoSettleCommission(orderId: string, nextStatus: string) {
@@ -60,6 +61,20 @@ async function autoSettleCommission(orderId: string, nextStatus: string) {
     }
   } catch (e: any) {
     toast.warning("VIP 年費升級處理失敗", { description: String(e?.message ?? "") });
+  }
+  // VIP 升級套組（綁定商品）→ 自動升級 VIP（冪等，失敗不擋主流程）
+  try {
+    const v: any = await processOrderVipPackageUpgrade({ data: { orderId } });
+    if (v?.ok && Array.isArray(v.results)) {
+      const applied = v.results.filter((x: any) => x?.applied);
+      if (applied.length > 0) {
+        const tier = applied.find((x: any) => x.upgraded)?.new_tier;
+        const pts = applied.reduce((s: number, x: any) => s + Number(x.granted_bonus_points ?? 0), 0);
+        toast.success(`VIP 升級套組已生效${tier ? `（${tier} 級）` : ""}${pts > 0 ? `；已發放贈點 ${pts}` : ""}`);
+      }
+    }
+  } catch (e: any) {
+    toast.warning("VIP 升級套組處理失敗", { description: String(e?.message ?? "") });
   }
 }
 import { supabase } from "@/integrations/supabase/client";

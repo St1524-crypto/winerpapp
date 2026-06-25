@@ -5107,6 +5107,72 @@ export type Database = {
           },
         ]
       }
+      vip_package_upgrade_logs: {
+        Row: {
+          bonus_points: number
+          created_at: string
+          id: string
+          new_tier: string | null
+          notes: string | null
+          package_id: string
+          previous_tier: string | null
+          sales_order_id: string
+          status: string
+          tier_code: string
+          upgraded: boolean
+          user_id: string
+          vip_expires_after: string | null
+          vip_expires_before: string | null
+        }
+        Insert: {
+          bonus_points?: number
+          created_at?: string
+          id?: string
+          new_tier?: string | null
+          notes?: string | null
+          package_id: string
+          previous_tier?: string | null
+          sales_order_id: string
+          status?: string
+          tier_code: string
+          upgraded?: boolean
+          user_id: string
+          vip_expires_after?: string | null
+          vip_expires_before?: string | null
+        }
+        Update: {
+          bonus_points?: number
+          created_at?: string
+          id?: string
+          new_tier?: string | null
+          notes?: string | null
+          package_id?: string
+          previous_tier?: string | null
+          sales_order_id?: string
+          status?: string
+          tier_code?: string
+          upgraded?: boolean
+          user_id?: string
+          vip_expires_after?: string | null
+          vip_expires_before?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vip_package_upgrade_logs_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "vip_upgrade_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vip_package_upgrade_logs_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vip_plans: {
         Row: {
           bonus_points: number
@@ -5427,6 +5493,7 @@ export type Database = {
           id: string
           name: string
           price: number
+          product_id: string | null
           sort_order: number
           status: string
           tier_code: string
@@ -5440,6 +5507,7 @@ export type Database = {
           id?: string
           name: string
           price?: number
+          product_id?: string | null
           sort_order?: number
           status?: string
           tier_code: string
@@ -5453,12 +5521,20 @@ export type Database = {
           id?: string
           name?: string
           price?: number
+          product_id?: string | null
           sort_order?: number
           status?: string
           tier_code?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vip_upgrade_packages_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vip_upgrade_packages_tier_code_fkey"
             columns: ["tier_code"]

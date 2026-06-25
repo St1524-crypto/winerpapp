@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Plus, Pencil, Trash2 } from "lucide-react";
+import { Crown, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
   adminListVipPackages, upsertVipPackage, deleteVipPackage, adminListVipTiers,
+  searchProductsForVipPackage,
 } from "@/lib/vip-tiers.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-packages")({
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-packages
 const empty = {
   id: "", tier_code: "V", name: "", description: "",
   price: 0, bonus_points: 0, duration_days: 365, sort_order: 0, status: "active",
+  product_id: null as string | null,
 };
 
 function VipPackagesAdmin() {
@@ -29,10 +31,21 @@ function VipPackagesAdmin() {
   const tiersFn = useServerFn(adminListVipTiers);
   const saveFn = useServerFn(upsertVipPackage);
   const delFn = useServerFn(deleteVipPackage);
+  const searchFn = useServerFn(searchProductsForVipPackage);
   const [rows, setRows] = useState<any[]>([]);
   const [tiers, setTiers] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>({ ...empty });
+  const [productLabel, setProductLabel] = useState<string>("");
+  const [productQuery, setProductQuery] = useState("");
+  const [productResults, setProductResults] = useState<any[]>([]);
+
+  async function doProductSearch() {
+    try {
+      const data: any = await searchFn({ data: { keyword: productQuery } });
+      setProductResults(data ?? []);
+    } catch (e: any) { toast.error(e?.message || "搜尋失敗"); }
+  }
 
   async function load() {
     try {
@@ -42,8 +55,17 @@ function VipPackagesAdmin() {
   }
   useEffect(() => { load(); }, []);
 
-  function edit(r: any) { setForm({ ...empty, ...r, description: r.description ?? "" }); setOpen(true); }
-  function add() { setForm({ ...empty }); setOpen(true); }
+  function edit(r: any) {
+    setForm({ ...empty, ...r, description: r.description ?? "", product_id: r.product_id ?? null });
+    setProductLabel(r.product_id ? "（已綁定商品）" : "");
+    setProductQuery(""); setProductResults([]);
+    setOpen(true);
+  }
+  function add() {
+    setForm({ ...empty });
+    setProductLabel(""); setProductQuery(""); setProductResults([]);
+    setOpen(true);
+  }
 
   async function save() {
     try {
@@ -54,6 +76,7 @@ function VipPackagesAdmin() {
         duration_days: Math.max(0, Math.floor(Number(form.duration_days) || 0)),
         sort_order: Math.floor(Number(form.sort_order) || 0),
         description: form.description || null,
+        product_id: form.product_id || null,
       };
       if (!payload.id) delete payload.id;
       await saveFn({ data: payload });
@@ -86,6 +109,10 @@ function VipPackagesAdmin() {
               <div className="text-lg font-bold">NT$ {Number(r.price).toLocaleString()}</div>
               <div>贈送獎勵點：{r.bonus_points}</div>
               <div>有效期：{r.duration_days > 0 ? `${r.duration_days} 天` : "永久"}</div>
+              <div>購買方式：{r.product_id
+                ? <Badge variant="default" className="ml-1">加入購物車</Badge>
+                : <Badge variant="outline" className="ml-1">直接購買（pending）</Badge>}
+              </div>
               {r.description && <div className="text-muted-foreground">{r.description}</div>}
               <div className="flex gap-2 pt-2">
                 <Button size="sm" variant="outline" onClick={() => edit(r)}><Pencil className="h-3 w-3 mr-1" />編輯</Button>
@@ -117,6 +144,50 @@ function VipPackagesAdmin() {
             <div><Label>有效天數 (0=永久)</Label><Input type="number" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: e.target.value })} /></div>
             <div><Label>排序</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} /></div>
             <div className="col-span-2"><Label>說明</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+
+            <div className="col-span-2 space-y-1">
+              <Label>綁定商品（綁定後改走「加入購物車 → 結帳付款 → 自動升級」流程）</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={productLabel || (form.product_id ?? "")}
+                  readOnly
+                  placeholder="未綁定（將以「立即購買」建立 pending 升級單）"
+                />
+                <Input
+                  value={productQuery}
+                  onChange={(e) => setProductQuery(e.target.value)}
+                  placeholder="搜尋商品名稱 / SKU"
+                  onKeyDown={(e) => e.key === "Enter" && doProductSearch()}
+                />
+                <Button type="button" variant="outline" onClick={doProductSearch}>
+                  <Search className="h-4 w-4" />
+                </Button>
+                {form.product_id && (
+                  <Button type="button" variant="ghost" onClick={() => { setForm({ ...form, product_id: null }); setProductLabel(""); }}>
+                    清除
+                  </Button>
+                )}
+              </div>
+              {productResults.length > 0 && (
+                <div className="border rounded-md divide-y max-h-40 overflow-auto">
+                  {productResults.map((p) => (
+                    <button
+                      type="button"
+                      key={p.id}
+                      className="w-full flex items-center justify-between px-2 py-1 text-left hover:bg-muted text-sm"
+                      onClick={() => {
+                        setForm({ ...form, product_id: p.id });
+                        setProductLabel(`${p.name}（${p.sku}）`);
+                        setProductResults([]);
+                      }}
+                    >
+                      <span className="truncate">{p.name} · <span className="text-muted-foreground">{p.sku}</span></span>
+                      <span className="text-xs text-muted-foreground">NT$ {p.price}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>取消</Button>

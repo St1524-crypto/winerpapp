@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package, MapPin, Lock, ExternalLink } from "lucide-react";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, SHIPPING_STATUS_LABELS, type SalesOrder, type SalesOrderItem } from "@/types/shop";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
+import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/shop/account/orders/$id")({ component: OrderDetail });
@@ -40,6 +41,17 @@ function OrderDetail() {
     (async () => {
       try {
         const res: any = await processOrderAnnualFeeUpgrade({ data: { orderId: id } });
+        try {
+          const r2: any = await processOrderVipPackageUpgrade({ data: { orderId: id } });
+          if (r2?.ok) {
+            const applied2 = (r2.results ?? []).filter((x: any) => x?.applied);
+            if (applied2.length > 0) {
+              const tier = applied2.find((x: any) => x.upgraded)?.new_tier;
+              const pts = applied2.reduce((s: number, x: any) => s + Number(x.granted_bonus_points ?? 0), 0);
+              toast.success(`VIP 升級套組已生效${tier ? `（${tier} 級）` : ""}${pts > 0 ? `；已發放贈點 ${pts}` : ""}`);
+            }
+          }
+        } catch (e) { console.error("[vip-package-upgrade] hook failed", e); }
         if (!res?.ok) return; // 不符合規則 → 靜默不影響原流程
         const results = (res.results ?? []) as any[];
         const applied = results.filter((r) => r.applied);

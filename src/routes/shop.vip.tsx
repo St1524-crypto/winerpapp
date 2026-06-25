@@ -92,7 +92,9 @@ function VipPage() {
               <p className="text-sm text-muted-foreground">此階級尚無上架套組</p>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {g.items.map((p) => (
+                {g.items.map((p) => {
+                  const hasProduct = !!p.product?.id && p.product?.status === "active";
+                  return (
                   <Card key={p.id} className="relative overflow-hidden">
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-primary" />
                     <CardHeader>
@@ -101,7 +103,7 @@ function VipPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="text-2xl font-bold">NT$ {Number(p.price).toLocaleString()}
+                      <div className="text-2xl font-bold">NT$ {Number(hasProduct ? p.product.price : p.price).toLocaleString()}
                         {p.duration_days > 0 && <span className="text-sm font-normal text-muted-foreground"> / {p.duration_days} 天</span>}
                       </div>
                       {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
@@ -110,12 +112,31 @@ function VipPage() {
                         {p.bonus_points > 0 && <li className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />贈送 {p.bonus_points} 獎勵點</li>}
                         <li className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />享 {g.tier.cashback_rate}% 回饋</li>
                       </ul>
-                      <Button className="w-full bg-gradient-primary" disabled={buying === p.id} onClick={() => buy(p.id)}>
-                        {buying === p.id && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}立即購買升級
-                      </Button>
+                      {hasProduct ? (
+                        <Button
+                          className="w-full bg-gradient-primary"
+                          disabled={adding === p.id}
+                          onClick={async () => {
+                            setAdding(p.id);
+                            try { await addItem(p.product.id, 1); }
+                            catch (e: any) { toast.error(e?.message || "加入購物車失敗"); }
+                            finally { setAdding(null); }
+                          }}
+                        >
+                          {adding === p.id
+                            ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            : <ShoppingCart className="h-4 w-4 mr-2" />}
+                          加入購物車
+                        </Button>
+                      ) : (
+                        <Button className="w-full bg-gradient-primary" disabled={buying === p.id} onClick={() => buy(p.id)}>
+                          {buying === p.id && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}立即購買升級
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
