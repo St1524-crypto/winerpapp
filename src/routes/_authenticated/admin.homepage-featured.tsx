@@ -37,7 +37,7 @@ function HomepageFeaturedAdmin() {
 
   async function refresh() {
     setLoading(true);
-    const r = await list({});
+    const r: any = await list({});
     if (r.ok) setItems(r.items);
     else toast.error(r.error || "讀取失敗");
     setLoading(false);
