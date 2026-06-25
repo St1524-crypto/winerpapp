@@ -46,7 +46,8 @@ export const quickRegisterAndSignIn = createServerFn({ method: "POST" })
     }
 
     const syntheticEmail = `${phone.replace(/^\+/, "")}@phone.local`;
-    const password = `st${phone.replace(/^\+/, "")}`;
+    // Cryptographically random transient password; session tokens are what persist on the client.
+    const password = randomBytes(24).toString("base64url");
 
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email: syntheticEmail,
