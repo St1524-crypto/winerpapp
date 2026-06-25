@@ -4086,6 +4086,100 @@ export type Database = {
         }
         Relationships: []
       }
+      retail_reward_splits: {
+        Row: {
+          base_reward_points: number
+          buyer_id: string
+          buyer_points: number
+          buyer_share_pct: number
+          buyer_tier: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          dedupe_key: string
+          id: string
+          notes: string | null
+          referrer_id: string | null
+          referrer_points: number
+          referrer_share_pct: number
+          referrer_tier: string | null
+          referrer_withheld: boolean
+          sales_order_id: string
+          sales_order_item_id: string | null
+          status: string
+          updated_at: string
+          withheld_reason: string | null
+        }
+        Insert: {
+          base_reward_points?: number
+          buyer_id: string
+          buyer_points?: number
+          buyer_share_pct?: number
+          buyer_tier?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dedupe_key: string
+          id?: string
+          notes?: string | null
+          referrer_id?: string | null
+          referrer_points?: number
+          referrer_share_pct?: number
+          referrer_tier?: string | null
+          referrer_withheld?: boolean
+          sales_order_id: string
+          sales_order_item_id?: string | null
+          status?: string
+          updated_at?: string
+          withheld_reason?: string | null
+        }
+        Update: {
+          base_reward_points?: number
+          buyer_id?: string
+          buyer_points?: number
+          buyer_share_pct?: number
+          buyer_tier?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          dedupe_key?: string
+          id?: string
+          notes?: string | null
+          referrer_id?: string | null
+          referrer_points?: number
+          referrer_share_pct?: number
+          referrer_tier?: string | null
+          referrer_withheld?: boolean
+          sales_order_id?: string
+          sales_order_item_id?: string | null
+          status?: string
+          updated_at?: string
+          withheld_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retail_reward_splits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_reward_splits_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retail_reward_splits_sales_order_item_id_fkey"
+            columns: ["sales_order_item_id"]
+            isOneToOne: false
+            referencedRelation: "sales_order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reward_wallet_logs: {
         Row: {
           bonus_record_id: string | null
@@ -4133,12 +4227,17 @@ export type Database = {
           created_at: string
           id: string
           image: string | null
+          original_unit_price: number | null
+          pricing_tier_visibility: string | null
           product_id: string | null
           product_name: string
           quantity: number
           sales_order_id: string
           sku: string | null
           subtotal: number
+          tier_max_qty: number | null
+          tier_min_qty: number | null
+          tier_reward_points: number | null
           unit_price: number
         }
         Insert: {
@@ -4146,12 +4245,17 @@ export type Database = {
           created_at?: string
           id?: string
           image?: string | null
+          original_unit_price?: number | null
+          pricing_tier_visibility?: string | null
           product_id?: string | null
           product_name: string
           quantity?: number
           sales_order_id: string
           sku?: string | null
           subtotal?: number
+          tier_max_qty?: number | null
+          tier_min_qty?: number | null
+          tier_reward_points?: number | null
           unit_price?: number
         }
         Update: {
@@ -4159,12 +4263,17 @@ export type Database = {
           created_at?: string
           id?: string
           image?: string | null
+          original_unit_price?: number | null
+          pricing_tier_visibility?: string | null
           product_id?: string | null
           product_name?: string
           quantity?: number
           sales_order_id?: string
           sku?: string | null
           subtotal?: number
+          tier_max_qty?: number | null
+          tier_min_qty?: number | null
+          tier_reward_points?: number | null
           unit_price?: number
         }
         Relationships: [
