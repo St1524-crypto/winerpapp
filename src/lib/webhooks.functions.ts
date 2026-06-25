@@ -70,6 +70,7 @@ export const createWebhookEndpoint = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context.supabase);
+    assertSafeWebhookUrl(data.url);
     const { data: profile } = await context.supabase
       .from("profiles").select("current_company_id").eq("id", context.userId).single();
     if (!profile?.current_company_id) throw new Error("未綁定公司");
