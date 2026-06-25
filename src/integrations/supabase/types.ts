@@ -6239,6 +6239,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      quote_retail_prices: {
+        Args: { _items: Json }
+        Returns: {
+          applied: boolean
+          base_price: number
+          line_subtotal: number
+          product_id: string
+          requested_qty: number
+          tier_max_qty: number
+          tier_min_qty: number
+          unit_price: number
+          unit_reward_points: number
+          visibility: string
+        }[]
+      }
       quote_wholesale_price: {
         Args: { _product_id: string; _qty: number }
         Returns: {
