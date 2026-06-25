@@ -76,6 +76,7 @@ function VipPackagesAdmin() {
         duration_days: Math.max(0, Math.floor(Number(form.duration_days) || 0)),
         sort_order: Math.floor(Number(form.sort_order) || 0),
         description: form.description || null,
+        product_id: form.product_id || null,
       };
       if (!payload.id) delete payload.id;
       await saveFn({ data: payload });
