@@ -129,6 +129,7 @@ const pkgSchema = z.object({
   duration_days: z.number().int().min(0).default(0),
   sort_order: z.number().int().default(0),
   status: z.enum(["active", "inactive"]).default("active"),
+  product_id: z.string().uuid().nullable().optional(),
 });
 
 export const upsertVipPackage = createServerFn({ method: "POST" })
