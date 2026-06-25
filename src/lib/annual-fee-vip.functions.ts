@@ -208,7 +208,55 @@ export const processOrderAnnualFeeUpgrade = createServerFn({ method: "POST" })
         },
       });
 
-      results.push({ rule_id: rule.id, applied: true, vip_expires_after: after.toISOString() });
+      // 發放獎勵點（若規則有設定）
+      let grantedPoints = 0;
+      const pts = Number((rule as any).reward_points ?? 0);
+      if (pts > 0) {
+        await supabaseAdmin
+          .from("member_points_wallet")
+          .upsert(
+            { user_id: userId, reward_points: pts },
+            { onConflict: "user_id", ignoreDuplicates: false },
+          );
+        // 確保是累加：再用 rpc-style 累加（upsert 會覆寫，改用先 select 再 update）
+        const { data: w } = await supabaseAdmin
+          .from("member_points_wallet")
+          .select("reward_points")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const curr = Number((w as any)?.reward_points ?? 0);
+        // 若 upsert 已新建為 pts，本次累加只需保證至少為 pts；若已存在更高值則重置為 curr（避免覆寫舊值）
+        // 安全作法：以 logs 為唯一加總來源
+        await supabaseAdmin.from("reward_wallet_logs").insert({
+          member_id: userId,
+          points: pts,
+          type: "earn",
+          description: `年費商品自動升級 VIP 獎勵 (SKU ${rule.sku})`,
+        });
+        // 重新依 logs 結算錢包（防止 race 重複計算）
+        const { data: sum } = await supabaseAdmin
+          .from("reward_wallet_logs")
+          .select("points")
+          .eq("member_id", userId);
+        const total = (sum ?? []).reduce((s: number, r: any) => s + Number(r.points ?? 0), 0);
+        await supabaseAdmin
+          .from("member_points_wallet")
+          .upsert(
+            { user_id: userId, reward_points: total },
+            { onConflict: "user_id" },
+          );
+        grantedPoints = pts;
+        void curr;
+      }
+
+      results.push({
+        rule_id: rule.id,
+        applied: true,
+        vip_expires_after: after.toISOString(),
+        granted_reward_points: grantedPoints,
+        gift_product_id: rule.gift_product_id,
+        gift_quantity: rule.gift_quantity ?? 0,
+      });
     }
 
     return { ok: true, results };
