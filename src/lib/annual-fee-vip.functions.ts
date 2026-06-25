@@ -32,6 +32,10 @@ const ruleSchema = z.object({
   gift_quantity: z.number().int().min(0).default(0),
   is_active: z.boolean().default(true),
   notes: z.string().nullable().optional(),
+  target_tier_code: z.string().max(8).nullable().optional(),
+  reward_points: z.number().int().min(0).default(0),
+  show_on_vip_upgrade_page: z.boolean().default(false),
+  sort_order: z.number().int().default(0),
 });
 
 export const upsertAnnualFeeRule = createServerFn({ method: "POST" })
