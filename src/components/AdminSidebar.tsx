@@ -58,6 +58,7 @@ const GROUPS: AdminNavGroup[] = [
       { title: "VIP 營業分紅上限", url: "/admin/vip-business-bonus-cap", icon: Crown },
       { title: "VIP 星級分紅池", url: "/admin/vip-bonus-pools", icon: Crown },
       { title: "升級分紅總收益上限", url: "/admin/vip-upgrade-bonus-total-earnings", icon: Crown },
+      { title: "年費自動升 VIP", url: "/admin/annual-fee-vip", icon: Crown, roles: ["super_admin", "admin"] },
       { title: "推廣總覽 / 結算", url: "/admin/referrals", icon: TrendingUp, roles: ["super_admin", "admin", "finance", "sales"] },
       { title: "獎金營運中心", url: "/admin/bonuses", icon: Coins, roles: ["super_admin", "admin"] },
       { title: "獎金管理中心", url: "/admin/bonus-center", icon: Coins, roles: ["super_admin", "admin", "finance"] },
