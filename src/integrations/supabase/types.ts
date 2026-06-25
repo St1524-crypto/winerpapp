@@ -5581,6 +5581,7 @@ export type Database = {
           id: string
           package_id: string
           product_id: string
+          quantity: number
           sort_order: number
         }
         Insert: {
@@ -5588,6 +5589,7 @@ export type Database = {
           id?: string
           package_id: string
           product_id: string
+          quantity?: number
           sort_order?: number
         }
         Update: {
@@ -5595,6 +5597,7 @@ export type Database = {
           id?: string
           package_id?: string
           product_id?: string
+          quantity?: number
           sort_order?: number
         }
         Relationships: [
