@@ -76,7 +76,8 @@ export function useProducts(filters: ProductFilters) {
     q = q.order(sort.col as string, { ascending: sort.dir === "asc" });
     q = q.range((page - 1) * pageSize, page * pageSize - 1);
     const { data, count } = await q;
-    const merged = await mergeProductCosts((data ?? []) as any[]);
+    const withCost = await mergeProductCosts((data ?? []) as any[]);
+    const merged = await mergeProductWholesalePrices(withCost);
     setData(merged as Product[]);
     setCount(count ?? 0);
     setLoading(false);
