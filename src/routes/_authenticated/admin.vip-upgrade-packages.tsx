@@ -31,10 +31,21 @@ function VipPackagesAdmin() {
   const tiersFn = useServerFn(adminListVipTiers);
   const saveFn = useServerFn(upsertVipPackage);
   const delFn = useServerFn(deleteVipPackage);
+  const searchFn = useServerFn(searchProductsForVipPackage);
   const [rows, setRows] = useState<any[]>([]);
   const [tiers, setTiers] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>({ ...empty });
+  const [productLabel, setProductLabel] = useState<string>("");
+  const [productQuery, setProductQuery] = useState("");
+  const [productResults, setProductResults] = useState<any[]>([]);
+
+  async function doProductSearch() {
+    try {
+      const data: any = await searchFn({ data: { keyword: productQuery } });
+      setProductResults(data ?? []);
+    } catch (e: any) { toast.error(e?.message || "搜尋失敗"); }
+  }
 
   async function load() {
     try {
