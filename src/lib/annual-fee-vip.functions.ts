@@ -116,7 +116,6 @@ export const processOrderAnnualFeeUpgrade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ orderId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await ensureAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: order, error: orderErr } = await supabaseAdmin
@@ -126,11 +125,19 @@ export const processOrderAnnualFeeUpgrade = createServerFn({ method: "POST" })
       .maybeSingle();
     if (orderErr) throw orderErr;
     if (!order) throw new Error("訂單不存在");
+
+    // 授權：admin 或訂單擁有者本人
+    const userId = (order as any).user_id as string | null;
+    const isOwner = !!userId && userId === context.userId;
+    if (!isOwner) {
+      await ensureAdmin(context.supabase, context.userId);
+    }
+
     if ((order as any).payment_status !== "paid") {
       return { ok: false, reason: "order_not_paid" };
     }
-    const userId = (order as any).user_id as string | null;
     if (!userId) return { ok: false, reason: "no_user" };
+
 
     const { data: items } = await supabaseAdmin
       .from("sales_order_items")
@@ -190,7 +197,8 @@ export const processOrderAnnualFeeUpgrade = createServerFn({ method: "POST" })
         gift_product_id: rule.gift_product_id,
         gift_quantity: rule.gift_quantity ?? 0,
         status: "applied",
-        notes: `由管理員 ${context.userId} 確認付款後升級`,
+        notes: isOwner ? `會員 ${context.userId} 於前台付款後自動升級` : `由管理員 ${context.userId} 確認付款後升級`,
+
       });
 
       await supabaseAdmin.from("audit_logs").insert({
