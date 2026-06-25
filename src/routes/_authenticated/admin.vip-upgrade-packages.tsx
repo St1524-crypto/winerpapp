@@ -183,15 +183,24 @@ function VipPackagesAdmin() {
               {bound.length > 0 ? (
                 <ul className="border rounded-md divide-y">
                   {bound.map((b, idx) => (
-                    <li key={b.id} className="flex items-center justify-between px-2 py-1 text-sm">
-                      <span className="truncate">
+                    <li key={b.id} className="flex items-center justify-between gap-2 px-2 py-1 text-sm">
+                      <span className="truncate flex-1">
                         <span className="text-muted-foreground mr-2">{idx + 1}.</span>
                         {b.name} <span className="text-muted-foreground">· {b.sku}</span>
-                        {typeof b.price === "number" && <span className="text-muted-foreground"> · NT$ {b.price}</span>}
                       </span>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => removeBound(b.id)}>
-                        <X className="h-3 w-3" />
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Label className="text-xs text-muted-foreground">數量</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          className="h-7 w-16"
+                          value={b.quantity}
+                          onChange={(e) => setBoundQty(b.id, Number(e.target.value))}
+                        />
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeBound(b.id)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </li>
                   ))}
                 </ul>
