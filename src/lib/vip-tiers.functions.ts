@@ -382,3 +382,181 @@ export const getMyVipUpgradeOrders = createServerFn({ method: "GET" })
     ]);
     return { orders: orders ?? [], profile: profile ?? null };
   });
+
+/** Admin：搜尋商品（綁定 VIP 升級套組用） */
+export const searchProductsForVipPackage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ keyword: z.string().default("") }).parse(d))
+  .handler(async ({ data, context }) => {
+    await ensureAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = supabaseAdmin
+      .from("products")
+      .select("id, sku, name, price, status")
+      .eq("status", "active")
+      .order("name")
+      .limit(20);
+    const kw = (data.keyword ?? "").trim();
+    if (kw) q = q.or(`name.ilike.%${kw}%,sku.ilike.%${kw}%`);
+    const { data: rows, error } = await q;
+    if (error) throw error;
+    return rows ?? [];
+  });
+
+/**
+ * 訂單付款成功後：掃描品項中綁定 VIP 升級套組的商品，
+ * 自動升級會員 VIP 階級、延長期限、發放贈點（冪等：以 sales_order_id+package_id 唯一）。
+ */
+export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: order, error: orderErr } = await supabaseAdmin
+      .from("sales_orders")
+      .select("id, user_id, payment_status, order_no")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (orderErr) throw orderErr;
+    if (!order) throw new Error("訂單不存在");
+
+    const userId = (order as any).user_id as string | null;
+    const isOwner = !!userId && userId === context.userId;
+    if (!isOwner) await ensureAdmin(context.supabase, context.userId);
+
+    if ((order as any).payment_status !== "paid") {
+      return { ok: false, reason: "order_not_paid" };
+    }
+    if (!userId) return { ok: false, reason: "no_user" };
+
+    const { data: items } = await supabaseAdmin
+      .from("sales_order_items")
+      .select("product_id, quantity")
+      .eq("sales_order_id", data.orderId);
+    const productIds = Array.from(
+      new Set((items ?? []).map((i: any) => i.product_id).filter(Boolean)),
+    );
+    if (productIds.length === 0) return { ok: false, reason: "no_items" };
+
+    const { data: pkgs } = await supabaseAdmin
+      .from("vip_upgrade_packages")
+      .select("*")
+      .eq("status", "active")
+      .in("product_id", productIds);
+    if (!pkgs || pkgs.length === 0) return { ok: false, reason: "no_matching_package" };
+
+    const { data: tiers } = await supabaseAdmin.from("vip_tiers").select("code, sort_order");
+    const tierMap = new Map<string, number>((tiers ?? []).map((t: any) => [t.code, t.sort_order]));
+
+    const results: any[] = [];
+    for (const pkg of pkgs as any[]) {
+      const { data: existing } = await supabaseAdmin
+        .from("vip_package_upgrade_logs")
+        .select("id")
+        .eq("sales_order_id", data.orderId)
+        .eq("package_id", pkg.id)
+        .maybeSingle();
+      if (existing) {
+        results.push({ package_id: pkg.id, skipped: "already_processed" });
+        continue;
+      }
+
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("vip_tier, is_vip, vip_expires_at")
+        .eq("id", userId)
+        .maybeSingle();
+      const currentTier = (profile as any)?.vip_tier as string | null;
+      const currentOrder = currentTier ? tierMap.get(currentTier) ?? 0 : 0;
+      const targetOrder = tierMap.get(pkg.tier_code) ?? 0;
+      const willUpgrade = targetOrder > currentOrder;
+
+      const now = new Date();
+      const baseExpiry =
+        (profile as any)?.vip_expires_at && new Date((profile as any).vip_expires_at) > now
+          ? new Date((profile as any).vip_expires_at)
+          : now;
+      const before = (profile as any)?.vip_expires_at ?? null;
+      const after =
+        pkg.duration_days > 0
+          ? new Date(baseExpiry.getTime() + pkg.duration_days * 86400000).toISOString()
+          : before;
+      const newTier = willUpgrade ? pkg.tier_code : currentTier;
+
+      const updates: any = { is_vip: true };
+      if (willUpgrade) updates.vip_tier = pkg.tier_code;
+      if (pkg.duration_days > 0) updates.vip_expires_at = after;
+      if (Object.keys(updates).length > 0) {
+        const { error: upErr } = await supabaseAdmin
+          .from("profiles")
+          .update(updates)
+          .eq("id", userId);
+        if (upErr) throw upErr;
+      }
+
+      let grantedPoints = 0;
+      if (pkg.bonus_points > 0) {
+        await supabaseAdmin.from("reward_wallet_logs").insert({
+          member_id: userId,
+          points: pkg.bonus_points,
+          type: "earn",
+          description: `VIP 升級套組贈點：${pkg.name}`,
+        });
+        const { data: sum } = await supabaseAdmin
+          .from("reward_wallet_logs")
+          .select("points")
+          .eq("member_id", userId);
+        const total = (sum ?? []).reduce((s: number, r: any) => s + Number(r.points ?? 0), 0);
+        await supabaseAdmin
+          .from("member_points_wallet")
+          .upsert({ user_id: userId, reward_points: total }, { onConflict: "user_id" });
+        grantedPoints = pkg.bonus_points;
+      }
+
+      await supabaseAdmin.from("vip_package_upgrade_logs").insert({
+        sales_order_id: data.orderId,
+        package_id: pkg.id,
+        user_id: userId,
+        tier_code: pkg.tier_code,
+        previous_tier: currentTier,
+        new_tier: newTier,
+        vip_expires_before: before,
+        vip_expires_after: after,
+        bonus_points: grantedPoints,
+        upgraded: willUpgrade,
+        status: "applied",
+        notes: isOwner
+          ? `會員 ${context.userId} 於前台付款後自動升級`
+          : `由管理員 ${context.userId} 確認付款後升級`,
+      });
+
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: context.userId,
+        action: "vip_package_auto_upgrade",
+        entity: "sales_orders",
+        entity_id: data.orderId,
+        metadata: {
+          order_no: (order as any).order_no,
+          target_user: userId,
+          package_id: pkg.id,
+          tier_code: pkg.tier_code,
+          previous_tier: currentTier,
+          new_tier: newTier,
+          upgraded: willUpgrade,
+          bonus_points: grantedPoints,
+        },
+      });
+
+      results.push({
+        package_id: pkg.id,
+        applied: true,
+        upgraded: willUpgrade,
+        new_tier: newTier,
+        vip_expires_after: after,
+        granted_bonus_points: grantedPoints,
+      });
+    }
+
+    return { ok: true, results };
+  });
