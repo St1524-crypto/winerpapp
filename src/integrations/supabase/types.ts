@@ -227,6 +227,123 @@ export type Database = {
         }
         Relationships: []
       }
+      annual_fee_upgrade_logs: {
+        Row: {
+          created_at: string
+          gift_product_id: string | null
+          gift_quantity: number | null
+          id: string
+          notes: string | null
+          rule_id: string | null
+          sales_order_id: string
+          sku: string
+          status: string
+          upgrade_days: number
+          user_id: string
+          vip_expires_after: string
+          vip_expires_before: string | null
+        }
+        Insert: {
+          created_at?: string
+          gift_product_id?: string | null
+          gift_quantity?: number | null
+          id?: string
+          notes?: string | null
+          rule_id?: string | null
+          sales_order_id: string
+          sku: string
+          status?: string
+          upgrade_days: number
+          user_id: string
+          vip_expires_after: string
+          vip_expires_before?: string | null
+        }
+        Update: {
+          created_at?: string
+          gift_product_id?: string | null
+          gift_quantity?: number | null
+          id?: string
+          notes?: string | null
+          rule_id?: string | null
+          sales_order_id?: string
+          sku?: string
+          status?: string
+          upgrade_days?: number
+          user_id?: string
+          vip_expires_after?: string
+          vip_expires_before?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_fee_upgrade_logs_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "annual_fee_vip_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annual_fee_upgrade_logs_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      annual_fee_vip_rules: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          gift_product_id: string | null
+          gift_quantity: number
+          id: string
+          is_active: boolean
+          notes: string | null
+          sku: string
+          updated_at: string
+          upgrade_days: number
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          gift_product_id?: string | null
+          gift_quantity?: number
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          sku: string
+          updated_at?: string
+          upgrade_days?: number
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          gift_product_id?: string | null
+          gift_quantity?: number
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          sku?: string
+          updated_at?: string
+          upgrade_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_fee_vip_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annual_fee_vip_rules_gift_product_id_fkey"
+            columns: ["gift_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string
