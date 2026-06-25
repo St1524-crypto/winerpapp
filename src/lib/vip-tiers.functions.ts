@@ -204,7 +204,6 @@ export const upsertVipPackage = createServerFn({ method: "POST" })
     const { product_ids, ...rest } = data as any;
     const payload: any = { ...rest };
     if (!payload.id) delete payload.id;
-    // keep legacy product_id in sync (first bound product)
     if (Array.isArray(product_ids)) {
       payload.product_id = product_ids[0] ?? null;
     }
@@ -216,7 +215,6 @@ export const upsertVipPackage = createServerFn({ method: "POST" })
     if (error) throw error;
 
     if (Array.isArray(product_ids)) {
-      // rebuild bindings
       await supabaseAdmin
         .from("vip_upgrade_package_products")
         .delete()
@@ -235,15 +233,94 @@ export const upsertVipPackage = createServerFn({ method: "POST" })
       }
     }
 
+    // === 同步「套組收費商品」(anchor product) ===
+    // 用途：套組金額 = 此商品售價；前台「加入購物車」實際只加這一個商品，
+    //       付款後系統再依綁定商品清單發放贈品 + 扣庫存。
+    const anchorSku = `VIP-PKG-${String(row.id).slice(0, 8).toUpperCase()}`;
+    const anchorName = `【VIP升級套組】${row.name}`;
+    let anchorImage: string | null = null;
+    let anchorCompanyId: string | null = null;
+    // 從第一個綁定商品取得 company_id / image 作為來源
+    const firstGiftId = Array.isArray(product_ids) ? product_ids[0] : row.product_id;
+    if (firstGiftId) {
+      const { data: gp } = await supabaseAdmin
+        .from("products")
+        .select("company_id, image")
+        .eq("id", firstGiftId)
+        .maybeSingle();
+      if (gp) {
+        anchorCompanyId = (gp as any).company_id ?? null;
+        anchorImage = (gp as any).image ?? null;
+      }
+    }
+    // fallback: 取任何商品的 company_id（系統至少有一個公司）
+    if (!anchorCompanyId) {
+      const { data: anyProd } = await supabaseAdmin
+        .from("products")
+        .select("company_id")
+        .limit(1)
+        .maybeSingle();
+      anchorCompanyId = (anyProd as any)?.company_id ?? null;
+    }
+
+    let anchorProductId: string | null = row.package_product_id ?? null;
+    if (anchorProductId) {
+      // 更新既有 anchor
+      await supabaseAdmin
+        .from("products")
+        .update({
+          name: anchorName,
+          price: row.price,
+          status: row.status,
+          image: anchorImage,
+        })
+        .eq("id", anchorProductId);
+    } else if (anchorCompanyId) {
+      const { data: newProd, error: prodErr } = await supabaseAdmin
+        .from("products")
+        .insert({
+          sku: anchorSku,
+          name: anchorName,
+          price: row.price,
+          stock: 999999,
+          safe_stock: 0,
+          status: row.status,
+          image: anchorImage,
+          short_description: "VIP 升級套組（含贈品）",
+          description: row.description ?? null,
+          company_id: anchorCompanyId,
+          featured: false,
+          reward_points: 0,
+          discount_points_max: 0,
+          specs: {},
+          cost_price: 0,
+          wholesale_price: row.price,
+        })
+        .select("id")
+        .single();
+      if (prodErr) throw prodErr;
+      anchorProductId = newProd.id;
+      await supabaseAdmin
+        .from("vip_upgrade_packages")
+        .update({ package_product_id: anchorProductId })
+        .eq("id", row.id);
+    }
+
     await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,
       action: data.id ? "update" : "create",
       entity: "vip_upgrade_package",
       entity_id: row.id,
-      metadata: { name: row.name, tier_code: row.tier_code, product_count: (product_ids ?? []).length },
+      metadata: {
+        name: row.name,
+        tier_code: row.tier_code,
+        product_count: (product_ids ?? []).length,
+        anchor_product_id: anchorProductId,
+      },
     });
-    return row;
+    return { ...row, package_product_id: anchorProductId };
   });
+
 
 export const deleteVipPackage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -528,8 +605,17 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
     );
     if (productIds.length === 0) return { ok: false, reason: "no_items" };
 
-    // 找出所有「綁定了訂單中任一商品」的套組（去重）
-    // 1) 透過多商品綁定表
+    // 找出所有「訂單中含此套組」的套組（去重）
+    // 優先：透過 package_product_id (anchor 商品) 比對
+    let pkgs: any[] = [];
+    const { data: anchorPkgs } = await supabaseAdmin
+      .from("vip_upgrade_packages")
+      .select("*")
+      .eq("status", "active")
+      .in("package_product_id", productIds);
+    pkgs = anchorPkgs ?? [];
+
+    // 向下相容：舊資料以多商品綁定表 + 舊單一 product_id 比對
     const { data: bindings } = await supabaseAdmin
       .from("vip_upgrade_package_products")
       .select("package_id")
@@ -537,15 +623,15 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
     const pkgIdsFromBindings = Array.from(
       new Set((bindings ?? []).map((b: any) => b.package_id)),
     );
-    // 2) 向下相容：仍以舊單一 product_id 查詢
-    let pkgs: any[] = [];
     if (pkgIdsFromBindings.length > 0) {
       const { data: a } = await supabaseAdmin
         .from("vip_upgrade_packages")
         .select("*")
         .eq("status", "active")
         .in("id", pkgIdsFromBindings);
-      pkgs = a ?? [];
+      for (const lp of a ?? []) {
+        if (!pkgs.some((x) => x.id === lp.id)) pkgs.push(lp);
+      }
     }
     const { data: legacy } = await supabaseAdmin
       .from("vip_upgrade_packages")
@@ -625,6 +711,47 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
         grantedPoints = pkg.bonus_points;
       }
 
+      // === 發放贈品商品：扣庫存 + 寫 inventory_logs ===
+      // 取出此套組綁定的贈品 product_id 清單（多商品優先，舊資料用 product_id）
+      const giftIds: string[] = [];
+      const { data: gifts } = await supabaseAdmin
+        .from("vip_upgrade_package_products")
+        .select("product_id")
+        .eq("package_id", pkg.id);
+      for (const g of gifts ?? []) {
+        if ((g as any).product_id) giftIds.push((g as any).product_id);
+      }
+      if (giftIds.length === 0 && pkg.product_id) giftIds.push(pkg.product_id);
+      // 排除 anchor 自身（避免重複扣 anchor）
+      const filteredGiftIds = giftIds.filter((id) => id !== pkg.package_product_id);
+      const grantedGifts: any[] = [];
+      for (const gid of filteredGiftIds) {
+        const { data: prod } = await supabaseAdmin
+          .from("products")
+          .select("id, stock, company_id, name")
+          .eq("id", gid)
+          .maybeSingle();
+        if (!prod) continue;
+        const before_stock = Number((prod as any).stock ?? 0);
+        const after_stock = before_stock - 1;
+        await supabaseAdmin
+          .from("products")
+          .update({ stock: after_stock })
+          .eq("id", gid);
+        await supabaseAdmin.from("inventory_logs").insert({
+          product_id: gid,
+          type: "out",
+          quantity: 1,
+          before_stock,
+          after_stock,
+          reason: `VIP升級套組贈品出庫：${pkg.name}（訂單 ${(order as any).order_no}）`,
+          operator_id: context.userId,
+          company_id: (prod as any).company_id,
+        });
+        grantedGifts.push({ product_id: gid, name: (prod as any).name, after_stock });
+      }
+
+
       await supabaseAdmin.from("vip_package_upgrade_logs").insert({
         sales_order_id: data.orderId,
         package_id: pkg.id,
@@ -656,6 +783,7 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
           new_tier: newTier,
           upgraded: willUpgrade,
           bonus_points: grantedPoints,
+          granted_gifts: grantedGifts,
         },
       });
 
@@ -666,6 +794,7 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
         new_tier: newTier,
         vip_expires_after: after,
         granted_bonus_points: grantedPoints,
+        granted_gifts: grantedGifts,
       });
     }
 

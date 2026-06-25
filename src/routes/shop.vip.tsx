@@ -125,16 +125,15 @@ function VipPage() {
                           </li>
                         )}
                       </ul>
-                      {hasProducts ? (
+                      {p.package_product_id ? (
                         <Button
                           className="w-full bg-gradient-primary"
                           disabled={adding === p.id}
                           onClick={async () => {
                             setAdding(p.id);
                             try {
-                              for (const pr of products) {
-                                await addItem(pr.id, 1);
-                              }
+                              // 僅加入 anchor 商品（套組金額），贈品於付款後系統自動發放並扣庫存
+                              await addItem(p.package_product_id, 1);
                             }
                             catch (e: any) { toast.error(e?.message || "加入購物車失敗"); }
                             finally { setAdding(null); }
@@ -143,7 +142,7 @@ function VipPage() {
                           {adding === p.id
                             ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             : <ShoppingCart className="h-4 w-4 mr-2" />}
-                          加入購物車{products.length > 1 ? `（${products.length} 項）` : ""}
+                          加入購物車
                         </Button>
                       ) : (
                         <Button className="w-full bg-gradient-primary" disabled={buying === p.id} onClick={() => buy(p.id)}>
