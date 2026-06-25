@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { deleteSalesOrder } from "@/lib/orders-admin.functions";
 import { processOrderCommission } from "@/lib/referral.functions";
 import { processOrderPaymentBonus } from "@/lib/bonus.functions";
+import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 
 /** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/升級獎金（失敗不擋主流程） */
 async function autoSettleCommission(orderId: string, nextStatus: string) {
@@ -39,6 +40,26 @@ async function autoSettleCommission(orderId: string, nextStatus: string) {
     }
   } catch (e: any) {
     toast.warning("獎金產生失敗", { description: String(e?.message ?? "") });
+  }
+  // 年費商品 → 自動升級 VIP（冪等，失敗不擋主流程）
+  try {
+    const a: any = await processOrderAnnualFeeUpgrade({ data: { orderId } });
+    if (a?.ok && Array.isArray(a.results)) {
+      const applied = a.results.filter((x: any) => x?.applied);
+      const skipped = a.results.filter((x: any) => x?.skipped === "already_processed");
+      const hasGift = applied.some((x: any) => x?.gift_product_id || x?.gift_quantity);
+      if (applied.length > 0) {
+        toast.success("已完成 VIP 年費升級，並已發放獎勵點");
+        if (hasGift) {
+          toast.info("贈品請確認是否加入訂單明細");
+        }
+      }
+      if (skipped.length > 0) {
+        toast.info("此訂單已處理過 VIP 年費升級，未重複發放");
+      }
+    }
+  } catch (e: any) {
+    toast.warning("VIP 年費升級處理失敗", { description: String(e?.message ?? "") });
   }
 }
 import { supabase } from "@/integrations/supabase/client";
