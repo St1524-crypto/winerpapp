@@ -605,8 +605,17 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
     );
     if (productIds.length === 0) return { ok: false, reason: "no_items" };
 
-    // 找出所有「綁定了訂單中任一商品」的套組（去重）
-    // 1) 透過多商品綁定表
+    // 找出所有「訂單中含此套組」的套組（去重）
+    // 優先：透過 package_product_id (anchor 商品) 比對
+    let pkgs: any[] = [];
+    const { data: anchorPkgs } = await supabaseAdmin
+      .from("vip_upgrade_packages")
+      .select("*")
+      .eq("status", "active")
+      .in("package_product_id", productIds);
+    pkgs = anchorPkgs ?? [];
+
+    // 向下相容：舊資料以多商品綁定表 + 舊單一 product_id 比對
     const { data: bindings } = await supabaseAdmin
       .from("vip_upgrade_package_products")
       .select("package_id")
@@ -614,15 +623,15 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
     const pkgIdsFromBindings = Array.from(
       new Set((bindings ?? []).map((b: any) => b.package_id)),
     );
-    // 2) 向下相容：仍以舊單一 product_id 查詢
-    let pkgs: any[] = [];
     if (pkgIdsFromBindings.length > 0) {
       const { data: a } = await supabaseAdmin
         .from("vip_upgrade_packages")
         .select("*")
         .eq("status", "active")
         .in("id", pkgIdsFromBindings);
-      pkgs = a ?? [];
+      for (const lp of a ?? []) {
+        if (!pkgs.some((x) => x.id === lp.id)) pkgs.push(lp);
+      }
     }
     const { data: legacy } = await supabaseAdmin
       .from("vip_upgrade_packages")
