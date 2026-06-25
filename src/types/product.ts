@@ -56,6 +56,8 @@ export const PRODUCT_STATUS = [
   { value: "inactive", label: "已下架" },
 ] as const;
 
+export type WholesaleTierVisibility = "all" | "vip" | "dealer";
+
 export interface WholesaleTier {
   id?: string;
   product_id?: string;
@@ -64,4 +66,5 @@ export interface WholesaleTier {
   unit_price: number;
   unit_reward_points: number;
   sort_order: number;
+  visibility?: WholesaleTierVisibility;
 }
