@@ -73,6 +73,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
             min_qty: t.min_qty, max_qty: t.max_qty,
             unit_price: Number(t.unit_price), unit_reward_points: Number(t.unit_reward_points),
             sort_order: t.sort_order,
+            visibility: (t.visibility ?? "all") as "all" | "vip" | "dealer",
           })) as WholesaleTier[];
           setForm((f) => ({ ...f, tiers }));
         });
