@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-packages
 const empty = {
   id: "", tier_code: "V", name: "", description: "",
   price: 0, bonus_points: 0, duration_days: 365, sort_order: 0, status: "active",
+  product_id: null as string | null,
 };
 
 function VipPackagesAdmin() {
