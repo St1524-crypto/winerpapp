@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
+import { randomBytes } from "crypto";
 
 /**
  * Guest checkout quick-register:
