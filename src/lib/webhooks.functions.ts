@@ -99,6 +99,7 @@ export const updateWebhookEndpoint = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await requireAdmin(context.supabase);
+    if (data.url) assertSafeWebhookUrl(data.url);
     const { id, ...patch } = data;
     const { error } = await context.supabase.from("webhook_endpoints").update(patch).eq("id", id);
     if (error) throw error;
