@@ -23,20 +23,33 @@ const featuredSchema = z.object({
   productIds: z.array(z.string().uuid()).max(20),
 });
 
+const httpUrlSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .regex(/^https?:\/\//i, "URL must start with http:// or https://")
+  .optional()
+  .or(z.literal(""));
+
 const customProductSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().max(1200).optional().or(z.literal("")),
   image_url: z.string().trim().max(500).optional().or(z.literal("")),
-  video_url: z.string().trim().max(500).optional().or(z.literal("")),
-  purchase_url: z.string().trim().max(500).optional().or(z.literal("")),
+  video_url: httpUrlSchema,
+  purchase_url: httpUrlSchema,
   is_active: z.boolean().default(true),
 });
 
 const videoSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().trim().min(1).max(120),
-  video_url: z.string().trim().min(1).max(500),
+  video_url: z
+    .string()
+    .trim()
+    .min(1)
+    .max(500)
+    .regex(/^https?:\/\//i, "URL must start with http:// or https://"),
   sort_order: z.number().int().min(0).max(9999).default(0),
 });
 
