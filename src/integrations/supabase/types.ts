@@ -5622,6 +5622,7 @@ export type Database = {
           duration_days: number
           id: string
           name: string
+          package_product_id: string | null
           price: number
           product_id: string | null
           sort_order: number
@@ -5636,6 +5637,7 @@ export type Database = {
           duration_days?: number
           id?: string
           name: string
+          package_product_id?: string | null
           price?: number
           product_id?: string | null
           sort_order?: number
@@ -5650,6 +5652,7 @@ export type Database = {
           duration_days?: number
           id?: string
           name?: string
+          package_product_id?: string | null
           price?: number
           product_id?: string | null
           sort_order?: number
@@ -5658,6 +5661,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vip_upgrade_packages_package_product_id_fkey"
+            columns: ["package_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vip_upgrade_packages_product_id_fkey"
             columns: ["product_id"]
