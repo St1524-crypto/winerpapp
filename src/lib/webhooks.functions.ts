@@ -4,6 +4,46 @@ import { z } from "zod";
 
 const VALID_EVENTS = ["member.created", "order.created", "group_buy.created", "group_buy.completed", "vip.upgraded"] as const;
 
+// SSRF guard: only allow https:// to public hostnames. Blocks loopback,
+// link-local (incl. cloud metadata 169.254.169.254), private RFC1918 ranges,
+// IPv6 loopback / unique-local / link-local, and bare hostnames without a dot.
+function assertSafeWebhookUrl(raw: string) {
+  let u: URL;
+  try { u = new URL(raw); } catch { throw new Error("Webhook URL 格式無效"); }
+  if (u.protocol !== "https:") throw new Error("Webhook URL 必須使用 https://");
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (!host) throw new Error("Webhook URL 主機名無效");
+  // Block obvious internal names
+  const blockedNames = new Set(["localhost", "ip6-localhost", "ip6-loopback", "metadata", "metadata.google.internal"]);
+  if (blockedNames.has(host)) throw new Error("Webhook URL 不可指向內網/雲端中繼資料服務");
+  if (host.endsWith(".local") || host.endsWith(".internal")) throw new Error("Webhook URL 不可指向內網主機");
+  // IPv4 check
+  const v4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    const [a, b] = [parseInt(v4[1], 10), parseInt(v4[2], 10)];
+    if (
+      a === 10 ||
+      a === 127 ||
+      a === 0 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      a >= 224 // multicast / reserved
+    ) throw new Error("Webhook URL 不可指向私有/保留 IP 範圍");
+  }
+  // IPv6 check (loopback, link-local fe80::/10, unique-local fc00::/7)
+  if (host.includes(":")) {
+    const h = host;
+    if (h === "::1" || h === "::" || h.startsWith("fe8") || h.startsWith("fe9") || h.startsWith("fea") || h.startsWith("feb") || h.startsWith("fc") || h.startsWith("fd")) {
+      throw new Error("Webhook URL 不可指向私有/保留 IPv6");
+    }
+  }
+  // Require a dot in hostname for non-IP hosts (rejects bare intranet names)
+  if (!v4 && !host.includes(":") && !host.includes(".")) {
+    throw new Error("Webhook URL 必須使用完整網域名稱");
+  }
+}
+
 async function requireAdmin(supabase: any) {
   const { data: roles } = await supabase.from("user_roles").select("role");
   if (!roles?.some((r: any) => ["super_admin", "admin"].includes(r.role))) throw new Error("無權限");
