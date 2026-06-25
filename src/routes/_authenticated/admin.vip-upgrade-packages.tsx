@@ -144,6 +144,50 @@ function VipPackagesAdmin() {
             <div><Label>有效天數 (0=永久)</Label><Input type="number" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: e.target.value })} /></div>
             <div><Label>排序</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} /></div>
             <div className="col-span-2"><Label>說明</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+
+            <div className="col-span-2 space-y-1">
+              <Label>綁定商品（綁定後改走「加入購物車 → 結帳付款 → 自動升級」流程）</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={productLabel || (form.product_id ?? "")}
+                  readOnly
+                  placeholder="未綁定（將以「立即購買」建立 pending 升級單）"
+                />
+                <Input
+                  value={productQuery}
+                  onChange={(e) => setProductQuery(e.target.value)}
+                  placeholder="搜尋商品名稱 / SKU"
+                  onKeyDown={(e) => e.key === "Enter" && doProductSearch()}
+                />
+                <Button type="button" variant="outline" onClick={doProductSearch}>
+                  <Search className="h-4 w-4" />
+                </Button>
+                {form.product_id && (
+                  <Button type="button" variant="ghost" onClick={() => { setForm({ ...form, product_id: null }); setProductLabel(""); }}>
+                    清除
+                  </Button>
+                )}
+              </div>
+              {productResults.length > 0 && (
+                <div className="border rounded-md divide-y max-h-40 overflow-auto">
+                  {productResults.map((p) => (
+                    <button
+                      type="button"
+                      key={p.id}
+                      className="w-full flex items-center justify-between px-2 py-1 text-left hover:bg-muted text-sm"
+                      onClick={() => {
+                        setForm({ ...form, product_id: p.id });
+                        setProductLabel(`${p.name}（${p.sku}）`);
+                        setProductResults([]);
+                      }}
+                    >
+                      <span className="truncate">{p.name} · <span className="text-muted-foreground">{p.sku}</span></span>
+                      <span className="text-xs text-muted-foreground">NT$ {p.price}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>取消</Button>
