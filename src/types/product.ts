@@ -17,7 +17,7 @@ export interface Product {
   category_id: string | null;
   category: string | null;
   price: number;
-  wholesale_price: number;
+  wholesale_price?: number;
   cost_price?: number;
   stock: number;
   safe_stock: number;
