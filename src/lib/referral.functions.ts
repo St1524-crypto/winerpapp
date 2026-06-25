@@ -50,7 +50,7 @@ export const getReferrerPublicProfile = createServerFn({ method: "POST" })
     if (company) {
       const { data: ps } = await supabaseAdmin
         .from("products")
-        .select("id, name, sku, price, wholesale_price, image, status")
+        .select("id, name, sku, price, image, status")
         .eq("company_id", company.id)
         .eq("status", "active")
         .order("created_at", { ascending: false })
