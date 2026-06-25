@@ -145,6 +145,56 @@ export const adminListVipPackages = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+/** Admin：列出全部套組（含停用、含綁定商品清單） */
+export const adminListVipPackages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("vip_upgrade_packages")
+      .select("*")
+      .order("tier_code")
+      .order("sort_order");
+    if (error) throw error;
+    const list = (data ?? []) as any[];
+    const pkgIds = list.map((p) => p.id);
+    let bindings: any[] = [];
+    if (pkgIds.length) {
+      const { data: bs } = await supabaseAdmin
+        .from("vip_upgrade_package_products")
+        .select("package_id, product_id, sort_order")
+        .in("package_id", pkgIds)
+        .order("sort_order");
+      bindings = bs ?? [];
+    }
+    const allProductIds = Array.from(
+      new Set([
+        ...bindings.map((b) => b.product_id),
+        ...list.map((p) => p.product_id).filter(Boolean),
+      ]),
+    );
+    let pMap = new Map<string, any>();
+    if (allProductIds.length) {
+      const { data: prods } = await supabaseAdmin
+        .from("products")
+        .select("id, sku, name, price, status")
+        .in("id", allProductIds);
+      pMap = new Map((prods ?? []).map((p: any) => [p.id, p]));
+    }
+    return list.map((p) => {
+      const productList = bindings
+        .filter((b) => b.package_id === p.id)
+        .map((b) => pMap.get(b.product_id))
+        .filter(Boolean);
+      if (productList.length === 0 && p.product_id) {
+        const legacy = pMap.get(p.product_id);
+        if (legacy) productList.push(legacy);
+      }
+      return { ...p, products: productList, product_ids: productList.map((x: any) => x.id) };
+    });
+  });
+
 const pkgSchema = z.object({
   id: z.string().uuid().optional(),
   tier_code: z.string().min(1),
@@ -156,6 +206,7 @@ const pkgSchema = z.object({
   sort_order: z.number().int().default(0),
   status: z.enum(["active", "inactive"]).default("active"),
   product_id: z.string().uuid().nullable().optional(),
+  product_ids: z.array(z.string().uuid()).optional(),
 });
 
 export const upsertVipPackage = createServerFn({ method: "POST" })
@@ -164,20 +215,46 @@ export const upsertVipPackage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await ensureAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const payload: any = { ...data };
+    const { product_ids, ...rest } = data as any;
+    const payload: any = { ...rest };
     if (!payload.id) delete payload.id;
+    // keep legacy product_id in sync (first bound product)
+    if (Array.isArray(product_ids)) {
+      payload.product_id = product_ids[0] ?? null;
+    }
     const { data: row, error } = await supabaseAdmin
       .from("vip_upgrade_packages")
       .upsert(payload)
       .select()
       .single();
     if (error) throw error;
+
+    if (Array.isArray(product_ids)) {
+      // rebuild bindings
+      await supabaseAdmin
+        .from("vip_upgrade_package_products")
+        .delete()
+        .eq("package_id", row.id);
+      if (product_ids.length > 0) {
+        const uniqueIds = Array.from(new Set(product_ids));
+        const rows = uniqueIds.map((pid, idx) => ({
+          package_id: row.id,
+          product_id: pid,
+          sort_order: idx,
+        }));
+        const { error: insErr } = await supabaseAdmin
+          .from("vip_upgrade_package_products")
+          .insert(rows);
+        if (insErr) throw insErr;
+      }
+    }
+
     await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,
       action: data.id ? "update" : "create",
       entity: "vip_upgrade_package",
       entity_id: row.id,
-      metadata: { name: row.name, tier_code: row.tier_code },
+      metadata: { name: row.name, tier_code: row.tier_code, product_count: (product_ids ?? []).length },
     });
     return row;
   });
