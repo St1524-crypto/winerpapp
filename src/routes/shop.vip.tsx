@@ -21,18 +21,34 @@ function VipPage() {
   const { user } = useAuth();
   const { is_vip, vip_expires_at, refresh } = useVipStatus();
   const nav = useNavigate();
+  const { addItem } = useCart();
   const tiersFn = useServerFn(listVipTiers);
   const pkgFn = useServerFn(listVipUpgradePackages);
   const buyFn = useServerFn(purchaseVipUpgrade);
+  const publicAnnualFn = useServerFn(listPublicAnnualFeeVipPackages);
   const [tiers, setTiers] = useState<any[]>([]);
   const [packages, setPackages] = useState<any[]>([]);
+  const [annualPkgs, setAnnualPkgs] = useState<any[]>([]);
   const [buying, setBuying] = useState<string | null>(null);
+  const [adding, setAdding] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([tiersFn(), pkgFn()]).then(([t, p]) => {
-      setTiers(t as any[]); setPackages(p as any[]);
+    Promise.all([tiersFn(), pkgFn(), publicAnnualFn()]).then(([t, p, a]) => {
+      setTiers(t as any[]); setPackages(p as any[]); setAnnualPkgs(a as any[]);
     }).catch(() => {});
   }, []);
+
+  async function addAnnualToCart(pkg: any) {
+    if (!pkg) { toast.error("此 VIP 升級套組目前未開放"); return; }
+    if (!pkg.product?.id) { toast.error("年費商品已下架，請聯絡客服"); return; }
+    setAdding(pkg.id);
+    try {
+      await addItem(pkg.product.id, 1);
+    } catch (e: any) {
+      toast.error(e?.message || "加入購物車失敗，請稍後再試");
+    } finally { setAdding(null); }
+  }
+
 
   async function buy(pkgId: string) {
     if (!user) { nav({ to: "/login" }); return; }
