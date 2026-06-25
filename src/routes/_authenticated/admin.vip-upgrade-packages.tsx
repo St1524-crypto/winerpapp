@@ -58,7 +58,10 @@ function VipPackagesAdmin() {
 
   function edit(r: any) {
     setForm({ ...empty, ...r, description: r.description ?? "" });
-    setBound((r.products ?? []) as BoundProduct[]);
+    setBound(((r.products ?? []) as any[]).map((p) => ({
+      id: p.id, name: p.name, sku: p.sku, price: p.price,
+      quantity: Math.max(1, Number(p.quantity ?? 1)),
+    })));
     setProductQuery(""); setProductResults([]);
     setOpen(true);
   }
@@ -74,10 +77,14 @@ function VipPackagesAdmin() {
       toast.info("此商品已加入");
       return;
     }
-    setBound([...bound, { id: p.id, name: p.name, sku: p.sku, price: p.price }]);
+    setBound([...bound, { id: p.id, name: p.name, sku: p.sku, price: p.price, quantity: 1 }]);
   }
   function removeBound(id: string) {
     setBound(bound.filter((b) => b.id !== id));
+  }
+  function setBoundQty(id: string, qty: number) {
+    const q = Math.max(1, Math.floor(qty || 1));
+    setBound(bound.map((b) => (b.id === id ? { ...b, quantity: q } : b)));
   }
 
   async function save() {
@@ -89,13 +96,14 @@ function VipPackagesAdmin() {
         duration_days: Math.max(0, Math.floor(Number(form.duration_days) || 0)),
         sort_order: Math.floor(Number(form.sort_order) || 0),
         description: form.description || null,
-        product_ids: bound.map((b) => b.id),
+        product_items: bound.map((b) => ({ product_id: b.id, quantity: b.quantity })),
       };
       if (!payload.id) delete payload.id;
       await saveFn({ data: payload });
       toast.success("已儲存"); setOpen(false); load();
     } catch (e: any) { toast.error(e.message); }
   }
+
 
   async function remove(id: string) {
     if (!confirm("確定刪除此套組？")) return;
