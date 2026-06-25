@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { randomInt } from "node:crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -243,16 +244,21 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
 
 
 // ============== Reset / generate password / impersonate ==============
-function generateTempPassword(len = 12): string {
+function generateTempPassword(len = 14): string {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghijkmnpqrstuvwxyz";
   const digits = "23456789";
   const symbols = "!@#$%^&*";
   const all = upper + lower + digits + symbols;
-  const pickFrom = (s: string) => s[Math.floor(Math.random() * s.length)];
+  const pickFrom = (s: string) => s[randomInt(0, s.length)];
   const base = [pickFrom(upper), pickFrom(lower), pickFrom(digits), pickFrom(symbols)];
   for (let i = base.length; i < len; i++) base.push(pickFrom(all));
-  return base.sort(() => Math.random() - 0.5).join("");
+  // Cryptographically secure Fisher-Yates shuffle
+  for (let i = base.length - 1; i > 0; i--) {
+    const j = randomInt(0, i + 1);
+    [base[i], base[j]] = [base[j], base[i]];
+  }
+  return base.join("");
 }
 
 const ResetSchema = z.object({

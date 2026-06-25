@@ -335,19 +335,34 @@ export const recordLoginAttempt = createServerFn({ method: "POST" })
         email: z.string().trim().min(1).max(255),
         success: z.boolean(),
         failureReason: z.string().max(200).optional(),
-        userId: z.string().uuid().optional(),
       })
       .parse(d),
   )
   .handler(async ({ data }) => {
     const { ip, userAgent } = extractRequestMeta();
+
+    // Verify user_id server-side from the bearer token (if any).
+    // Never trust a client-supplied userId — it would let any unauthenticated
+    // caller forge audit rows attributed to arbitrary users.
+    let verifiedUserId: string | null = null;
+    if (data.success) {
+      const authHeader = getRequestHeader("authorization");
+      const token = authHeader?.toLowerCase().startsWith("bearer ")
+        ? authHeader.slice(7).trim()
+        : null;
+      if (token) {
+        const { data: userRes } = await supabaseAdmin.auth.getUser(token);
+        if (userRes?.user?.id) verifiedUserId = userRes.user.id;
+      }
+    }
+
     await supabaseAdmin.from("login_attempts").insert({
-      email: data.email.toLowerCase(),
-      user_id: data.userId ?? null,
+      email: data.email.toLowerCase().slice(0, 255),
+      user_id: verifiedUserId,
       ip_address: ip,
-      user_agent: userAgent,
+      user_agent: userAgent ? userAgent.slice(0, 500) : null,
       success: data.success,
-      failure_reason: data.failureReason ?? null,
+      failure_reason: data.failureReason ? data.failureReason.slice(0, 200) : null,
     });
     return { ok: true };
   });
