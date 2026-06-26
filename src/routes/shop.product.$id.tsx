@@ -92,11 +92,18 @@ function ProductDetail() {
   const outOfStock = product.stock <= 0;
   const baseEff = getEffectivePrice(product, isDealer);
   const baseReward = Number((product as any).reward_points ?? 0);
-  const pricing = applyWholesalePricing(baseEff, baseReward, tiers, qty);
-  const effPrice = canSeeWholesale ? pricing.unitPrice : baseEff;
+  // 拆分階梯：零售多件優惠（公開，所有人可見） vs VIP/dealer 批發階梯（僅合格身分）
+  const retailTiers = tiers.filter((t) => (t.visibility ?? "all") === "all");
+  const vipTiers = tiers.filter((t) => t.visibility === "vip" || t.visibility === "dealer");
+  // 套用順序：VIP 身分優先套 VIP 階梯，否則退回零售階梯
+  const applicableTiers = canSeeWholesale && vipTiers.length > 0 ? vipTiers : retailTiers;
+  const pricing = applyWholesalePricing(baseEff, baseReward, applicableTiers, qty);
+  const effPrice = pricing.unitPrice;
   const showDealer = false;
-  const hasTiers = canSeeWholesale && tiers.length > 0;
-  const showTierBadge = canSeeWholesale && pricing.tier && pricing.unitPrice < baseEff;
+  const hasRetailTiers = retailTiers.length > 0;
+  const hasVipTiers = canSeeWholesale && vipTiers.length > 0;
+  const showTierBadge = pricing.tier && pricing.unitPrice < baseEff;
+  const isVipTierActive = hasVipTiers && pricing.tier && vipTiers.some((t) => t.id === pricing.tier?.id);
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-10 pb-44 md:pb-10">
