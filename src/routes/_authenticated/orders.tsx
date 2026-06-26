@@ -1669,10 +1669,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                           {fmt(it.unit_price * it.quantity)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums text-amber-600">
-                          {Number(it.reward_points ?? 0).toLocaleString()}
+                          {getEffectiveReward(it).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right tabular-nums font-medium text-amber-600">
-                          {(Number(it.reward_points ?? 0) * Number(it.quantity ?? 0)).toLocaleString()}
+                          {(getEffectiveReward(it) * Number(it.quantity ?? 0)).toLocaleString()}
                         </TableCell>
                         <TableCell>
                           <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeItem(i)}>
