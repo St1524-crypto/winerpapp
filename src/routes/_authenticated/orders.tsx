@@ -1300,13 +1300,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   }
 
   // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
-  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null }) {
+  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null; user_id?: string | null }) {
     setCustomerId(null);
     setCustomer(e.name);
     setEmail(e.email ?? "");
     setPhone(e.phone ?? "");
     if (e.address && !address) setAddress(e.address);
-    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null });
+    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null, user_id: e.user_id ?? null });
     setPickerOpen(false);
     toast.success(`已帶入${e.label}：${e.name}`);
   }
