@@ -1283,7 +1283,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (filters.length === 0) return;
       const { data } = await supabase
         .from("profiles")
-        .select("member_no,is_vip,is_dealer,vip_tier")
+        .select("id,member_no,is_vip,is_dealer,vip_tier")
         .or(filters.join(","))
         .limit(1)
         .maybeSingle();
@@ -1293,6 +1293,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           is_dealer: !!(data as any).is_dealer,
           vip_tier: ((data as any).vip_tier as string | null) ?? null,
           member_no: ((data as any).member_no as string | null) ?? null,
+          user_id: ((data as any).id as string | null) ?? null,
         });
       }
     } catch { /* ignore */ }
