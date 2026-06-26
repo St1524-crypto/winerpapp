@@ -207,7 +207,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
             <TabsTrigger value="basic">基本資訊</TabsTrigger>
             <TabsTrigger value="price">價格庫存</TabsTrigger>
             <TabsTrigger value="specs">規格選項</TabsTrigger>
-            <TabsTrigger value="tiers">批發階梯</TabsTrigger>
+            <TabsTrigger value="tiers">階梯價</TabsTrigger>
             <TabsTrigger value="images">商品圖片</TabsTrigger>
             <TabsTrigger value="meta">其他</TabsTrigger>
           </TabsList>
@@ -360,111 +360,183 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
             )}
           </TabsContent>
 
-          <TabsContent value="tiers" className="space-y-3 pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium">批發階梯</div>
-                <p className="text-xs text-muted-foreground">設定多段數量門檻，每段獨立指定批發單價與單件獎勵點。凡有設定階梯的商品會自動出現在商城「批發專區」。</p>
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  const last = form.tiers[form.tiers.length - 1];
-                  const nextMin = last ? (last.max_qty ?? last.min_qty) + 1 : 1;
-                  setForm({ ...form, tiers: [...form.tiers, { min_qty: nextMin, max_qty: null, unit_price: 0, unit_reward_points: 0, sort_order: form.tiers.length, visibility: "all" }] });
-                }}
-              >
-                <Plus className="h-4 w-4 mr-1" /> 新增階梯
-              </Button>
-            </div>
+          <TabsContent value="tiers" className="space-y-6 pt-4">
+            {(() => {
+              const renderTierGroup = (
+                groupKey: "retail" | "vip",
+              ) => {
+                const isRetail = groupKey === "retail";
+                const matches = (t: WholesaleTier) =>
+                  isRetail ? (t.visibility ?? "all") === "all" : (t.visibility ?? "all") !== "all";
+                const indices = form.tiers.map((t, i) => (matches(t) ? i : -1)).filter((i) => i >= 0);
+                const defaultVisibility: "all" | "vip" = isRetail ? "all" : "vip";
 
-            {form.tiers.length === 0 ? (
-              <div className="text-center text-sm text-muted-foreground py-8 border border-dashed border-border rounded-lg">
-                尚未設定批發階梯
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
-                  <div className="col-span-2">起 (≥)</div>
-                  <div className="col-span-2">迄 (≤)</div>
-                  <div className="col-span-2">單件批發價</div>
-                  <div className="col-span-2">單件獎勵點</div>
-                  <div className="col-span-3">可見對象</div>
-                  <div className="col-span-1"></div>
-                </div>
-                {form.tiers.map((t, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                    <Input
-                      className="col-span-2"
-                      type="number" min={1}
-                      value={t.min_qty}
-                      onChange={(e) => {
-                        const next = [...form.tiers];
-                        next[i] = { ...next[i], min_qty: +e.target.value };
-                        setForm({ ...form, tiers: next });
-                      }}
-                    />
-                    <Input
-                      className="col-span-2"
-                      type="number" min={1}
-                      placeholder="無上限"
-                      value={t.max_qty ?? ""}
-                      onChange={(e) => {
-                        const next = [...form.tiers];
-                        const v = e.target.value;
-                        next[i] = { ...next[i], max_qty: v === "" ? null : +v };
-                        setForm({ ...form, tiers: next });
-                      }}
-                    />
-                    <Input
-                      className="col-span-2"
-                      type="number" min={0}
-                      value={t.unit_price}
-                      onChange={(e) => {
-                        const next = [...form.tiers];
-                        next[i] = { ...next[i], unit_price: +e.target.value };
-                        setForm({ ...form, tiers: next });
-                      }}
-                    />
-                    <Input
-                      className="col-span-2"
-                      type="number" min={0}
-                      value={t.unit_reward_points}
-                      onChange={(e) => {
-                        const next = [...form.tiers];
-                        next[i] = { ...next[i], unit_reward_points: +e.target.value };
-                        setForm({ ...form, tiers: next });
-                      }}
-                    />
-                    <Select
-                      value={t.visibility ?? "all"}
-                      onValueChange={(v) => {
-                        const next = [...form.tiers];
-                        next[i] = { ...next[i], visibility: v as "all" | "vip" | "dealer" };
-                        setForm({ ...form, tiers: next });
-                      }}
-                    >
-                      <SelectTrigger className="col-span-3 h-9"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">全部會員</SelectItem>
-                        <SelectItem value="vip">僅 VIP</SelectItem>
-                        <SelectItem value="dealer">僅經銷商</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button" size="icon" variant="ghost"
-                      className="col-span-1 h-9 w-9 justify-self-end"
-                      onClick={() => setForm({ ...form, tiers: form.tiers.filter((_, j) => j !== i) })}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                const addTier = (min_qty: number, max_qty: number | null) => {
+                  setForm({
+                    ...form,
+                    tiers: [
+                      ...form.tiers,
+                      {
+                        min_qty,
+                        max_qty,
+                        unit_price: 0,
+                        unit_reward_points: 0,
+                        sort_order: form.tiers.length,
+                        visibility: defaultVisibility,
+                      },
+                    ],
+                  });
+                };
+
+                const addQuick = (min: number, max: number | null) => addTier(min, max);
+                const addCustom = () => {
+                  const groupTiers = indices.map((i) => form.tiers[i]);
+                  const last = groupTiers[groupTiers.length - 1];
+                  const nextMin = last ? (last.max_qty ?? last.min_qty) + 1 : 1;
+                  addTier(nextMin, null);
+                };
+
+                return (
+                  <div className="border border-border rounded-lg p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div>
+                        <div className="text-sm font-semibold">
+                          {isRetail ? "零售多件優惠（公開）" : "VIP 批發階梯"}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {isRetail
+                            ? "遊客 / 免費會員 / VIP 都可看到，用於 2 件、5 件、多件折扣等促銷。"
+                            : "僅合格 VIP / 經銷商可看到，用於 VIP 大宗批發價。"}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {isRetail && (
+                          <>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addQuick(2, 4)}>
+                              + 2 件優惠
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addQuick(5, 9)}>
+                              + 5 件優惠
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={() => addQuick(10, null)}>
+                              + 多件優惠
+                            </Button>
+                          </>
+                        )}
+                        <Button type="button" size="sm" variant="secondary" onClick={addCustom}>
+                          <Plus className="h-4 w-4 mr-1" /> 新增階梯
+                        </Button>
+                      </div>
+                    </div>
+
+                    {indices.length === 0 ? (
+                      <div className="text-center text-sm text-muted-foreground py-6 border border-dashed border-border rounded-lg">
+                        {isRetail ? "尚未設定零售多件優惠" : "尚未設定 VIP 批發階梯"}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground px-1">
+                          <div className="col-span-2">起 (≥)</div>
+                          <div className="col-span-2">迄 (≤)</div>
+                          <div className="col-span-2">單件價</div>
+                          <div className="col-span-2">單件獎勵點</div>
+                          <div className="col-span-3">可見對象</div>
+                          <div className="col-span-1"></div>
+                        </div>
+                        {indices.map((i) => {
+                          const t = form.tiers[i];
+                          return (
+                            <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                              <Input
+                                className="col-span-2"
+                                type="number" min={1}
+                                value={t.min_qty}
+                                onChange={(e) => {
+                                  const next = [...form.tiers];
+                                  next[i] = { ...next[i], min_qty: +e.target.value };
+                                  setForm({ ...form, tiers: next });
+                                }}
+                              />
+                              <Input
+                                className="col-span-2"
+                                type="number" min={1}
+                                placeholder="無上限"
+                                value={t.max_qty ?? ""}
+                                onChange={(e) => {
+                                  const next = [...form.tiers];
+                                  const v = e.target.value;
+                                  next[i] = { ...next[i], max_qty: v === "" ? null : +v };
+                                  setForm({ ...form, tiers: next });
+                                }}
+                              />
+                              <Input
+                                className="col-span-2"
+                                type="number" min={0}
+                                value={t.unit_price}
+                                onChange={(e) => {
+                                  const next = [...form.tiers];
+                                  next[i] = { ...next[i], unit_price: +e.target.value };
+                                  setForm({ ...form, tiers: next });
+                                }}
+                              />
+                              <Input
+                                className="col-span-2"
+                                type="number" min={0}
+                                value={t.unit_reward_points}
+                                onChange={(e) => {
+                                  const next = [...form.tiers];
+                                  next[i] = { ...next[i], unit_reward_points: +e.target.value };
+                                  setForm({ ...form, tiers: next });
+                                }}
+                              />
+                              {isRetail ? (
+                                <div className="col-span-3 text-xs text-muted-foreground self-center">
+                                  全部會員（公開零售）
+                                </div>
+                              ) : (
+                                <Select
+                                  value={(t.visibility ?? "vip") === "all" ? "vip" : (t.visibility ?? "vip")}
+                                  onValueChange={(v) => {
+                                    const next = [...form.tiers];
+                                    next[i] = { ...next[i], visibility: v as "vip" | "dealer" };
+                                    setForm({ ...form, tiers: next });
+                                  }}
+                                >
+                                  <SelectTrigger className="col-span-3 h-9"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="vip">僅 VIP</SelectItem>
+                                    <SelectItem value="dealer">僅經銷商</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              <Button
+                                type="button" size="icon" variant="ghost"
+                                className="col-span-1 h-9 w-9 justify-self-end"
+                                onClick={() => setForm({ ...form, tiers: form.tiers.filter((_, j) => j !== i) })}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                        {isRetail && (
+                          <p className="text-xs text-muted-foreground pt-1">
+                            範例：2–4 件每件 NT$ 900、5–9 件每件 NT$ 850、10+ 件每件 NT$ 800。
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                ))}
-                <p className="text-xs text-muted-foreground pt-1">範例：1–5 件每件 NT$ 800（10 點），6+ 件每件 NT$ 700（15 點）。</p>
-              </div>
-            )}
+                );
+              };
+
+              return (
+                <>
+                  {renderTierGroup("retail")}
+                  {renderTierGroup("vip")}
+                </>
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="images" className="pt-4">
