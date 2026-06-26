@@ -1538,6 +1538,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                                   is_dealer: !!m.is_dealer,
                                   vip_tier: (m.vip_tier as string | null) ?? null,
                                   member_no: (m.member_no as string | null) ?? null,
+                                  user_id: (m.id as string | null) ?? null,
                                 })}
                               >
                                 <div className="flex-1 min-w-0 ml-6">
