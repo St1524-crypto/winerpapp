@@ -92,11 +92,18 @@ function ProductDetail() {
   const outOfStock = product.stock <= 0;
   const baseEff = getEffectivePrice(product, isDealer);
   const baseReward = Number((product as any).reward_points ?? 0);
-  const pricing = applyWholesalePricing(baseEff, baseReward, tiers, qty);
-  const effPrice = canSeeWholesale ? pricing.unitPrice : baseEff;
+  // 拆分階梯：零售多件優惠（公開，所有人可見） vs VIP/dealer 批發階梯（僅合格身分）
+  const retailTiers = tiers.filter((t) => (t.visibility ?? "all") === "all");
+  const vipTiers = tiers.filter((t) => t.visibility === "vip" || t.visibility === "dealer");
+  // 套用順序：VIP 身分優先套 VIP 階梯，否則退回零售階梯
+  const applicableTiers = canSeeWholesale && vipTiers.length > 0 ? vipTiers : retailTiers;
+  const pricing = applyWholesalePricing(baseEff, baseReward, applicableTiers, qty);
+  const effPrice = pricing.unitPrice;
   const showDealer = false;
-  const hasTiers = canSeeWholesale && tiers.length > 0;
-  const showTierBadge = canSeeWholesale && pricing.tier && pricing.unitPrice < baseEff;
+  const hasRetailTiers = retailTiers.length > 0;
+  const hasVipTiers = canSeeWholesale && vipTiers.length > 0;
+  const showTierBadge = pricing.tier && pricing.unitPrice < baseEff;
+  const isVipTierActive = hasVipTiers && pricing.tier && vipTiers.some((t) => t.id === pricing.tier?.id);
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-10 pb-44 md:pb-10">
@@ -159,16 +166,16 @@ function ProductDetail() {
             )}
           </div>
 
-          {hasTiers && (
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 sm:p-4 space-y-2">
+          {hasRetailTiers && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 sm:p-4 space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <Sparkles className="h-4 w-4 text-primary shrink-0" /> 批發階梯（買越多越省）
+                <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" /> 零售多件優惠（公開）
               </div>
               <div className="space-y-1">
-                {tiers.map((t) => {
-                  const active = pricing.tier?.id === t.id;
+                {retailTiers.map((t) => {
+                  const active = !isVipTierActive && pricing.tier?.id === t.id;
                   return (
-                    <div key={t.id ?? `${t.min_qty}`} className={`flex items-center justify-between gap-2 text-xs sm:text-sm rounded-md px-2 py-1 ${active ? "bg-primary text-primary-foreground" : ""}`}>
+                    <div key={t.id ?? `r-${t.min_qty}`} className={`flex items-center justify-between gap-2 text-xs sm:text-sm rounded-md px-2 py-1 ${active ? "bg-emerald-600 text-white" : ""}`}>
                       <span className="shrink-0">
                         {t.min_qty}{t.max_qty == null ? "+" : `–${t.max_qty}`} 件
                       </span>
@@ -180,10 +187,37 @@ function ProductDetail() {
                   );
                 })}
               </div>
-              <p className="text-xs text-muted-foreground">
-                目前 {qty} 件 → 單件 NT$ {effPrice.toLocaleString()}，共得 {pricing.totalReward} 點。
-              </p>
             </div>
+          )}
+
+          {hasVipTiers && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 sm:p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Sparkles className="h-4 w-4 text-primary shrink-0" /> VIP 批發階梯（買越多越省）
+              </div>
+              <div className="space-y-1">
+                {vipTiers.map((t) => {
+                  const active = pricing.tier?.id === t.id;
+                  return (
+                    <div key={t.id ?? `v-${t.min_qty}`} className={`flex items-center justify-between gap-2 text-xs sm:text-sm rounded-md px-2 py-1 ${active ? "bg-primary text-primary-foreground" : ""}`}>
+                      <span className="shrink-0">
+                        {t.min_qty}{t.max_qty == null ? "+" : `–${t.max_qty}`} 件
+                      </span>
+                      <span className="tabular-nums text-right">
+                        NT$ {Number(t.unit_price).toLocaleString()}<span className="hidden sm:inline"> / 件</span>
+                        <span className={`ml-2 sm:ml-3 ${active ? "" : "text-amber-600"}`}>+{t.unit_reward_points}點</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {(hasRetailTiers || hasVipTiers) && (
+            <p className="text-xs text-muted-foreground">
+              目前 {qty} 件 → 單件 NT$ {effPrice.toLocaleString()}，共得 {pricing.totalReward} 點。
+            </p>
           )}
 
           <div className="space-y-3">
