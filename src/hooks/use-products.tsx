@@ -7,7 +7,7 @@ import type { Category, Product } from "@/types/product";
 // 僅能透過 SECURITY DEFINER RPC（get_product_costs / get_product_wholesale_prices）讀取；
 // 不要在任何 client-side select 中直接列出這兩個欄位。
 export const PRODUCT_PUBLIC_COLUMNS =
-  "id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs";
+  "id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs, display_priority";
 
 export async function mergeProductCosts<T extends { id: string }>(rows: T[]): Promise<(T & { cost_price: number })[]> {
   if (!rows.length) return rows.map((r) => ({ ...r, cost_price: 0 }));

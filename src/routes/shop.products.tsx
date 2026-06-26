@@ -40,7 +40,7 @@ function ProductsList() {
       if (search.cat) qb = qb.eq("category_id", search.cat);
       if (search.sort === "price_asc") qb = qb.order("price", { ascending: true });
       else if (search.sort === "price_desc") qb = qb.order("price", { ascending: false });
-      else qb = qb.order("created_at", { ascending: false });
+      else qb = qb.order("display_priority", { ascending: false }).order("created_at", { ascending: false });
       const { data } = await qb.limit(60);
       setProducts((data ?? []) as Product[]);
       setLoading(false);

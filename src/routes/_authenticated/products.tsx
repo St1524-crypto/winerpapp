@@ -66,6 +66,15 @@ function ProductsPage() {
     setDelProduct(null);
   }
 
+  async function savePriority(p: Product, value: number) {
+    const next = Math.floor(Number(value) || 0);
+    if (next === Number((p as any).display_priority ?? 0)) return;
+    const { error } = await supabase.from("products").update({ display_priority: next } as any).eq("id", p.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`已更新「${p.name}」優先順位 = ${next}`);
+    refresh();
+  }
+
   async function exportPdf() {
     try {
       await exportPdfReport({
@@ -138,6 +147,7 @@ function ProductsPage() {
                   <TableHead className="text-right">成本</TableHead>
                   <TableHead className="text-right cursor-pointer" onClick={() => toggleSort("stock")}>庫存</TableHead>
                   <TableHead>狀態</TableHead>
+                  <TableHead className="w-24 text-right" title="數字越大越前面顯示">優先順位</TableHead>
                   <TableHead className="cursor-pointer" onClick={() => toggleSort("updated_at" as keyof Product)}>最後編輯 <ArrowUpDown className="inline h-3 w-3 ml-1" /></TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
@@ -146,11 +156,11 @@ function ProductsPage() {
                 {loading ? (
                   [...Array(5)].map((_, i) => (
                     <TableRow key={i}>
-                      {[...Array(10)].map((_, j) => <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>)}
+                      {[...Array(11)].map((_, j) => <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>)}
                     </TableRow>
                   ))
                 ) : data.length === 0 ? (
-                  <TableRow><TableCell colSpan={10} className="text-center py-12">
+                  <TableRow><TableCell colSpan={11} className="text-center py-12">
                     <Package className="h-10 w-10 mx-auto text-muted-foreground/40" />
                     <p className="text-sm text-muted-foreground mt-3">沒有符合條件的商品</p>
                   </TableCell></TableRow>
@@ -178,6 +188,16 @@ function ProductsPage() {
                         <Badge variant={p.status === "active" ? "default" : p.status === "draft" ? "secondary" : "outline"}>
                           {PRODUCT_STATUS.find((s) => s.value === p.status)?.label ?? p.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Input
+                          type="number"
+                          defaultValue={Number((p as any).display_priority ?? 0)}
+                          onBlur={(e) => savePriority(p, +e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                          className="h-8 w-20 text-right ml-auto"
+                          title="數字越大越前面顯示。按 Enter 或離開欄位即儲存。"
+                        />
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{new Date((p as any).updated_at ?? p.created_at).toLocaleString()}</TableCell>
                       <TableCell className="text-right">
