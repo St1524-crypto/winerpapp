@@ -968,7 +968,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
-  function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null }) {
+  function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null; reward_points?: number | null }) {
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.product_id === p.id);
       if (idx >= 0) {
@@ -976,7 +976,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       }
-      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1 }];
+      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1, reward_points: Number(p.reward_points ?? 0) }];
     });
     setProductPickerOpen(false);
   }
