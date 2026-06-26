@@ -4,16 +4,16 @@ import type { WholesaleTier } from "@/types/product";
 /** Pick the tier whose [min_qty, max_qty] covers the quantity. */
 export function pickTier(tiers: WholesaleTier[] | null | undefined, qty: number): WholesaleTier | null {
   if (!tiers || tiers.length === 0) return null;
-  const sorted = [...tiers].sort((a, b) => a.min_qty - b.min_qty);
-  for (const t of sorted) {
+  // 找出所有符合 [min_qty, max_qty] 的階梯，取單價最低（對買家最有利）
+  const matches = tiers.filter((t) => {
     const okMin = qty >= t.min_qty;
     const okMax = t.max_qty == null || qty <= t.max_qty;
-    if (okMin && okMax) return t;
-  }
-  // qty beyond highest — use last tier if it has no max, else null
-  const last = sorted[sorted.length - 1];
-  if (last && last.max_qty == null && qty >= last.min_qty) return last;
-  return null;
+    return okMin && okMax;
+  });
+  if (matches.length === 0) return null;
+  return matches.reduce((best, cur) =>
+    (Number(cur.unit_price) || 0) < (Number(best.unit_price) || 0) ? cur : best,
+  );
 }
 
 export interface WholesalePricingResult {
