@@ -816,7 +816,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [items, setItems] = useState<Array<{ product_id: string; name: string; sku: string | null; image: string | null; unit_price: number; quantity: number }>>([]);
+  const [items, setItems] = useState<Array<{ product_id: string; name: string; sku: string | null; image: string | null; unit_price: number; quantity: number; reward_points: number }>>([]);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [shippingFee, setShippingFee] = useState("0");
   const [discount, setDiscount] = useState("0");
@@ -938,7 +938,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id,name,sku,price,image,stock,status")
+        .select("id,name,sku,price,image,stock,status,reward_points")
         .eq("company_id", currentCompanyId!)
         .order("updated_at", { ascending: false })
         .limit(500);
@@ -968,7 +968,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
-  function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null }) {
+  function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null; reward_points?: number | null }) {
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.product_id === p.id);
       if (idx >= 0) {
@@ -976,7 +976,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       }
-      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1 }];
+      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1, reward_points: Number(p.reward_points ?? 0) }];
     });
     setProductPickerOpen(false);
   }
@@ -1042,6 +1042,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
   const subtotalNum = useMemo(
     () => items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
+    [items],
+  );
+  const totalRewardPoints = useMemo(
+    () => items.reduce((s, it) => s + Number(it.reward_points || 0) * Number(it.quantity || 0), 0),
     [items],
   );
   const taxAmount = useMemo(
@@ -1566,6 +1570,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                       <TableHead className="w-28">單價</TableHead>
                       <TableHead className="w-24">數量</TableHead>
                       <TableHead className="w-28 text-right">小計</TableHead>
+                      <TableHead className="w-24 text-right">獎勵點/件</TableHead>
+                      <TableHead className="w-24 text-right">小計獎勵點</TableHead>
                       <TableHead className="w-10" />
                     </TableRow>
                   </TableHeader>
@@ -1597,6 +1603,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                         <TableCell className="text-right tabular-nums font-medium">
                           {fmt(it.unit_price * it.quantity)}
                         </TableCell>
+                        <TableCell className="text-right tabular-nums text-amber-600">
+                          {Number(it.reward_points ?? 0).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-medium text-amber-600">
+                          {(Number(it.reward_points ?? 0) * Number(it.quantity ?? 0)).toLocaleString()}
+                        </TableCell>
                         <TableCell>
                           <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeItem(i)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -1627,6 +1639,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             <div className="text-sm text-muted-foreground">
               稅額：<span className="tabular-nums font-medium text-foreground">{fmt(taxAmount)}</span>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-md border border-amber-300/50 p-3 bg-amber-50/40">
+            <span className="text-sm text-muted-foreground">本訂單獎勵點（付款完成後發放）</span>
+            <span className="text-base font-semibold tabular-nums text-amber-600">
+              {totalRewardPoints.toLocaleString()} 點
+            </span>
           </div>
 
 
