@@ -66,6 +66,15 @@ function ProductsPage() {
     setDelProduct(null);
   }
 
+  async function savePriority(p: Product, value: number) {
+    const next = Math.floor(Number(value) || 0);
+    if (next === Number((p as any).display_priority ?? 0)) return;
+    const { error } = await supabase.from("products").update({ display_priority: next } as any).eq("id", p.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`已更新「${p.name}」優先順位 = ${next}`);
+    refresh();
+  }
+
   async function exportPdf() {
     try {
       await exportPdfReport({
@@ -138,6 +147,7 @@ function ProductsPage() {
                   <TableHead className="text-right">成本</TableHead>
                   <TableHead className="text-right cursor-pointer" onClick={() => toggleSort("stock")}>庫存</TableHead>
                   <TableHead>狀態</TableHead>
+                  <TableHead className="w-24 text-right" title="數字越大越前面顯示">優先順位</TableHead>
                   <TableHead className="cursor-pointer" onClick={() => toggleSort("updated_at" as keyof Product)}>最後編輯 <ArrowUpDown className="inline h-3 w-3 ml-1" /></TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
