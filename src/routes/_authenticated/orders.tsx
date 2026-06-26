@@ -1516,9 +1516,11 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                                   email: m.email ?? null,
                                   phone: m.phone ?? null,
                                   address: m.addr_mail ?? m.addr_home ?? null,
-                                  label: m.is_vip ? "VIP 會員" : "會員",
+                                  label: m.is_vip ? `VIP 會員${m.vip_tier ? ` ${m.vip_tier}` : ""}` : "會員",
                                   is_vip: !!m.is_vip,
                                   is_dealer: !!m.is_dealer,
+                                  vip_tier: (m.vip_tier as string | null) ?? null,
+                                  member_no: (m.member_no as string | null) ?? null,
                                 })}
                               >
                                 <div className="flex-1 min-w-0 ml-6">
