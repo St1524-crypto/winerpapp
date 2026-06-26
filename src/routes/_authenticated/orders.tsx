@@ -1084,9 +1084,29 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     () => items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
     [items],
   );
+  // 套用：VIP 升級套組 → 套組 bonus_points；其他 → 階梯獎勵點（依會員身分過濾可見階梯）
+  function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number }): number {
+    const pkg = packagesQ.data?.[it.product_id];
+    if (pkg) return pkg.bonus_points;
+    const tiers = (tiersQ.data?.[it.product_id] ?? []).filter((t: any) => {
+      const v = t.visibility ?? "all";
+      if (v === "all") return true;
+      if (v === "vip") return customerStatus.is_vip;
+      if (v === "dealer") return customerStatus.is_dealer;
+      return false;
+    });
+    const matches = tiers.filter((t: any) => it.quantity >= Number(t.min_qty) && (t.max_qty == null || it.quantity <= Number(t.max_qty)));
+    if (matches.length > 0) {
+      // 取對買家最有利（單價最低）的那一階
+      const best = matches.reduce((b: any, c: any) => (Number(c.unit_price) < Number(b.unit_price) ? c : b));
+      return Number(best.unit_reward_points || 0);
+    }
+    return Number(it.reward_points || 0);
+  }
   const totalRewardPoints = useMemo(
-    () => items.reduce((s, it) => s + Number(it.reward_points || 0) * Number(it.quantity || 0), 0),
-    [items],
+    () => items.reduce((s, it) => s + getEffectiveReward(it) * Number(it.quantity || 0), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, packagesQ.data, tiersQ.data, customerStatus.is_vip, customerStatus.is_dealer],
   );
   const taxAmount = useMemo(
     () => (taxAdded ? Math.round(subtotalNum * 0.05) : 0),
