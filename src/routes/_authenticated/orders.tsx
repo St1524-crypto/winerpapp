@@ -1444,6 +1444,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                                   phone: d.phone ?? null,
                                   address: d.address ?? null,
                                   label: "經銷商",
+                                  is_dealer: true,
                                 })}
                               >
                                 <div className="flex-1 min-w-0 ml-6">
