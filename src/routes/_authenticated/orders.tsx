@@ -1272,7 +1272,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
     if (c.address && !address) setAddress(c.address);
-    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null });
+    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
     // 嘗試以電話 / Email 對應到會員 profile，自動帶入 VIP 階層
