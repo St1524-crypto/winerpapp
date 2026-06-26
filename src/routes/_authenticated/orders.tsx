@@ -875,13 +875,14 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       const s = escLike(debouncedSearch);
       let q = supabase
         .from("profiles")
-        .select("id,name,email,phone,member_no,is_vip,is_dealer,addr_mail,addr_home")
-        .eq("current_company_id", currentCompanyId!);
+        .select("id,name,email,phone,member_no,is_vip,is_dealer,addr_mail,addr_home,current_company_id");
       if (s) {
+        // 有搜尋字 → 跨公司搜尋全部會員（包含 current_company_id 未設定者）
         const like = `%${s}%`;
         q = q.or(`name.ilike.${like},email.ilike.${like},phone.ilike.${like},member_no.ilike.${like}`);
       } else {
-        q = q.not("phone", "is", null);
+        // 預載：僅顯示本公司、且有電話的會員
+        q = q.eq("current_company_id", currentCompanyId!).not("phone", "is", null);
       }
       const { data, error } = await q.order("created_at", { ascending: false }).limit(s ? 100 : 300);
       if (error) throw new Error(error.message);
