@@ -876,7 +876,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       const s = escLike(debouncedSearch);
       let q = supabase
         .from("profiles")
-        .select("id,name,email,phone,member_no,is_vip,is_dealer,addr_mail,addr_home,current_company_id");
+        .select("id,name,email,phone,member_no,is_vip,is_dealer,vip_tier,addr_mail,addr_home,current_company_id");
       if (s) {
         // 有搜尋字 → 跨公司搜尋全部會員（包含 current_company_id 未設定者）
         const like = `%${s}%`;
