@@ -948,6 +948,45 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  // 載入 VIP 升級套組（依綁定的 anchor product_id 對應 bonus_points，付款後僅發一次）
+  const packagesQ = useQuery({
+    queryKey: ["vip-packages-bonus", currentCompanyId],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vip_upgrade_packages")
+        .select("product_id,bonus_points,name")
+        .eq("status", "active");
+      if (error) throw new Error(error.message);
+      const map: Record<string, { bonus_points: number; name: string }> = {};
+      for (const r of (data ?? []) as any[]) {
+        if (r.product_id) map[r.product_id] = { bonus_points: Number(r.bonus_points || 0), name: r.name };
+      }
+      return map;
+    },
+  });
+
+  // 載入目前訂單商品對應的批發 / 階梯獎勵點
+  const itemIds = items.map((it) => it.product_id);
+  const itemIdsKey = itemIds.slice().sort().join(",");
+  const tiersQ = useQuery({
+    queryKey: ["order-item-tiers", itemIdsKey],
+    enabled: itemIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_wholesale_tiers")
+        .select("product_id,min_qty,max_qty,unit_price,unit_reward_points,visibility")
+        .in("product_id", itemIds)
+        .order("min_qty", { ascending: true });
+      if (error) throw new Error(error.message);
+      const map: Record<string, any[]> = {};
+      for (const t of (data ?? []) as any[]) {
+        (map[t.product_id] = map[t.product_id] ?? []).push(t);
+      }
+      return map;
+    },
+  });
+
   const staffQ = useQuery({
     queryKey: ["company-staff-picker", currentCompanyId],
     enabled: open && !!currentCompanyId,
