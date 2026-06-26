@@ -29,6 +29,8 @@ function ProductDetail() {
   const { id } = Route.useParams();
   const { addItem } = useCart();
   const isDealer = useIsDealer();
+  const { is_vip } = useVipStatus();
+  const canSeeWholesale = isDealer || is_vip;
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [related, setRelated] = useState<Product[]>([]);
