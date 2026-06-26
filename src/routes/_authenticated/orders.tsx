@@ -1354,6 +1354,22 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   <Search className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
                 </Button>
               </PopoverTrigger>
+              {(customer || phone || email) && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  {customerStatus.is_vip ? (
+                    <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/40 hover:bg-amber-500/20">
+                      VIP{customerStatus.vip_tier ? ` · ${customerStatus.vip_tier}` : ""}
+                    </Badge>
+                  ) : customerStatus.is_dealer ? (
+                    <Badge className="bg-blue-500/15 text-blue-500 border border-blue-500/40 hover:bg-blue-500/20">經銷商</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">免費會員 / 一般客戶</Badge>
+                  )}
+                  {customerStatus.member_no && (
+                    <span className="text-xs text-muted-foreground">{customerStatus.member_no}</span>
+                  )}
+                </div>
+              )}
               <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
                 {quickAddOpen ? (
                   <div className="p-3 space-y-2">
