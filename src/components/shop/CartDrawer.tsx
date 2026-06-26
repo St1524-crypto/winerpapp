@@ -9,7 +9,7 @@ const SHIPPING_THRESHOLD = 2000;
 const SHIPPING_FEE = 150;
 
 export function CartDrawer() {
-  const { open, setOpen, items, count, subtotal, updateQty, removeItem } = useCart();
+  const { open, setOpen, items, count, subtotal, updateQty, removeItem, getItemUnitPrice } = useCart();
   const isDealer = useIsDealer();
   const shipping = subtotal >= SHIPPING_THRESHOLD || subtotal === 0 ? 0 : SHIPPING_FEE;
   const total = subtotal + shipping;
