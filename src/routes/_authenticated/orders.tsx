@@ -1044,6 +1044,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     () => items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
     [items],
   );
+  const totalRewardPoints = useMemo(
+    () => items.reduce((s, it) => s + Number(it.reward_points || 0) * Number(it.quantity || 0), 0),
+    [items],
+  );
   const taxAmount = useMemo(
     () => (taxAdded ? Math.round(subtotalNum * 0.05) : 0),
     [taxAdded, subtotalNum],
