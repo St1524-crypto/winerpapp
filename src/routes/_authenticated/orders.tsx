@@ -828,7 +828,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [orderSource, setOrderSource] = useState("");
   const [salespersonId, setSalespersonId] = useState<string>("");
   const [customerId, setCustomerId] = useState<string | null>(null);
-  const [customerStatus, setCustomerStatus] = useState<{ is_vip: boolean; is_dealer: boolean; vip_tier: string | null; member_no: string | null }>({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null });
+  const [customerStatus, setCustomerStatus] = useState<{ is_vip: boolean; is_dealer: boolean; vip_tier: string | null; member_no: string | null; user_id: string | null }>({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [qaName, setQaName] = useState("");
@@ -1242,12 +1242,18 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       });
       if (error) throw new Error(`建立訂單失敗：${error.message}`);
 
-      // 寫入訂單來源 / 業務人員（RPC 不包含這些欄位，建立後補上；建檔人員由 DB trigger 自動寫入）
-      const patch: { order_source?: string; salesperson_id?: string } = {};
+      // 寫入訂單來源 / 業務人員 / 會員關聯（RPC 不包含這些欄位，建立後補上；建檔人員由 DB trigger 自動寫入）
+      const patch: { order_source?: string; salesperson_id?: string; user_id?: string } = {};
       if (orderSource.trim()) patch.order_source = orderSource.trim();
       if (salespersonId) patch.salesperson_id = salespersonId;
+      if (customerStatus.user_id) patch.user_id = customerStatus.user_id;
       if (Object.keys(patch).length > 0 && (orderRow as any)?.id) {
         await supabase.from("sales_orders").update(patch).eq("id", (orderRow as any).id);
+      }
+
+      // 若訂單建立時即標記為已付款 → 自動觸發後續結算（佣金 / 復購 / VIP 升級 / 套組）
+      if (paymentStatus === "paid" && (orderRow as any)?.id) {
+        autoSettleCommission((orderRow as any).id, "paid").catch(() => {});
       }
 
       return { createdNewCustomer, orderRow };
@@ -1272,7 +1278,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
     if (c.address && !address) setAddress(c.address);
-    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null });
+    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
     // 嘗試以電話 / Email 對應到會員 profile，自動帶入 VIP 階層
@@ -1283,7 +1289,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (filters.length === 0) return;
       const { data } = await supabase
         .from("profiles")
-        .select("member_no,is_vip,is_dealer,vip_tier")
+        .select("id,member_no,is_vip,is_dealer,vip_tier")
         .or(filters.join(","))
         .limit(1)
         .maybeSingle();
@@ -1293,19 +1299,20 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           is_dealer: !!(data as any).is_dealer,
           vip_tier: ((data as any).vip_tier as string | null) ?? null,
           member_no: ((data as any).member_no as string | null) ?? null,
+          user_id: ((data as any).id as string | null) ?? null,
         });
       }
     } catch { /* ignore */ }
   }
 
   // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
-  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null }) {
+  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null; user_id?: string | null }) {
     setCustomerId(null);
     setCustomer(e.name);
     setEmail(e.email ?? "");
     setPhone(e.phone ?? "");
     if (e.address && !address) setAddress(e.address);
-    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null });
+    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null, user_id: e.user_id ?? null });
     setPickerOpen(false);
     toast.success(`已帶入${e.label}：${e.name}`);
   }
@@ -1537,6 +1544,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                                   is_dealer: !!m.is_dealer,
                                   vip_tier: (m.vip_tier as string | null) ?? null,
                                   member_no: (m.member_no as string | null) ?? null,
+                                  user_id: (m.id as string | null) ?? null,
                                 })}
                               >
                                 <div className="flex-1 min-w-0 ml-6">
@@ -1902,6 +1910,57 @@ function OrderDetailDialog({
   const order = detailQ.data?.order;
   const items = detailQ.data?.items ?? [];
   const payments = detailQ.data?.payments ?? [];
+
+  // 載入 VIP 升級套組贈品（依訂單品項中 anchor product_id 對應）
+  const itemProductIds = (items as any[]).map((i) => i.product_id).filter(Boolean);
+  const itemPidKey = itemProductIds.slice().sort().join(",");
+  const giftsQ = useQuery({
+    queryKey: ["order-vip-gifts", orderId, itemPidKey],
+    enabled: !!orderId && itemProductIds.length > 0,
+    queryFn: async () => {
+      // 1. 找出對應的套組
+      const { data: pkgs } = await supabase
+        .from("vip_upgrade_packages")
+        .select("id, name, tier_code, bonus_points, package_product_id, product_id")
+        .or(
+          `package_product_id.in.(${itemProductIds.join(",")}),product_id.in.(${itemProductIds.join(",")})`,
+        );
+      if (!pkgs || pkgs.length === 0) return [] as any[];
+      const pkgIds = pkgs.map((p: any) => p.id);
+      // 2. 取得套組綁定贈品（多商品）
+      const { data: binds } = await supabase
+        .from("vip_upgrade_package_products")
+        .select("package_id, product_id, quantity")
+        .in("package_id", pkgIds);
+      const productIds = Array.from(new Set((binds ?? []).map((b: any) => b.product_id).filter(Boolean)));
+      // 含舊欄位 product_id（向下相容）
+      for (const p of pkgs as any[]) {
+        if (p.product_id && p.product_id !== p.package_product_id && !productIds.includes(p.product_id)) {
+          productIds.push(p.product_id);
+        }
+      }
+      if (productIds.length === 0) return pkgs.map((p: any) => ({ ...p, gifts: [] }));
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, name, sku, image")
+        .in("id", productIds);
+      const prodMap = new Map((prods ?? []).map((p: any) => [p.id, p]));
+      return (pkgs as any[]).map((p) => {
+        const gifts = (binds ?? [])
+          .filter((b: any) => b.package_id === p.id && b.product_id !== p.package_product_id)
+          .map((b: any) => ({ ...prodMap.get(b.product_id), quantity: Number(b.quantity ?? 1) }))
+          .filter((g: any) => g.id);
+        // 向下相容：舊資料若僅有 pkg.product_id 且未在 binds 中，視為單一贈品
+        if (gifts.length === 0 && p.product_id && p.product_id !== p.package_product_id) {
+          const g = prodMap.get(p.product_id);
+          if (g) gifts.push({ ...g, quantity: 1 });
+        }
+        return { ...p, gifts };
+      });
+    },
+  });
+  const vipPackages = (giftsQ.data ?? []) as any[];
+
   const paidTotal = payments
     .filter((p: any) => p.payment_status === "completed")
     .reduce((s: number, p: any) => s + Number(p.amount), 0);
@@ -2100,6 +2159,53 @@ function OrderDetailDialog({
                 )}
               </CardContent>
             </Card>
+
+            {/* VIP 升級套組贈品 */}
+            {vipPackages.length > 0 && (
+              <Card className="border-primary/40 bg-primary/[0.04]">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <PackageCheck className="h-4 w-4 text-primary" />
+                    VIP 升級套組贈品
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {vipPackages.map((pkg) => (
+                    <div key={pkg.id} className="rounded-md border border-border/60 bg-background/60 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-sm font-medium">
+                          {pkg.name}
+                          <span className="ml-2 text-xs text-muted-foreground">{pkg.tier_code} 級</span>
+                        </div>
+                        {Number(pkg.bonus_points) > 0 && (
+                          <Badge variant="secondary" className="text-xs">贈點 {pkg.bonus_points}</Badge>
+                        )}
+                      </div>
+                      {pkg.gifts.length === 0 ? (
+                        <div className="text-xs text-muted-foreground">此套組未設定贈品商品</div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {pkg.gifts.map((g: any) => (
+                            <div key={g.id} className="flex items-center gap-2 text-sm">
+                              {g.image && <img src={g.image} alt={g.name} className="h-8 w-8 rounded object-cover" />}
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate">{g.name}</div>
+                                <div className="text-xs text-muted-foreground font-mono">{g.sku ?? "—"}</div>
+                              </div>
+                              <div className="text-xs text-muted-foreground">x{g.quantity}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-muted-foreground">
+                    付款完成後系統會自動發放贈品（扣庫存）並升級會員 VIP 階層 / 加點。
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
 
             {/* Payments */}
             <Card>
