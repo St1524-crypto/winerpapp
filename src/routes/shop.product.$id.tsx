@@ -93,9 +93,10 @@ function ProductDetail() {
   const baseEff = getEffectivePrice(product, isDealer);
   const baseReward = Number((product as any).reward_points ?? 0);
   const pricing = applyWholesalePricing(baseEff, baseReward, tiers, qty);
-  const effPrice = pricing.unitPrice;
+  const effPrice = canSeeWholesale ? pricing.unitPrice : baseEff;
   const showDealer = false;
-  const hasTiers = tiers.length > 0;
+  const hasTiers = canSeeWholesale && tiers.length > 0;
+  const showTierBadge = canSeeWholesale && pricing.tier && pricing.unitPrice < baseEff;
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-10 pb-44 md:pb-10">
