@@ -938,7 +938,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id,name,sku,price,image,stock,status")
+        .select("id,name,sku,price,image,stock,status,reward_points")
         .eq("company_id", currentCompanyId!)
         .order("updated_at", { ascending: false })
         .limit(500);
