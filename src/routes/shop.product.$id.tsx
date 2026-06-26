@@ -9,6 +9,7 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { ShareProductButtons } from "@/components/shop/ShareProductButtons";
 import { useCart } from "@/hooks/use-cart";
 import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
+import { useVipStatus } from "@/hooks/use-wallet";
 import { setReferralCode } from "@/lib/referral-tracking";
 import { ShoppingCart, Heart, Truck, Shield, RotateCcw, Minus, Plus, ChevronRight, Sparkles } from "lucide-react";
 import type { Product, ProductImage, WholesaleTier } from "@/types/product";
@@ -28,6 +29,8 @@ function ProductDetail() {
   const { id } = Route.useParams();
   const { addItem } = useCart();
   const isDealer = useIsDealer();
+  const { is_vip } = useVipStatus();
+  const canSeeWholesale = isDealer || is_vip;
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ProductImage[]>([]);
   const [related, setRelated] = useState<Product[]>([]);
@@ -90,9 +93,10 @@ function ProductDetail() {
   const baseEff = getEffectivePrice(product, isDealer);
   const baseReward = Number((product as any).reward_points ?? 0);
   const pricing = applyWholesalePricing(baseEff, baseReward, tiers, qty);
-  const effPrice = pricing.unitPrice;
+  const effPrice = canSeeWholesale ? pricing.unitPrice : baseEff;
   const showDealer = false;
-  const hasTiers = tiers.length > 0;
+  const hasTiers = canSeeWholesale && tiers.length > 0;
+  const showTierBadge = canSeeWholesale && pricing.tier && pricing.unitPrice < baseEff;
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-10 pb-44 md:pb-10">
@@ -141,7 +145,7 @@ function ProductDetail() {
 
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2 border-y border-border/60">
             <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary tabular-nums">NT$ {effPrice.toLocaleString()}</span>
-            {pricing.tier && (
+            {showTierBadge && (
               <>
                 <span className="text-xs sm:text-sm text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</span>
                 <Badge variant="outline" className="border-primary text-primary"><Sparkles className="h-3 w-3 mr-1" />批發價</Badge>
