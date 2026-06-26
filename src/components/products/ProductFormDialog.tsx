@@ -36,6 +36,7 @@ const empty = {
   price: 0, wholesale_price: 0, cost_price: 0,
   stock: 0, safe_stock: 0,
   reward_points: 0, discount_points_max: 0,
+  display_priority: 0,
   status: "inactive", featured: false,
   specs: [] as SpecOption[],
   tiers: [] as WholesaleTier[],
@@ -60,6 +61,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         stock: product.stock, safe_stock: product.safe_stock,
         reward_points: Number((product as any).reward_points ?? 0),
         discount_points_max: Number((product as any).discount_points_max ?? 0),
+        display_priority: Number((product as any).display_priority ?? 0),
         status: product.status, featured: product.featured,
         specs: Array.isArray((product as any).specs) ? ((product as any).specs as SpecOption[]) : [],
         tiers: [],
@@ -128,6 +130,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         safe_stock: Math.max(0, Math.floor(Number(form.safe_stock) || 0)),
         reward_points: Math.max(0, Math.floor(Number(form.reward_points) || 0)),
         discount_points_max: Math.max(0, Math.floor(Number(form.discount_points_max) || 0)),
+        display_priority: Math.floor(Number(form.display_priority) || 0),
         status: effectiveStatus, featured: form.featured,
         image: images[0]?.url ?? null,
         specs: form.specs
@@ -262,8 +265,12 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                 <Label>折扣點上限 <span className="text-xs text-muted-foreground">(0=不限)</span></Label>
                 <Input type="number" min={0} value={form.discount_points_max} onChange={(e) => setForm({ ...form, discount_points_max: +e.target.value })} />
               </div>
+              <div className="space-y-2">
+                <Label>優先順位 <span className="text-xs text-muted-foreground">(數字越大越前面)</span></Label>
+                <Input type="number" value={form.display_priority} onChange={(e) => setForm({ ...form, display_priority: +e.target.value })} />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">獎勵點：客戶購買此商品後自動入帳。折扣點上限：此商品最多可被折扣點折抵的點數（每點 1 元）。</p>
+            <p className="text-xs text-muted-foreground">獎勵點：客戶購買此商品後自動入帳。折扣點上限：此商品最多可被折扣點折抵的點數（每點 1 元）。優先順位：影響商城列表顯示順序，數字越大越前面，0 為預設。</p>
           </TabsContent>
 
 

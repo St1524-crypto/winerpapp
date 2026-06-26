@@ -28,7 +28,7 @@ function CategoryPage() {
       setLoading(true);
       const { data: c } = await supabase.from("categories").select("*").eq("id", slug).maybeSingle();
       setCat(c as Category | null);
-      const { data: p } = await supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("category_id", slug).eq("status", "active").order("created_at", { ascending: false });
+      const { data: p } = await supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("category_id", slug).eq("status", "active").order("display_priority", { ascending: false }).order("created_at", { ascending: false });
       setProducts((p ?? []) as Product[]);
       setLoading(false);
     })();

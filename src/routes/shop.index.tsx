@@ -28,7 +28,7 @@ function ShopHome() {
     (async () => {
       const [f, l, c] = await Promise.all([
         supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("status", "active").eq("featured", true).limit(8),
-        supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("status", "active").order("created_at", { ascending: false }).limit(8),
+        supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("status", "active").order("display_priority", { ascending: false }).order("created_at", { ascending: false }).limit(8),
         supabase.from("categories").select("*").eq("status", "active").order("sort_order").limit(8),
       ]);
       setFeatured((f.data ?? []) as Product[]);
