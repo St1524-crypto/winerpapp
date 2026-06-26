@@ -3308,6 +3308,7 @@ export type Database = {
           created_at: string
           description: string | null
           discount_points_max: number
+          display_priority: number
           featured: boolean
           id: string
           image: string | null
@@ -3331,6 +3332,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount_points_max?: number
+          display_priority?: number
           featured?: boolean
           id?: string
           image?: string | null
@@ -3354,6 +3356,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           discount_points_max?: number
+          display_priority?: number
           featured?: boolean
           id?: string
           image?: string | null
