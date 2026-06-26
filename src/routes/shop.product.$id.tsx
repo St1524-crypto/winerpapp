@@ -145,7 +145,7 @@ function ProductDetail() {
 
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2 border-y border-border/60">
             <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary tabular-nums">NT$ {effPrice.toLocaleString()}</span>
-            {pricing.tier && (
+            {showTierBadge && (
               <>
                 <span className="text-xs sm:text-sm text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</span>
                 <Badge variant="outline" className="border-primary text-primary"><Sparkles className="h-3 w-3 mr-1" />批發價</Badge>
