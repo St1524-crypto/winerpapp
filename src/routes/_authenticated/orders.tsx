@@ -1910,6 +1910,57 @@ function OrderDetailDialog({
   const order = detailQ.data?.order;
   const items = detailQ.data?.items ?? [];
   const payments = detailQ.data?.payments ?? [];
+
+  // 載入 VIP 升級套組贈品（依訂單品項中 anchor product_id 對應）
+  const itemProductIds = (items as any[]).map((i) => i.product_id).filter(Boolean);
+  const itemPidKey = itemProductIds.slice().sort().join(",");
+  const giftsQ = useQuery({
+    queryKey: ["order-vip-gifts", orderId, itemPidKey],
+    enabled: !!orderId && itemProductIds.length > 0,
+    queryFn: async () => {
+      // 1. 找出對應的套組
+      const { data: pkgs } = await supabase
+        .from("vip_upgrade_packages")
+        .select("id, name, tier_code, bonus_points, package_product_id, product_id")
+        .or(
+          `package_product_id.in.(${itemProductIds.join(",")}),product_id.in.(${itemProductIds.join(",")})`,
+        );
+      if (!pkgs || pkgs.length === 0) return [] as any[];
+      const pkgIds = pkgs.map((p: any) => p.id);
+      // 2. 取得套組綁定贈品（多商品）
+      const { data: binds } = await supabase
+        .from("vip_upgrade_package_products")
+        .select("package_id, product_id, quantity")
+        .in("package_id", pkgIds);
+      const productIds = Array.from(new Set((binds ?? []).map((b: any) => b.product_id).filter(Boolean)));
+      // 含舊欄位 product_id（向下相容）
+      for (const p of pkgs as any[]) {
+        if (p.product_id && p.product_id !== p.package_product_id && !productIds.includes(p.product_id)) {
+          productIds.push(p.product_id);
+        }
+      }
+      if (productIds.length === 0) return pkgs.map((p: any) => ({ ...p, gifts: [] }));
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, name, sku, image")
+        .in("id", productIds);
+      const prodMap = new Map((prods ?? []).map((p: any) => [p.id, p]));
+      return (pkgs as any[]).map((p) => {
+        const gifts = (binds ?? [])
+          .filter((b: any) => b.package_id === p.id && b.product_id !== p.package_product_id)
+          .map((b: any) => ({ ...prodMap.get(b.product_id), quantity: Number(b.quantity ?? 1) }))
+          .filter((g: any) => g.id);
+        // 向下相容：舊資料若僅有 pkg.product_id 且未在 binds 中，視為單一贈品
+        if (gifts.length === 0 && p.product_id && p.product_id !== p.package_product_id) {
+          const g = prodMap.get(p.product_id);
+          if (g) gifts.push({ ...g, quantity: 1 });
+        }
+        return { ...p, gifts };
+      });
+    },
+  });
+  const vipPackages = (giftsQ.data ?? []) as any[];
+
   const paidTotal = payments
     .filter((p: any) => p.payment_status === "completed")
     .reduce((s: number, p: any) => s + Number(p.amount), 0);
