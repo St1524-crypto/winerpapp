@@ -1566,6 +1566,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                       <TableHead className="w-28">單價</TableHead>
                       <TableHead className="w-24">數量</TableHead>
                       <TableHead className="w-28 text-right">小計</TableHead>
+                      <TableHead className="w-24 text-right">獎勵點/件</TableHead>
+                      <TableHead className="w-24 text-right">小計獎勵點</TableHead>
                       <TableHead className="w-10" />
                     </TableRow>
                   </TableHeader>
@@ -1596,6 +1598,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                         </TableCell>
                         <TableCell className="text-right tabular-nums font-medium">
                           {fmt(it.unit_price * it.quantity)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-amber-600">
+                          {Number(it.reward_points ?? 0).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-medium text-amber-600">
+                          {(Number(it.reward_points ?? 0) * Number(it.quantity ?? 0)).toLocaleString()}
                         </TableCell>
                         <TableCell>
                           <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeItem(i)}>
