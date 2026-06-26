@@ -46,7 +46,7 @@ export function CartDrawer() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{it.product?.name ?? "商品"}</div>
                   <div className="text-xs text-muted-foreground">{it.product?.sku}</div>
-                  <div className="text-sm font-semibold text-primary mt-1">NT$ {getEffectivePrice(it.product as any, isDealer).toLocaleString()}</div>
+                  <div className="text-sm font-semibold text-primary mt-1">NT$ {getItemUnitPrice(it).toLocaleString()}</div>
                 </div>
                 <div className="flex flex-col items-end justify-between">
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeItem(it.id)}>
