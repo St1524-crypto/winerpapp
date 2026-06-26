@@ -207,7 +207,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
             <TabsTrigger value="basic">基本資訊</TabsTrigger>
             <TabsTrigger value="price">價格庫存</TabsTrigger>
             <TabsTrigger value="specs">規格選項</TabsTrigger>
-            <TabsTrigger value="tiers">批發階梯</TabsTrigger>
+            <TabsTrigger value="tiers">階梯價</TabsTrigger>
             <TabsTrigger value="images">商品圖片</TabsTrigger>
             <TabsTrigger value="meta">其他</TabsTrigger>
           </TabsList>
