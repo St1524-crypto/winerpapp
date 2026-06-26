@@ -1266,25 +1266,46 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     onError: (e: any) => toast.error(e?.message ?? "建立失敗"),
   });
 
-  function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null }) {
+  async function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null }) {
     setCustomerId(c.id);
     setCustomer(c.name);
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
     if (c.address && !address) setAddress(c.address);
-    setCustomerStatus({ is_vip: false, is_dealer: false });
+    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
+    // 嘗試以電話 / Email 對應到會員 profile，自動帶入 VIP 階層
+    try {
+      const filters: string[] = [];
+      if (c.phone) filters.push(`phone.eq.${c.phone}`);
+      if (c.email) filters.push(`email.eq.${c.email}`);
+      if (filters.length === 0) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("member_no,is_vip,is_dealer,vip_tier")
+        .or(filters.join(","))
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setCustomerStatus({
+          is_vip: !!(data as any).is_vip,
+          is_dealer: !!(data as any).is_dealer,
+          vip_tier: ((data as any).vip_tier as string | null) ?? null,
+          member_no: ((data as any).member_no as string | null) ?? null,
+        });
+      }
+    } catch { /* ignore */ }
   }
 
   // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
-  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean }) {
+  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null }) {
     setCustomerId(null);
     setCustomer(e.name);
     setEmail(e.email ?? "");
     setPhone(e.phone ?? "");
     if (e.address && !address) setAddress(e.address);
-    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer });
+    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null });
     setPickerOpen(false);
     toast.success(`已帶入${e.label}：${e.name}`);
   }
