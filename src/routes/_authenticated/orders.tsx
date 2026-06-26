@@ -828,6 +828,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [orderSource, setOrderSource] = useState("");
   const [salespersonId, setSalespersonId] = useState<string>("");
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [customerStatus, setCustomerStatus] = useState<{ is_vip: boolean; is_dealer: boolean }>({ is_vip: false, is_dealer: false });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [qaName, setQaName] = useState("");
