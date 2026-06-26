@@ -1191,17 +1191,19 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
     if (c.address && !address) setAddress(c.address);
+    setCustomerStatus({ is_vip: false, is_dealer: false });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
   }
 
   // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
-  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string }) {
+  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean }) {
     setCustomerId(null);
     setCustomer(e.name);
     setEmail(e.email ?? "");
     setPhone(e.phone ?? "");
     if (e.address && !address) setAddress(e.address);
+    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer });
     setPickerOpen(false);
     toast.success(`已帶入${e.label}：${e.name}`);
   }
