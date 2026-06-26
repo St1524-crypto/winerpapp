@@ -64,12 +64,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const ensureCart = useCallback(async () => {
     const token = getOrCreateSessionToken();
     if (user) {
-      // find user cart
-      const { data: userCart } = await supabase.from("carts").select("*").eq("user_id", user.id).maybeSingle();
+      // find user cart (pick newest if multiple exist)
+      const { data: userCarts } = await supabase
+        .from("carts")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const userCart = userCarts?.[0];
       if (userCart) {
-        // merge guest cart if any — use the guest client so RLS lets us read it
         const guestDb = getCartClient(token);
-        const { data: guestCart } = await guestDb.from("carts").select("id").eq("session_token", token).is("user_id", null).maybeSingle();
+        const { data: guestCarts } = await guestDb
+          .from("carts")
+          .select("id")
+          .eq("session_token", token)
+          .is("user_id", null)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        const guestCart = guestCarts?.[0];
         if (guestCart && guestCart.id !== userCart.id) {
           const { data: guestItems } = await guestDb.from("cart_items").select("*").eq("cart_id", guestCart.id);
           for (const gi of guestItems ?? []) {
@@ -79,9 +91,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         return userCart.id;
       }
-      // promote guest cart to user cart, or create new
       const guestDb = getCartClient(token);
-      const { data: guestCart } = await guestDb.from("carts").select("id").eq("session_token", token).is("user_id", null).maybeSingle();
+      const { data: guestCarts } = await guestDb
+        .from("carts")
+        .select("id")
+        .eq("session_token", token)
+        .is("user_id", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const guestCart = guestCarts?.[0];
       if (guestCart) {
         await supabase.from("carts").update({ user_id: user.id, session_token: null }).eq("id", guestCart.id);
         return guestCart.id;
@@ -90,7 +108,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return created!.id;
     } else {
       const db = getCartClient(token);
-      const { data: guestCart } = await db.from("carts").select("id").eq("session_token", token).maybeSingle();
+      const { data: guestCarts } = await db
+        .from("carts")
+        .select("id")
+        .eq("session_token", token)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const guestCart = guestCarts?.[0];
       if (guestCart) return guestCart.id;
       const { data: created } = await db.from("carts").insert({ session_token: token }).select("id").single();
       return created!.id;
