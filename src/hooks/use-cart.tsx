@@ -33,12 +33,14 @@ interface CartCtx {
   removeItem: (itemId: string) => Promise<void>;
   clear: () => Promise<void>;
   refresh: () => Promise<void>;
+  getItemUnitPrice: (item: CartItem) => number;
 }
 
 const CartContext = createContext<CartCtx>({
   cartId: null, items: [], loading: true, count: 0, subtotal: 0,
   open: false, setOpen: () => {},
   addItem: async () => {}, updateQty: async () => {}, removeItem: async () => {}, clear: async () => {}, refresh: async () => {},
+  getItemUnitPrice: () => 0,
 });
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -152,16 +154,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await refresh();
   };
 
-  const count = items.reduce((s, i) => s + i.quantity, 0);
-  const subtotal = items.reduce((s, i) => {
+  const getItemUnitPrice = (i: CartItem) => {
     const base = getEffectivePrice(i.product as any, isDealer);
     const tiers = tiersMap[i.product_id] ?? [];
-    const { unitPrice } = applyWholesalePricing(base, 0, tiers, i.quantity);
-    return s + unitPrice * i.quantity;
-  }, 0);
+    return applyWholesalePricing(base, 0, tiers, i.quantity).unitPrice;
+  };
+  const count = items.reduce((s, i) => s + i.quantity, 0);
+  const subtotal = items.reduce((s, i) => s + getItemUnitPrice(i) * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cartId, items, loading, count, subtotal, open, setOpen, addItem, updateQty, removeItem, clear, refresh }}>
+    <CartContext.Provider value={{ cartId, items, loading, count, subtotal, open, setOpen, addItem, updateQty, removeItem, clear, refresh, getItemUnitPrice }}>
       {children}
     </CartContext.Provider>
   );
