@@ -1641,6 +1641,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             </div>
           </div>
 
+          <div className="flex items-center justify-between rounded-md border border-amber-300/50 p-3 bg-amber-50/40">
+            <span className="text-sm text-muted-foreground">本訂單獎勵點（付款完成後發放）</span>
+            <span className="text-base font-semibold tabular-nums text-amber-600">
+              {totalRewardPoints.toLocaleString()} 點
+            </span>
+          </div>
+
 
           {/* ===== 訂金 / 尾款 ===== */}
           <div className="rounded-md border p-3 space-y-2 bg-muted/20">
