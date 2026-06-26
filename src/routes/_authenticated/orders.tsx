@@ -828,7 +828,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [orderSource, setOrderSource] = useState("");
   const [salespersonId, setSalespersonId] = useState<string>("");
   const [customerId, setCustomerId] = useState<string | null>(null);
-  const [customerStatus, setCustomerStatus] = useState<{ is_vip: boolean; is_dealer: boolean }>({ is_vip: false, is_dealer: false });
+  const [customerStatus, setCustomerStatus] = useState<{ is_vip: boolean; is_dealer: boolean; vip_tier: string | null; member_no: string | null }>({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [qaName, setQaName] = useState("");
@@ -876,7 +876,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       const s = escLike(debouncedSearch);
       let q = supabase
         .from("profiles")
-        .select("id,name,email,phone,member_no,is_vip,is_dealer,addr_mail,addr_home,current_company_id");
+        .select("id,name,email,phone,member_no,is_vip,is_dealer,vip_tier,addr_mail,addr_home,current_company_id");
       if (s) {
         // 有搜尋字 → 跨公司搜尋全部會員（包含 current_company_id 未設定者）
         const like = `%${s}%`;
@@ -1266,25 +1266,46 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     onError: (e: any) => toast.error(e?.message ?? "建立失敗"),
   });
 
-  function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null }) {
+  async function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null }) {
     setCustomerId(c.id);
     setCustomer(c.name);
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
     if (c.address && !address) setAddress(c.address);
-    setCustomerStatus({ is_vip: false, is_dealer: false });
+    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
+    // 嘗試以電話 / Email 對應到會員 profile，自動帶入 VIP 階層
+    try {
+      const filters: string[] = [];
+      if (c.phone) filters.push(`phone.eq.${c.phone}`);
+      if (c.email) filters.push(`email.eq.${c.email}`);
+      if (filters.length === 0) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("member_no,is_vip,is_dealer,vip_tier")
+        .or(filters.join(","))
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setCustomerStatus({
+          is_vip: !!(data as any).is_vip,
+          is_dealer: !!(data as any).is_dealer,
+          vip_tier: ((data as any).vip_tier as string | null) ?? null,
+          member_no: ((data as any).member_no as string | null) ?? null,
+        });
+      }
+    } catch { /* ignore */ }
   }
 
   // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
-  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean }) {
+  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null }) {
     setCustomerId(null);
     setCustomer(e.name);
     setEmail(e.email ?? "");
     setPhone(e.phone ?? "");
     if (e.address && !address) setAddress(e.address);
-    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer });
+    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null });
     setPickerOpen(false);
     toast.success(`已帶入${e.label}：${e.name}`);
   }
@@ -1333,6 +1354,22 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   <Search className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
                 </Button>
               </PopoverTrigger>
+              {(customer || phone || email) && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  {customerStatus.is_vip ? (
+                    <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/40 hover:bg-amber-500/20">
+                      VIP{customerStatus.vip_tier ? ` · ${customerStatus.vip_tier}` : ""}
+                    </Badge>
+                  ) : customerStatus.is_dealer ? (
+                    <Badge className="bg-blue-500/15 text-blue-500 border border-blue-500/40 hover:bg-blue-500/20">經銷商</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">免費會員 / 一般客戶</Badge>
+                  )}
+                  {customerStatus.member_no && (
+                    <span className="text-xs text-muted-foreground">{customerStatus.member_no}</span>
+                  )}
+                </div>
+              )}
               <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
                 {quickAddOpen ? (
                   <div className="p-3 space-y-2">
@@ -1495,9 +1532,11 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                                   email: m.email ?? null,
                                   phone: m.phone ?? null,
                                   address: m.addr_mail ?? m.addr_home ?? null,
-                                  label: m.is_vip ? "VIP 會員" : "會員",
+                                  label: m.is_vip ? `VIP 會員${m.vip_tier ? ` ${m.vip_tier}` : ""}` : "會員",
                                   is_vip: !!m.is_vip,
                                   is_dealer: !!m.is_dealer,
+                                  vip_tier: (m.vip_tier as string | null) ?? null,
+                                  member_no: (m.member_no as string | null) ?? null,
                                 })}
                               >
                                 <div className="flex-1 min-w-0 ml-6">
