@@ -9,6 +9,7 @@ import { ProductCard } from "@/components/shop/ProductCard";
 import { ShareProductButtons } from "@/components/shop/ShareProductButtons";
 import { useCart } from "@/hooks/use-cart";
 import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
+import { useVipStatus } from "@/hooks/use-wallet";
 import { setReferralCode } from "@/lib/referral-tracking";
 import { ShoppingCart, Heart, Truck, Shield, RotateCcw, Minus, Plus, ChevronRight, Sparkles } from "lucide-react";
 import type { Product, ProductImage, WholesaleTier } from "@/types/product";
