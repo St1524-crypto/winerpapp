@@ -3,9 +3,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PRODUCT_PUBLIC_COLUMNS } from "@/hooks/use-products";
 import { useAuth } from "@/hooks/use-auth";
+import { useVipStatus } from "@/hooks/use-wallet";
+import { useDealerStatus } from "@/hooks/use-dealer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Package, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Package, Sparkles, Lock } from "lucide-react";
 import type { Product, WholesaleTier } from "@/types/product";
 
 export const Route = createFileRoute("/shop/wholesale")({
@@ -26,9 +29,14 @@ interface WholesaleProduct extends Product {
 
 function WholesaleArea() {
   const { user, loading: authLoading } = useAuth();
+  const { is_vip, loading: vipLoading } = useVipStatus();
+  const { isDealer, loaded: dealerLoaded } = useDealerStatus();
   const navigate = useNavigate();
   const [list, setList] = useState<WholesaleProduct[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const canAccess = is_vip || isDealer;
+  const gatesReady = !authLoading && (!user || (!vipLoading && dealerLoaded));
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -37,12 +45,14 @@ function WholesaleArea() {
   }, [authLoading, user, navigate]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !gatesReady || !canAccess) return;
     (async () => {
       setLoading(true);
+      // RLS 已限制只回傳 visibility='all' 或會員可見的 vip / dealer 階梯
       const { data: tiers } = await supabase
         .from("product_wholesale_tiers" as any)
         .select("*")
+        .in("visibility", ["vip", "dealer"])
         .order("min_qty", { ascending: true });
       const tiersByProduct: Record<string, WholesaleTier[]> = {};
       for (const t of ((tiers ?? []) as any as WholesaleTier[])) {
@@ -67,10 +77,30 @@ function WholesaleArea() {
       setList(result);
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, gatesReady, canAccess]);
 
-  if (authLoading || !user) {
+  if (authLoading || !user || !gatesReady) {
     return <div className="container mx-auto px-4 py-16 text-center text-muted-foreground">驗證會員身分…</div>;
+  }
+
+  if (!canAccess) {
+    return (
+      <div className="container mx-auto px-4 py-16 max-w-xl">
+        <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-8 text-center space-y-4">
+          <div className="h-14 w-14 mx-auto rounded-xl bg-primary/15 grid place-items-center text-primary">
+            <Lock className="h-7 w-7" />
+          </div>
+          <h1 className="text-xl md:text-2xl font-bold">VIP 批發專區</h1>
+          <p className="text-sm text-muted-foreground">
+            升級 VIP 後即可查看批發階梯價、享有更多獎勵點與專屬優惠。
+          </p>
+          <div className="flex gap-2 justify-center pt-2">
+            <Button asChild><Link to="/shop/vip">升級 VIP</Link></Button>
+            <Button asChild variant="outline"><Link to="/shop">回到商城</Link></Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
