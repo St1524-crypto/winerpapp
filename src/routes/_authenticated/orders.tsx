@@ -2160,6 +2160,53 @@ function OrderDetailDialog({
               </CardContent>
             </Card>
 
+            {/* VIP 升級套組贈品 */}
+            {vipPackages.length > 0 && (
+              <Card className="border-primary/40 bg-primary/[0.04]">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <PackageCheck className="h-4 w-4 text-primary" />
+                    VIP 升級套組贈品
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {vipPackages.map((pkg) => (
+                    <div key={pkg.id} className="rounded-md border border-border/60 bg-background/60 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-sm font-medium">
+                          {pkg.name}
+                          <span className="ml-2 text-xs text-muted-foreground">{pkg.tier_code} 級</span>
+                        </div>
+                        {Number(pkg.bonus_points) > 0 && (
+                          <Badge variant="secondary" className="text-xs">贈點 {pkg.bonus_points}</Badge>
+                        )}
+                      </div>
+                      {pkg.gifts.length === 0 ? (
+                        <div className="text-xs text-muted-foreground">此套組未設定贈品商品</div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {pkg.gifts.map((g: any) => (
+                            <div key={g.id} className="flex items-center gap-2 text-sm">
+                              {g.image && <img src={g.image} alt={g.name} className="h-8 w-8 rounded object-cover" />}
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate">{g.name}</div>
+                                <div className="text-xs text-muted-foreground font-mono">{g.sku ?? "—"}</div>
+                              </div>
+                              <div className="text-xs text-muted-foreground">x{g.quantity}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <p className="text-[11px] text-muted-foreground">
+                    付款完成後系統會自動發放贈品（扣庫存）並升級會員 VIP 階層 / 加點。
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+
             {/* Payments */}
             <Card>
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
