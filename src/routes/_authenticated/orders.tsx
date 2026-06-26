@@ -1084,25 +1084,47 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     () => items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
     [items],
   );
-  // 套用：VIP 升級套組 → 套組 bonus_points；其他 → 階梯獎勵點（依會員身分過濾可見階梯）
-  function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number }): number {
-    const pkg = packagesQ.data?.[it.product_id];
-    if (pkg) return pkg.bonus_points;
-    const tiers = (tiersQ.data?.[it.product_id] ?? []).filter((t: any) => {
+  // 取得當前可套用的最佳階梯（依會員身分過濾、數量符合、單價最低）
+  function getBestTier(productId: string, quantity: number): any | null {
+    const tiers = (tiersQ.data?.[productId] ?? []).filter((t: any) => {
       const v = t.visibility ?? "all";
       if (v === "all") return true;
       if (v === "vip") return customerStatus.is_vip;
       if (v === "dealer") return customerStatus.is_dealer;
       return false;
     });
-    const matches = tiers.filter((t: any) => it.quantity >= Number(t.min_qty) && (t.max_qty == null || it.quantity <= Number(t.max_qty)));
-    if (matches.length > 0) {
-      // 取對買家最有利（單價最低）的那一階
-      const best = matches.reduce((b: any, c: any) => (Number(c.unit_price) < Number(b.unit_price) ? c : b));
-      return Number(best.unit_reward_points || 0);
-    }
+    const matches = tiers.filter((t: any) => quantity >= Number(t.min_qty) && (t.max_qty == null || quantity <= Number(t.max_qty)));
+    if (matches.length === 0) return null;
+    return matches.reduce((b: any, c: any) => (Number(c.unit_price) < Number(b.unit_price) ? c : b));
+  }
+  // 套用：VIP 升級套組 → 套組 bonus_points；其他 → 階梯獎勵點（依會員身分過濾可見階梯）
+  function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number }): number {
+    const pkg = packagesQ.data?.[it.product_id];
+    if (pkg) return pkg.bonus_points;
+    const best = getBestTier(it.product_id, it.quantity);
+    if (best) return Number(best.unit_reward_points || 0);
     return Number(it.reward_points || 0);
   }
+  // 自動依會員身分 / 數量 套用階梯單價（VIP 升級套組不覆寫）
+  useEffect(() => {
+    setItems((prev) => {
+      let changed = false;
+      const next = prev.map((it) => {
+        if (packagesQ.data?.[it.product_id]) return it;
+        const best = getBestTier(it.product_id, it.quantity);
+        if (!best) return it;
+        const tierPrice = Number(best.unit_price);
+        if (Number.isFinite(tierPrice) && tierPrice !== Number(it.unit_price)) {
+          changed = true;
+          return { ...it, unit_price: tierPrice };
+        }
+        return it;
+      });
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tiersQ.data, packagesQ.data, customerStatus.is_vip, customerStatus.is_dealer, items.map((i) => `${i.product_id}:${i.quantity}`).join("|")]);
+
   const totalRewardPoints = useMemo(
     () => items.reduce((s, it) => s + getEffectiveReward(it) * Number(it.quantity || 0), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
