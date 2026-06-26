@@ -828,6 +828,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [orderSource, setOrderSource] = useState("");
   const [salespersonId, setSalespersonId] = useState<string>("");
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [customerStatus, setCustomerStatus] = useState<{ is_vip: boolean; is_dealer: boolean }>({ is_vip: false, is_dealer: false });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [qaName, setQaName] = useState("");
@@ -947,6 +948,45 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  // 載入 VIP 升級套組（依綁定的 anchor product_id 對應 bonus_points，付款後僅發一次）
+  const packagesQ = useQuery({
+    queryKey: ["vip-packages-bonus", currentCompanyId],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vip_upgrade_packages")
+        .select("product_id,bonus_points,name")
+        .eq("status", "active");
+      if (error) throw new Error(error.message);
+      const map: Record<string, { bonus_points: number; name: string }> = {};
+      for (const r of (data ?? []) as any[]) {
+        if (r.product_id) map[r.product_id] = { bonus_points: Number(r.bonus_points || 0), name: r.name };
+      }
+      return map;
+    },
+  });
+
+  // 載入目前訂單商品對應的批發 / 階梯獎勵點
+  const itemIds = items.map((it) => it.product_id);
+  const itemIdsKey = itemIds.slice().sort().join(",");
+  const tiersQ = useQuery({
+    queryKey: ["order-item-tiers", itemIdsKey],
+    enabled: itemIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_wholesale_tiers")
+        .select("product_id,min_qty,max_qty,unit_price,unit_reward_points,visibility")
+        .in("product_id", itemIds)
+        .order("min_qty", { ascending: true });
+      if (error) throw new Error(error.message);
+      const map: Record<string, any[]> = {};
+      for (const t of (data ?? []) as any[]) {
+        (map[t.product_id] = map[t.product_id] ?? []).push(t);
+      }
+      return map;
+    },
+  });
+
   const staffQ = useQuery({
     queryKey: ["company-staff-picker", currentCompanyId],
     enabled: open && !!currentCompanyId,
@@ -1044,9 +1084,29 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     () => items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
     [items],
   );
+  // 套用：VIP 升級套組 → 套組 bonus_points；其他 → 階梯獎勵點（依會員身分過濾可見階梯）
+  function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number }): number {
+    const pkg = packagesQ.data?.[it.product_id];
+    if (pkg) return pkg.bonus_points;
+    const tiers = (tiersQ.data?.[it.product_id] ?? []).filter((t: any) => {
+      const v = t.visibility ?? "all";
+      if (v === "all") return true;
+      if (v === "vip") return customerStatus.is_vip;
+      if (v === "dealer") return customerStatus.is_dealer;
+      return false;
+    });
+    const matches = tiers.filter((t: any) => it.quantity >= Number(t.min_qty) && (t.max_qty == null || it.quantity <= Number(t.max_qty)));
+    if (matches.length > 0) {
+      // 取對買家最有利（單價最低）的那一階
+      const best = matches.reduce((b: any, c: any) => (Number(c.unit_price) < Number(b.unit_price) ? c : b));
+      return Number(best.unit_reward_points || 0);
+    }
+    return Number(it.reward_points || 0);
+  }
   const totalRewardPoints = useMemo(
-    () => items.reduce((s, it) => s + Number(it.reward_points || 0) * Number(it.quantity || 0), 0),
-    [items],
+    () => items.reduce((s, it) => s + getEffectiveReward(it) * Number(it.quantity || 0), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, packagesQ.data, tiersQ.data, customerStatus.is_vip, customerStatus.is_dealer],
   );
   const taxAmount = useMemo(
     () => (taxAdded ? Math.round(subtotalNum * 0.05) : 0),
@@ -1190,17 +1250,19 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
     if (c.address && !address) setAddress(c.address);
+    setCustomerStatus({ is_vip: false, is_dealer: false });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
   }
 
   // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
-  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string }) {
+  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean }) {
     setCustomerId(null);
     setCustomer(e.name);
     setEmail(e.email ?? "");
     setPhone(e.phone ?? "");
     if (e.address && !address) setAddress(e.address);
+    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer });
     setPickerOpen(false);
     toast.success(`已帶入${e.label}：${e.name}`);
   }
@@ -1412,6 +1474,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                                   phone: m.phone ?? null,
                                   address: m.addr_mail ?? m.addr_home ?? null,
                                   label: m.is_vip ? "VIP 會員" : "會員",
+                                  is_vip: !!m.is_vip,
+                                  is_dealer: !!m.is_dealer,
                                 })}
                               >
                                 <div className="flex-1 min-w-0 ml-6">
@@ -1439,6 +1503,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                                   phone: d.phone ?? null,
                                   address: d.address ?? null,
                                   label: "經銷商",
+                                  is_dealer: true,
                                 })}
                               >
                                 <div className="flex-1 min-w-0 ml-6">
@@ -1604,10 +1669,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                           {fmt(it.unit_price * it.quantity)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums text-amber-600">
-                          {Number(it.reward_points ?? 0).toLocaleString()}
+                          {getEffectiveReward(it).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right tabular-nums font-medium text-amber-600">
-                          {(Number(it.reward_points ?? 0) * Number(it.quantity ?? 0)).toLocaleString()}
+                          {(getEffectiveReward(it) * Number(it.quantity ?? 0)).toLocaleString()}
                         </TableCell>
                         <TableCell>
                           <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeItem(i)}>
