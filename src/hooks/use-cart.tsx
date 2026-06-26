@@ -33,12 +33,14 @@ interface CartCtx {
   removeItem: (itemId: string) => Promise<void>;
   clear: () => Promise<void>;
   refresh: () => Promise<void>;
+  getItemUnitPrice: (item: CartItem) => number;
 }
 
 const CartContext = createContext<CartCtx>({
   cartId: null, items: [], loading: true, count: 0, subtotal: 0,
   open: false, setOpen: () => {},
   addItem: async () => {}, updateQty: async () => {}, removeItem: async () => {}, clear: async () => {}, refresh: async () => {},
+  getItemUnitPrice: () => 0,
 });
 
 export function CartProvider({ children }: { children: ReactNode }) {
