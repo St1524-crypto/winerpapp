@@ -390,9 +390,17 @@ function HomepageSectionsPage() {
           <CardContent className="space-y-3">
             <div className="space-y-2">
               <Label>目前區塊</Label>
-              <div className="rounded-md border px-3 py-2 text-sm">
-                {selectedSection ? SECTION_LABELS[selectedSection.section_type] ?? selectedSection.title : "尚未選取"}
-              </div>
+              <select
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                value={selectedSection?.id ?? ""}
+                onChange={(event) => setSelectedId(event.target.value)}
+              >
+                {sections.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {SECTION_LABELS[section.section_type] ?? section.title}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="flex gap-2">
               <Input
