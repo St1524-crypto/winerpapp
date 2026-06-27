@@ -278,12 +278,12 @@ function HomepageProductSection({ section }: { section: HomepageSection }) {
 
 function FeatureCard({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
   return (
-    <div className="flex flex-col items-center text-center p-3 md:p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-sm hover:bg-white/15 transition-colors">
-      <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-primary/20 flex items-center justify-center mb-2">
-        <Icon className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+    <div className="flex flex-col items-center text-center p-1.5 md:p-4 rounded-xl md:rounded-2xl bg-white/10 border border-white/15 backdrop-blur-sm hover:bg-white/15 transition-colors">
+      <div className="h-7 w-7 md:h-12 md:w-12 rounded-full bg-primary/20 flex items-center justify-center mb-1 md:mb-2">
+        <Icon className="h-3.5 w-3.5 md:h-6 md:w-6 text-primary" />
       </div>
-      <div className="text-sm md:text-base font-semibold text-white">{title}</div>
-      <div className="text-[11px] md:text-xs text-white/60 mt-0.5">{desc}</div>
+      <div className="text-[11px] md:text-base font-semibold text-white leading-tight">{title}</div>
+      <div className="text-[9px] md:text-xs text-white/60 mt-0.5 leading-tight hidden sm:block">{desc}</div>
     </div>
   );
 }
