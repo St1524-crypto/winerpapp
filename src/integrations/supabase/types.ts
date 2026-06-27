@@ -2102,6 +2102,99 @@ export type Database = {
           },
         ]
       }
+      homepage_section_products: {
+        Row: {
+          config_json: Json
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          product_id: string
+          section_id: string
+          sort_order: number
+          starts_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          config_json?: Json
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          product_id: string
+          section_id: string
+          sort_order?: number
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          config_json?: Json
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          product_id?: string
+          section_id?: string
+          sort_order?: number
+          starts_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homepage_section_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homepage_section_products_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "homepage_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homepage_sections: {
+        Row: {
+          config_json: Json
+          created_at: string
+          display_limit: number
+          id: string
+          is_active: boolean
+          section_type: string
+          sort_order: number
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          config_json?: Json
+          created_at?: string
+          display_limit?: number
+          id?: string
+          is_active?: boolean
+          section_type: string
+          sort_order?: number
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          config_json?: Json
+          created_at?: string
+          display_limit?: number
+          id?: string
+          is_active?: boolean
+          section_type?: string
+          sort_order?: number
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_logs: {
         Row: {
           after_stock: number
