@@ -104,58 +104,58 @@ function ShopHome() {
         <div className="absolute top-20 right-[15%] w-32 h-32 rounded-full bg-[oklch(0.70_0.18_230_/_0.30)] blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute bottom-10 left-[30%] w-24 h-24 rounded-full bg-[oklch(0.60_0.22_275_/_0.28)] blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
 
-        <div className="relative container mx-auto px-4 py-16 md:py-24">
+        <div className="relative container mx-auto px-4 py-8 md:py-24">
           {/* Top badge */}
-          <div className="flex justify-center mb-6">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white/90 backdrop-blur-sm">
-              <Sparkles className="h-4 w-4 text-primary" /> VIP 拼購主 享 30% 推廣獎勵
+          <div className="flex justify-center mb-3 md:mb-6">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/10 border border-white/20 text-[11px] md:text-sm font-medium text-white/90 backdrop-blur-sm">
+              <Sparkles className="h-3 w-3 md:h-4 md:w-4 text-primary" /> VIP 拼購主 享 30% 推廣獎勵
             </div>
           </div>
 
           {/* Main headline */}
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
-              熱情選購&nbsp;&nbsp;品質保障&nbsp;&nbsp;樂享回饋
+          <div className="text-center max-w-3xl mx-auto space-y-2 md:space-y-4">
+            <h1 className="text-2xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
+              熱情選購 · 品質保障 · 樂享回饋
             </h1>
-            <p className="text-white/70 text-sm md:text-lg max-w-2xl mx-auto leading-relaxed">
+            <p className="text-white/70 text-xs md:text-lg max-w-2xl mx-auto leading-relaxed px-2">
               保健食品 · 保養品 · 保健器材 · 生活用品。每一筆消費都能累積購物金，VIP 拼購主更享分潤獎勵。
             </p>
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-wrap justify-center gap-3 md:gap-4 mt-8">
+          <div className="grid grid-cols-3 md:flex md:flex-wrap md:justify-center gap-2 md:gap-4 mt-5 md:mt-8 max-w-md md:max-w-none mx-auto">
             <Button
               size="lg"
-              className="rounded-full px-8 h-12 text-base bg-gradient-to-r from-[oklch(0.62_0.22_255)] to-[oklch(0.70_0.18_240)] hover:opacity-90 text-white shadow-lg shadow-[oklch(0.55_0.22_260_/_0.45)] border-0"
+              className="rounded-full px-2 md:px-8 h-10 md:h-12 text-xs md:text-base bg-gradient-to-r from-[oklch(0.62_0.22_255)] to-[oklch(0.70_0.18_240)] hover:opacity-90 text-white shadow-lg shadow-[oklch(0.55_0.22_260_/_0.45)] border-0"
               asChild
             >
-              <Link to="/shop/products">立即購物 <ArrowRight className="h-4 w-4 ml-1" /></Link>
+              <Link to="/shop/products">立即購物 <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-0.5 md:ml-1" /></Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="rounded-full px-8 h-12 text-base bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
+              className="rounded-full px-2 md:px-8 h-10 md:h-12 text-xs md:text-base bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
               asChild
             >
-              <Link to="/login">免費加入會員</Link>
+              <Link to="/login">免費加入</Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="rounded-full px-8 h-12 text-base bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
+              className="rounded-full px-2 md:px-8 h-10 md:h-12 text-xs md:text-base bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
               asChild
             >
-              <Link to="/shop/vip">升級為 VIP</Link>
+              <Link to="/shop/vip">升級 VIP</Link>
             </Button>
           </div>
 
           {/* Feature cards */}
-          <div className="flex md:grid md:grid-cols-5 gap-3 md:gap-4 mt-12 md:mt-16 max-w-5xl mx-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 px-1 scrollbar-hide">
-            <FeatureCard icon={Gift} title="註冊送點數" desc="新會員即贈購物金" />
-            <FeatureCard icon={Sparkles} title="新會員首購好禮" desc="首單專屬優惠" />
-            <FeatureCard icon={Flame} title="6 人拼團" desc="團購主享 10% 分潤" />
-            <FeatureCard icon={Crown} title="VIP 升級制" desc="銀/金/紫多重特權" />
-            <FeatureCard icon={Coins} title="獎勵點折抵" desc="立刻折抵下一筆" />
+          <div className="grid grid-cols-5 gap-1.5 md:gap-4 mt-6 md:mt-16 max-w-5xl mx-auto">
+            <FeatureCard icon={Gift} title="註冊送點" desc="新會員贈金" />
+            <FeatureCard icon={Sparkles} title="首購好禮" desc="首單優惠" />
+            <FeatureCard icon={Flame} title="6人拼團" desc="享10%分潤" />
+            <FeatureCard icon={Crown} title="VIP 制" desc="多重特權" />
+            <FeatureCard icon={Coins} title="點數折抵" desc="立即可用" />
           </div>
         </div>
       </section>
