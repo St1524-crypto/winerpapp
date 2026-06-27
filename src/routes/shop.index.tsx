@@ -1,12 +1,38 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { PRODUCT_PUBLIC_COLUMNS } from "@/hooks/use-products";
+import { listPublicHomepageSections } from "@/lib/homepage-sections.functions";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Flame, Tag, Gift, Truck, Crown, Coins } from "lucide-react";
 import type { Product, Category } from "@/types/product";
+
+const SHOP_HOME_PRODUCT_COLUMNS =
+  "id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs";
+
+const SECTION_META: Record<string, { title: string; desc: string; icon: any }> = {
+  limited_offer: { title: "限時特惠區", desc: "期間限定優惠與多件活動", icon: Flame },
+  bundle: { title: "優惠套組區", desc: "精選商品組合與套組推薦", icon: Gift },
+  featured: { title: "主力產品區", desc: "管理員精選主力商品", icon: Crown },
+  best_seller: { title: "熱賣產品區", desc: "人氣熱銷商品推薦", icon: Sparkles },
+  new_arrival: { title: "新上架區", desc: "最新上架商品", icon: Tag },
+};
+
+type HomepageSectionProduct = {
+  id: string;
+  product: Partial<Product> & { id: string };
+};
+
+type HomepageSection = {
+  id: string;
+  section_type: string;
+  title: string;
+  subtitle: string | null;
+  products: HomepageSectionProduct[];
+};
 
 export const Route = createFileRoute("/shop/")({
   component: ShopHome,
@@ -23,20 +49,28 @@ function ShopHome() {
   const [latest, setLatest] = useState<Product[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchHomepageSections = useServerFn(listPublicHomepageSections);
+  const { data: homepageData, isLoading: sectionsLoading } = useQuery({
+    queryKey: ["shop-homepage-sections"],
+    queryFn: () => fetchHomepageSections(),
+  });
 
   useEffect(() => {
     (async () => {
       const [f, l, c] = await Promise.all([
-        supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("status", "active").eq("featured", true).limit(8),
-        supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).eq("status", "active").order("display_priority", { ascending: false }).order("created_at", { ascending: false }).limit(8),
+        supabase.from("products").select(SHOP_HOME_PRODUCT_COLUMNS).eq("status", "active").eq("featured", true).limit(8),
+        supabase.from("products").select(SHOP_HOME_PRODUCT_COLUMNS).eq("status", "active").order("display_priority", { ascending: false }).order("created_at", { ascending: false }).limit(8),
         supabase.from("categories").select("*").eq("status", "active").order("sort_order").limit(8),
       ]);
-      setFeatured((f.data ?? []) as Product[]);
-      setLatest((l.data ?? []) as Product[]);
+      setFeatured(toProducts(f.data ?? []));
+      setLatest(toProducts(l.data ?? []));
       setCats((c.data ?? []) as Category[]);
       setLoading(false);
     })();
   }, []);
+
+  const homepageSections = ((homepageData?.sections ?? []) as HomepageSection[]).filter((section) => section.products?.length);
+  const useDynamicSections = homepageSections.length > 0;
 
   return (
     <div className="flex flex-col">
@@ -150,6 +184,19 @@ function ShopHome() {
           </section>
         )}
 
+        {sectionsLoading ? (
+          <section>
+            <SectionHeader icon={Sparkles} title="首頁展示區塊" desc="正在載入管理員設定的首頁商品區塊" />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
+              {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[3/4]" />)}
+            </div>
+          </section>
+        ) : useDynamicSections ? (
+          homepageSections.map((section) => <HomepageProductSection key={section.id} section={section} />)
+        ) : null}
+
+        {!sectionsLoading && !useDynamicSections && (
+          <>
         {/* Featured */}
         <section>
           <SectionHeader icon={Flame} title="熱銷商品" desc="人氣商品 · 限量供應" action={<Link to="/shop/products" className="text-sm text-primary hover:underline">查看全部 →</Link>} />
@@ -169,6 +216,9 @@ function ShopHome() {
           </div>
         </section>
 
+          </>
+        )}
+
         {/* Promo banner */}
         <section
           className="rounded-3xl border border-border/60 p-6 md:p-10 grid md:grid-cols-3 gap-4 text-center"
@@ -182,6 +232,47 @@ function ShopHome() {
         </section>
       </div>
     </div>
+  );
+}
+
+function toProducts(rows: any[]): Product[] {
+  return rows.map((row) => ({
+    ...row,
+    wholesale_price: Number(row.wholesale_price ?? 0),
+    price: Number(row.price ?? 0),
+    stock: Number(row.stock ?? 0),
+    safe_stock: Number(row.safe_stock ?? 0),
+    reward_points: Number(row.reward_points ?? 0),
+    discount_points_max: Number(row.discount_points_max ?? 0),
+  })) as Product[];
+}
+
+function productFromSectionItem(item: HomepageSectionProduct): Product {
+  return toProducts([item.product])[0];
+}
+
+function HomepageProductSection({ section }: { section: HomepageSection }) {
+  const meta = SECTION_META[section.section_type] ?? { title: section.title, desc: "", icon: Sparkles };
+  const products = (section.products ?? [])
+    .map(productFromSectionItem)
+    .filter((product) => product.id);
+
+  return (
+    <section>
+      <SectionHeader
+        icon={meta.icon}
+        title={section.title || meta.title}
+        desc={section.subtitle || meta.desc}
+        action={<Link to="/shop/products" search={{}} className="text-sm text-primary hover:underline">查看全部</Link>}
+      />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
+        {products.length === 0 ? (
+          <p className="col-span-full text-sm text-muted-foreground py-8 text-center">此區塊尚未加入商品</p>
+        ) : (
+          products.map((product) => <ProductCard key={`${section.id}-${product.id}`} product={product} />)
+        )}
+      </div>
+    </section>
   );
 }
 
