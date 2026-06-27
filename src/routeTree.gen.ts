@@ -96,6 +96,7 @@ import { Route as AuthenticatedAdminReferralTreeRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminQuoteSettingsRouteImport } from './routes/_authenticated/admin.quote-settings'
 import { Route as AuthenticatedAdminOperationsRouteImport } from './routes/_authenticated/admin.operations'
 import { Route as AuthenticatedAdminMemberSearchRouteImport } from './routes/_authenticated/admin.member-search'
+import { Route as AuthenticatedAdminHomepageSectionsRouteImport } from './routes/_authenticated/admin.homepage-sections'
 import { Route as AuthenticatedAdminHomepageFeaturedRouteImport } from './routes/_authenticated/admin.homepage-featured'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
 import { Route as AuthenticatedAdminBonusesRouteImport } from './routes/_authenticated/admin.bonuses'
@@ -584,6 +585,12 @@ const AuthenticatedAdminMemberSearchRoute =
     path: '/admin/member-search',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminHomepageSectionsRoute =
+  AuthenticatedAdminHomepageSectionsRouteImport.update({
+    id: '/admin/homepage-sections',
+    path: '/admin/homepage-sections',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminHomepageFeaturedRoute =
   AuthenticatedAdminHomepageFeaturedRouteImport.update({
     id: '/admin/homepage-featured',
@@ -779,6 +786,7 @@ export interface FileRoutesByFullPath {
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/homepage-featured': typeof AuthenticatedAdminHomepageFeaturedRoute
+  '/admin/homepage-sections': typeof AuthenticatedAdminHomepageSectionsRoute
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
   '/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
@@ -887,6 +895,7 @@ export interface FileRoutesByTo {
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/homepage-featured': typeof AuthenticatedAdminHomepageFeaturedRoute
+  '/admin/homepage-sections': typeof AuthenticatedAdminHomepageSectionsRoute
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
   '/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
@@ -999,6 +1008,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/_authenticated/admin/homepage-featured': typeof AuthenticatedAdminHomepageFeaturedRoute
+  '/_authenticated/admin/homepage-sections': typeof AuthenticatedAdminHomepageSectionsRoute
   '/_authenticated/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
   '/_authenticated/admin/operations': typeof AuthenticatedAdminOperationsRouteWithChildren
   '/_authenticated/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
@@ -1112,6 +1122,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses'
     | '/admin/companies'
     | '/admin/homepage-featured'
+    | '/admin/homepage-sections'
     | '/admin/member-search'
     | '/admin/operations'
     | '/admin/quote-settings'
@@ -1220,6 +1231,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses'
     | '/admin/companies'
     | '/admin/homepage-featured'
+    | '/admin/homepage-sections'
     | '/admin/member-search'
     | '/admin/operations'
     | '/admin/quote-settings'
@@ -1331,6 +1343,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bonuses'
     | '/_authenticated/admin/companies'
     | '/_authenticated/admin/homepage-featured'
+    | '/_authenticated/admin/homepage-sections'
     | '/_authenticated/admin/member-search'
     | '/_authenticated/admin/operations'
     | '/_authenticated/admin/quote-settings'
@@ -2020,6 +2033,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminMemberSearchRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/homepage-sections': {
+      id: '/_authenticated/admin/homepage-sections'
+      path: '/admin/homepage-sections'
+      fullPath: '/admin/homepage-sections'
+      preLoaderRoute: typeof AuthenticatedAdminHomepageSectionsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/homepage-featured': {
       id: '/_authenticated/admin/homepage-featured'
       path: '/admin/homepage-featured'
@@ -2318,6 +2338,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminBonusesRoute: typeof AuthenticatedAdminBonusesRouteWithChildren
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
   AuthenticatedAdminHomepageFeaturedRoute: typeof AuthenticatedAdminHomepageFeaturedRoute
+  AuthenticatedAdminHomepageSectionsRoute: typeof AuthenticatedAdminHomepageSectionsRoute
   AuthenticatedAdminMemberSearchRoute: typeof AuthenticatedAdminMemberSearchRoute
   AuthenticatedAdminOperationsRoute: typeof AuthenticatedAdminOperationsRouteWithChildren
   AuthenticatedAdminQuoteSettingsRoute: typeof AuthenticatedAdminQuoteSettingsRoute
@@ -2377,6 +2398,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedAdminCompaniesRouteWithChildren,
   AuthenticatedAdminHomepageFeaturedRoute:
     AuthenticatedAdminHomepageFeaturedRoute,
+  AuthenticatedAdminHomepageSectionsRoute:
+    AuthenticatedAdminHomepageSectionsRoute,
   AuthenticatedAdminMemberSearchRoute: AuthenticatedAdminMemberSearchRoute,
   AuthenticatedAdminOperationsRoute:
     AuthenticatedAdminOperationsRouteWithChildren,
@@ -2527,3 +2550,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
