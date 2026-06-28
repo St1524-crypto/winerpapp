@@ -114,10 +114,14 @@ function ShopHome() {
 
           {/* Main headline */}
           <div className="text-center max-w-3xl mx-auto space-y-2 md:space-y-4">
-            <h1 className="text-2xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
-              熱情選購 · 品質保障 · 樂享回饋
+            <h1 className="text-2xl md:text-5xl lg:text-6xl font-bold leading-tight text-white text-pretty">
+              <span className="whitespace-nowrap">熱情選購</span>
+              <span className="mx-1 md:mx-2">·</span>
+              <span className="whitespace-nowrap">品質保障</span>
+              <span className="mx-1 md:mx-2">·</span>
+              <span className="whitespace-nowrap">樂享回饋</span>
             </h1>
-            <p className="text-white/70 text-xs md:text-lg max-w-2xl mx-auto leading-relaxed px-2">
+            <p className="text-white/70 text-xs md:text-lg max-w-2xl mx-auto leading-relaxed px-2 text-pretty">
               保健食品 · 保養品 · 保健器材 · 生活用品。每一筆消費都能累積購物金，VIP 拼購主更享分潤獎勵。
             </p>
           </div>
