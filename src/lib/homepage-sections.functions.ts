@@ -69,8 +69,12 @@ type SectionProductRow = {
   products?: ProductRow | ProductRow[] | null;
 };
 
-function db() {
-  return supabaseAdmin as any;
+let _adminPromise: Promise<any> | null = null;
+async function db(): Promise<any> {
+  if (!_adminPromise) {
+    _adminPromise = import("@/integrations/supabase/client.server").then((m) => m.supabaseAdmin);
+  }
+  return _adminPromise;
 }
 
 function nullIfEmpty(value: string | null | undefined) {
