@@ -134,10 +134,11 @@ async function assertAdmin(userId: string) {
   if (!data?.length) throw new Error("需要 admin 或 super_admin 權限");
 }
 
-async function loadSectionProducts(sectionIds: string[], includeInactive = false) {
+async function loadSectionProducts(sectionIds: string[], includeInactive = false, client?: any) {
   if (!sectionIds.length) return new Map<string, ReturnType<typeof normalizeSectionProduct>[]>();
 
-  let query = (await db())
+  const c = client ?? (await db());
+  let query = c
     .from("homepage_section_products")
     .select(`id, section_id, product_id, sort_order, is_active, starts_at, ends_at, config_json, product:products(${SAFE_PRODUCT_COLUMNS})`)
     .in("section_id", sectionIds)
@@ -161,7 +162,8 @@ async function loadSectionProducts(sectionIds: string[], includeInactive = false
 }
 
 export const listPublicHomepageSections = createServerFn({ method: "GET" }).handler(async () => {
-  const { data: sections, error } = await (await db())
+  const client = await dbPublic();
+  const { data: sections, error } = await client
     .from("homepage_sections")
     .select("id, section_type, title, subtitle, is_active, sort_order, display_limit, config_json, created_at, updated_at")
     .eq("is_active", true)
@@ -169,7 +171,7 @@ export const listPublicHomepageSections = createServerFn({ method: "GET" }).hand
   if (error) throw new Error(error.message);
 
   const sectionRows = sections ?? [];
-  const productsBySection = await loadSectionProducts(sectionRows.map((section: any) => section.id), false);
+  const productsBySection = await loadSectionProducts(sectionRows.map((section: any) => section.id), false, client);
 
   return {
     sections: sectionRows.map((section: any) => ({
