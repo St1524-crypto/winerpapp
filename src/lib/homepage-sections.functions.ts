@@ -285,15 +285,16 @@ export const reorderHomepageSections = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
+    const client = await db();
     const updates = await Promise.all(
       data.items.map((item) =>
-        db()
+        client
           .from("homepage_sections")
           .update({ sort_order: item.sort_order })
           .eq("id", item.id),
       ),
     );
-    const error = updates.find((result) => result.error)?.error;
+    const error = updates.find((result: any) => result.error)?.error;
     if (error) throw new Error(error.message);
     return { ok: true, count: data.items.length };
   });
