@@ -341,15 +341,16 @@ export const searchActiveProductsForHomepage = createServerFn({ method: "POST" }
       return { products: products ?? [] };
     }
 
+    const client3 = await db();
     const [byName, bySku] = await Promise.all([
-      db()
+      client3
         .from("products")
         .select(baseSelect)
         .eq("status", "active")
         .ilike("name", pattern)
         .order("created_at", { ascending: false })
         .limit(data.limit),
-      db()
+      client3
         .from("products")
         .select(baseSelect)
         .eq("status", "active")
