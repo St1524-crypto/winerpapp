@@ -125,7 +125,7 @@ async function assertAdmin(userId: string) {
 async function loadSectionProducts(sectionIds: string[], includeInactive = false) {
   if (!sectionIds.length) return new Map<string, ReturnType<typeof normalizeSectionProduct>[]>();
 
-  let query = await (await db())
+  let query = (await db())
     .from("homepage_section_products")
     .select(`id, section_id, product_id, sort_order, is_active, starts_at, ends_at, config_json, product:products(${SAFE_PRODUCT_COLUMNS})`)
     .in("section_id", sectionIds)
