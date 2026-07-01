@@ -77,6 +77,18 @@ async function db(): Promise<any> {
   return _adminPromise;
 }
 
+let _publicClient: any = null;
+async function dbPublic(): Promise<any> {
+  if (_publicClient) return _publicClient;
+  const { createClient } = await import("@supabase/supabase-js");
+  _publicClient = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+  );
+  return _publicClient;
+}
+
 function nullIfEmpty(value: string | null | undefined) {
   const text = value?.trim();
   return text ? text : null;
