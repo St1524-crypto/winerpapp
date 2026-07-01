@@ -113,7 +113,7 @@ function normalizeSectionProduct(row: SectionProductRow) {
 }
 
 async function assertAdmin(userId: string) {
-  const { data, error } = await db()
+  const { data, error } = (await db())
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
@@ -149,7 +149,7 @@ async function loadSectionProducts(sectionIds: string[], includeInactive = false
 }
 
 export const listPublicHomepageSections = createServerFn({ method: "GET" }).handler(async () => {
-  const { data: sections, error } = await db()
+  const { data: sections, error } = (await db())
     .from("homepage_sections")
     .select("id, section_type, title, subtitle, is_active, sort_order, display_limit, config_json, created_at, updated_at")
     .eq("is_active", true)
@@ -173,7 +173,7 @@ export const adminListHomepageSections = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
 
-    const { data: sections, error } = await db()
+    const { data: sections, error } = (await db())
       .from("homepage_sections")
       .select("*")
       .order("sort_order", { ascending: true });
@@ -208,7 +208,7 @@ export const upsertHomepageSection = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
-      const { data: section, error } = await db()
+      const { data: section, error } = (await db())
         .from("homepage_sections")
         .update(payload)
         .eq("id", data.id)
@@ -220,7 +220,7 @@ export const upsertHomepageSection = createServerFn({ method: "POST" })
 
     if (!data.section_type) throw new Error("新增首頁區塊時必須指定 section_type");
 
-    const { data: section, error } = await db()
+    const { data: section, error } = (await db())
       .from("homepage_sections")
       .insert(payload)
       .select("*")
@@ -246,7 +246,7 @@ export const upsertHomepageSectionProduct = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
-      const { data: item, error } = await db()
+      const { data: item, error } = (await db())
         .from("homepage_section_products")
         .update(payload)
         .eq("id", data.id)
@@ -256,7 +256,7 @@ export const upsertHomepageSectionProduct = createServerFn({ method: "POST" })
       return { ok: true, item };
     }
 
-    const { data: item, error } = await db()
+    const { data: item, error } = (await db())
       .from("homepage_section_products")
       .upsert(payload, { onConflict: "section_id,product_id" })
       .select("*")
@@ -271,7 +271,7 @@ export const removeHomepageSectionProduct = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
-    const { error } = await db()
+    const { error } = (await db())
       .from("homepage_section_products")
       .delete()
       .eq("id", data.id);
@@ -329,7 +329,7 @@ export const searchActiveProductsForHomepage = createServerFn({ method: "POST" }
     const baseSelect = `id, sku, name, category, price, stock, image, created_at, short_description, category_id, safe_stock, status, featured, company_id, reward_points, discount_points_max`;
 
     if (!term) {
-      const { data: products, error } = await db()
+      const { data: products, error } = (await db())
         .from("products")
         .select(baseSelect)
         .eq("status", "active")
