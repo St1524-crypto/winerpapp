@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ADMIN_ROLES = ["super_admin", "admin"] as const;
 const SECTION_TYPES = ["limited_offer", "bundle", "featured", "best_seller", "new_arrival"] as const;
@@ -70,8 +69,24 @@ type SectionProductRow = {
   products?: ProductRow | ProductRow[] | null;
 };
 
-function db() {
-  return supabaseAdmin as any;
+let _adminPromise: Promise<any> | null = null;
+async function db(): Promise<any> {
+  if (!_adminPromise) {
+    _adminPromise = import("@/integrations/supabase/client.server").then((m) => m.supabaseAdmin);
+  }
+  return _adminPromise;
+}
+
+let _publicClient: any = null;
+async function dbPublic(): Promise<any> {
+  if (_publicClient) return _publicClient;
+  const { createClient } = await import("@supabase/supabase-js");
+  _publicClient = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+  );
+  return _publicClient;
 }
 
 function nullIfEmpty(value: string | null | undefined) {
@@ -110,7 +125,7 @@ function normalizeSectionProduct(row: SectionProductRow) {
 }
 
 async function assertAdmin(userId: string) {
-  const { data, error } = await db()
+  const { data, error } = await (await db())
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
@@ -119,10 +134,11 @@ async function assertAdmin(userId: string) {
   if (!data?.length) throw new Error("需要 admin 或 super_admin 權限");
 }
 
-async function loadSectionProducts(sectionIds: string[], includeInactive = false) {
+async function loadSectionProducts(sectionIds: string[], includeInactive = false, client?: any) {
   if (!sectionIds.length) return new Map<string, ReturnType<typeof normalizeSectionProduct>[]>();
 
-  let query = db()
+  const c = client ?? (await db());
+  let query = c
     .from("homepage_section_products")
     .select(`id, section_id, product_id, sort_order, is_active, starts_at, ends_at, config_json, product:products(${SAFE_PRODUCT_COLUMNS})`)
     .in("section_id", sectionIds)
@@ -146,7 +162,8 @@ async function loadSectionProducts(sectionIds: string[], includeInactive = false
 }
 
 export const listPublicHomepageSections = createServerFn({ method: "GET" }).handler(async () => {
-  const { data: sections, error } = await db()
+  const client = await dbPublic();
+  const { data: sections, error } = await client
     .from("homepage_sections")
     .select("id, section_type, title, subtitle, is_active, sort_order, display_limit, config_json, created_at, updated_at")
     .eq("is_active", true)
@@ -154,7 +171,7 @@ export const listPublicHomepageSections = createServerFn({ method: "GET" }).hand
   if (error) throw new Error(error.message);
 
   const sectionRows = sections ?? [];
-  const productsBySection = await loadSectionProducts(sectionRows.map((section: any) => section.id), false);
+  const productsBySection = await loadSectionProducts(sectionRows.map((section: any) => section.id), false, client);
 
   return {
     sections: sectionRows.map((section: any) => ({
@@ -170,7 +187,7 @@ export const adminListHomepageSections = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
 
-    const { data: sections, error } = await db()
+    const { data: sections, error } = await (await db())
       .from("homepage_sections")
       .select("*")
       .order("sort_order", { ascending: true });
@@ -205,7 +222,7 @@ export const upsertHomepageSection = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
-      const { data: section, error } = await db()
+      const { data: section, error } = await (await db())
         .from("homepage_sections")
         .update(payload)
         .eq("id", data.id)
@@ -217,7 +234,7 @@ export const upsertHomepageSection = createServerFn({ method: "POST" })
 
     if (!data.section_type) throw new Error("新增首頁區塊時必須指定 section_type");
 
-    const { data: section, error } = await db()
+    const { data: section, error } = await (await db())
       .from("homepage_sections")
       .insert(payload)
       .select("*")
@@ -243,7 +260,7 @@ export const upsertHomepageSectionProduct = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
-      const { data: item, error } = await db()
+      const { data: item, error } = await (await db())
         .from("homepage_section_products")
         .update(payload)
         .eq("id", data.id)
@@ -253,7 +270,7 @@ export const upsertHomepageSectionProduct = createServerFn({ method: "POST" })
       return { ok: true, item };
     }
 
-    const { data: item, error } = await db()
+    const { data: item, error } = await (await db())
       .from("homepage_section_products")
       .upsert(payload, { onConflict: "section_id,product_id" })
       .select("*")
@@ -268,7 +285,7 @@ export const removeHomepageSectionProduct = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
-    const { error } = await db()
+    const { error } = await (await db())
       .from("homepage_section_products")
       .delete()
       .eq("id", data.id);
@@ -282,15 +299,16 @@ export const reorderHomepageSections = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
+    const client = await db();
     const updates = await Promise.all(
       data.items.map((item) =>
-        db()
+        client
           .from("homepage_sections")
           .update({ sort_order: item.sort_order })
           .eq("id", item.id),
       ),
     );
-    const error = updates.find((result) => result.error)?.error;
+    const error = updates.find((result: any) => result.error)?.error;
     if (error) throw new Error(error.message);
     return { ok: true, count: data.items.length };
   });
@@ -301,16 +319,17 @@ export const reorderHomepageSectionProducts = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
+    const client2 = await db();
     const updates = await Promise.all(
       data.items.map((item) =>
-        db()
+        client2
           .from("homepage_section_products")
           .update({ sort_order: item.sort_order })
           .eq("id", item.id)
           .eq("section_id", data.sectionId),
       ),
     );
-    const error = updates.find((result) => result.error)?.error;
+    const error = updates.find((result: any) => result.error)?.error;
     if (error) throw new Error(error.message);
     return { ok: true, count: data.items.length };
   });
@@ -326,7 +345,7 @@ export const searchActiveProductsForHomepage = createServerFn({ method: "POST" }
     const baseSelect = `id, sku, name, category, price, stock, image, created_at, short_description, category_id, safe_stock, status, featured, company_id, reward_points, discount_points_max`;
 
     if (!term) {
-      const { data: products, error } = await db()
+      const { data: products, error } = await (await db())
         .from("products")
         .select(baseSelect)
         .eq("status", "active")
@@ -336,15 +355,16 @@ export const searchActiveProductsForHomepage = createServerFn({ method: "POST" }
       return { products: products ?? [] };
     }
 
+    const client3 = await db();
     const [byName, bySku] = await Promise.all([
-      db()
+      client3
         .from("products")
         .select(baseSelect)
         .eq("status", "active")
         .ilike("name", pattern)
         .order("created_at", { ascending: false })
         .limit(data.limit),
-      db()
+      client3
         .from("products")
         .select(baseSelect)
         .eq("status", "active")
