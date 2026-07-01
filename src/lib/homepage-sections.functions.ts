@@ -305,16 +305,17 @@ export const reorderHomepageSectionProducts = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
+    const client2 = await db();
     const updates = await Promise.all(
       data.items.map((item) =>
-        db()
+        client2
           .from("homepage_section_products")
           .update({ sort_order: item.sort_order })
           .eq("id", item.id)
           .eq("section_id", data.sectionId),
       ),
     );
-    const error = updates.find((result) => result.error)?.error;
+    const error = updates.find((result: any) => result.error)?.error;
     if (error) throw new Error(error.message);
     return { ok: true, count: data.items.length };
   });
