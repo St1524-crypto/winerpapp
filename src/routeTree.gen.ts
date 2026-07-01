@@ -92,6 +92,7 @@ import { Route as AuthenticatedAdminVipTiersRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminVipBusinessBonusCapRouteImport } from './routes/_authenticated/admin.vip-business-bonus-cap'
 import { Route as AuthenticatedAdminVipBonusPoolsRouteImport } from './routes/_authenticated/admin.vip-bonus-pools'
 import { Route as AuthenticatedAdminStorefrontTemplatesRouteImport } from './routes/_authenticated/admin.storefront-templates'
+import { Route as AuthenticatedAdminShopContentRouteImport } from './routes/_authenticated/admin.shop-content'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
@@ -561,6 +562,12 @@ const AuthenticatedAdminStorefrontTemplatesRoute =
     path: '/admin/storefront-templates',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminShopContentRoute =
+  AuthenticatedAdminShopContentRouteImport.update({
+    id: '/admin/shop-content',
+    path: '/admin/shop-content',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminSecurityRoute =
   AuthenticatedAdminSecurityRouteImport.update({
     id: '/admin/security',
@@ -815,6 +822,7 @@ export interface FileRoutesByFullPath {
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
+  '/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/admin/vip-bonus-pools': typeof AuthenticatedAdminVipBonusPoolsRoute
   '/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
@@ -927,6 +935,7 @@ export interface FileRoutesByTo {
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
+  '/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/admin/vip-bonus-pools': typeof AuthenticatedAdminVipBonusPoolsRoute
   '/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
@@ -1043,6 +1052,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
+  '/_authenticated/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
   '/_authenticated/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
   '/_authenticated/admin/vip-bonus-pools': typeof AuthenticatedAdminVipBonusPoolsRoute
   '/_authenticated/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
@@ -1160,6 +1170,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/role-manager'
     | '/admin/security'
+    | '/admin/shop-content'
     | '/admin/storefront-templates'
     | '/admin/vip-bonus-pools'
     | '/admin/vip-business-bonus-cap'
@@ -1272,6 +1283,7 @@ export interface FileRouteTypes {
     | '/admin/referrals'
     | '/admin/role-manager'
     | '/admin/security'
+    | '/admin/shop-content'
     | '/admin/storefront-templates'
     | '/admin/vip-bonus-pools'
     | '/admin/vip-business-bonus-cap'
@@ -1387,6 +1399,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/referrals'
     | '/_authenticated/admin/role-manager'
     | '/_authenticated/admin/security'
+    | '/_authenticated/admin/shop-content'
     | '/_authenticated/admin/storefront-templates'
     | '/_authenticated/admin/vip-bonus-pools'
     | '/_authenticated/admin/vip-business-bonus-cap'
@@ -2041,6 +2054,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminStorefrontTemplatesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/shop-content': {
+      id: '/_authenticated/admin/shop-content'
+      path: '/admin/shop-content'
+      fullPath: '/admin/shop-content'
+      preLoaderRoute: typeof AuthenticatedAdminShopContentRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/security': {
       id: '/_authenticated/admin/security'
       path: '/admin/security'
@@ -2403,6 +2423,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
+  AuthenticatedAdminShopContentRoute: typeof AuthenticatedAdminShopContentRoute
   AuthenticatedAdminStorefrontTemplatesRoute: typeof AuthenticatedAdminStorefrontTemplatesRoute
   AuthenticatedAdminVipBonusPoolsRoute: typeof AuthenticatedAdminVipBonusPoolsRoute
   AuthenticatedAdminVipBusinessBonusCapRoute: typeof AuthenticatedAdminVipBusinessBonusCapRoute
@@ -2465,6 +2486,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
+  AuthenticatedAdminShopContentRoute: AuthenticatedAdminShopContentRoute,
   AuthenticatedAdminStorefrontTemplatesRoute:
     AuthenticatedAdminStorefrontTemplatesRoute,
   AuthenticatedAdminVipBonusPoolsRoute: AuthenticatedAdminVipBonusPoolsRoute,
@@ -2613,3 +2635,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

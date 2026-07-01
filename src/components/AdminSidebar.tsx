@@ -42,6 +42,7 @@ const GROUPS: AdminNavGroup[] = [
       { title: "商品分類", url: "/categories", icon: Tag },
       { title: "精品推薦", url: "/admin/homepage-featured", icon: Sparkles },
       { title: "首頁展示區塊", url: "/admin/homepage-sections", icon: LayoutDashboard, roles: ["super_admin", "admin"] },
+      { title: "商城內容管理", url: "/admin/shop-content", icon: FileText, roles: ["super_admin", "admin"] },
       { title: "庫存管理", url: "/inventory", icon: Boxes },
       { title: "訂單管理", url: "/orders", icon: ShoppingCart },
       { title: "採購管理", url: "/purchases", icon: Truck },
