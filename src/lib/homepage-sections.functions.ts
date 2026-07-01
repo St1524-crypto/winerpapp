@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ADMIN_ROLES = ["super_admin", "admin"] as const;
 const SECTION_TYPES = ["limited_offer", "bundle", "featured", "best_seller", "new_arrival"] as const;
