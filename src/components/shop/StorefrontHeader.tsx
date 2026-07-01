@@ -52,10 +52,13 @@ export function StorefrontHeader() {
           />
         </form>
 
-        <nav className="hidden lg:flex items-center gap-1 text-sm">
-          <Link to="/shop" className="px-3 py-1.5 rounded-md hover:bg-accent">首頁</Link>
-          <Link to="/shop/products" className="px-3 py-1.5 rounded-md hover:bg-accent">全部商品</Link>
-          <Link to="/shop/wholesale" className="px-3 py-1.5 rounded-md hover:bg-accent text-primary font-medium">批發專區</Link>
+        <nav className="hidden lg:flex items-center gap-0.5 text-sm">
+          <Link to="/shop" className="px-2.5 py-1.5 rounded-md hover:bg-accent">首頁</Link>
+          <Link to="/shop/products" className="px-2.5 py-1.5 rounded-md hover:bg-accent">全部商品</Link>
+          <Link to="/shop/wholesale" className="px-2.5 py-1.5 rounded-md hover:bg-accent text-primary font-medium">批發專區</Link>
+          <Link to="/shop/patents" className="px-2.5 py-1.5 rounded-md hover:bg-accent">專利檢驗區</Link>
+          <Link to="/shop/news" className="px-2.5 py-1.5 rounded-md hover:bg-accent">最新消息</Link>
+          <Link to="/shop/health" className="px-2.5 py-1.5 rounded-md hover:bg-accent">健康學術</Link>
         </nav>
 
         <div className="flex items-center gap-1 ml-auto">
@@ -89,6 +92,9 @@ export function StorefrontHeader() {
                 <Link to="/shop" className="px-3 py-2 rounded-md hover:bg-accent">首頁</Link>
                 <Link to="/shop/products" className="px-3 py-2 rounded-md hover:bg-accent">全部商品</Link>
                 <Link to="/shop/wholesale" className="px-3 py-2 rounded-md hover:bg-accent text-primary font-medium">批發專區</Link>
+                <Link to="/shop/patents" className="px-3 py-2 rounded-md hover:bg-accent">專利檢驗區</Link>
+                <Link to="/shop/news" className="px-3 py-2 rounded-md hover:bg-accent">最新消息</Link>
+                <Link to="/shop/health" className="px-3 py-2 rounded-md hover:bg-accent">健康學術</Link>
                 <Link to={user ? "/shop/account" : "/login"} className="px-3 py-2 rounded-md hover:bg-accent">會員中心</Link>
                 <Link to={user ? "/shop/account/orders" : "/login"} className="px-3 py-2 rounded-md hover:bg-accent">我的訂單</Link>
               </nav>

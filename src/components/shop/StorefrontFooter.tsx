@@ -17,11 +17,11 @@ export function StorefrontFooter() {
           </ul>
         </div>
         <div>
-          <div className="font-semibold mb-3">客戶服務</div>
+          <div className="font-semibold mb-3">品牌內容</div>
           <ul className="space-y-2 text-muted-foreground">
-            <li>配送說明</li>
-            <li>退換貨政策</li>
-            <li>常見問題</li>
+            <li><Link to="/shop/patents">專利檢驗區</Link></li>
+            <li><Link to="/shop/news">最新消息</Link></li>
+            <li><Link to="/shop/health">健康學術</Link></li>
           </ul>
         </div>
         <div>
