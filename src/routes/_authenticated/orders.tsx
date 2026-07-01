@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   ShoppingCart, Search, Plus, Loader2, Eye, Truck, CreditCard,
   PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check, UserPlus,
-  Package, Trash2, Printer, Pencil,
+  Package, Trash2, Printer, Pencil, Wallet,
 } from "lucide-react";
 import { exportOrderPdf, exportOrdersPdf } from "@/lib/order-pdf";
 import { useBranding } from "@/hooks/use-branding";
@@ -17,6 +17,7 @@ import { processOrderCommission } from "@/lib/referral.functions";
 import { processOrderPaymentBonus } from "@/lib/bonus.functions";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
+import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 
 /** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/升級獎金（失敗不擋主流程） */
 async function autoSettleCommission(orderId: string, nextStatus: string) {
@@ -820,6 +821,9 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [shippingFee, setShippingFee] = useState("0");
   const [discount, setDiscount] = useState("0");
+  const [discountPoints, setDiscountPoints] = useState("0");
+  const [shoppingPoints, setShoppingPoints] = useState("0");
+  const [rewardPoints, setRewardPoints] = useState("0");
   const [deposit, setDeposit] = useState("0");
   const [balance, setBalance] = useState("0");
   const [depositMethod, setDepositMethod] = useState("bank_transfer");
@@ -1008,6 +1012,24 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  const memberWalletQ = useQuery({
+    queryKey: ["order-member-points-wallet", customerStatus.user_id],
+    enabled: open && !!customerStatus.user_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("member_points_wallet")
+        .select("discount_points,shopping_points,reward_points")
+        .eq("user_id", customerStatus.user_id!)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return {
+        discount_points: Number((data as any)?.discount_points ?? 0),
+        shopping_points: Number((data as any)?.shopping_points ?? 0),
+        reward_points: Number((data as any)?.reward_points ?? 0),
+      };
+    },
+  });
+
   function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null; reward_points?: number | null }) {
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.product_id === p.id);
@@ -1025,6 +1047,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   }
   function removeItem(idx: number) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
+  }
+  function clearMemberPointPaymentSelection() {
+    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null });
+    setDiscountPoints("0");
+    setShoppingPoints("0");
+    setRewardPoints("0");
   }
 
   // 即時校驗：取得各欄位的錯誤訊息（僅在欄位被觸碰過後顯示）
@@ -1138,10 +1166,16 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     () => Math.max(0, subtotalNum + taxAmount + Number(shippingFee || 0) - Number(discount || 0)),
     [subtotalNum, taxAmount, shippingFee, discount],
   );
+  const walletBalances = memberWalletQ.data ?? { discount_points: 0, shopping_points: 0, reward_points: 0 };
+  const discountPointNum = Number(discountPoints || 0);
+  const shoppingPointNum = Number(shoppingPoints || 0);
+  const rewardPointNum = Number(rewardPoints || 0);
+  const pointOffsetTotal = discountPointNum + shoppingPointNum + rewardPointNum;
+  const cashDue = Math.max(0, total - pointOffsetTotal);
   const depositNum = Number(deposit || 0);
   const balanceNum = Number(balance || 0);
   const paymentsTotal = depositNum + balanceNum;
-  const paymentsDiff = total - paymentsTotal;
+  const paymentsDiff = cashDue - paymentsTotal;
 
   const m = useMutation({
     mutationFn: async () => {
@@ -1157,8 +1191,29 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (depositNum < 0 || balanceNum < 0) {
         throw new Error("訂金與尾款不可為負");
       }
-      if (depositNum + balanceNum > total) {
-        throw new Error("訂金 + 尾款不可超過訂單總額");
+      if (discountPointNum < 0 || shoppingPointNum < 0 || rewardPointNum < 0) {
+        throw new Error("點數付款不可為負");
+      }
+      if (![discountPointNum, shoppingPointNum, rewardPointNum].every(Number.isInteger)) {
+        throw new Error("點數付款必須為整數");
+      }
+      if (pointOffsetTotal > 0 && !customerStatus.user_id) {
+        throw new Error("點數付款需先選擇可對應會員帳號的客戶");
+      }
+      if (discountPointNum > walletBalances.discount_points) {
+        throw new Error("折扣點餘額不足");
+      }
+      if (shoppingPointNum > walletBalances.shopping_points) {
+        throw new Error("購物點餘額不足");
+      }
+      if (rewardPointNum > walletBalances.reward_points) {
+        throw new Error("獎勵點餘額不足");
+      }
+      if (pointOffsetTotal > total) {
+        throw new Error("點數付款不可超過訂單總額");
+      }
+      if (depositNum + balanceNum > cashDue) {
+        throw new Error("訂金 + 尾款不可超過扣除點數後的現金應付");
       }
 
       // 若未從客戶名單選取，使用手動輸入資料建立新客戶以保持訂單與客戶資料一致
@@ -1182,8 +1237,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
       // 依訂金決定付款狀態
       let paymentStatus: "pending" | "partial" | "paid" = "pending";
-      if (depositNum >= total && total > 0) paymentStatus = "paid";
-      else if (depositNum > 0) paymentStatus = "partial";
+      if (cashDue === 0 || (depositNum >= cashDue && cashDue > 0)) paymentStatus = "paid";
+      else if (depositNum > 0 || pointOffsetTotal > 0) paymentStatus = "partial";
 
       // 組合付款紀錄（訂金已收、尾款待收）
       const paymentsPayload: Array<{
@@ -1208,10 +1263,44 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         });
       }
 
-      // 單一交易：訂單 + 商品明細 + 付款 一次寫入，任一失敗整筆回滾
-      const { data: orderRow, error } = await supabase.rpc("create_sales_order_with_items", {
-        _order: {
+      const pointPayments: Array<{
+        point_type: "discount" | "shopping" | "reward";
+        points_used: number;
+        amount_offset: number;
+        note: string;
+      }> = [];
+      if (discountPointNum > 0) {
+        pointPayments.push({
+          point_type: "discount",
+          points_used: discountPointNum,
+          amount_offset: discountPointNum,
+          note: "Admin order discount point payment",
+        });
+      }
+      if (shoppingPointNum > 0) {
+        pointPayments.push({
+          point_type: "shopping",
+          points_used: shoppingPointNum,
+          amount_offset: shoppingPointNum,
+          note: "Admin order shopping point payment",
+        });
+      }
+      if (rewardPointNum > 0) {
+        pointPayments.push({
+          point_type: "reward",
+          points_used: rewardPointNum,
+          amount_offset: rewardPointNum,
+          note: "Admin order reward point payment",
+        });
+      }
+
+      // 單一交易：訂單 + 商品明細 + 付款 + 點數付款一次寫入，任一失敗整筆回滾
+      const orderRow = await createSalesOrderWithPointPayments({
+        data: {
+          order: {
           order_no: genOrderNo(),
+          company_id: currentCompanyId,
+          user_id: customerStatus.user_id,
           customer_id: linkedCustomerId,
           customer_name: customer,
           customer_email: email || null,
@@ -1228,19 +1317,20 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           order_status: "pending",
           shipping_status: "pending",
           payment_status: paymentStatus,
+          },
+          items: items.map((it) => ({
+            product_id: it.product_id,
+            product_name: it.name,
+            sku: it.sku,
+            image: it.image,
+            unit_price: it.unit_price,
+            quantity: it.quantity,
+            subtotal: Number(it.unit_price) * Number(it.quantity),
+          })),
+          payments: paymentsPayload,
+          pointPayments,
         },
-        _items: items.map((it) => ({
-          product_id: it.product_id,
-          product_name: it.name,
-          sku: it.sku,
-          image: it.image,
-          unit_price: it.unit_price,
-          quantity: it.quantity,
-          subtotal: Number(it.unit_price) * Number(it.quantity),
-        })),
-        _payments: paymentsPayload,
       });
-      if (error) throw new Error(`建立訂單失敗：${error.message}`);
 
       // 寫入訂單來源 / 業務人員 / 會員關聯（RPC 不包含這些欄位，建立後補上；建檔人員由 DB trigger 自動寫入）
       const patch: { order_source?: string; salesperson_id?: string; user_id?: string } = {};
@@ -1265,6 +1355,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
       setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource("");
+      setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
       setDeposit("0"); setBalance("0");
       setCustomerId(null); setSalespersonId("");
       onCreated();
@@ -1278,6 +1369,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
     if (c.address && !address) setAddress(c.address);
+    setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
     setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
@@ -1312,6 +1404,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setEmail(e.email ?? "");
     setPhone(e.phone ?? "");
     if (e.address && !address) setAddress(e.address);
+    setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
     setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null, user_id: e.user_id ?? null });
     setPickerOpen(false);
     toast.success(`已帶入${e.label}：${e.name}`);
@@ -1339,7 +1432,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                 <button
                   type="button"
                   className="text-xs text-muted-foreground hover:text-foreground underline"
-                  onClick={() => { setCustomerId(null); setCustomer(""); setEmail(""); setPhone(""); }}
+                  onClick={() => { setCustomerId(null); setCustomer(""); setEmail(""); setPhone(""); clearMemberPointPaymentSelection(); }}
                 >
                   清除選取
                 </button>
@@ -1635,7 +1728,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>客戶姓名 *</Label><Input value={customer} onChange={(e) => { setCustomer(e.target.value); setCustomerId(null); }} /></div>
+            <div><Label>客戶姓名 *</Label><Input value={customer} onChange={(e) => { setCustomer(e.target.value); setCustomerId(null); clearMemberPointPaymentSelection(); }} /></div>
             <div><Label>電話 *</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
           </div>
 
@@ -1786,7 +1879,66 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           {/* ===== 訂金 / 尾款 ===== */}
           <div className="rounded-md border p-3 space-y-2 bg-muted/20">
             <div className="text-sm font-medium flex items-center gap-1.5">
-              <CreditCard className="h-3.5 w-3.5" /> 付款設定（訂金 / 尾款）
+              <Wallet className="h-3.5 w-3.5" /> 點數付款（折扣點 / 購物點 / 獎勵點）
+            </div>
+            {!customerStatus.user_id ? (
+              <div className="text-xs text-muted-foreground">
+                請先從客戶 / 會員搜尋選擇可對應會員帳號的客戶，才能使用點數付款。
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-xs">折扣點</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={walletBalances.discount_points}
+                    value={discountPoints}
+                    onChange={(e) => setDiscountPoints(String(Math.max(0, Math.min(walletBalances.discount_points, Math.floor(Number(e.target.value || 0))))))}
+                  />
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    可用 {walletBalances.discount_points.toLocaleString()} 點
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">購物點</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={walletBalances.shopping_points}
+                    value={shoppingPoints}
+                    onChange={(e) => setShoppingPoints(String(Math.max(0, Math.min(walletBalances.shopping_points, Math.floor(Number(e.target.value || 0))))))}
+                  />
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    可用 {walletBalances.shopping_points.toLocaleString()} 點
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">獎勵點</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={walletBalances.reward_points}
+                    value={rewardPoints}
+                    onChange={(e) => setRewardPoints(String(Math.max(0, Math.min(walletBalances.reward_points, Math.floor(Number(e.target.value || 0))))))}
+                  />
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    可用 {walletBalances.reward_points.toLocaleString()} 點
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>點數折抵合計：<span className="tabular-nums font-medium text-foreground">{fmt(pointOffsetTotal)}</span></span>
+              <span className={pointOffsetTotal > total ? "text-destructive font-medium" : ""}>
+                扣點後現金應付：{fmt(cashDue)}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+            <div className="text-sm font-medium flex items-center gap-1.5">
+              <CreditCard className="h-3.5 w-3.5" /> 付款設定（現金訂金 / 尾款）
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -1812,17 +1964,17 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>訂金 + 尾款 = <span className="tabular-nums font-medium text-foreground">{fmt(paymentsTotal)}</span></span>
               <span className={paymentsDiff < 0 ? "text-destructive font-medium" : ""}>
-                與訂單總額差額：{fmt(paymentsDiff)}
+                與現金應付差額：{fmt(paymentsDiff)}
               </span>
             </div>
           </div>
 
           <div className="flex items-center justify-between border-t pt-3">
             <div className="text-xs text-muted-foreground">
-              小計 {fmt(subtotalNum)}{taxAdded ? ` ＋ 稅 ${fmt(taxAmount)}` : ""} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)}
+              小計 {fmt(subtotalNum)}{taxAdded ? ` ＋ 稅 ${fmt(taxAmount)}` : ""} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)} － 點數 {fmt(pointOffsetTotal)}
             </div>
             <div className="text-sm">
-              訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
+              現金應付：<span className="text-lg font-bold text-primary ml-1">{fmt(cashDue)}</span>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
