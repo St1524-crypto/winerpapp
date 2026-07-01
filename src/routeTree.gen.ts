@@ -24,6 +24,9 @@ import { Route as UCodeRouteImport } from './routes/u.$code'
 import { Route as ShopWholesaleRouteImport } from './routes/shop.wholesale'
 import { Route as ShopVipRouteImport } from './routes/shop.vip'
 import { Route as ShopProductsRouteImport } from './routes/shop.products'
+import { Route as ShopPatentsRouteImport } from './routes/shop.patents'
+import { Route as ShopNewsRouteImport } from './routes/shop.news'
+import { Route as ShopHealthRouteImport } from './routes/shop.health'
 import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
 import { Route as ShopAccountRouteImport } from './routes/shop.account'
 import { Route as RPhoneRouteImport } from './routes/r.$phone'
@@ -193,6 +196,21 @@ const ShopVipRoute = ShopVipRouteImport.update({
 const ShopProductsRoute = ShopProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => ShopRoute,
+} as any)
+const ShopPatentsRoute = ShopPatentsRouteImport.update({
+  id: '/patents',
+  path: '/patents',
+  getParentRoute: () => ShopRoute,
+} as any)
+const ShopNewsRoute = ShopNewsRouteImport.update({
+  id: '/news',
+  path: '/news',
+  getParentRoute: () => ShopRoute,
+} as any)
+const ShopHealthRoute = ShopHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
   getParentRoute: () => ShopRoute,
 } as any)
 const ShopCheckoutRoute = ShopCheckoutRouteImport.update({
@@ -772,6 +790,9 @@ export interface FileRoutesByFullPath {
   '/r/$phone': typeof RPhoneRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
+  '/shop/health': typeof ShopHealthRoute
+  '/shop/news': typeof ShopNewsRoute
+  '/shop/patents': typeof ShopPatentsRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
   '/shop/wholesale': typeof ShopWholesaleRoute
@@ -881,6 +902,9 @@ export interface FileRoutesByTo {
   '/member-page/$memberNo': typeof MemberPageMemberNoRoute
   '/r/$phone': typeof RPhoneRoute
   '/shop/checkout': typeof ShopCheckoutRoute
+  '/shop/health': typeof ShopHealthRoute
+  '/shop/news': typeof ShopNewsRoute
+  '/shop/patents': typeof ShopPatentsRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
   '/shop/wholesale': typeof ShopWholesaleRoute
@@ -994,6 +1018,9 @@ export interface FileRoutesById {
   '/r/$phone': typeof RPhoneRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
+  '/shop/health': typeof ShopHealthRoute
+  '/shop/news': typeof ShopNewsRoute
+  '/shop/patents': typeof ShopPatentsRoute
   '/shop/products': typeof ShopProductsRoute
   '/shop/vip': typeof ShopVipRoute
   '/shop/wholesale': typeof ShopWholesaleRoute
@@ -1108,6 +1135,9 @@ export interface FileRouteTypes {
     | '/r/$phone'
     | '/shop/account'
     | '/shop/checkout'
+    | '/shop/health'
+    | '/shop/news'
+    | '/shop/patents'
     | '/shop/products'
     | '/shop/vip'
     | '/shop/wholesale'
@@ -1217,6 +1247,9 @@ export interface FileRouteTypes {
     | '/member-page/$memberNo'
     | '/r/$phone'
     | '/shop/checkout'
+    | '/shop/health'
+    | '/shop/news'
+    | '/shop/patents'
     | '/shop/products'
     | '/shop/vip'
     | '/shop/wholesale'
@@ -1329,6 +1362,9 @@ export interface FileRouteTypes {
     | '/r/$phone'
     | '/shop/account'
     | '/shop/checkout'
+    | '/shop/health'
+    | '/shop/news'
+    | '/shop/patents'
     | '/shop/products'
     | '/shop/vip'
     | '/shop/wholesale'
@@ -1527,6 +1563,27 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/shop/products'
       preLoaderRoute: typeof ShopProductsRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/shop/patents': {
+      id: '/shop/patents'
+      path: '/patents'
+      fullPath: '/shop/patents'
+      preLoaderRoute: typeof ShopPatentsRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/shop/news': {
+      id: '/shop/news'
+      path: '/news'
+      fullPath: '/shop/news'
+      preLoaderRoute: typeof ShopNewsRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/shop/health': {
+      id: '/shop/health'
+      path: '/health'
+      fullPath: '/shop/health'
+      preLoaderRoute: typeof ShopHealthRouteImport
       parentRoute: typeof ShopRoute
     }
     '/shop/checkout': {
@@ -2492,6 +2549,9 @@ const ShopAccountRouteWithChildren = ShopAccountRoute._addFileChildren(
 interface ShopRouteChildren {
   ShopAccountRoute: typeof ShopAccountRouteWithChildren
   ShopCheckoutRoute: typeof ShopCheckoutRoute
+  ShopHealthRoute: typeof ShopHealthRoute
+  ShopNewsRoute: typeof ShopNewsRoute
+  ShopPatentsRoute: typeof ShopPatentsRoute
   ShopProductsRoute: typeof ShopProductsRoute
   ShopVipRoute: typeof ShopVipRoute
   ShopWholesaleRoute: typeof ShopWholesaleRoute
@@ -2503,6 +2563,9 @@ interface ShopRouteChildren {
 const ShopRouteChildren: ShopRouteChildren = {
   ShopAccountRoute: ShopAccountRouteWithChildren,
   ShopCheckoutRoute: ShopCheckoutRoute,
+  ShopHealthRoute: ShopHealthRoute,
+  ShopNewsRoute: ShopNewsRoute,
+  ShopPatentsRoute: ShopPatentsRoute,
   ShopProductsRoute: ShopProductsRoute,
   ShopVipRoute: ShopVipRoute,
   ShopWholesaleRoute: ShopWholesaleRoute,
@@ -2550,13 +2613,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
