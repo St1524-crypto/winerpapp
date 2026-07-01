@@ -17,9 +17,9 @@ import { useAddresses } from "@/hooks/use-addresses";
 import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { buildShippingSnapshot } from "@/lib/order-snapshot";
 import { useWallet, useVipStatus } from "@/hooks/use-wallet";
-import { applyOrderPoints } from "@/lib/points.functions";
 import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
 import { quickRegisterAndSignIn } from "@/lib/checkout-register.functions";
+import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 
 
 export const Route = createFileRoute("/shop/checkout")({
@@ -44,6 +44,7 @@ function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [useShopping, setUseShopping] = useState<number>(0);
   const [useDiscount, setUseDiscount] = useState<number>(0);
+  const [useReward, setUseReward] = useState<number>(0);
 
   // Guest checkout: no auto-redirect; render inline auth UI below.
 
@@ -81,7 +82,11 @@ function CheckoutPage() {
   // 餘額（購物點）可全額折抵；1 點 = NT$1
   const maxShoppingRedeem = Math.min(wallet.shopping_points, afterDiscount);
   const shoppingApplied = Math.max(0, Math.min(Math.floor(useShopping) || 0, maxShoppingRedeem));
-  const total = Math.max(0, afterDiscount - shoppingApplied);
+  const afterShopping = Math.max(0, afterDiscount - shoppingApplied);
+  const maxRewardRedeem = Math.min(wallet.reward_points, afterShopping);
+  const rewardApplied = Math.max(0, Math.min(Math.floor(useReward) || 0, maxRewardRedeem));
+  const pointOffsetTotal = discountApplied + shoppingApplied + rewardApplied;
+  const total = Math.max(0, afterShopping - rewardApplied);
   const canPlace = useMemo(
     () => items.length > 0 && form.receiver_name && form.phone && form.address && !placing,
     [items, form, placing]
@@ -112,35 +117,11 @@ function CheckoutPage() {
       // 風控：禁止自己推薦自己
       const safeReferrerId = referrerId && referrerId !== user.id ? referrerId : null;
 
-      const { data: order, error: oErr } = await supabase
-        .from("sales_orders")
-        .insert({
-          order_no,
-          company_id: companyId,
-          user_id: user.id,
-          customer_name: form.receiver_name,
-          customer_email: user.email,
-          customer_phone: form.phone,
-          receiver_name: form.receiver_name,
-          receiver_phone: form.phone,
-          shipping_address: form.address,
-          notes: form.notes || null,
-          subtotal,
-          shipping_fee: shipping,
-          discount_amount: discountApplied,
-          total_amount: total,
-          referrer_id: safeReferrerId,
-        })
-        .select("id")
-        .single();
-      if (oErr) throw oErr;
-
       const prodCompanyMap = new Map(prodRows?.map((p: any) => [p.id, p.company_id]) ?? []);
 
       const rows = items.map((it) => {
         const unit = getEffectivePrice(it.product as any, isDealer);
         return {
-          sales_order_id: order.id,
           company_id: (prodCompanyMap.get(it.product_id) as string) ?? companyId,
           product_id: it.product_id,
           product_name: it.product?.name ?? "",
@@ -151,32 +132,73 @@ function CheckoutPage() {
           subtotal: unit * it.quantity,
         };
       });
-      const { error: iErr } = await supabase.from("sales_order_items").insert(rows);
-      if (iErr) throw iErr;
 
-      // 扣抵錢包點數（餘額/折扣點），並產生交易紀錄
-      if (shoppingApplied > 0 || discountApplied > 0) {
-        try {
-          await applyOrderPoints({
-            data: {
-              orderId: order.id,
-              shopping_redeem: shoppingApplied,
-              discount_redeem: discountApplied,
-              reward_redeem: 0,
-            },
-          });
-          await refreshWallet();
-        } catch (err: any) {
-          toast.warning(`訂單已建立，但點數扣抵失敗：${err.message ?? err}`);
-        }
+      const pointPayments: Array<{
+        point_type: "discount" | "shopping" | "reward";
+        points_used: number;
+        amount_offset: number;
+        note: string;
+      }> = [];
+      if (discountApplied > 0) {
+        pointPayments.push({
+          point_type: "discount",
+          points_used: discountApplied,
+          amount_offset: discountApplied,
+          note: "Checkout discount point offset",
+        });
       }
+      if (shoppingApplied > 0) {
+        pointPayments.push({
+          point_type: "shopping",
+          points_used: shoppingApplied,
+          amount_offset: shoppingApplied,
+          note: "Checkout shopping point offset",
+        });
+      }
+      if (rewardApplied > 0) {
+        pointPayments.push({
+          point_type: "reward",
+          points_used: rewardApplied,
+          amount_offset: rewardApplied,
+          note: "Checkout reward point offset",
+        });
+      }
+
+      const order = await createSalesOrderWithPointPayments({
+        data: {
+          order: {
+            order_no,
+            company_id: companyId,
+            user_id: user.id,
+            customer_name: form.receiver_name,
+            customer_email: user.email,
+            customer_phone: form.phone,
+            receiver_name: form.receiver_name,
+            receiver_phone: form.phone,
+            shipping_address: form.address,
+            notes: form.notes || null,
+            subtotal,
+            shipping_fee: shipping,
+            discount_amount: pointOffsetTotal,
+            total_amount: subtotal + shipping,
+            payment_status: total <= 0 ? "paid" : "pending",
+            referrer_id: safeReferrerId,
+          },
+          items: rows,
+          payments: [],
+          pointPayments,
+        },
+      });
+      const orderId = (order as any)?.id;
+      if (!orderId) throw new Error("訂單建立失敗，請重新整理後再試。");
+      if (pointPayments.length > 0) await refreshWallet();
 
       await clear();
       toast.success(`訂單建立成功：${order_no}`);
-      navigate({ to: "/shop/account/orders/$id", params: { id: order.id } });
+      navigate({ to: "/shop/account/orders/$id", params: { id: orderId } });
 
     } catch (e: any) {
-      toast.error(e.message ?? "建立訂單失敗");
+      toast.error(formatCheckoutPointPaymentError(e));
     } finally {
       setPlacing(false);
     }
@@ -333,6 +355,35 @@ function CheckoutPage() {
             </div>
 
             <Separator />
+            <div className="space-y-1 pt-1">
+              <div className="flex items-center justify-between text-xs">
+                <Label className="flex items-center gap-1 text-muted-foreground font-normal">
+                  <Wallet className="h-3 w-3" />獎勵點折抵
+                </Label>
+                <span className="text-muted-foreground">可用 {wallet.reward_points.toLocaleString()}</span>
+              </div>
+              <div className="flex gap-2">
+                <Input type="number" min={0} max={maxRewardRedeem} value={useReward}
+                  disabled={maxRewardRedeem === 0}
+                  onChange={(e) => setUseReward(Math.max(0, Math.min(maxRewardRedeem, +e.target.value || 0)))}
+                  className="h-8 text-xs" />
+                <Button type="button" size="sm" variant="outline" className="h-8 text-xs px-2"
+                  disabled={maxRewardRedeem === 0}
+                  onClick={() => setUseReward(maxRewardRedeem)}>全用</Button>
+              </div>
+              {rewardApplied > 0 && (
+                <div className="flex justify-between text-xs text-success">
+                  <span>已折抵獎勵點</span><span className="tabular-nums">- NT$ {rewardApplied.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
+            <Separator />
+            {pointOffsetTotal > 0 && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>點數折抵合計</span><span className="tabular-nums">- NT$ {pointOffsetTotal.toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between font-semibold text-base"><span>應付總計</span><span className="tabular-nums text-primary">NT$ {total.toLocaleString()}</span></div>
 
             <Button className="w-full mt-2" disabled={!canPlace} onClick={placeOrder}>
@@ -343,6 +394,26 @@ function CheckoutPage() {
       </div>
     </div>
   );
+}
+
+function formatCheckoutPointPaymentError(error: unknown) {
+  const message = error instanceof Error ? error.message : String((error as any)?.message ?? error ?? "");
+  if (message.includes("insufficient discount points")) return "折扣點餘額不足，請調整折抵點數後再送出。";
+  if (message.includes("insufficient shopping points")) return "購物點餘額不足，請調整折抵點數後再送出。";
+  if (message.includes("insufficient reward points")) return "獎勵點餘額不足，請調整折抵點數後再送出。";
+  if (message.includes("point offset total cannot exceed") || message.includes("Point offset total cannot exceed")) {
+    return "點數折抵不可超過訂單金額，請重新確認。";
+  }
+  if (message.includes("cash payment total cannot exceed") || message.includes("Cash payment total cannot exceed")) {
+    return "現金付款不可超過扣除點數後的應付金額。";
+  }
+  if (message.includes("duplicate point_type") || message.includes("Duplicate point type")) {
+    return "同一種點數不可重複折抵，請重新整理後再試。";
+  }
+  if (message.includes("cannot use another member point balance")) {
+    return "不可使用其他會員的點數餘額。";
+  }
+  return message || "建立訂單失敗，請重新整理後再試。";
 }
 
 function GuestAuthPanel() {

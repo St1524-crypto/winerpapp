@@ -90,7 +90,7 @@ export const createSalesOrderWithPointPayments = createServerFn({ method: "POST"
     const rpc = context.supabase.rpc as unknown as (
       fn: string,
       args: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    ) => Promise<{ data: { id?: unknown } | null; error: { message: string } | null }>;
 
     const { data: order, error } = await rpc("create_sales_order_with_point_payments", {
       _order: data.order,
@@ -100,5 +100,8 @@ export const createSalesOrderWithPointPayments = createServerFn({ method: "POST"
     });
 
     if (error) throw new Error(error.message);
-    return order;
+    if (!order?.id || typeof order.id !== "string") {
+      throw new Error("Order was created but no order id was returned.");
+    }
+    return { id: order.id };
   });
