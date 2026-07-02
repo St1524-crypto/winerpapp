@@ -1121,9 +1121,20 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (v === "dealer") return customerStatus.is_dealer;
       return false;
     });
+    if (tiers.length === 0) return null;
     const matches = tiers.filter((t: any) => quantity >= Number(t.min_qty) && (t.max_qty == null || quantity <= Number(t.max_qty)));
-    if (matches.length === 0) return null;
-    return matches.reduce((b: any, c: any) => (Number(c.unit_price) < Number(b.unit_price) ? c : b));
+    if (matches.length > 0) {
+      return matches.reduce((b: any, c: any) => (Number(c.unit_price) < Number(b.unit_price) ? c : b));
+    }
+    // VIP / 經銷會員即使未達最小門檻，仍套用其身分可見的最低門檻批發價
+    if (customerStatus.is_vip || customerStatus.is_dealer) {
+      const memberTiers = tiers.filter((t: any) => (t.visibility ?? "all") !== "all");
+      const pool = memberTiers.length > 0 ? memberTiers : tiers;
+      const minMin = Math.min(...pool.map((t: any) => Number(t.min_qty)));
+      const entry = pool.filter((t: any) => Number(t.min_qty) === minMin);
+      return entry.reduce((b: any, c: any) => (Number(c.unit_price) < Number(b.unit_price) ? c : b));
+    }
+    return null;
   }
   // 套用：VIP 升級套組 → 套組 bonus_points；其他 → 階梯獎勵點（依會員身分過濾可見階梯）
   function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number }): number {
