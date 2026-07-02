@@ -27,6 +27,7 @@ const upsertSchema = z.object({
     .regex(/^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/, "網址代稱需為 3-80 字元，可含小寫英文、數字與 -"),
   summary: z.string().trim().max(500).nullable().optional(),
   cover_image: z.string().trim().max(1000).nullable().optional(),
+  images: z.array(z.string().trim().min(1).max(1000)).max(7).default([]),
   content_json: jsonRecord.default({}),
   content_html: z.string().max(30000).nullable().optional(),
   external_url: z.string().trim().max(1000).nullable().optional(),
