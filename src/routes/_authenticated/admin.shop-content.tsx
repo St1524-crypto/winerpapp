@@ -416,6 +416,20 @@ function ShopContentAdminPage() {
             </div>
 
             <div className="space-y-1.5">
+              <Label>內容圖片（最多 7 張）</Label>
+              <ImageUploader
+                max={7}
+                images={(form.images ?? []).map((url, sort) => ({ url, sort }))}
+                onChange={(next) =>
+                  setForm((current) => ({
+                    ...current,
+                    images: next.slice(0, 7).map((im) => im.url),
+                  }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">可拖曳上傳、單張 5MB 以內。</p>
+
+            <div className="space-y-1.5">
               <Label>外部連結 / PDF URL</Label>
               <Input
                 value={form.external_url ?? ""}
