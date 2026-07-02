@@ -1,3 +1,4 @@
+import { ImageUploader, type UploaderImage } from "@/components/products/ImageUploader";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { FileText, Loader2, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
