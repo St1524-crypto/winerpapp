@@ -421,10 +421,10 @@ function ShopContentAdminPage() {
               <ImageUploader
                 max={7}
                 images={(form.images ?? []).map((url, sort) => ({ url, sort }))}
-                onChange={(next) =>
+                onChange={(next: UploaderImage[]) =>
                   setForm((current) => ({
                     ...current,
-                    images: next.slice(0, 7).map((im) => im.url),
+                    images: next.slice(0, 7).map((im: UploaderImage) => im.url),
                   }))
                 }
               />
