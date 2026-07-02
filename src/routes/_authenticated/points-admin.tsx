@@ -9,8 +9,9 @@ import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Coins, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { adminAdjustPoints } from "@/lib/points.functions";
+import { adminAdjustPoints, getSignupDiscountBonus, setSignupDiscountBonus } from "@/lib/points.functions";
 import { toast } from "sonner";
+import { Gift } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/points-admin")({
   component: PointsAdminPage,
