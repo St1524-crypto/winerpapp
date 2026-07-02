@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ShieldCheck, FileCheck2, Award } from "lucide-react";
+import { ShopContentList } from "@/components/shop/ShopContentList";
 
 export const Route = createFileRoute("/shop/patents")({
   component: PatentsPage,
