@@ -56,6 +56,7 @@ const EMPTY_FORM: Omit<ShopContentPage, "id" | "published_at" | "updated_at"> = 
   slug: "",
   summary: "",
   cover_image: "",
+  images: [],
   content_json: {},
   content_html: "",
   external_url: "",
