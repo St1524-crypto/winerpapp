@@ -97,8 +97,12 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
  * Returns the user's current_company_id so the client can compare.
  */
 export const getUserCompany = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    if (data.userId !== context.userId) {
+      throw new Error("Forbidden");
+    }
     const { data: row } = await supabaseAdmin
       .from("profiles")
       .select("current_company_id")
