@@ -10,13 +10,13 @@ async function ensureAdmin(supabase: any, userId: string) {
   }
 }
 
-/** 公開：列出所有啟用中的 VIP 階級 */
+/** 公開：列出所有啟用中的 VIP 階級（僅安全欄位，透過 vip_tiers_public 視圖） */
 export const listVipTiers = createServerFn({ method: "GET" }).handler(async () => {
   const { createClient } = await import("@supabase/supabase-js");
   const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
   });
-  const { data, error } = await sb.from("vip_tiers").select("*").order("sort_order");
+  const { data, error } = await sb.from("vip_tiers_public").select("*").order("sort_order");
   if (error) throw error;
   return data ?? [];
 });
