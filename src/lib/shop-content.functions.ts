@@ -114,6 +114,7 @@ export const upsertShopContentPage = createServerFn({ method: "POST" })
       slug: data.slug,
       summary: nullIfEmpty(data.summary),
       cover_image: nullIfEmpty(data.cover_image),
+      images: (data.images ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 7),
       content_json: data.content_json ?? {},
       content_html: nullIfEmpty(data.content_html),
       external_url: nullIfEmpty(data.external_url),
