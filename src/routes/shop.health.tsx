@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { HeartPulse, BookOpen, FlaskConical } from "lucide-react";
+import { ShopContentList } from "@/components/shop/ShopContentList";
 
 export const Route = createFileRoute("/shop/health")({
   component: HealthPage,
