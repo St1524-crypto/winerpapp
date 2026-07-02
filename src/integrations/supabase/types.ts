@@ -4737,6 +4737,66 @@ export type Database = {
           },
         ]
       }
+      shop_content_pages: {
+        Row: {
+          content_html: string | null
+          content_json: Json
+          cover_image: string | null
+          created_at: string
+          created_by: string | null
+          external_url: string | null
+          id: string
+          images: Json
+          is_published: boolean
+          published_at: string | null
+          section_type: string
+          slug: string
+          sort_order: number
+          summary: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content_html?: string | null
+          content_json?: Json
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          external_url?: string | null
+          id?: string
+          images?: Json
+          is_published?: boolean
+          published_at?: string | null
+          section_type: string
+          slug: string
+          sort_order?: number
+          summary?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content_html?: string | null
+          content_json?: Json
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          external_url?: string | null
+          id?: string
+          images?: Json
+          is_published?: boolean
+          published_at?: string | null
+          section_type?: string
+          slug?: string
+          sort_order?: number
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       support_announcements: {
         Row: {
           content: string

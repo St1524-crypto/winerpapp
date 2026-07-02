@@ -1,3 +1,4 @@
+import { ImageUploader, type UploaderImage } from "@/components/products/ImageUploader";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { FileText, Loader2, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
@@ -40,6 +41,7 @@ type ShopContentPage = {
   slug: string;
   summary: string | null;
   cover_image: string | null;
+  images?: string[] | null;
   content_json?: Record<string, unknown> | null;
   content_html: string | null;
   external_url: string | null;
@@ -55,6 +57,7 @@ const EMPTY_FORM: Omit<ShopContentPage, "id" | "published_at" | "updated_at"> = 
   slug: "",
   summary: "",
   cover_image: "",
+  images: [],
   content_json: {},
   content_html: "",
   external_url: "",
@@ -127,6 +130,7 @@ function ShopContentAdminPage() {
       slug: page.slug,
       summary: page.summary ?? "",
       cover_image: page.cover_image ?? "",
+      images: Array.isArray(page.images) ? page.images.slice(0, 7) : [],
       content_json: page.content_json ?? {},
       content_html: page.content_html ?? "",
       external_url: page.external_url ?? "",
@@ -162,6 +166,7 @@ function ShopContentAdminPage() {
           slug,
           summary: form.summary || null,
           cover_image: form.cover_image || null,
+          images: (form.images ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 7),
           content_json: form.content_json ?? {},
           content_html: form.content_html || null,
           external_url: form.external_url || null,
@@ -409,6 +414,21 @@ function ShopContentAdminPage() {
                 onChange={(event) => setForm((current) => ({ ...current, cover_image: event.target.value }))}
                 placeholder="https://..."
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>內容圖片（最多 7 張）</Label>
+              <ImageUploader
+                max={7}
+                images={(form.images ?? []).map((url, sort) => ({ url, sort }))}
+                onChange={(next: UploaderImage[]) =>
+                  setForm((current) => ({
+                    ...current,
+                    images: next.slice(0, 7).map((im: UploaderImage) => im.url),
+                  }))
+                }
+              />
+              <p className="text-xs text-muted-foreground">可拖曳上傳、單張 5MB 以內。</p>
             </div>
 
             <div className="space-y-1.5">

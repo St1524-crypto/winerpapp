@@ -7,7 +7,7 @@ const ADMIN_ROLES = ["super_admin", "admin"] as const;
 const SECTION_TYPES = ["wholesale", "patent", "news", "health"] as const;
 
 const PUBLIC_COLUMNS =
-  "id,section_type,title,slug,summary,cover_image,content_json,content_html,external_url,sort_order,is_published,published_at,updated_at";
+  "id,section_type,title,slug,summary,cover_image,images,content_json,content_html,external_url,sort_order,is_published,published_at,updated_at";
 
 const jsonRecord = z.record(z.unknown());
 
@@ -27,6 +27,7 @@ const upsertSchema = z.object({
     .regex(/^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/, "網址代稱需為 3-80 字元，可含小寫英文、數字與 -"),
   summary: z.string().trim().max(500).nullable().optional(),
   cover_image: z.string().trim().max(1000).nullable().optional(),
+  images: z.array(z.string().trim().min(1).max(1000)).max(7).default([]),
   content_json: jsonRecord.default({}),
   content_html: z.string().max(30000).nullable().optional(),
   external_url: z.string().trim().max(1000).nullable().optional(),
@@ -113,6 +114,7 @@ export const upsertShopContentPage = createServerFn({ method: "POST" })
       slug: data.slug,
       summary: nullIfEmpty(data.summary),
       cover_image: nullIfEmpty(data.cover_image),
+      images: (data.images ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 7),
       content_json: data.content_json ?? {},
       content_html: nullIfEmpty(data.content_html),
       external_url: nullIfEmpty(data.external_url),
