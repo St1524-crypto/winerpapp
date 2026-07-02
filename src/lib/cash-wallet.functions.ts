@@ -253,6 +253,86 @@ export const adminAdjustCash = createServerFn({ method: "POST" })
     return { balance_after: after };
   });
 
+// ============ 管理員：會員現金 / 點數餘額查詢 ============
+const AdminWalletListSchema = z.object({
+  query: z.string().trim().max(80).optional().default(""),
+  limit: z.number().int().min(1).max(200).optional().default(100),
+});
+
+export const adminListMemberCashWallets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => AdminWalletListSchema.parse(d ?? {}))
+  .handler(async ({ data, context }) => {
+    if (!(await isFinanceAdmin(context.userId))) throw new Error("沒有權限");
+
+    let profilesQuery = supabaseAdmin
+      .from("profiles")
+      .select("id, name, member_no, email, phone, is_vip, vip_expires_at")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+
+    const keyword = data.query.trim();
+    if (keyword) {
+      const escaped = keyword.replace(/[%_]/g, "\\$&");
+      profilesQuery = profilesQuery.or(
+        `name.ilike.%${escaped}%,email.ilike.%${escaped}%,phone.ilike.%${escaped}%,member_no.ilike.%${escaped}%`,
+      );
+    }
+
+    const { data: profiles, error: profilesError } = await profilesQuery;
+    if (profilesError) throw new Error(profilesError.message);
+
+    const ids = (profiles ?? []).map((profile: any) => profile.id);
+    let wallets: any[] = [];
+    if (ids.length > 0) {
+      const { data: walletRows, error: walletError } = await supabaseAdmin
+        .from("member_points_wallet")
+        .select("user_id, cash_balance, shopping_points, reward_points, discount_points, updated_at")
+        .in("user_id", ids);
+      if (walletError) throw new Error(walletError.message);
+      wallets = walletRows ?? [];
+    }
+
+    const walletMap = new Map(wallets.map((wallet: any) => [wallet.user_id, wallet]));
+    return {
+      members: (profiles ?? []).map((profile: any) => ({
+        ...profile,
+        wallet: walletMap.get(profile.id) ?? {
+          user_id: profile.id,
+          cash_balance: 0,
+          shopping_points: 0,
+          reward_points: 0,
+          discount_points: 0,
+          updated_at: null,
+        },
+      })),
+    };
+  });
+
+// ============ 管理員：代會員用現金錢包購買購物點 ============
+const AdminBuyPointsSchema = z.object({
+  userId: z.string().uuid(),
+  amount: z.number().positive().max(10_000_000),
+  note: z.string().trim().max(500).optional(),
+});
+
+export const adminBuyShoppingPointsWithCash = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => AdminBuyPointsSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    if (!(await isFinanceAdmin(context.userId))) throw new Error("沒有權限");
+    const { data: result, error } = await (supabaseAdmin as any).rpc(
+      "admin_buy_shopping_points_with_cash",
+      {
+        _member_id: data.userId,
+        _amount: data.amount,
+        _note: data.note ?? null,
+      },
+    );
+    if (error) throw new Error(error.message);
+    return result;
+  });
+
 // ============ 管理員：列表 ============
 export const adminListCashTx = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
