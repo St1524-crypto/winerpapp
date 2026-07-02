@@ -25,7 +25,7 @@ function NewsPage() {
           品牌動態、活動快訊與限時優惠，第一時間在此同步。內容即將上線。
         </p>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto mb-10">
         {[
           { icon: Megaphone, title: "品牌公告", desc: "營運與服務相關重要訊息" },
           { icon: Sparkles, title: "活動資訊", desc: "會員活動、線下體驗、講座" },
@@ -37,10 +37,10 @@ function NewsPage() {
             </div>
             <div className="font-semibold mb-1">{title}</div>
             <p className="text-xs text-muted-foreground">{desc}</p>
-            <div className="mt-4 text-[11px] text-muted-foreground/70">即將上線</div>
           </div>
         ))}
       </div>
+      <ShopContentList sectionType="news" />
     </div>
   );
 }
