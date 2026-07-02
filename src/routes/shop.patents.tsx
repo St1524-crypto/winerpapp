@@ -25,7 +25,7 @@ function PatentsPage() {
           我們致力於品質透明化。專利文件、第三方檢驗報告、國際認證資料即將於此上線。
         </p>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto mb-10">
         {[
           { icon: Award, title: "產品專利", desc: "核心技術與配方專利證書" },
           { icon: FileCheck2, title: "檢驗報告", desc: "SGS / 第三方公正單位檢驗" },
@@ -37,10 +37,10 @@ function PatentsPage() {
             </div>
             <div className="font-semibold mb-1">{title}</div>
             <p className="text-xs text-muted-foreground">{desc}</p>
-            <div className="mt-4 text-[11px] text-muted-foreground/70">即將上線</div>
           </div>
         ))}
       </div>
+      <ShopContentList sectionType="patent" />
     </div>
   );
 }
