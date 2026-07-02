@@ -75,6 +75,38 @@ export const quickRegisterAndSignIn = createServerFn({ method: "POST" })
       is_default: true,
     });
 
+    // 首次註冊贈送折扣點（管理員可於後台調整；預設 1000）
+    try {
+      const { data: setting } = await supabaseAdmin
+        .from("system_settings")
+        .select("value")
+        .eq("key", "guest_signup_discount_points")
+        .maybeSingle();
+      const raw = (setting as any)?.value;
+      const bonus = Math.max(
+        0,
+        Math.floor(Number(typeof raw === "number" ? raw : raw ?? 1000)) || 0,
+      );
+      if (bonus > 0) {
+        await supabaseAdmin
+          .from("member_points_wallet")
+          .upsert(
+            { user_id: userId, discount_points: bonus },
+            { onConflict: "user_id" },
+          );
+        await supabaseAdmin.from("point_transactions").insert({
+          user_id: userId,
+          point_type: "discount",
+          amount: bonus,
+          balance_after: bonus,
+          source: "signup_bonus",
+          note: `新會員註冊贈送 ${bonus} 折扣點`,
+        });
+      }
+    } catch (e) {
+      console.error("[signup bonus] failed", e);
+    }
+
     // Sign in via publishable client to obtain session tokens.
     const pub = createClient(
       process.env.SUPABASE_URL!,
