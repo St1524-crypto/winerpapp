@@ -165,6 +165,7 @@ function ShopContentAdminPage() {
           slug,
           summary: form.summary || null,
           cover_image: form.cover_image || null,
+          images: (form.images ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 7),
           content_json: form.content_json ?? {},
           content_html: form.content_html || null,
           external_url: form.external_url || null,
