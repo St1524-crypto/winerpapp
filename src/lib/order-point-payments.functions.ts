@@ -87,17 +87,16 @@ export const createSalesOrderWithPointPayments = createServerFn({ method: "POST"
       throw new Error("Cash payment total cannot exceed cash amount due.");
     }
 
-    const rpc = context.supabase.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: { id?: unknown } | null; error: { message: string } | null }>;
-
-    const { data: order, error } = await rpc("create_sales_order_with_point_payments", {
-      _order: data.order,
-      _items: data.items,
-      _payments: data.payments,
-      _point_payments: data.pointPayments,
-    });
+    const { data: order, error } = (await (context.supabase.rpc as any).call(
+      context.supabase,
+      "create_sales_order_with_point_payments",
+      {
+        _order: data.order,
+        _items: data.items,
+        _payments: data.payments,
+        _point_payments: data.pointPayments,
+      },
+    )) as { data: { id?: unknown } | null; error: { message: string } | null };
 
     if (error) throw new Error(error.message);
     if (!order?.id || typeof order.id !== "string") {
