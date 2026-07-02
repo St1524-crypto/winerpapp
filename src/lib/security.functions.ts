@@ -341,9 +341,20 @@ export const recordLoginAttempt = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { ip, userAgent } = extractRequestMeta();
 
+    // Rate-limit per IP to prevent audit-log pollution by unauthenticated callers.
+    if (ip) {
+      const since = new Date(Date.now() - 60_000).toISOString();
+      const { count } = await supabaseAdmin
+        .from("login_attempts")
+        .select("id", { count: "exact", head: true })
+        .eq("ip_address", ip)
+        .gte("created_at", since);
+      if ((count ?? 0) >= 20) {
+        return { ok: false as const, error: "rate_limited" };
+      }
+    }
+
     // Verify user_id server-side from the bearer token (if any).
-    // Never trust a client-supplied userId — it would let any unauthenticated
-    // caller forge audit rows attributed to arbitrary users.
     let verifiedUserId: string | null = null;
     if (data.success) {
       const authHeader = getRequestHeader("authorization");
@@ -356,15 +367,30 @@ export const recordLoginAttempt = createServerFn({ method: "POST" })
       }
     }
 
+    // For failed attempts, only log if the target email exists — prevents
+    // audit-log pollution with fabricated records for arbitrary emails.
+    const normalized = data.email.toLowerCase().slice(0, 255);
+    if (!data.success) {
+      const { data: exists } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("email", normalized)
+        .limit(1)
+        .maybeSingle();
+      if (!exists) {
+        return { ok: true as const, skipped: true };
+      }
+    }
+
     await supabaseAdmin.from("login_attempts").insert({
-      email: data.email.toLowerCase().slice(0, 255),
+      email: normalized,
       user_id: verifiedUserId,
       ip_address: ip,
       user_agent: userAgent ? userAgent.slice(0, 500) : null,
       success: data.success,
       failure_reason: data.failureReason ? data.failureReason.slice(0, 200) : null,
     });
-    return { ok: true };
+    return { ok: true as const };
   });
 
 export const listMyLoginAttempts = createServerFn({ method: "GET" })
