@@ -96,11 +96,10 @@ function ProfilePage() {
       setMarketingSlug((data as any)?.marketing_slug ?? (data as any)?.member_no ?? "");
 
       const { data: tiers } = await supabase
-        .from("vip_tiers")
+        .from("vip_tiers_public" as any)
         .select("code, name, sort_order")
-        .eq("status", "active")
         .order("sort_order", { ascending: true });
-      setVipTiers(tiers ?? []);
+      setVipTiers(((tiers as any) ?? []) as { code: string; name: string; sort_order: number }[]);
 
       const isVipFlag = !!((data as any)?.is_vip);
       const expiresAt = (data as any)?.vip_expires_at as string | null;
