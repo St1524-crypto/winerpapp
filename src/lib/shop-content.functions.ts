@@ -16,6 +16,10 @@ const listPublicSchema = z.object({
   limit: z.number().int().min(1).max(100).optional().default(50),
 });
 
+const getBySlugSchema = z.object({
+  slug: z.string().trim().min(1).max(120),
+});
+
 const upsertSchema = z.object({
   id: z.string().uuid().optional(),
   section_type: z.enum(SECTION_TYPES),
@@ -87,6 +91,20 @@ export const listPublicShopContentPages = createServerFn({ method: "POST" })
     const { data: pages, error } = await query;
     if (error) throw new Error(error.message);
     return { pages: pages ?? [] };
+  });
+
+export const getPublicShopContentPage = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => getBySlugSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { data: page, error } = await db()
+      .from("shop_content_pages")
+      .select(PUBLIC_COLUMNS)
+      .eq("slug", data.slug)
+      .eq("is_published", true)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!page) throw new Error("找不到內容或尚未發布");
+    return { page };
   });
 
 export const adminListShopContentPages = createServerFn({ method: "GET" })

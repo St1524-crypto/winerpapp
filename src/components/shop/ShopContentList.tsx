@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { listPublicShopContentPages } from "@/lib/shop-content.functions";
 
@@ -31,16 +32,9 @@ export function ShopContentList({ sectionType, emptyText = "內容即將上線" 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
       {pages.map((p) => {
-        const href = p.external_url || `#${p.slug}`;
         const isExternal = !!p.external_url;
-        return (
-          <a
-            key={p.id}
-            href={href}
-            target={isExternal ? "_blank" : undefined}
-            rel={isExternal ? "noopener noreferrer" : undefined}
-            className="group rounded-2xl border border-border/60 bg-card overflow-hidden hover:shadow-lg transition-shadow"
-          >
+        const commonInner = (
+          <>
             {p.cover_image && (
               <div className="aspect-[16/9] overflow-hidden bg-muted">
                 <img
@@ -65,7 +59,17 @@ export function ShopContentList({ sectionType, emptyText = "內容即將上線" 
                 </div>
               )}
             </div>
+          </>
+        );
+        const className = "group rounded-2xl border border-border/60 bg-card overflow-hidden hover:shadow-lg transition-shadow block";
+        return isExternal ? (
+          <a key={p.id} href={p.external_url} target="_blank" rel="noopener noreferrer" className={className}>
+            {commonInner}
           </a>
+        ) : (
+          <Link key={p.id} to="/shop/content/$slug" params={{ slug: p.slug }} className={className}>
+            {commonInner}
+          </Link>
         );
       })}
     </div>
