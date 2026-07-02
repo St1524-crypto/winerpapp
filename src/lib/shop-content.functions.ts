@@ -93,6 +93,20 @@ export const listPublicShopContentPages = createServerFn({ method: "POST" })
     return { pages: pages ?? [] };
   });
 
+export const getPublicShopContentPage = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => getBySlugSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { data: page, error } = await db()
+      .from("shop_content_pages")
+      .select(PUBLIC_COLUMNS)
+      .eq("slug", data.slug)
+      .eq("is_published", true)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!page) throw new Error("找不到內容或尚未發布");
+    return { page };
+  });
+
 export const adminListShopContentPages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
