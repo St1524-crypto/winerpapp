@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { HeartPulse, BookOpen, FlaskConical } from "lucide-react";
+import { ShopContentList } from "@/components/shop/ShopContentList";
 
 export const Route = createFileRoute("/shop/health")({
   component: HealthPage,
@@ -24,7 +25,7 @@ function HealthPage() {
           以科學為本，分享健康研究、營養知識與產品應用實證。內容即將上線。
         </p>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto mb-10">
         {[
           { icon: FlaskConical, title: "健康研究", desc: "國內外研究文獻與趨勢" },
           { icon: BookOpen, title: "營養知識", desc: "日常保健與飲食觀念" },
@@ -36,10 +37,10 @@ function HealthPage() {
             </div>
             <div className="font-semibold mb-1">{title}</div>
             <p className="text-xs text-muted-foreground">{desc}</p>
-            <div className="mt-4 text-[11px] text-muted-foreground/70">即將上線</div>
           </div>
         ))}
       </div>
+      <ShopContentList sectionType="health" />
     </div>
   );
 }
