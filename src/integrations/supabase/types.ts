@@ -14,21 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _annual_fee_import: {
-        Row: {
-          expires_at: string
-          member_no: string
-        }
-        Insert: {
-          expires_at: string
-          member_no: string
-        }
-        Update: {
-          expires_at?: string
-          member_no?: string
-        }
-        Relationships: []
-      }
       account_statements: {
         Row: {
           business_account_id: string

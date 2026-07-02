@@ -1363,17 +1363,31 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     onError: (e: any) => toast.error(e?.message ?? "建立失敗"),
   });
 
+  async function fetchDefaultShippingAddress(userId: string): Promise<string | null> {
+    try {
+      const { data } = await supabase
+        .from("customer_addresses")
+        .select("address,is_default,created_at")
+        .eq("user_id", userId)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return (data as any)?.address ?? null;
+    } catch { return null; }
+  }
+
   async function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null }) {
     setCustomerId(c.id);
     setCustomer(c.name);
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
-    if (c.address && !address) setAddress(c.address);
+    if (c.address) setAddress(c.address);
     setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
     setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
-    // 嘗試以電話 / Email 對應到會員 profile，自動帶入 VIP 階層
+    // 嘗試以電話 / Email 對應到會員 profile，自動帶入 VIP 階層與通訊地址
     try {
       const filters: string[] = [];
       if (c.phone) filters.push(`phone.eq.${c.phone}`);
@@ -1381,34 +1395,46 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (filters.length === 0) return;
       const { data } = await supabase
         .from("profiles")
-        .select("id,member_no,is_vip,is_dealer,vip_tier")
+        .select("id,member_no,is_vip,is_dealer,vip_tier,addr_mail,addr_home")
         .or(filters.join(","))
         .limit(1)
         .maybeSingle();
       if (data) {
+        const uid = ((data as any).id as string | null) ?? null;
         setCustomerStatus({
           is_vip: !!(data as any).is_vip,
           is_dealer: !!(data as any).is_dealer,
           vip_tier: ((data as any).vip_tier as string | null) ?? null,
           member_no: ((data as any).member_no as string | null) ?? null,
-          user_id: ((data as any).id as string | null) ?? null,
+          user_id: uid,
         });
+        if (!c.address) {
+          const memberAddr = (data as any).addr_mail ?? (data as any).addr_home ?? null;
+          const fallback = memberAddr ?? (uid ? await fetchDefaultShippingAddress(uid) : null);
+          if (fallback) setAddress(fallback);
+        }
       }
     } catch { /* ignore */ }
   }
 
   // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
-  function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null; user_id?: string | null }) {
+  async function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null; user_id?: string | null }) {
     setCustomerId(null);
     setCustomer(e.name);
     setEmail(e.email ?? "");
     setPhone(e.phone ?? "");
-    if (e.address && !address) setAddress(e.address);
+    let addr = e.address ?? null;
+    if (!addr && e.user_id) {
+      addr = await fetchDefaultShippingAddress(e.user_id);
+    }
+    if (addr) setAddress(addr);
     setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
     setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null, user_id: e.user_id ?? null });
     setPickerOpen(false);
     toast.success(`已帶入${e.label}：${e.name}`);
   }
+
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
