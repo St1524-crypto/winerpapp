@@ -16,6 +16,10 @@ const listPublicSchema = z.object({
   limit: z.number().int().min(1).max(100).optional().default(50),
 });
 
+const getBySlugSchema = z.object({
+  slug: z.string().trim().min(1).max(120),
+});
+
 const upsertSchema = z.object({
   id: z.string().uuid().optional(),
   section_type: z.enum(SECTION_TYPES),
