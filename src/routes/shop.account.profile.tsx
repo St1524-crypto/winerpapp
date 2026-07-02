@@ -99,7 +99,7 @@ function ProfilePage() {
         .from("vip_tiers_public" as any)
         .select("code, name, sort_order")
         .order("sort_order", { ascending: true });
-      setVipTiers(tiers ?? []);
+      setVipTiers(((tiers as any) ?? []) as { code: string; name: string; sort_order: number }[]);
 
       const isVipFlag = !!((data as any)?.is_vip);
       const expiresAt = (data as any)?.vip_expires_at as string | null;
