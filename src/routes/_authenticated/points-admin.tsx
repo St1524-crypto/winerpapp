@@ -9,8 +9,9 @@ import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Coins, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { adminAdjustPoints } from "@/lib/points.functions";
+import { adminAdjustPoints, getSignupDiscountBonus, setSignupDiscountBonus } from "@/lib/points.functions";
 import { toast } from "sonner";
+import { Gift } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/points-admin")({
   component: PointsAdminPage,
@@ -74,6 +75,8 @@ function PointsAdminPage() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">為會員儲值購物點、發放獎勵點或調整折扣點。</p>
       </div>
+
+      <SignupBonusCard />
 
       <Card>
         <CardHeader>
@@ -179,5 +182,68 @@ function PointsAdminPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function SignupBonusCard() {
+  const [points, setPoints] = useState<number>(1000);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await getSignupDiscountBonus();
+        setPoints(Number(r.points ?? 1000));
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    try {
+      const val = Math.max(0, Math.floor(Number(points) || 0));
+      await setSignupDiscountBonus({ data: { points: val } });
+      toast.success(`已設定為 ${val} 折扣點`);
+    } catch (e: any) {
+      toast.error(e.message ?? "儲存失敗");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Gift className="h-4 w-4 text-primary" />
+          新會員註冊贈送折扣點
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          遊客快速註冊成功時，系統自動發放折扣點；設為 0 表示停用。
+        </p>
+        <div className="flex items-end gap-3 max-w-md">
+          <div className="flex-1 space-y-1">
+            <Label>贈送折扣點</Label>
+            <Input
+              type="number"
+              min={0}
+              value={points}
+              disabled={loading}
+              onChange={(e) => setPoints(Number(e.target.value))}
+            />
+          </div>
+          <Button onClick={save} disabled={saving || loading}>
+            {saving ? "儲存中…" : "儲存"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
