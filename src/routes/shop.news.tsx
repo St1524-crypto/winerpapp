@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Megaphone, Sparkles, Tag } from "lucide-react";
+import { ShopContentList } from "@/components/shop/ShopContentList";
 
 export const Route = createFileRoute("/shop/news")({
   component: NewsPage,
