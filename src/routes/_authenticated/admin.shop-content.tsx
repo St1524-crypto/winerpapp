@@ -129,6 +129,7 @@ function ShopContentAdminPage() {
       slug: page.slug,
       summary: page.summary ?? "",
       cover_image: page.cover_image ?? "",
+      images: Array.isArray(page.images) ? page.images.slice(0, 7) : [],
       content_json: page.content_json ?? {},
       content_html: page.content_html ?? "",
       external_url: page.external_url ?? "",
