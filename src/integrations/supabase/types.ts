@@ -6611,6 +6611,10 @@ export type Database = {
         Args: { _advance_next?: boolean; _created_by?: string }
         Returns: Json
       }
+      settle_monthly_bonus: {
+        Args: { _created_by?: string; _source?: string; _yyyymm?: string }
+        Returns: Json
+      }
       slugify_company_name: { Args: { _name: string }; Returns: string }
     }
     Enums: {
