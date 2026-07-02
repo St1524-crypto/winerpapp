@@ -119,6 +119,42 @@ export const adminAdjustPoints = createServerFn({ method: "POST" })
     return { balance_after: after };
   });
 
+// ---- 新會員註冊贈送折扣點：設定管理 ----
+export const getSignupDiscountBonus = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { data } = await supabaseAdmin
+      .from("system_settings")
+      .select("value")
+      .eq("key", "guest_signup_discount_points")
+      .maybeSingle();
+    const raw = (data as any)?.value;
+    const points = Math.max(
+      0,
+      Math.floor(Number(typeof raw === "number" ? raw : raw ?? 1000)) || 0,
+    );
+    return { points };
+  });
+
+export const setSignupDiscountBonus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ points: z.number().int().min(0).max(1000000) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin
+      .from("system_settings")
+      .upsert(
+        {
+          key: "guest_signup_discount_points",
+          value: data.points as any,
+          description: "新會員（含訪客快速註冊）首次註冊贈送折扣點",
+          updated_by: context.userId,
+        },
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true, points: data.points };
+  });
+
 // ---- 結帳：扣點 + 入點（reward_earn 由伺服器依訂單實際商品計算，不接受客戶端輸入）----
 const redeemSchema = z.object({
   orderId: z.string().uuid(),
