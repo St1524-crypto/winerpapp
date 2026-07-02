@@ -428,6 +428,7 @@ function ShopContentAdminPage() {
                 }
               />
               <p className="text-xs text-muted-foreground">可拖曳上傳、單張 5MB 以內。</p>
+            </div>
 
             <div className="space-y-1.5">
               <Label>外部連結 / PDF URL</Label>
