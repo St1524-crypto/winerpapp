@@ -76,6 +76,8 @@ function PointsAdminPage() {
         <p className="text-sm text-muted-foreground mt-1">為會員儲值購物點、發放獎勵點或調整折扣點。</p>
       </div>
 
+      <SignupBonusCard />
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">會員列表</CardTitle>
