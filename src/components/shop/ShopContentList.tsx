@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { listPublicShopContentPages } from "@/lib/shop-content.functions";
 
