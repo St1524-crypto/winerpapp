@@ -7,7 +7,7 @@ const ADMIN_ROLES = ["super_admin", "admin"] as const;
 const SECTION_TYPES = ["wholesale", "patent", "news", "health"] as const;
 
 const PUBLIC_COLUMNS =
-  "id,section_type,title,slug,summary,cover_image,content_json,content_html,external_url,sort_order,is_published,published_at,updated_at";
+  "id,section_type,title,slug,summary,cover_image,images,content_json,content_html,external_url,sort_order,is_published,published_at,updated_at";
 
 const jsonRecord = z.record(z.unknown());
 
