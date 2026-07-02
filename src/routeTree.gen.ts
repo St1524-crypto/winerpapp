@@ -68,6 +68,7 @@ import { Route as ShopAccountIndexRouteImport } from './routes/shop.account.inde
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
+import { Route as ShopContentSlugRouteImport } from './routes/shop.content.$slug'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
 import { Route as ShopAccountWorkbenchRouteImport } from './routes/shop.account.workbench'
 import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wallet'
@@ -427,6 +428,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
 const ShopProductIdRoute = ShopProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
+  getParentRoute: () => ShopRoute,
+} as any)
+const ShopContentSlugRoute = ShopContentSlugRouteImport.update({
+  id: '/content/$slug',
+  path: '/content/$slug',
   getParentRoute: () => ShopRoute,
 } as any)
 const ShopCategorySlugRoute = ShopCategorySlugRouteImport.update({
@@ -847,6 +853,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
+  '/shop/content/$slug': typeof ShopContentSlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/finance/': typeof AuthenticatedFinanceIndexRoute
@@ -959,6 +966,7 @@ export interface FileRoutesByTo {
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
+  '/shop/content/$slug': typeof ShopContentSlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/finance': typeof AuthenticatedFinanceIndexRoute
@@ -1077,6 +1085,7 @@ export interface FileRoutesById {
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
+  '/shop/content/$slug': typeof ShopContentSlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
@@ -1195,6 +1204,7 @@ export interface FileRouteTypes {
     | '/shop/account/wallet'
     | '/shop/account/workbench'
     | '/shop/category/$slug'
+    | '/shop/content/$slug'
     | '/shop/product/$id'
     | '/admin/'
     | '/finance/'
@@ -1307,6 +1317,7 @@ export interface FileRouteTypes {
     | '/shop/account/wallet'
     | '/shop/account/workbench'
     | '/shop/category/$slug'
+    | '/shop/content/$slug'
     | '/shop/product/$id'
     | '/admin'
     | '/finance'
@@ -1424,6 +1435,7 @@ export interface FileRouteTypes {
     | '/shop/account/wallet'
     | '/shop/account/workbench'
     | '/shop/category/$slug'
+    | '/shop/content/$slug'
     | '/shop/product/$id'
     | '/_authenticated/admin/'
     | '/_authenticated/finance/'
@@ -1884,6 +1896,13 @@ declare module '@tanstack/react-router' {
       path: '/product/$id'
       fullPath: '/shop/product/$id'
       preLoaderRoute: typeof ShopProductIdRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/shop/content/$slug': {
+      id: '/shop/content/$slug'
+      path: '/content/$slug'
+      fullPath: '/shop/content/$slug'
+      preLoaderRoute: typeof ShopContentSlugRouteImport
       parentRoute: typeof ShopRoute
     }
     '/shop/category/$slug': {
@@ -2579,6 +2598,7 @@ interface ShopRouteChildren {
   ShopWholesaleRoute: typeof ShopWholesaleRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ShopCategorySlugRoute: typeof ShopCategorySlugRoute
+  ShopContentSlugRoute: typeof ShopContentSlugRoute
   ShopProductIdRoute: typeof ShopProductIdRoute
 }
 
@@ -2593,6 +2613,7 @@ const ShopRouteChildren: ShopRouteChildren = {
   ShopWholesaleRoute: ShopWholesaleRoute,
   ShopIndexRoute: ShopIndexRoute,
   ShopCategorySlugRoute: ShopCategorySlugRoute,
+  ShopContentSlugRoute: ShopContentSlugRoute,
   ShopProductIdRoute: ShopProductIdRoute,
 }
 
