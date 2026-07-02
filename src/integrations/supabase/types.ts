@@ -6331,6 +6331,54 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_sales_order_with_point_payments: {
+        Args: {
+          _items: Json
+          _order: Json
+          _payments?: Json
+          _point_payments?: Json
+        }
+        Returns: {
+          company_id: string
+          coupon_code: string | null
+          created_at: string
+          created_by_id: string | null
+          created_by_name: string | null
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string
+          customer_phone: string | null
+          discount_amount: number
+          id: string
+          invoice_tax_id: string | null
+          invoice_type: string | null
+          notes: string | null
+          order_no: string
+          order_source: string | null
+          order_status: string
+          order_type: string
+          payment_status: string
+          receiver_name: string
+          receiver_phone: string
+          referrer_id: string | null
+          salesperson_id: string | null
+          salesperson_name: string | null
+          shipping_address: string
+          shipping_fee: number
+          shipping_method: string
+          shipping_status: string
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "sales_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       current_company_id: { Args: never; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
