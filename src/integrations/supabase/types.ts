@@ -5841,6 +5841,13 @@ export type Database = {
             referencedRelation: "vip_tiers"
             referencedColumns: ["code"]
           },
+          {
+            foreignKeyName: "vip_upgrade_packages_tier_code_fkey"
+            columns: ["tier_code"]
+            isOneToOne: false
+            referencedRelation: "vip_tiers_public"
+            referencedColumns: ["code"]
+          },
         ]
       }
       warehouse_inventory: {
@@ -6179,6 +6186,51 @@ export type Database = {
           profile_cover?: string | null
           referral_code?: string | null
           youtube_url?: string | null
+        }
+        Relationships: []
+      }
+      vip_tiers_public: {
+        Row: {
+          code: string | null
+          description: string | null
+          id: string | null
+          name: string | null
+          renewal_required_new_vip: number | null
+          renewal_window_days: number | null
+          required_direct_vip: number | null
+          required_mentor_count: number | null
+          required_mentor_tier: string | null
+          required_reward_points: number | null
+          sort_order: number | null
+          status: string | null
+        }
+        Insert: {
+          code?: string | null
+          description?: string | null
+          id?: string | null
+          name?: string | null
+          renewal_required_new_vip?: number | null
+          renewal_window_days?: number | null
+          required_direct_vip?: number | null
+          required_mentor_count?: number | null
+          required_mentor_tier?: string | null
+          required_reward_points?: number | null
+          sort_order?: number | null
+          status?: string | null
+        }
+        Update: {
+          code?: string | null
+          description?: string | null
+          id?: string | null
+          name?: string | null
+          renewal_required_new_vip?: number | null
+          renewal_window_days?: number | null
+          required_direct_vip?: number | null
+          required_mentor_count?: number | null
+          required_mentor_tier?: string | null
+          required_reward_points?: number | null
+          sort_order?: number | null
+          status?: string | null
         }
         Relationships: []
       }
