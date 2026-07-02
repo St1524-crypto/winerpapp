@@ -96,9 +96,8 @@ function ProfilePage() {
       setMarketingSlug((data as any)?.marketing_slug ?? (data as any)?.member_no ?? "");
 
       const { data: tiers } = await supabase
-        .from("vip_tiers")
+        .from("vip_tiers_public" as any)
         .select("code, name, sort_order")
-        .eq("status", "active")
         .order("sort_order", { ascending: true });
       setVipTiers(tiers ?? []);
 
