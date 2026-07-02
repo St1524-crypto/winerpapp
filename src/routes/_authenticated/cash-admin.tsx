@@ -7,11 +7,27 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Wallet, CheckCircle2, XCircle, Plus, Minus } from "lucide-react";
+import { Wallet, CheckCircle2, XCircle, Plus, Minus, Search, Coins } from "lucide-react";
 import { toast } from "sonner";
-import { adminListCashTx, adminProcessCashTx, adminAdjustCash } from "@/lib/cash-wallet.functions";
+import {
+  adminListCashTx,
+  adminProcessCashTx,
+  adminAdjustCash,
+  adminListMemberCashWallets,
+  adminBuyShoppingPointsWithCash,
+} from "@/lib/cash-wallet.functions";
 
 export const Route = createFileRoute("/_authenticated/cash-admin")({ component: Page });
 
@@ -38,6 +54,14 @@ function Page() {
   const [adjUserId, setAdjUserId] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
   const [adjNote, setAdjNote] = useState("");
+  const [walletQuery, setWalletQuery] = useState("");
+  const [walletRows, setWalletRows] = useState<any[]>([]);
+  const [walletLoading, setWalletLoading] = useState(true);
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [buyMember, setBuyMember] = useState<any | null>(null);
+  const [buyAmount, setBuyAmount] = useState("");
+  const [buyNote, setBuyNote] = useState("");
+  const [buyBusy, setBuyBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +73,20 @@ function Page() {
   }, [status]);
 
   useEffect(() => { load(); }, [load]);
+
+  const loadWallets = useCallback(async () => {
+    setWalletLoading(true);
+    try {
+      const data = await adminListMemberCashWallets({ data: { query: walletQuery, limit: 100 } });
+      setWalletRows((data as any)?.members ?? []);
+    } catch (e: any) {
+      toast.error(e.message ?? "載入會員現金錢包餘額失敗");
+    } finally {
+      setWalletLoading(false);
+    }
+  }, [walletQuery]);
+
+  useEffect(() => { loadWallets(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function act(id: string, action: "approve" | "reject") {
     setBusyId(id);
@@ -72,15 +110,118 @@ function Page() {
     } catch (e: any) { toast.error(e.message ?? "調整失敗"); }
   }
 
+  function openBuyPoints(member: any) {
+    setBuyMember(member);
+    setBuyAmount("");
+    setBuyNote("");
+    setBuyOpen(true);
+  }
+
+  async function confirmBuyPoints() {
+    if (!buyMember) return;
+    const amount = Number(buyAmount);
+    const cashBalance = Number(buyMember.wallet?.cash_balance ?? 0);
+    if (!amount || amount <= 0) return toast.error("請輸入大於 0 的購買金額");
+    if (amount > cashBalance) return toast.error(`會員現金餘額不足，目前餘額 NT$ ${cashBalance.toLocaleString()}`);
+
+    setBuyBusy(true);
+    try {
+      const result: any = await adminBuyShoppingPointsWithCash({
+        data: { userId: buyMember.id, amount, note: buyNote || undefined },
+      });
+      const pointsAdded = Number(result?.points_added ?? Math.floor(amount));
+      toast.success(`購買完成，已增加 ${pointsAdded.toLocaleString()} 購物點`);
+      setBuyOpen(false);
+      setBuyMember(null);
+      setBuyAmount("");
+      setBuyNote("");
+      await Promise.all([loadWallets(), load()]);
+    } catch (e: any) {
+      toast.error(e.message ?? "代會員購買購物點失敗");
+    } finally {
+      setBuyBusy(false);
+    }
+  }
+
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2"><Wallet className="h-6 w-6 text-primary" />現金錢包審核</h1>
-          <p className="text-sm text-muted-foreground mt-1">審核會員的現金充值 / 提現 / 購買購物點交易。</p>
+          <p className="text-sm text-muted-foreground mt-1">審核會員交易，查詢現金錢包餘額，並代會員用現金餘額購買購物點。</p>
         </div>
         <Button onClick={() => setAdjOpen(true)} variant="outline"><Plus className="h-4 w-4 mr-2" />手動調整餘額</Button>
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2"><Coins className="h-4 w-4 text-primary" />會員現金錢包餘額查詢</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form
+            className="flex flex-col gap-2 sm:flex-row"
+            onSubmit={(event) => {
+              event.preventDefault();
+              loadWallets();
+            }}
+          >
+            <Input
+              value={walletQuery}
+              onChange={(event) => setWalletQuery(event.target.value)}
+              placeholder="搜尋姓名 / Email / 電話 / 會員編號"
+              className="sm:max-w-md"
+            />
+            <Button type="submit" variant="outline" disabled={walletLoading}>
+              <Search className="h-4 w-4 mr-2" />查詢
+            </Button>
+          </form>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>會員</TableHead>
+                <TableHead>聯絡方式</TableHead>
+                <TableHead className="text-right">現金餘額</TableHead>
+                <TableHead className="text-right">購物點</TableHead>
+                <TableHead className="text-right">獎勵點</TableHead>
+                <TableHead className="text-right">折扣點</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {walletLoading ? Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}><TableCell colSpan={7}><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+              )) : walletRows.length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-10">查無會員錢包資料</TableCell></TableRow>
+              ) : walletRows.map((member: any) => {
+                const wallet = member.wallet ?? {};
+                const cashBalance = Number(wallet.cash_balance ?? 0);
+                return (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div className="text-sm font-medium">{member.name ?? "未命名會員"}</div>
+                      <div className="text-xs text-muted-foreground font-mono">{member.member_no ?? member.id}</div>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      <div>{member.phone ?? "—"}</div>
+                      <div>{member.email ?? ""}</div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">NT$ {cashBalance.toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-mono">{Number(wallet.shopping_points ?? 0).toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-mono">{Number(wallet.reward_points ?? 0).toLocaleString()}</TableCell>
+                    <TableCell className="text-right font-mono">{Number(wallet.discount_points ?? 0).toLocaleString()}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" disabled={cashBalance <= 0} onClick={() => openBuyPoints(member)}>
+                        <Coins className="h-4 w-4 mr-1" />購買購物點
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-3">
@@ -171,6 +312,45 @@ function Page() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={buyOpen} onOpenChange={setBuyOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>代會員用現金餘額購買購物點</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作會立即扣除會員現金錢包餘額，並增加同額購物點。送出前請再次確認會員與金額。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div className="font-medium">{buyMember?.name ?? "未選擇會員"}</div>
+              <div className="text-xs text-muted-foreground font-mono">{buyMember?.member_no ?? buyMember?.id ?? ""}</div>
+              <div className="mt-2">目前現金餘額：<span className="font-mono">NT$ {Number(buyMember?.wallet?.cash_balance ?? 0).toLocaleString()}</span></div>
+            </div>
+            <div className="space-y-1">
+              <Label>購買金額 / 購物點數 *</Label>
+              <Input type="number" min="1" value={buyAmount} onChange={(event) => setBuyAmount(event.target.value)} />
+              <p className="text-xs text-muted-foreground">目前規則：NT$ 1 = 1 購物點。</p>
+            </div>
+            <div className="space-y-1">
+              <Label>備註</Label>
+              <Input value={buyNote} onChange={(event) => setBuyNote(event.target.value)} placeholder="例如：客服代購、門市協助" />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={buyBusy}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={buyBusy || !Number(buyAmount)}
+              onClick={(event) => {
+                event.preventDefault();
+                confirmBuyPoints();
+              }}
+            >
+              {buyBusy ? "處理中..." : "確認購買"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
