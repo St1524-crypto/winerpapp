@@ -9,6 +9,7 @@ const SECTION_LABELS: Record<string, { label: string; href: string }> = {
   patent: { label: "專利檢驗區", href: "/shop/patents" },
   news: { label: "最新消息", href: "/shop/news" },
   health: { label: "健康學術", href: "/shop/health" },
+  academy: { label: "源晶 AI 商學院", href: "/shop/academy" },
 };
 
 export const Route = createFileRoute("/shop/content/$slug")({

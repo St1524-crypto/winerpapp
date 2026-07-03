@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ADMIN_ROLES = ["super_admin", "admin"] as const;
-const SECTION_TYPES = ["wholesale", "patent", "news", "health"] as const;
+const SECTION_TYPES = ["wholesale", "patent", "news", "health", "academy"] as const;
 
 const PUBLIC_COLUMNS =
   "id,section_type,title,slug,summary,cover_image,images,content_json,content_html,external_url,sort_order,is_published,published_at,updated_at";

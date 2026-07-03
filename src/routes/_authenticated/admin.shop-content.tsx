@@ -28,11 +28,12 @@ const SECTION_LABELS: Record<ShopContentSection, string> = {
   patent: "專利檢驗區",
   news: "最新消息",
   health: "健康學術",
+  academy: "源晶 AI 商學院",
 };
 
 const SECTION_OPTIONS = Object.entries(SECTION_LABELS) as Array<[ShopContentSection, string]>;
 
-type ShopContentSection = "wholesale" | "patent" | "news" | "health";
+type ShopContentSection = "wholesale" | "patent" | "news" | "health" | "academy";
 
 type ShopContentPage = {
   id: string;
