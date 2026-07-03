@@ -22,6 +22,7 @@ export function StorefrontFooter() {
             <li><Link to="/shop/patents">專利檢驗區</Link></li>
             <li><Link to="/shop/news">最新消息</Link></li>
             <li><Link to="/shop/health">健康學術</Link></li>
+            <li><Link to="/shop/academy">源晶 AI 商學院</Link></li>
           </ul>
         </div>
         <div>

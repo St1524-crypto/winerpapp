@@ -29,6 +29,7 @@ import { Route as ShopNewsRouteImport } from './routes/shop.news'
 import { Route as ShopHealthRouteImport } from './routes/shop.health'
 import { Route as ShopCheckoutRouteImport } from './routes/shop.checkout'
 import { Route as ShopAccountRouteImport } from './routes/shop.account'
+import { Route as ShopAcademyRouteImport } from './routes/shop.academy'
 import { Route as RPhoneRouteImport } from './routes/r.$phone'
 import { Route as MemberPageMemberNoRouteImport } from './routes/member-page.$memberNo'
 import { Route as MSlugRouteImport } from './routes/m.$slug'
@@ -223,6 +224,11 @@ const ShopCheckoutRoute = ShopCheckoutRouteImport.update({
 const ShopAccountRoute = ShopAccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => ShopRoute,
+} as any)
+const ShopAcademyRoute = ShopAcademyRouteImport.update({
+  id: '/academy',
+  path: '/academy',
   getParentRoute: () => ShopRoute,
 } as any)
 const RPhoneRoute = RPhoneRouteImport.update({
@@ -801,6 +807,7 @@ export interface FileRoutesByFullPath {
   '/m/$slug': typeof MSlugRoute
   '/member-page/$memberNo': typeof MemberPageMemberNoRoute
   '/r/$phone': typeof RPhoneRoute
+  '/shop/academy': typeof ShopAcademyRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/health': typeof ShopHealthRoute
@@ -916,6 +923,7 @@ export interface FileRoutesByTo {
   '/m/$slug': typeof MSlugRoute
   '/member-page/$memberNo': typeof MemberPageMemberNoRoute
   '/r/$phone': typeof RPhoneRoute
+  '/shop/academy': typeof ShopAcademyRoute
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/health': typeof ShopHealthRoute
   '/shop/news': typeof ShopNewsRoute
@@ -1033,6 +1041,7 @@ export interface FileRoutesById {
   '/m/$slug': typeof MSlugRoute
   '/member-page/$memberNo': typeof MemberPageMemberNoRoute
   '/r/$phone': typeof RPhoneRoute
+  '/shop/academy': typeof ShopAcademyRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
   '/shop/checkout': typeof ShopCheckoutRoute
   '/shop/health': typeof ShopHealthRoute
@@ -1152,6 +1161,7 @@ export interface FileRouteTypes {
     | '/m/$slug'
     | '/member-page/$memberNo'
     | '/r/$phone'
+    | '/shop/academy'
     | '/shop/account'
     | '/shop/checkout'
     | '/shop/health'
@@ -1267,6 +1277,7 @@ export interface FileRouteTypes {
     | '/m/$slug'
     | '/member-page/$memberNo'
     | '/r/$phone'
+    | '/shop/academy'
     | '/shop/checkout'
     | '/shop/health'
     | '/shop/news'
@@ -1383,6 +1394,7 @@ export interface FileRouteTypes {
     | '/m/$slug'
     | '/member-page/$memberNo'
     | '/r/$phone'
+    | '/shop/academy'
     | '/shop/account'
     | '/shop/checkout'
     | '/shop/health'
@@ -1623,6 +1635,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/shop/account'
       preLoaderRoute: typeof ShopAccountRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/shop/academy': {
+      id: '/shop/academy'
+      path: '/academy'
+      fullPath: '/shop/academy'
+      preLoaderRoute: typeof ShopAcademyRouteImport
       parentRoute: typeof ShopRoute
     }
     '/r/$phone': {
@@ -2588,6 +2607,7 @@ const ShopAccountRouteWithChildren = ShopAccountRoute._addFileChildren(
 )
 
 interface ShopRouteChildren {
+  ShopAcademyRoute: typeof ShopAcademyRoute
   ShopAccountRoute: typeof ShopAccountRouteWithChildren
   ShopCheckoutRoute: typeof ShopCheckoutRoute
   ShopHealthRoute: typeof ShopHealthRoute
@@ -2603,6 +2623,7 @@ interface ShopRouteChildren {
 }
 
 const ShopRouteChildren: ShopRouteChildren = {
+  ShopAcademyRoute: ShopAcademyRoute,
   ShopAccountRoute: ShopAccountRouteWithChildren,
   ShopCheckoutRoute: ShopCheckoutRoute,
   ShopHealthRoute: ShopHealthRoute,

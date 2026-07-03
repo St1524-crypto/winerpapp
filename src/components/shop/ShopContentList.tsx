@@ -4,7 +4,7 @@ import { ExternalLink, Loader2 } from "lucide-react";
 import { listPublicShopContentPages } from "@/lib/shop-content.functions";
 
 type Props = {
-  sectionType: "wholesale" | "patent" | "news" | "health";
+  sectionType: "wholesale" | "patent" | "news" | "health" | "academy";
   emptyText?: string;
 };
 
