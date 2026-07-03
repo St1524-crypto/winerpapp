@@ -86,7 +86,7 @@ async function assertAdmin(userId: string) {
 export const listPublicShopContentPages = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => listPublicSchema.parse(input ?? {}))
   .handler(async ({ data }) => {
-    let query = db()
+    let query = publicDb()
       .from("shop_content_pages")
       .select(PUBLIC_COLUMNS)
       .eq("is_published", true)
