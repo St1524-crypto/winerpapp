@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -8,6 +9,15 @@ const SECTION_TYPES = ["wholesale", "patent", "news", "health", "academy"] as co
 
 const PUBLIC_COLUMNS =
   "id,section_type,title,slug,summary,cover_image,images,content_json,content_html,external_url,sort_order,is_published,published_at,updated_at";
+
+function publicDb() {
+  return createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+  ) as any;
+}
+
 
 const jsonRecord = z.record(z.unknown());
 
@@ -76,7 +86,7 @@ async function assertAdmin(userId: string) {
 export const listPublicShopContentPages = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => listPublicSchema.parse(input ?? {}))
   .handler(async ({ data }) => {
-    let query = db()
+    let query = publicDb()
       .from("shop_content_pages")
       .select(PUBLIC_COLUMNS)
       .eq("is_published", true)
@@ -96,7 +106,7 @@ export const listPublicShopContentPages = createServerFn({ method: "POST" })
 export const getPublicShopContentPage = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => getBySlugSchema.parse(input))
   .handler(async ({ data }) => {
-    const { data: page, error } = await db()
+    const { data: page, error } = await publicDb()
       .from("shop_content_pages")
       .select(PUBLIC_COLUMNS)
       .eq("slug", data.slug)
