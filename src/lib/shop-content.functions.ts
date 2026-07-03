@@ -10,6 +10,19 @@ const SECTION_TYPES = ["wholesale", "patent", "news", "health", "academy"] as co
 const PUBLIC_COLUMNS =
   "id,section_type,title,slug,summary,cover_image,images,content_json,content_html,external_url,sort_order,is_published,published_at,updated_at";
 
+// Edge/Worker-safe HTML sanitizer for admin-authored content.
+// Strips dangerous tags and inline event handlers / javascript: URLs without
+// requiring jsdom (which does not run in Cloudflare Workers).
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<\/?(?:script|style|iframe|object|embed|form|meta|link|base)\b[^>]*>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "")
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "")
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
+    .replace(/(href|src)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/(href|src)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
+}
+
 function publicDb() {
   return createClient(
     process.env.SUPABASE_URL!,
@@ -115,13 +128,11 @@ export const getPublicShopContentPage = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!page) throw new Error("找不到內容或尚未發布");
     // Sanitize admin-authored HTML server-side to prevent stored XSS on the public storefront.
+    // Use a lightweight regex-based sanitizer (edge/Worker-safe — no jsdom dependency).
     if ((page as any).content_html) {
-      const { default: DOMPurify } = await import("isomorphic-dompurify");
-      (page as any).content_html = DOMPurify.sanitize((page as any).content_html, {
-        FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
-        FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur", "onchange", "onsubmit"],
-      });
+      (page as any).content_html = sanitizeHtml((page as any).content_html);
     }
+
     return { page };
   });
 
