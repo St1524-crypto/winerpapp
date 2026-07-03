@@ -6606,6 +6606,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      release_bonus_rewards: {
+        Args: { _limit?: number; _record_ids?: string[] }
+        Returns: Json
+      }
       set_default_address: { Args: { _address_id: string }; Returns: undefined }
       settle_daily_bonus: {
         Args: { _advance_next?: boolean; _created_by?: string }
