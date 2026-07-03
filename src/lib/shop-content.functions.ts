@@ -10,6 +10,19 @@ const SECTION_TYPES = ["wholesale", "patent", "news", "health", "academy"] as co
 const PUBLIC_COLUMNS =
   "id,section_type,title,slug,summary,cover_image,images,content_json,content_html,external_url,sort_order,is_published,published_at,updated_at";
 
+// Edge/Worker-safe HTML sanitizer for admin-authored content.
+// Strips dangerous tags and inline event handlers / javascript: URLs without
+// requiring jsdom (which does not run in Cloudflare Workers).
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<\/?(?:script|style|iframe|object|embed|form|meta|link|base)\b[^>]*>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "")
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "")
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
+    .replace(/(href|src)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
+    .replace(/(href|src)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
+}
+
 function publicDb() {
   return createClient(
     process.env.SUPABASE_URL!,
