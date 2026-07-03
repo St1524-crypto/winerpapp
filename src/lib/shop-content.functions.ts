@@ -115,13 +115,11 @@ export const getPublicShopContentPage = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!page) throw new Error("找不到內容或尚未發布");
     // Sanitize admin-authored HTML server-side to prevent stored XSS on the public storefront.
+    // Use a lightweight regex-based sanitizer (edge/Worker-safe — no jsdom dependency).
     if ((page as any).content_html) {
-      const { default: DOMPurify } = await import("isomorphic-dompurify");
-      (page as any).content_html = DOMPurify.sanitize((page as any).content_html, {
-        FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
-        FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur", "onchange", "onsubmit"],
-      });
+      (page as any).content_html = sanitizeHtml((page as any).content_html);
     }
+
     return { page };
   });
 
