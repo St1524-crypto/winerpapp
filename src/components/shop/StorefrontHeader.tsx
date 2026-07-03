@@ -59,6 +59,7 @@ export function StorefrontHeader() {
           <Link to="/shop/patents" className="px-2.5 py-1.5 rounded-md hover:bg-accent">專利檢驗區</Link>
           <Link to="/shop/news" className="px-2.5 py-1.5 rounded-md hover:bg-accent">最新消息</Link>
           <Link to="/shop/health" className="px-2.5 py-1.5 rounded-md hover:bg-accent">健康學術</Link>
+          <Link to="/shop/academy" className="px-2.5 py-1.5 rounded-md hover:bg-accent">源晶 AI 商學院</Link>
         </nav>
 
         <div className="flex items-center gap-1 ml-auto">
@@ -95,6 +96,7 @@ export function StorefrontHeader() {
                 <Link to="/shop/patents" className="px-3 py-2 rounded-md hover:bg-accent">專利檢驗區</Link>
                 <Link to="/shop/news" className="px-3 py-2 rounded-md hover:bg-accent">最新消息</Link>
                 <Link to="/shop/health" className="px-3 py-2 rounded-md hover:bg-accent">健康學術</Link>
+                <Link to="/shop/academy" className="px-3 py-2 rounded-md hover:bg-accent">源晶 AI 商學院</Link>
                 <Link to={user ? "/shop/account" : "/login"} className="px-3 py-2 rounded-md hover:bg-accent">會員中心</Link>
                 <Link to={user ? "/shop/account/orders" : "/login"} className="px-3 py-2 rounded-md hover:bg-accent">我的訂單</Link>
               </nav>
