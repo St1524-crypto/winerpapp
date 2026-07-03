@@ -106,7 +106,7 @@ export const listPublicShopContentPages = createServerFn({ method: "POST" })
 export const getPublicShopContentPage = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => getBySlugSchema.parse(input))
   .handler(async ({ data }) => {
-    const { data: page, error } = await db()
+    const { data: page, error } = await publicDb()
       .from("shop_content_pages")
       .select(PUBLIC_COLUMNS)
       .eq("slug", data.slug)
