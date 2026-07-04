@@ -125,11 +125,12 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     // Snapshot current profile for audit diff (marketing_slug)
     const { data: prior } = await supabaseAdmin
       .from("profiles")
-      .select("marketing_slug, member_no")
+      .select("marketing_slug, member_no, apply_date, created_at")
       .eq("id", data.userId)
       .maybeSingle();
     const prevSlug = (prior as any)?.marketing_slug ?? null;
     const memberNo = (prior as any)?.member_no ?? null;
+
 
     const phone = data.phone !== undefined ? normalizePhone(data.phone) : undefined;
     const profileUpdate: Record<string, any> = {};
