@@ -6191,6 +6191,7 @@ export type Database = {
       }
       vip_tiers_public: {
         Row: {
+          cashback_rate: number | null
           code: string | null
           description: string | null
           id: string | null
@@ -6201,10 +6202,12 @@ export type Database = {
           required_mentor_count: number | null
           required_mentor_tier: string | null
           required_reward_points: number | null
+          revenue_share_rate: number | null
           sort_order: number | null
           status: string | null
         }
         Insert: {
+          cashback_rate?: number | null
           code?: string | null
           description?: string | null
           id?: string | null
@@ -6215,10 +6218,12 @@ export type Database = {
           required_mentor_count?: number | null
           required_mentor_tier?: string | null
           required_reward_points?: number | null
+          revenue_share_rate?: number | null
           sort_order?: number | null
           status?: string | null
         }
         Update: {
+          cashback_rate?: number | null
           code?: string | null
           description?: string | null
           id?: string | null
@@ -6229,6 +6234,7 @@ export type Database = {
           required_mentor_count?: number | null
           required_mentor_tier?: string | null
           required_reward_points?: number | null
+          revenue_share_rate?: number | null
           sort_order?: number | null
           status?: string | null
         }
