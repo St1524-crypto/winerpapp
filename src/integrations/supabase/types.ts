@@ -690,10 +690,13 @@ export type Database = {
           generation_level: number | null
           id: string
           member_id: string
+          original_member_id: string | null
           release_attempts: number
           release_date: string | null
+          release_redirect_reason: string | null
           release_source: string | null
           released_at: string | null
+          released_member_id: string | null
           required_points_checked: boolean
           required_points_passed: boolean
           settlement_batch_id: string | null
@@ -714,10 +717,13 @@ export type Database = {
           generation_level?: number | null
           id?: string
           member_id: string
+          original_member_id?: string | null
           release_attempts?: number
           release_date?: string | null
+          release_redirect_reason?: string | null
           release_source?: string | null
           released_at?: string | null
+          released_member_id?: string | null
           required_points_checked?: boolean
           required_points_passed?: boolean
           settlement_batch_id?: string | null
@@ -738,10 +744,13 @@ export type Database = {
           generation_level?: number | null
           id?: string
           member_id?: string
+          original_member_id?: string | null
           release_attempts?: number
           release_date?: string | null
+          release_redirect_reason?: string | null
           release_source?: string | null
           released_at?: string | null
+          released_member_id?: string | null
           required_points_checked?: boolean
           required_points_passed?: boolean
           settlement_batch_id?: string | null
@@ -6611,6 +6620,10 @@ export type Database = {
       }
       release_bonus_rewards: {
         Args: { _limit?: number; _record_ids?: string[] }
+        Returns: Json
+      }
+      resolve_bonus_reward_recipient: {
+        Args: { _member_id: string }
         Returns: Json
       }
       set_default_address: { Args: { _address_id: string }; Returns: undefined }
