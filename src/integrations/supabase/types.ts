@@ -6191,52 +6191,49 @@ export type Database = {
       }
       vip_tiers_public: {
         Row: {
+          business_bonus_cap_amount: number | null
+          business_bonus_rate: number | null
           cashback_rate: number | null
           code: string | null
-          description: string | null
           id: string | null
           name: string | null
-          renewal_required_new_vip: number | null
-          renewal_window_days: number | null
-          required_direct_vip: number | null
-          required_mentor_count: number | null
-          required_mentor_tier: string | null
-          required_reward_points: number | null
           revenue_share_rate: number | null
           sort_order: number | null
           status: string | null
+          upgrade_bonus_cap: number | null
+          upgrade_bonus_cap_amount: number | null
+          upgrade_bonus_cap_basis: string | null
+          upgrade_total_earnings_cap_amount: number | null
         }
         Insert: {
+          business_bonus_cap_amount?: number | null
+          business_bonus_rate?: number | null
           cashback_rate?: number | null
           code?: string | null
-          description?: string | null
           id?: string | null
           name?: string | null
-          renewal_required_new_vip?: number | null
-          renewal_window_days?: number | null
-          required_direct_vip?: number | null
-          required_mentor_count?: number | null
-          required_mentor_tier?: string | null
-          required_reward_points?: number | null
           revenue_share_rate?: number | null
           sort_order?: number | null
           status?: string | null
+          upgrade_bonus_cap?: number | null
+          upgrade_bonus_cap_amount?: number | null
+          upgrade_bonus_cap_basis?: string | null
+          upgrade_total_earnings_cap_amount?: number | null
         }
         Update: {
+          business_bonus_cap_amount?: number | null
+          business_bonus_rate?: number | null
           cashback_rate?: number | null
           code?: string | null
-          description?: string | null
           id?: string | null
           name?: string | null
-          renewal_required_new_vip?: number | null
-          renewal_window_days?: number | null
-          required_direct_vip?: number | null
-          required_mentor_count?: number | null
-          required_mentor_tier?: string | null
-          required_reward_points?: number | null
           revenue_share_rate?: number | null
           sort_order?: number | null
           status?: string | null
+          upgrade_bonus_cap?: number | null
+          upgrade_bonus_cap_amount?: number | null
+          upgrade_bonus_cap_basis?: string | null
+          upgrade_total_earnings_cap_amount?: number | null
         }
         Relationships: []
       }
