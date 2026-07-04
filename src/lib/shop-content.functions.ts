@@ -1,8 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import { notFound } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
 
 const ADMIN_ROLES = ["super_admin", "admin"] as const;
 const SECTION_TYPES = ["wholesale", "patent", "news", "health", "academy"] as const;
@@ -126,7 +128,7 @@ export const getPublicShopContentPage = createServerFn({ method: "POST" })
       .eq("is_published", true)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!page) throw new Error("找不到內容或尚未發布");
+    if (!page) throw notFound();
     // Sanitize admin-authored HTML server-side to prevent stored XSS on the public storefront.
     // Use a lightweight regex-based sanitizer (edge/Worker-safe — no jsdom dependency).
     if ((page as any).content_html) {
