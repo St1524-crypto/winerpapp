@@ -2223,7 +2223,13 @@ function OrderDetailDialog({
                   disabled={updateStatus.isPending}
                 />
               </CardContent>
+              {order.payment_status === "paid" && (
+                <div className="px-6 pb-4">
+                  <RerunUpgradeHookButton orderId={order.id} />
+                </div>
+              )}
             </Card>
+
 
             {/* Customer & summary */}
             <div className="grid md:grid-cols-2 gap-3">
