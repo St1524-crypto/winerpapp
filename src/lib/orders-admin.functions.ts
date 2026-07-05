@@ -54,3 +54,38 @@ export const deleteSalesOrder = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+/**
+ * Admin：對指定訂單「補跑」VIP 升級 hook（VIP 升級套組 + 年費 VIP 規則）。
+ * 冪等：已存在的升級 log 會被跳過。適用於歷史遺漏、金流延遲補寫等情境。
+ */
+export const adminRerunOrderUpgrades = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ orderId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const roleSet = new Set((roles ?? []).map((r: any) => r.role));
+    if (!["super_admin", "admin", "finance"].some((r) => roleSet.has(r))) {
+      throw new Error("Forbidden: 需要 super_admin / admin / finance 權限");
+    }
+
+    const { data: result, error } = await supabaseAdmin.rpc(
+      "process_paid_order_upgrades" as any,
+      { p_order_id: data.orderId, p_operator: context.userId },
+    );
+    if (error) throw new Error(error.message);
+    return result as {
+      ok: boolean;
+      reason?: string;
+      vip_package_created?: number;
+      vip_package_skipped?: number;
+      annual_fee_created?: number;
+      annual_fee_skipped?: number;
+    };
+  });
+
