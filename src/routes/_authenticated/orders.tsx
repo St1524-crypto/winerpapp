@@ -12,7 +12,7 @@ import { exportOrderPdf, exportOrdersPdf } from "@/lib/order-pdf";
 import { useBranding } from "@/hooks/use-branding";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { useAuth } from "@/hooks/use-auth";
-import { deleteSalesOrder } from "@/lib/orders-admin.functions";
+import { deleteSalesOrder, adminRerunOrderUpgrades } from "@/lib/orders-admin.functions";
 import { processOrderCommission } from "@/lib/referral.functions";
 import { processOrderPaymentBonus } from "@/lib/bonus.functions";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
