@@ -97,7 +97,8 @@ export const adminListMembersBusinessBonusSummary = createServerFn({ method: "GE
     const { supabase, userId } = context;
     await ensureAdminOrFinance(supabase, userId);
 
-    const { data: tiers, error: tierErr } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: tiers, error: tierErr } = await supabaseAdmin
       .from("vip_tiers")
       .select("code, business_bonus_rate, business_bonus_cap_amount");
     if (tierErr) throw tierErr;
