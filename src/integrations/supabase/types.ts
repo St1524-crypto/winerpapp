@@ -6501,6 +6501,10 @@ export type Database = {
         }
         Returns: number
       }
+      process_paid_order_upgrades: {
+        Args: { p_operator?: string; p_order_id: string }
+        Returns: Json
+      }
       profile_sensitive_unchanged: {
         Args: {
           _new: Database["public"]["Tables"]["profiles"]["Row"]
