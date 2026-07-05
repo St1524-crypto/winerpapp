@@ -94,7 +94,8 @@ export const adminListMembersUpgradeBonusSummary = createServerFn({ method: "GET
     const { supabase, userId } = context;
     await ensureAdminOrFinance(supabase, userId);
 
-    const { data: tiers, error: tierErr } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: tiers, error: tierErr } = await supabaseAdmin
       .from("vip_tiers")
       .select("code, upgrade_bonus_cap_amount, upgrade_bonus_cap");
     if (tierErr) throw tierErr;

@@ -112,7 +112,8 @@ export const adminListTiersTotalEarningsCap = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     await ensureAdminOrFinance(supabase, userId);
-    const { data, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("vip_tiers")
       .select("id, code, name, sort_order, upgrade_bonus_cap_basis, upgrade_total_earnings_cap_amount, upgrade_bonus_cap_amount")
       .order("sort_order", { ascending: true });
@@ -135,7 +136,8 @@ export const updateTierTotalEarningsCap = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await ensureAdminOrFinance(supabase, userId);
-    const { error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("vip_tiers")
       .update({
         upgrade_total_earnings_cap_amount: data.capAmount,
