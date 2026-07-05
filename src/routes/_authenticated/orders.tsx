@@ -3256,3 +3256,45 @@ function PaymentRecordStatusCell({
     </DropdownMenu>
   );
 }
+
+// =================== 補跑 VIP 升級 hook（管理員用） ===================
+function RerunUpgradeHookButton({ orderId }: { orderId: string }) {
+  const rerunFn = useServerFn(adminRerunOrderUpgrades);
+  const [pending, setPending] = useState(false);
+  async function run() {
+    setPending(true);
+    try {
+      const r: any = await rerunFn({ data: { orderId } });
+      if (!r?.ok) {
+        toast.warning("補跑未執行", { description: r?.reason ?? "未知原因" });
+        return;
+      }
+      const pkgC = Number(r.vip_package_created ?? 0);
+      const pkgS = Number(r.vip_package_skipped ?? 0);
+      const afC  = Number(r.annual_fee_created  ?? 0);
+      const afS  = Number(r.annual_fee_skipped  ?? 0);
+      if (pkgC + afC === 0) {
+        toast.info("無新增升級紀錄（已全部處理過）", {
+          description: `VIP套組已處理 ${pkgS} 筆、年費規則已處理 ${afS} 筆`,
+        });
+      } else {
+        toast.success(
+          `補跑完成：VIP套組 +${pkgC}、年費 +${afC}${
+            pkgS + afS > 0 ? `（另跳過 ${pkgS + afS} 筆已處理）` : ""
+          }`,
+        );
+      }
+    } catch (e: any) {
+      toast.error("補跑失敗", { description: e?.message ?? String(e) });
+    } finally {
+      setPending(false);
+    }
+  }
+  return (
+    <Button size="sm" variant="outline" onClick={run} disabled={pending}>
+      {pending ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RotateCw className="h-3.5 w-3.5 mr-1" />}
+      補跑 VIP 升級 hook
+    </Button>
+  );
+}
+
