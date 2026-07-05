@@ -136,7 +136,8 @@ export const updateTierTotalEarningsCap = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await ensureAdminOrFinance(supabase, userId);
-    const { error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("vip_tiers")
       .update({
         upgrade_total_earnings_cap_amount: data.capAmount,
