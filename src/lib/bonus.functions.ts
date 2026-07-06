@@ -1057,6 +1057,34 @@ export const getBonusOperationsData = createServerFn({ method: "GET" })
     };
   });
 
+function getBonusRecalculationBlockReason(profile: any, referenceDate: string) {
+  if (!profile) return "會員資料不存在，重新計算後不發放獎勵點";
+
+  const status = String(profile.member_status ?? "").trim();
+  if (status && status !== "active" && status !== "正式會員") {
+    return "會員狀態已停用，重新計算後不發放獎勵點";
+  }
+
+  const frozenCode = String(profile.frozen_code ?? "").trim().toUpperCase();
+  if (frozenCode && frozenCode !== "N") {
+    return "會員已凍結，重新計算後不發放獎勵點";
+  }
+
+  if (!profile.is_vip) return "會員不是有效 VIP，重新計算後不發放獎勵點";
+
+  if (profile.vip_expires_at) {
+    const releaseAt = referenceDate.includes("T")
+      ? new Date(referenceDate)
+      : new Date(`${referenceDate}T23:59:59+08:00`);
+    const vipExpiresAt = new Date(profile.vip_expires_at);
+    if (vipExpiresAt < releaseAt) {
+      return "VIP 年費已到期，重新計算後不發放獎勵點";
+    }
+  }
+
+  return null;
+}
+
 export const recalculateWaitingBonusRecords = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -1082,16 +1110,35 @@ export const recalculateWaitingBonusRecords = createServerFn({ method: "POST" })
       throw new Error("只能重新計算尚未發放的獎金紀錄");
     }
 
+    const memberIds = Array.from(
+      new Set(records.map((record: any) => record.member_id).filter(Boolean)),
+    );
+    const { data: profiles, error: profileError } = memberIds.length
+      ? await supabaseAdmin
+          .from("profiles")
+          .select("id, is_vip, vip_expires_at, member_status, frozen_code")
+          .in("id", memberIds)
+      : { data: [], error: null };
+    if (profileError) throw new Error(profileError.message);
+
+    const profileById = new Map((profiles ?? []).map((profile: any) => [profile.id, profile]));
     const now = new Date().toISOString();
     const updates = records.map((record: any) => {
       const baseAmount = Number(record.base_amount ?? 0);
       const bonusRate = Number(record.bonus_rate ?? 0);
       const oldPoints = Number(record.bonus_points ?? 0);
-      const newPoints = Math.max(0, Math.floor((baseAmount * bonusRate) / 100));
+      const referenceDate = String(record.release_date ?? record.settlement_date ?? now);
+      const blockReason = getBonusRecalculationBlockReason(profileById.get(record.member_id), referenceDate);
+      const recalculatedPoints = Math.max(0, Math.floor((baseAmount * bonusRate) / 100));
+      const newPoints = blockReason ? 0 : recalculatedPoints;
+      const newStatus = blockReason ? "cancelled" : "waiting_release";
       return {
         ...record,
         oldPoints,
         newPoints,
+        newStatus,
+        blockReason,
+        recalculatedPoints,
       };
     });
 
@@ -1100,6 +1147,10 @@ export const recalculateWaitingBonusRecords = createServerFn({ method: "POST" })
         .from("bonus_records")
         .update({
           bonus_points: record.newPoints,
+          status: record.newStatus,
+          fail_reason: record.blockReason,
+          required_points_checked: true,
+          required_points_passed: !record.blockReason,
           updated_at: now,
         })
         .eq("id", record.id)
@@ -1116,6 +1167,10 @@ export const recalculateWaitingBonusRecords = createServerFn({ method: "POST" })
       metadata: {
         old_bonus_points: record.oldPoints,
         new_bonus_points: record.newPoints,
+        recalculated_bonus_points: record.recalculatedPoints,
+        old_status: record.status,
+        new_status: record.newStatus,
+        block_reason: record.blockReason,
         base_amount: record.base_amount,
         bonus_rate: record.bonus_rate,
         bonus_type: record.bonus_type,
@@ -1131,6 +1186,7 @@ export const recalculateWaitingBonusRecords = createServerFn({ method: "POST" })
       ok: true,
       recalculated: updates.length,
       changed: updates.filter((record) => record.oldPoints !== record.newPoints).length,
+      cancelled: updates.filter((record) => record.newStatus === "cancelled").length,
       totalBefore: updates.reduce((sum, record) => sum + record.oldPoints, 0),
       totalAfter: updates.reduce((sum, record) => sum + record.newPoints, 0),
     };
