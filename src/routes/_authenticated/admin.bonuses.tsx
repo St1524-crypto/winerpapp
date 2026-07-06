@@ -26,6 +26,7 @@ import {
   getBonusRecalculationDiagnostics,
   manualReleaseRewards,
   releaseDueRewards,
+  recalculateWaitingBonusRecords,
   retryFailedBonusRewards,
 } from "@/lib/bonus.functions";
 
@@ -105,6 +106,7 @@ function Guard() {
 }
 
 function BonusOperationsPage() {
+  const { roles } = useAuth();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
@@ -197,6 +199,19 @@ function BonusOperationsPage() {
     }
   }
 
+  async function recalculateWaitingRecord(id: string) {
+    setBusy(true);
+    try {
+      const result = await recalculateWaitingBonusRecords({ data: { recordIds: [id] } });
+      toast.success(`已重新計算 ${result.recalculated ?? 1} 筆，點數 ${result.totalBefore ?? 0} → ${result.totalAfter ?? 0}`);
+      await loadData();
+    } catch (error: any) {
+      toast.error(error?.message ?? "重新計算獎金失敗");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function executeConfirmedAction() {
     if (!confirmAction) return;
     setBusy(true);
@@ -274,6 +289,7 @@ function BonusOperationsPage() {
         selected={selectedWaiting}
         onToggle={toggleWaiting}
         onReleaseOne={(id) => setConfirmAction({ type: "release-one", ids: [id] })}
+        onRecalculate={roles.includes("super_admin") ? recalculateWaitingRecord : undefined}
       />
 
       <BonusRecordTable
@@ -551,6 +567,7 @@ function BonusRecordTable({
   selected,
   onToggle,
   onReleaseOne,
+  onRecalculate,
   onRetryFailed,
 }: {
   title: string;
@@ -562,12 +579,13 @@ function BonusRecordTable({
   selected?: Set<string>;
   onToggle?: (id: string, checked: boolean) => void;
   onReleaseOne?: (id: string) => void;
+  onRecalculate?: (id: string) => void;
   onRetryFailed?: (id: string) => void;
 }) {
   const isWaiting = mode === "waiting";
   const isReleased = mode === "released";
   const isFailed = mode === "failed";
-  const colSpan = isWaiting ? 9 : 7;
+  const colSpan = isWaiting ? 10 : 7;
 
   return (
     <Card>
@@ -585,6 +603,7 @@ function BonusRecordTable({
                 <TableHead>會員編號</TableHead>
                 <TableHead>獎金類型</TableHead>
                 <TableHead className="text-right">點數</TableHead>
+                {isWaiting && <TableHead>結算日期</TableHead>}
                 {isWaiting && <TableHead>結算批次</TableHead>}
                 {isWaiting && <TableHead>預計發放日</TableHead>}
                 {isWaiting && <TableHead>狀態</TableHead>}
@@ -628,6 +647,7 @@ function BonusRecordTable({
                       <Badge variant="outline">{TYPE_LABEL[record.bonus_type] ?? record.bonus_type ?? "-"}</Badge>
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">{formatNumber(record.bonus_points)}</TableCell>
+                    {isWaiting && <TableCell>{formatDate(record.settlement_date)}</TableCell>}
                     {isWaiting && <TableCell className="font-mono text-xs">{shortId(record.settlement_batch_id)}</TableCell>}
                     {isWaiting && <TableCell>{formatDate(record.release_date)}</TableCell>}
                     {isWaiting && (
@@ -655,9 +675,16 @@ function BonusRecordTable({
                     )}
                     {isWaiting && (
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => onReleaseOne?.(record.id)}>
-                          單筆發放
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          {onRecalculate && (
+                            <Button size="sm" variant="outline" onClick={() => onRecalculate(record.id)}>
+                              重新計算
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" onClick={() => onReleaseOne?.(record.id)}>
+                            單筆發放
+                          </Button>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>

@@ -1057,6 +1057,85 @@ export const getBonusOperationsData = createServerFn({ method: "GET" })
     };
   });
 
+export const recalculateWaitingBonusRecords = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ recordIds: z.array(z.string().uuid()).min(1).max(100) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ["super_admin"]);
+
+    const uniqueIds = Array.from(new Set(data.recordIds));
+    const { data: rows, error } = await supabaseAdmin
+      .from("bonus_records")
+      .select("id, status, member_id, bonus_type, base_amount, bonus_rate, bonus_points, settlement_batch_id, settlement_date, release_date, released_at")
+      .in("id", uniqueIds);
+    if (error) throw new Error(error.message);
+
+    const records = rows ?? [];
+    if (records.length !== uniqueIds.length) {
+      throw new Error("部分獎金紀錄不存在，已停止重新計算");
+    }
+
+    const invalid = records.find((record: any) => record.status !== "waiting_release" || record.released_at);
+    if (invalid) {
+      throw new Error("只能重新計算尚未發放的獎金紀錄");
+    }
+
+    const now = new Date().toISOString();
+    const updates = records.map((record: any) => {
+      const baseAmount = Number(record.base_amount ?? 0);
+      const bonusRate = Number(record.bonus_rate ?? 0);
+      const oldPoints = Number(record.bonus_points ?? 0);
+      const newPoints = Math.max(0, Math.floor((baseAmount * bonusRate) / 100));
+      return {
+        ...record,
+        oldPoints,
+        newPoints,
+      };
+    });
+
+    for (const record of updates) {
+      const { error: updateError } = await supabaseAdmin
+        .from("bonus_records")
+        .update({
+          bonus_points: record.newPoints,
+          updated_at: now,
+        })
+        .eq("id", record.id)
+        .eq("status", "waiting_release")
+        .is("released_at", null);
+      if (updateError) throw new Error(updateError.message);
+    }
+
+    const auditRows = updates.map((record: any) => ({
+      user_id: context.userId,
+      action: "bonus_recalculated_before_release",
+      entity: "bonus_record",
+      entity_id: record.id,
+      metadata: {
+        old_bonus_points: record.oldPoints,
+        new_bonus_points: record.newPoints,
+        base_amount: record.base_amount,
+        bonus_rate: record.bonus_rate,
+        bonus_type: record.bonus_type,
+        settlement_batch_id: record.settlement_batch_id,
+        settlement_date: record.settlement_date,
+        release_date: record.release_date,
+      },
+    }));
+    const { error: auditError } = await supabaseAdmin.from("audit_logs").insert(auditRows);
+    if (auditError) throw new Error(auditError.message);
+
+    return {
+      ok: true,
+      recalculated: updates.length,
+      changed: updates.filter((record) => record.oldPoints !== record.newPoints).length,
+      totalBefore: updates.reduce((sum, record) => sum + record.oldPoints, 0),
+      totalAfter: updates.reduce((sum, record) => sum + record.newPoints, 0),
+    };
+  });
+
 const recalculationDiagnosticsSchema = z.object({
   orderId: z.string().uuid().optional(),
   memberId: z.string().uuid().optional(),
