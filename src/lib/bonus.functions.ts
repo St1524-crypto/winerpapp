@@ -1123,13 +1123,22 @@ export const recalculateWaitingBonusRecords = createServerFn({ method: "POST" })
 
     const profileById = new Map((profiles ?? []).map((profile: any) => [profile.id, profile]));
     const now = new Date().toISOString();
+    const FLAT_POINT_BONUS_TYPES = new Set(["referral", "repurchase", "rank_rebate"]);
     const updates = records.map((record: any) => {
       const baseAmount = Number(record.base_amount ?? 0);
       const bonusRate = Number(record.bonus_rate ?? 0);
       const oldPoints = Number(record.bonus_points ?? 0);
       const referenceDate = String(record.release_date ?? record.settlement_date ?? now);
       const blockReason = getBonusRecalculationBlockReason(profileById.get(record.member_id), referenceDate);
-      const recalculatedPoints = Math.max(0, Math.floor((baseAmount * bonusRate) / 100));
+      // Flat-point bonuses (referral / repurchase / rank_rebate) are issued with
+      // base_amount=0 and bonus_rate=0; recalculating base*rate would zero them.
+      // Preserve the originally granted amount and only apply the VIP-status block.
+      const isFlatPoint =
+        FLAT_POINT_BONUS_TYPES.has(String(record.bonus_type ?? "")) ||
+        (baseAmount === 0 && bonusRate === 0 && oldPoints > 0);
+      const recalculatedPoints = isFlatPoint
+        ? oldPoints
+        : Math.max(0, Math.floor((baseAmount * bonusRate) / 100));
       const newPoints = blockReason ? 0 : recalculatedPoints;
       const newStatus = blockReason ? "cancelled" : "waiting_release";
       return {
@@ -1139,8 +1148,10 @@ export const recalculateWaitingBonusRecords = createServerFn({ method: "POST" })
         newStatus,
         blockReason,
         recalculatedPoints,
+        isFlatPoint,
       };
     });
+
 
     for (const record of updates) {
       const { error: updateError } = await supabaseAdmin
