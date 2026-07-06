@@ -275,8 +275,8 @@ function PointsPage() {
                   </TableHeader>
                   <TableBody>
                     {dailyDetail.map((d) => (
-                      <>
-                        <TableRow key={d.date} className="bg-muted/30">
+                      <Fragment key={d.date}>
+                        <TableRow className="bg-muted/30">
                           <TableCell className="font-mono text-xs font-semibold">{d.date}</TableCell>
                           <TableCell className="text-right tabular-nums text-xs font-semibold">{d.count}</TableCell>
                           <TableCell className="text-right tabular-nums font-semibold text-success">+{d.amount.toLocaleString()}</TableCell>
@@ -295,8 +295,9 @@ function PointsPage() {
                             <TableCell className="text-right tabular-nums text-xs text-success">+{s.amount.toLocaleString()}</TableCell>
                           </TableRow>
                         ))}
-                      </>
+                      </Fragment>
                     ))}
+
                   </TableBody>
                 </Table>
 
