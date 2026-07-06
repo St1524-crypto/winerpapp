@@ -267,21 +267,38 @@ function PointsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>日期</TableHead>
+                      <TableHead>日期 / 來源</TableHead>
                       <TableHead className="text-right">筆數</TableHead>
                       <TableHead className="text-right">獲得獎勵點</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {dailyDetail.map((d) => (
-                      <TableRow key={d.date}>
-                        <TableCell className="font-mono text-xs">{d.date}</TableCell>
-                        <TableCell className="text-right tabular-nums text-xs">{d.count}</TableCell>
-                        <TableCell className="text-right tabular-nums font-semibold text-success">+{d.amount.toLocaleString()}</TableCell>
-                      </TableRow>
+                      <>
+                        <TableRow key={d.date} className="bg-muted/30">
+                          <TableCell className="font-mono text-xs font-semibold">{d.date}</TableCell>
+                          <TableCell className="text-right tabular-nums text-xs font-semibold">{d.count}</TableCell>
+                          <TableCell className="text-right tabular-nums font-semibold text-success">+{d.amount.toLocaleString()}</TableCell>
+                        </TableRow>
+                        {d.sources.map((s) => (
+                          <TableRow key={`${d.date}-${s.source}`}>
+                            <TableCell className="pl-8 text-xs text-muted-foreground">
+                              <div>{SOURCE_LABELS[s.source] ?? s.source}</div>
+                              {s.notes.length > 0 && (
+                                <div className="text-[11px] text-muted-foreground/80 mt-0.5 line-clamp-2">
+                                  {[...new Set(s.notes)].slice(0, 3).join("；")}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums text-xs text-muted-foreground">{s.count}</TableCell>
+                            <TableCell className="text-right tabular-nums text-xs text-success">+{s.amount.toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </>
                     ))}
                   </TableBody>
                 </Table>
+
               )}
             </TabsContent>
 
