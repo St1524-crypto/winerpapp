@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Coins, Gift, Percent, History, Copy, TrendingUp, CalendarDays, CalendarRange, Sparkles, Wallet, Info } from "lucide-react";
@@ -96,18 +97,32 @@ function PointsPage() {
     [rewardEarnings, monthKey],
   );
 
-  // 日明細：近 30 天
+  // 日明細：近 60 天，附各獎金來源明細
   const dailyDetail = useMemo(() => {
-    const map = new Map<string, { date: string; amount: number; count: number }>();
+    const map = new Map<string, { date: string; amount: number; count: number; bySource: Map<string, { amount: number; count: number; notes: string[] }> }>();
     for (const t of rewardEarnings) {
       const k = ymd(new Date(t.created_at));
-      const cur = map.get(k) ?? { date: k, amount: 0, count: 0 };
+      const cur = map.get(k) ?? { date: k, amount: 0, count: 0, bySource: new Map() };
       cur.amount += t.amount;
       cur.count += 1;
+      const src = cur.bySource.get(t.source) ?? { amount: 0, count: 0, notes: [] };
+      src.amount += t.amount;
+      src.count += 1;
+      if (t.note) src.notes.push(t.note);
+      cur.bySource.set(t.source, src);
       map.set(k, cur);
     }
-    return [...map.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 60);
+    return [...map.values()]
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, 60)
+      .map((d) => ({
+        ...d,
+        sources: [...d.bySource.entries()]
+          .map(([source, v]) => ({ source, ...v }))
+          .sort((a, b) => b.amount - a.amount),
+      }));
   }, [rewardEarnings]);
+
 
   // 月明細：近 12 個月
   const monthlyDetail = useMemo(() => {
@@ -253,21 +268,39 @@ function PointsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>日期</TableHead>
+                      <TableHead>日期 / 來源</TableHead>
                       <TableHead className="text-right">筆數</TableHead>
                       <TableHead className="text-right">獲得獎勵點</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {dailyDetail.map((d) => (
-                      <TableRow key={d.date}>
-                        <TableCell className="font-mono text-xs">{d.date}</TableCell>
-                        <TableCell className="text-right tabular-nums text-xs">{d.count}</TableCell>
-                        <TableCell className="text-right tabular-nums font-semibold text-success">+{d.amount.toLocaleString()}</TableCell>
-                      </TableRow>
+                      <Fragment key={d.date}>
+                        <TableRow className="bg-muted/30">
+                          <TableCell className="font-mono text-xs font-semibold">{d.date}</TableCell>
+                          <TableCell className="text-right tabular-nums text-xs font-semibold">{d.count}</TableCell>
+                          <TableCell className="text-right tabular-nums font-semibold text-success">+{d.amount.toLocaleString()}</TableCell>
+                        </TableRow>
+                        {d.sources.map((s) => (
+                          <TableRow key={`${d.date}-${s.source}`}>
+                            <TableCell className="pl-8 text-xs text-muted-foreground">
+                              <div>{SOURCE_LABELS[s.source] ?? s.source}</div>
+                              {s.notes.length > 0 && (
+                                <div className="text-[11px] text-muted-foreground/80 mt-0.5 line-clamp-2">
+                                  {[...new Set(s.notes)].slice(0, 3).join("；")}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums text-xs text-muted-foreground">{s.count}</TableCell>
+                            <TableCell className="text-right tabular-nums text-xs text-success">+{s.amount.toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </Fragment>
                     ))}
+
                   </TableBody>
                 </Table>
+
               )}
             </TabsContent>
 
