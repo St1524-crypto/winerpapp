@@ -96,18 +96,32 @@ function PointsPage() {
     [rewardEarnings, monthKey],
   );
 
-  // 日明細：近 30 天
+  // 日明細：近 60 天，附各獎金來源明細
   const dailyDetail = useMemo(() => {
-    const map = new Map<string, { date: string; amount: number; count: number }>();
+    const map = new Map<string, { date: string; amount: number; count: number; bySource: Map<string, { amount: number; count: number; notes: string[] }> }>();
     for (const t of rewardEarnings) {
       const k = ymd(new Date(t.created_at));
-      const cur = map.get(k) ?? { date: k, amount: 0, count: 0 };
+      const cur = map.get(k) ?? { date: k, amount: 0, count: 0, bySource: new Map() };
       cur.amount += t.amount;
       cur.count += 1;
+      const src = cur.bySource.get(t.source) ?? { amount: 0, count: 0, notes: [] };
+      src.amount += t.amount;
+      src.count += 1;
+      if (t.note) src.notes.push(t.note);
+      cur.bySource.set(t.source, src);
       map.set(k, cur);
     }
-    return [...map.values()].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 60);
+    return [...map.values()]
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, 60)
+      .map((d) => ({
+        ...d,
+        sources: [...d.bySource.entries()]
+          .map(([source, v]) => ({ source, ...v }))
+          .sort((a, b) => b.amount - a.amount),
+      }));
   }, [rewardEarnings]);
+
 
   // 月明細：近 12 個月
   const monthlyDetail = useMemo(() => {
