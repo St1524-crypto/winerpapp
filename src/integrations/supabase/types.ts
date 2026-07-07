@@ -6492,6 +6492,7 @@ export type Database = {
         Returns: boolean
       }
       is_operation_participant: { Args: { _user_id: string }; Returns: boolean }
+      map_legacy_rank_to_code: { Args: { _legacy: string }; Returns: string }
       move_to_dlq: {
         Args: {
           dlq_name: string
