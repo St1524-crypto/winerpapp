@@ -127,7 +127,7 @@ function Page() {
         roles: rolesMap.get(p.id) ?? [],
         referrer_member_no: ref?.member_no ?? null,
         referrer_name: ref?.name ?? null,
-        current_tier: tierMap.get(p.id) ?? null,
+        current_tier: tierMap.get(p.id) ?? (p.vip_tier ?? null),
       };
     }));
     setLoading(false);
