@@ -141,7 +141,12 @@ function Page() {
                 </div>
                 <div>
                   <Label>下次結算時間</Label>
-                  <Input value={new Date(s.daily_next_settlement_at).toLocaleString()} readOnly />
+                  <Input value={computeUpcomingSettlement(s.daily_next_settlement_at, s.daily_bonus_cycle_days).toLocaleString()} readOnly />
+                  {new Date(s.daily_next_settlement_at).getTime() < Date.now() && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      （原設定 {new Date(s.daily_next_settlement_at).toLocaleString()} 已過期，已依週期滾動至下一次）
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
