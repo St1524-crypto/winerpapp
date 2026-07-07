@@ -202,10 +202,34 @@ function VipBonusDetailPage() {
                   <TabsTrigger value="monthly">月獎金明細（{data.monthly.records.length}）</TabsTrigger>
                 </TabsList>
                 <TabsContent value="daily" className="space-y-4 pt-4">
+                  <div className="flex justify-end">
+                    <ExportCsvButton
+                      disabled={data.daily.records.length === 0}
+                      onClick={() => exportBonusCsv({
+                        scope: "daily",
+                        member: data.member,
+                        records: data.daily.records,
+                        sources: data.sources,
+                        dateFrom, dateTo,
+                      })}
+                    />
+                  </div>
                   <SummaryStrip summary={data.daily.summary} />
                   <BonusRecordsTable records={data.daily.records} sources={data.sources} />
                 </TabsContent>
                 <TabsContent value="monthly" className="space-y-4 pt-4">
+                  <div className="flex justify-end">
+                    <ExportCsvButton
+                      disabled={data.monthly.records.length === 0}
+                      onClick={() => exportBonusCsv({
+                        scope: "monthly",
+                        member: data.member,
+                        records: data.monthly.records,
+                        sources: data.sources,
+                        dateFrom, dateTo,
+                      })}
+                    />
+                  </div>
                   <SummaryStrip summary={data.monthly.summary} />
                   <BonusRecordsTable records={data.monthly.records} sources={data.sources} />
                 </TabsContent>
