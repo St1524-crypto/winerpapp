@@ -174,11 +174,20 @@ async function addMonthlyResponsibility(memberId: string, points: number, orderI
 
 async function processRepurchase(orderId: string, buyerId: string, base: number) {
   if (base <= 0) return { inserted: 0, monthly: 0 };
+
+  // 買家若為經銷商：自己不領獎勵點，個人月責任額全數歸屬推薦人
+  const { data: buyer } = await supabaseAdmin
+    .from("profiles").select("is_dealer, referred_by").eq("id", buyerId).maybeSingle();
+  const buyerIsDealer = !!(buyer as any)?.is_dealer;
+  const buyerReferrer = (buyer as any)?.referred_by as string | null;
+  const monthlyRecipient = buyerIsDealer ? (buyerReferrer ?? null) : buyerId;
+
   const { data: rates } = await supabaseAdmin
     .from("repurchase_bonus_settings").select("*").eq("enabled", true)
     .order("generation_level");
   const maxLevel = (rates ?? []).reduce((m, r: any) => Math.max(m, r.generation_level), 0);
-  let currentId: string | null = buyerId;
+  // 經銷商買家：跳過自己，從推薦人開始計算 1/2 代
+  let currentId: string | null = buyerIsDealer ? (buyerReferrer ?? null) : buyerId;
   let inserted = 0;
   for (let level = 1; level <= maxLevel; level++) {
     if (!currentId) break;
@@ -205,9 +214,12 @@ async function processRepurchase(orderId: string, buyerId: string, base: number)
     }
     currentId = upline;
   }
-  await addMonthlyResponsibility(buyerId, base, orderId);
-  return { inserted, monthly: base };
+  if (monthlyRecipient) {
+    await addMonthlyResponsibility(monthlyRecipient, base, orderId);
+  }
+  return { inserted, monthly: monthlyRecipient ? base : 0 };
 }
+
 
 async function processUpgrade(orderId: string, buyerId: string, base: number) {
   if (base <= 0) return { inserted: 0 };
