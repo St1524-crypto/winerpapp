@@ -26,6 +26,20 @@ import {
 
 const ALLOW: AppRole[] = ["super_admin", "admin", "finance"];
 
+/** 依循環週期把過期的「下次結算時間」向前滾到未來，讓後台永遠顯示最新一次預定時間 */
+function computeUpcomingSettlement(nextAtIso: string | null | undefined, cycleDays: number | null | undefined): Date {
+  const base = nextAtIso ? new Date(nextAtIso) : new Date();
+  const cycle = Math.max(1, Number(cycleDays) || 1);
+  const now = Date.now();
+  const cursor = new Date(base);
+  if (isNaN(cursor.getTime())) return new Date(now);
+  while (cursor.getTime() <= now) {
+    cursor.setDate(cursor.getDate() + cycle);
+  }
+  return cursor;
+}
+
+
 export const Route = createFileRoute("/_authenticated/admin/bonus-center")({
   component: Guard,
 });
