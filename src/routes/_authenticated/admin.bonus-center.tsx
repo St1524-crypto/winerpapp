@@ -295,25 +295,42 @@ function Page() {
         <TabsContent value="actions" className="space-y-3">
           <Card>
             <CardContent className="pt-6 space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <Button disabled={busy} onClick={() => action(() => runDailySettlement(), "日結算")}>
-                  <Play className="h-4 w-4 mr-1" />立即執行日結算
-                </Button>
-                <Button disabled={busy} variant="secondary"
-                  onClick={() => action(() => runMonthlySettlement({ data: {} }), "月結算")}>
-                  <Play className="h-4 w-4 mr-1" />立即執行月結算（本月）
-                </Button>
-                <Button disabled={busy} variant="secondary"
-                  onClick={() => action(() => releaseDueRewards(), "到期發放")}>
-                  <Send className="h-4 w-4 mr-1" />發放到期獎勵點
-                </Button>
-              </div>
+              {(() => {
+                const now = new Date();
+                const dailyDate = now.toLocaleDateString();
+                const monthLabel = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}`;
+                return (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="flex flex-col gap-1">
+                      <Button disabled={busy} onClick={() => action(() => runDailySettlement(), `日結算（${dailyDate}）`)}>
+                        <Play className="h-4 w-4 mr-1" />立即執行日結算
+                      </Button>
+                      <span className="text-xs text-muted-foreground">結算日期：{dailyDate}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Button disabled={busy} variant="secondary"
+                        onClick={() => action(() => runMonthlySettlement({ data: {} }), `月結算（${monthLabel}）`)}>
+                        <Play className="h-4 w-4 mr-1" />立即執行月結算（本月）
+                      </Button>
+                      <span className="text-xs text-muted-foreground">結算月份：{monthLabel}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Button disabled={busy} variant="secondary"
+                        onClick={() => action(() => releaseDueRewards(), `到期發放（${dailyDate}）`)}>
+                        <Send className="h-4 w-4 mr-1" />發放到期獎勵點
+                      </Button>
+                      <span className="text-xs text-muted-foreground">發放日期：{dailyDate}（{monthLabel}）</span>
+                    </div>
+                  </div>
+                );
+              })()}
               <p className="text-xs text-muted-foreground">
                 * 自動結算與發放透過 pg_cron 每日呼叫 `/api/public/hooks/bonus-daily-tick`。
               </p>
             </CardContent>
           </Card>
         </TabsContent>
+
 
         {/* 獎金明細 */}
         <TabsContent value="records" className="space-y-3">
