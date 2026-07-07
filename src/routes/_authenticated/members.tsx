@@ -383,8 +383,12 @@ function Page() {
                     const exp = new Date(m.vip_expires_at);
                     const expired = exp.getTime() <= Date.now();
                     return (
-                      <Badge variant="outline" className={expired ? "bg-red-500/15 text-red-500 border-red-500/30" : "bg-amber-500/15 text-amber-600 border-amber-500/30"}>
-                        VIP {expired ? "已到期" : exp.toLocaleDateString()}
+                      <Badge
+                        variant="outline"
+                        title={`到期日：${exp.toLocaleDateString()}`}
+                        className={expired ? "bg-red-500/15 text-red-500 border-red-500/30" : "bg-amber-500/15 text-amber-600 border-amber-500/30"}
+                      >
+                        {expired ? "VIP 已到期" : "VIP"}
                       </Badge>
                     );
                   })()}
