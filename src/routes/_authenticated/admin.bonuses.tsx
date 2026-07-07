@@ -247,10 +247,18 @@ function BonusOperationsPage() {
             管理日獎金、月獎金、推薦獎勵、復購獎勵與獎勵點發放狀態。
           </p>
         </div>
-        <Button variant="outline" onClick={loadData} disabled={loading || busy}>
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-          重新整理
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link to="/admin/bonuses/vip-detail">
+              <Search className="mr-2 h-4 w-4" />
+              VIP 個人明細
+            </Link>
+          </Button>
+          <Button variant="outline" onClick={loadData} disabled={loading || busy}>
+            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+            重新整理
+          </Button>
+        </div>
       </div>
 
       <section>
