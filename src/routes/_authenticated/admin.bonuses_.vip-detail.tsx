@@ -31,7 +31,7 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "已取消",
 };
 
-export const Route = createFileRoute("/_authenticated/admin/bonuses/vip-detail")({
+export const Route = createFileRoute("/_authenticated/admin/bonuses_/vip-detail")({
   component: Guard,
 });
 
