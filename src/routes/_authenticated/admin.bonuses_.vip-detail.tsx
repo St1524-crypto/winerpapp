@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Coins, Loader2, Search, User, Calendar, TrendingUp } from "lucide-react";
+import { ArrowLeft, Coins, Download, Loader2, Search, User, Calendar, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -202,10 +202,34 @@ function VipBonusDetailPage() {
                   <TabsTrigger value="monthly">月獎金明細（{data.monthly.records.length}）</TabsTrigger>
                 </TabsList>
                 <TabsContent value="daily" className="space-y-4 pt-4">
+                  <div className="flex justify-end">
+                    <ExportCsvButton
+                      disabled={data.daily.records.length === 0}
+                      onClick={() => exportBonusCsv({
+                        scope: "daily",
+                        member: data.member,
+                        records: data.daily.records,
+                        sources: data.sources,
+                        dateFrom, dateTo,
+                      })}
+                    />
+                  </div>
                   <SummaryStrip summary={data.daily.summary} />
                   <BonusRecordsTable records={data.daily.records} sources={data.sources} />
                 </TabsContent>
                 <TabsContent value="monthly" className="space-y-4 pt-4">
+                  <div className="flex justify-end">
+                    <ExportCsvButton
+                      disabled={data.monthly.records.length === 0}
+                      onClick={() => exportBonusCsv({
+                        scope: "monthly",
+                        member: data.member,
+                        records: data.monthly.records,
+                        sources: data.sources,
+                        dateFrom, dateTo,
+                      })}
+                    />
+                  </div>
                   <SummaryStrip summary={data.monthly.summary} />
                   <BonusRecordsTable records={data.monthly.records} sources={data.sources} />
                 </TabsContent>
@@ -311,4 +335,85 @@ function BonusRecordsTable({ records, sources }: { records: any[]; sources: Reco
       </Table>
     </div>
   );
+}
+
+function ExportCsvButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+  return (
+    <Button variant="outline" size="sm" onClick={onClick} disabled={disabled}>
+      <Download className="mr-2 h-4 w-4" />匯出 CSV
+    </Button>
+  );
+}
+
+function csvCell(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function exportBonusCsv({
+  scope, member, records, sources, dateFrom, dateTo,
+}: {
+  scope: "daily" | "monthly";
+  member: any;
+  records: any[];
+  sources: Record<string, any>;
+  dateFrom?: string;
+  dateTo?: string;
+}) {
+  if (!records.length) {
+    toast.error("目前沒有可匯出的資料");
+    return;
+  }
+  const header = [
+    "建立時間", "獎金類型", "來源會員姓名", "來源會員編號", "層級",
+    "基數", "比例(%)", "點數", "狀態", "結算日", "發放日", "失敗原因",
+  ];
+  const rows = records.map((r) => {
+    const src = r.source_member_id ? sources[r.source_member_id] : null;
+    return [
+      new Date(r.created_at).toLocaleString("zh-TW", { hour12: false }),
+      TYPE_LABEL[r.bonus_type] ?? r.bonus_type ?? "",
+      src?.name ?? "",
+      src?.member_no ?? "",
+      r.generation_level ?? "",
+      Number(r.base_amount ?? 0),
+      Number(r.bonus_rate ?? 0),
+      Number(r.bonus_points ?? 0),
+      STATUS_LABEL[r.status] ?? r.status ?? "",
+      r.settlement_date ?? "",
+      r.release_date ?? "",
+      r.fail_reason ?? "",
+    ];
+  });
+
+  const memberNo = member?.member_no ?? member?.id ?? "member";
+  const memberName = member?.name ?? "";
+  const range = `${dateFrom || "all"}_${dateTo || "all"}`;
+  const meta = [
+    ["會員", `${memberName} (${memberNo})`],
+    ["範圍", scope === "daily" ? "日獎金明細" : "月獎金明細"],
+    ["起始日", dateFrom || "—"],
+    ["結束日", dateTo || "—"],
+    ["匯出時間", new Date().toLocaleString("zh-TW", { hour12: false })],
+    [],
+  ];
+
+  const lines = [
+    ...meta.map((r) => r.map(csvCell).join(",")),
+    header.map(csvCell).join(","),
+    ...rows.map((r) => r.map(csvCell).join(",")),
+  ];
+  const csv = "\uFEFF" + lines.join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `bonus_${scope}_${memberNo}_${range}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast.success(`已匯出 ${records.length} 筆`);
 }
