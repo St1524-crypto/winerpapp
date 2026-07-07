@@ -6473,6 +6473,30 @@ export type Database = {
           slug: string
         }[]
       }
+      get_quote_by_public_token: {
+        Args: { _token: string }
+        Returns: {
+          bank_snapshot: Json
+          company_snapshot: Json
+          customer_address: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          discount_amount: number
+          id: string
+          items: Json
+          notes: string
+          payment_terms: string
+          quote_date: string
+          quote_no: string
+          salesperson_name: string
+          status: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          valid_until: string
+        }[]
+      }
       get_tier_upgrade_total_earnings_cap: {
         Args: { _tier_code: string }
         Returns: number
