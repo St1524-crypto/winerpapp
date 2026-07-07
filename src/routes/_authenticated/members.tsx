@@ -475,10 +475,16 @@ function Page() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {m.roles.length === 0 ? <span className="text-xs text-muted-foreground">無</span>
-                        : m.roles.map((r) => (
-                          <Badge key={r} variant="outline" className={ROLE_COLORS[r]}>{ROLE_LABELS[r]}</Badge>
-                        ))}
+                      {(() => {
+                        const isVip = !!(m.vip_expires_at && new Date(m.vip_expires_at).getTime() > Date.now()) || !!m.vip_tier;
+                        if (m.roles.length === 0 && !isVip) return <span className="text-xs text-muted-foreground">無</span>;
+                        return <>
+                          {isVip && <Badge variant="outline" className="bg-amber-500/15 text-amber-600 border-amber-500/40">VIP會員</Badge>}
+                          {m.roles.map((r) => (
+                            <Badge key={r} variant="outline" className={ROLE_COLORS[r]}>{ROLE_LABELS[r]}</Badge>
+                          ))}
+                        </>;
+                      })()}
                     </div>
                   </TableCell>
                   <TableCell>
