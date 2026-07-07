@@ -1391,3 +1391,108 @@ export const getMyBonusRecords = createServerFn({ method: "GET" })
       reward_release_days: s.reward_release_days,
     };
   });
+
+/* ───────────── VIP 個人日 / 月獎金明細 ───────────── */
+const DAILY_BONUS_TYPES = ["referral", "repurchase"];
+const MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate"];
+
+export const searchBonusMembers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ keyword: z.string().trim().min(1).max(120) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, VIEW_ROLES);
+    const kw = data.keyword.replace(/[%,]/g, " ").trim();
+    const like = `%${kw}%`;
+    const { data: rows, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, name, member_no, email, phone, is_vip, vip_expires_at")
+      .or(`name.ilike.${like},member_no.ilike.${like},email.ilike.${like},phone.ilike.${like}`)
+      .limit(30);
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const getMemberBonusBreakdown = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      memberId: z.string().uuid(),
+      scope: z.enum(["all", "daily", "monthly"]).default("all"),
+      dateFrom: z.string().optional(),
+      dateTo: z.string().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, VIEW_ROLES);
+
+    const { data: member, error: memberError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, name, member_no, email, phone, is_vip, vip_expires_at")
+      .eq("id", data.memberId)
+      .maybeSingle();
+    if (memberError) throw new Error(memberError.message);
+    if (!member) throw new Error("找不到會員");
+
+    let q = supabaseAdmin
+      .from("bonus_records")
+      .select("*")
+      .eq("member_id", data.memberId)
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    if (data.scope === "daily") q = q.in("bonus_type", DAILY_BONUS_TYPES);
+    else if (data.scope === "monthly") q = q.in("bonus_type", MONTHLY_BONUS_TYPES);
+    if (data.dateFrom) q = q.gte("created_at", `${data.dateFrom}T00:00:00Z`);
+    if (data.dateTo) q = q.lte("created_at", `${data.dateTo}T23:59:59Z`);
+
+    const { data: rows, error: rowsError } = await q;
+    if (rowsError) throw new Error(rowsError.message);
+
+    const records = rows ?? [];
+    const sourceIds = Array.from(new Set(
+      records.map((r: any) => r.source_member_id).filter(Boolean),
+    ));
+    let sourceMap: Record<string, any> = {};
+    if (sourceIds.length > 0) {
+      const { data: sources } = await supabaseAdmin
+        .from("profiles").select("id, name, member_no").in("id", sourceIds);
+      (sources ?? []).forEach((p: any) => { sourceMap[p.id] = p; });
+    }
+
+    const bucket = (types: string[]) => records.filter((r: any) => types.includes(r.bonus_type));
+    const dailyRecords = bucket(DAILY_BONUS_TYPES);
+    const monthlyRecords = bucket(MONTHLY_BONUS_TYPES);
+
+    const summarize = (list: any[]) => {
+      const byType: Record<string, { count: number; points: number; released: number; waiting: number; failed: number }> = {};
+      let totalPoints = 0;
+      let releasedPoints = 0;
+      let waitingPoints = 0;
+      let failedPoints = 0;
+      for (const r of list) {
+        const pts = Number(r.bonus_points ?? 0);
+        totalPoints += pts;
+        if (r.status === "released") releasedPoints += pts;
+        else if (r.status === "waiting_release" || r.status === "pending") waitingPoints += pts;
+        else if (r.status === "failed") failedPoints += pts;
+        const key = r.bonus_type ?? "unknown";
+        if (!byType[key]) byType[key] = { count: 0, points: 0, released: 0, waiting: 0, failed: 0 };
+        byType[key].count += 1;
+        byType[key].points += pts;
+        if (r.status === "released") byType[key].released += pts;
+        else if (r.status === "waiting_release" || r.status === "pending") byType[key].waiting += pts;
+        else if (r.status === "failed") byType[key].failed += pts;
+      }
+      return { totalCount: list.length, totalPoints, releasedPoints, waitingPoints, failedPoints, byType };
+    };
+
+    return {
+      member,
+      records,
+      sources: sourceMap,
+      daily: { records: dailyRecords, summary: summarize(dailyRecords) },
+      monthly: { records: monthlyRecords, summary: summarize(monthlyRecords) },
+    };
+  });
