@@ -3180,6 +3180,130 @@ function PaymentStatusCell({
   );
 }
 
+// =================== Inline 訂單狀態 / 出貨狀態快速修改 ===================
+function OrderStatusCell({
+  orderId,
+  value,
+  onChanged,
+}: {
+  orderId: string;
+  value: keyof typeof ORDER_STATUS;
+  onChanged: () => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const current = ORDER_STATUS[value];
+
+  async function update(next: keyof typeof ORDER_STATUS) {
+    if (next === value) return;
+    setPending(true);
+    const { error } = await supabase
+      .from("sales_orders")
+      .update({ order_status: next })
+      .eq("id", orderId);
+    setPending(false);
+    if (error) {
+      toast.error("更新訂單狀態失敗", { description: error.message });
+      return;
+    }
+    toast.success(`訂單狀態已更新為「${ORDER_STATUS[next].label}」`);
+    onChanged();
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          disabled={pending}
+          className="inline-flex items-center gap-1 disabled:opacity-60"
+          title="點擊修改訂單狀態"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Badge variant="outline" className={`${current?.tone ?? ""} cursor-pointer hover:opacity-80`}>
+            {pending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            {current?.label ?? value}
+          </Badge>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[140px]">
+        {(Object.keys(ORDER_STATUS) as Array<keyof typeof ORDER_STATUS>).map((k) => (
+          <DropdownMenuItem
+            key={k}
+            onClick={() => update(k)}
+            className="flex items-center justify-between gap-2"
+          >
+            <span>{ORDER_STATUS[k].label}</span>
+            {k === value && <Check className="h-3.5 w-3.5 text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ShippingStatusCell({
+  orderId,
+  value,
+  onChanged,
+}: {
+  orderId: string;
+  value: keyof typeof SHIPPING_STATUS;
+  onChanged: () => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const current = SHIPPING_STATUS[value];
+
+  async function update(next: keyof typeof SHIPPING_STATUS) {
+    if (next === value) return;
+    setPending(true);
+    const patch: Record<string, unknown> = { shipping_status: next };
+    if (next === "shipped") patch.shipped_at = new Date().toISOString();
+    if (next === "delivered") patch.delivered_at = new Date().toISOString();
+    const { error } = await supabase
+      .from("sales_orders")
+      .update(patch)
+      .eq("id", orderId);
+    setPending(false);
+    if (error) {
+      toast.error("更新出貨狀態失敗", { description: error.message });
+      return;
+    }
+    toast.success(`出貨狀態已更新為「${SHIPPING_STATUS[next].label}」`);
+    onChanged();
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          disabled={pending}
+          className="inline-flex items-center gap-1 disabled:opacity-60"
+          title="點擊修改出貨狀態"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Badge variant="outline" className={`${current?.tone ?? ""} cursor-pointer hover:opacity-80`}>
+            {pending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            {current?.label ?? value}
+          </Badge>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[140px]">
+        {(Object.keys(SHIPPING_STATUS) as Array<keyof typeof SHIPPING_STATUS>).map((k) => (
+          <DropdownMenuItem
+            key={k}
+            onClick={() => update(k)}
+            className="flex items-center justify-between gap-2"
+          >
+            <span>{SHIPPING_STATUS[k].label}</span>
+            {k === value && <Check className="h-3.5 w-3.5 text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 // =================== Inline 付款紀錄狀態快速修改 ===================
 const PAYMENT_RECORD_STATUS: Record<string, { label: string; tone: string }> = {
   pending:   { label: "待處理", tone: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
