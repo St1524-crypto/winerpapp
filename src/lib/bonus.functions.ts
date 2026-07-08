@@ -145,7 +145,7 @@ export const deleteMonthlyTier = createServerFn({ method: "POST" })
 /* ───────────── 訂單付款 → 自動產生獎金 + 累計責任額 ─────────────
  * 依 sales_orders.order_type 判斷：
  *   - repurchase：上線 1/2 代復購獎金 + 買家月度責任額累計
- *   - upgrade   ：依 dealer_tiers.upgrade_referral_rate 差額制往上各階分潤
+ *   - upgrade   ：依 dealer_tiers.daily_referral_rate 差額制往上各階分潤（日獎金推薦）
  *   - normal    ：不處理
  */
 async function addMonthlyResponsibility(memberId: string, points: number, orderId: string) {
@@ -225,10 +225,10 @@ async function processUpgrade(orderId: string, buyerId: string, base: number) {
   if (base <= 0) return { inserted: 0 };
   const { data: tiers } = await supabaseAdmin
     .from("dealer_tiers")
-    .select("code, upgrade_referral_rate")
-    .gt("upgrade_referral_rate", 0);
+    .select("code, daily_referral_rate")
+    .gt("daily_referral_rate", 0);
   const tierMap = new Map<string, number>(
-    (tiers ?? []).map((t: any) => [t.code, Number(t.upgrade_referral_rate)]),
+    (tiers ?? []).map((t: any) => [t.code, Number(t.daily_referral_rate)]),
   );
   const { data: statuses } = await supabaseAdmin
     .from("dealer_tier_status").select("user_id, current_tier");

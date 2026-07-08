@@ -1519,6 +1519,7 @@ export type Database = {
         Row: {
           code: string
           condition_logic: string
+          daily_referral_rate: number
           description: string | null
           freeze_when_points_below: boolean
           global_bonus_income_threshold: number
@@ -1549,6 +1550,7 @@ export type Database = {
         Insert: {
           code: string
           condition_logic?: string
+          daily_referral_rate?: number
           description?: string | null
           freeze_when_points_below?: boolean
           global_bonus_income_threshold?: number
@@ -1579,6 +1581,7 @@ export type Database = {
         Update: {
           code?: string
           condition_logic?: string
+          daily_referral_rate?: number
           description?: string | null
           freeze_when_points_below?: boolean
           global_bonus_income_threshold?: number
