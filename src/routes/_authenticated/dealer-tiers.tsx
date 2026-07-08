@@ -111,6 +111,7 @@ function DealerTiersAdmin() {
               <div className="text-xs font-semibold text-muted-foreground pt-2">獎勵</div>
               <ul className="text-xs space-y-1 ml-1">
                 <li>• 回饋率 {t.rebate_rate}%</li>
+                {t.daily_referral_rate > 0 && <li>• 日獎金推薦 {t.daily_referral_rate}%（差額制）</li>}
                 {t.operating_bonus_rate > 0 && <li>• 營業分紅 {t.operating_bonus_rate}%</li>}
                 {t.upgrade_bonus_cap > 0 && <li>• 升級分紅上限 NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
                 {t.special_bonus_rate > 0 && (
