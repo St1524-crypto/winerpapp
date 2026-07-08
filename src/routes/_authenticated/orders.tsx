@@ -3256,12 +3256,9 @@ function ShippingStatusCell({
   async function update(next: keyof typeof SHIPPING_STATUS) {
     if (next === value) return;
     setPending(true);
-    const patch: { shipping_status: typeof next; shipped_at?: string; delivered_at?: string } = { shipping_status: next };
-    if (next === "shipped") patch.shipped_at = new Date().toISOString();
-    if (next === "delivered") patch.delivered_at = new Date().toISOString();
     const { error } = await supabase
       .from("sales_orders")
-      .update(patch)
+      .update({ shipping_status: next })
       .eq("id", orderId);
     setPending(false);
     if (error) {
