@@ -186,6 +186,7 @@ function DealerTiersAdmin() {
               <div className="text-sm font-semibold pt-2">獎勵設定</div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="回饋率 %"><Input type="number" step="0.01" value={editing.rebate_rate} onChange={(e) => setEditing({ ...editing, rebate_rate: +e.target.value })} /></Field>
+                <Field label="日獎金推薦 %（差額制）"><Input type="number" step="0.01" value={editing.daily_referral_rate} onChange={(e) => setEditing({ ...editing, daily_referral_rate: +e.target.value })} /></Field>
                 <Field label="營業分紅率 %"><Input type="number" step="0.01" value={editing.operating_bonus_rate} onChange={(e) => setEditing({ ...editing, operating_bonus_rate: +e.target.value })} /></Field>
                 <Field label="升級分紅上限"><Input type="number" value={editing.upgrade_bonus_cap} onChange={(e) => setEditing({ ...editing, upgrade_bonus_cap: +e.target.value })} /></Field>
                 <Field label="特別獎勵名稱"><Input value={editing.special_bonus_label ?? ""} onChange={(e) => setEditing({ ...editing, special_bonus_label: e.target.value || null })} /></Field>
