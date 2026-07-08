@@ -47,17 +47,27 @@ export const uploadBrandingLogo = createServerFn({ method: "POST" })
     const ext = (safeName.split(".").pop() || fallbackExt).slice(0, 8);
     const rand = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-    // 3) Path strictly scoped: companies/{id}/... for existing companies,
-    //    pending/{userId}/... while creating a new one.
+    // 3) Approved company logos are public brand assets → 'branding' (public bucket).
+    //    Pre-approval uploads may contain sensitive draft artwork tied to a
+    //    specific user → isolated in the private 'branding-pending' bucket,
+    //    guarded by RLS (owner-only + admin read).
+    const bucket = data.companyId ? "branding" : "branding-pending";
     const path = data.companyId
       ? `companies/${data.companyId}/${rand}.${ext}`
       : `pending/${userId}/${rand}.${ext}`;
 
     const { error: uploadError } = await supabaseAdmin.storage
-      .from("branding")
+      .from(bucket)
       .upload(path, bytes, { contentType: data.contentType, cacheControl: "3600", upsert: false });
     if (uploadError) throw uploadError;
 
-    const { data: pub } = supabaseAdmin.storage.from("branding").getPublicUrl(path);
-    return { path, publicUrl: pub.publicUrl };
+    if (bucket === "branding-pending") {
+      const { data: signed, error: signErr } = await supabaseAdmin.storage
+        .from(bucket)
+        .createSignedUrl(path, 60 * 60 * 24); // 24h preview
+      if (signErr) throw signErr;
+      return { path, publicUrl: signed.signedUrl, bucket };
+    }
+    const { data: pub } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
+    return { path, publicUrl: pub.publicUrl, bucket };
   });
