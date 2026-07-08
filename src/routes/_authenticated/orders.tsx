@@ -517,12 +517,8 @@ function OrdersPage() {
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      <Badge variant="outline" className={ORDER_STATUS[o.order_status]?.tone}>
-                        {ORDER_STATUS[o.order_status]?.label ?? o.order_status}
-                      </Badge>
-                      <Badge variant="outline" className={SHIPPING_STATUS[o.shipping_status]?.tone}>
-                        {SHIPPING_STATUS[o.shipping_status]?.label ?? o.shipping_status}
-                      </Badge>
+                      <OrderStatusCell orderId={o.id} value={o.order_status} onChanged={refresh} />
+                      <ShippingStatusCell orderId={o.id} value={o.shipping_status} onChanged={refresh} />
                       <PaymentStatusCell orderId={o.id} value={o.payment_status} onChanged={refresh} />
                     </div>
                     <div className="flex gap-2 pt-1">
@@ -619,14 +615,10 @@ function OrdersPage() {
                         </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={ORDER_STATUS[o.order_status]?.tone}>
-                            {ORDER_STATUS[o.order_status]?.label ?? o.order_status}
-                          </Badge>
+                          <OrderStatusCell orderId={o.id} value={o.order_status} onChanged={refresh} />
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={SHIPPING_STATUS[o.shipping_status]?.tone}>
-                            {SHIPPING_STATUS[o.shipping_status]?.label ?? o.shipping_status}
-                          </Badge>
+                          <ShippingStatusCell orderId={o.id} value={o.shipping_status} onChanged={refresh} />
                         </TableCell>
                         <TableCell>
                           <PaymentStatusCell
@@ -3180,6 +3172,127 @@ function PaymentStatusCell({
             className="flex items-center justify-between gap-2"
           >
             <span>{PAYMENT_STATUS[k].label}</span>
+            {k === value && <Check className="h-3.5 w-3.5 text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// =================== Inline 訂單狀態 / 出貨狀態快速修改 ===================
+function OrderStatusCell({
+  orderId,
+  value,
+  onChanged,
+}: {
+  orderId: string;
+  value: keyof typeof ORDER_STATUS;
+  onChanged: () => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const current = ORDER_STATUS[value];
+
+  async function update(next: keyof typeof ORDER_STATUS) {
+    if (next === value) return;
+    setPending(true);
+    const { error } = await supabase
+      .from("sales_orders")
+      .update({ order_status: next })
+      .eq("id", orderId);
+    setPending(false);
+    if (error) {
+      toast.error("更新訂單狀態失敗", { description: error.message });
+      return;
+    }
+    toast.success(`訂單狀態已更新為「${ORDER_STATUS[next].label}」`);
+    onChanged();
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          disabled={pending}
+          className="inline-flex items-center gap-1 disabled:opacity-60"
+          title="點擊修改訂單狀態"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Badge variant="outline" className={`${current?.tone ?? ""} cursor-pointer hover:opacity-80`}>
+            {pending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            {current?.label ?? value}
+          </Badge>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[140px]">
+        {(Object.keys(ORDER_STATUS) as Array<keyof typeof ORDER_STATUS>).map((k) => (
+          <DropdownMenuItem
+            key={k}
+            onClick={() => update(k)}
+            className="flex items-center justify-between gap-2"
+          >
+            <span>{ORDER_STATUS[k].label}</span>
+            {k === value && <Check className="h-3.5 w-3.5 text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ShippingStatusCell({
+  orderId,
+  value,
+  onChanged,
+}: {
+  orderId: string;
+  value: keyof typeof SHIPPING_STATUS;
+  onChanged: () => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const current = SHIPPING_STATUS[value];
+
+  async function update(next: keyof typeof SHIPPING_STATUS) {
+    if (next === value) return;
+    setPending(true);
+    const { error } = await supabase
+      .from("sales_orders")
+      .update({ shipping_status: next })
+      .eq("id", orderId);
+    setPending(false);
+    if (error) {
+      toast.error("更新出貨狀態失敗", { description: error.message });
+      return;
+    }
+    toast.success(`出貨狀態已更新為「${SHIPPING_STATUS[next].label}」`);
+    onChanged();
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          disabled={pending}
+          className="inline-flex items-center gap-1 disabled:opacity-60"
+          title="點擊修改出貨狀態"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Badge variant="outline" className={`${current?.tone ?? ""} cursor-pointer hover:opacity-80`}>
+            {pending && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            {current?.label ?? value}
+          </Badge>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[140px]">
+        {(Object.keys(SHIPPING_STATUS) as Array<keyof typeof SHIPPING_STATUS>).map((k) => (
+          <DropdownMenuItem
+            key={k}
+            onClick={() => update(k)}
+            className="flex items-center justify-between gap-2"
+          >
+            <span>{SHIPPING_STATUS[k].label}</span>
             {k === value && <Check className="h-3.5 w-3.5 text-primary" />}
           </DropdownMenuItem>
         ))}
