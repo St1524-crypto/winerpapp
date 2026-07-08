@@ -418,6 +418,18 @@ export const runMonthlySettlement = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertRoles(context.userId, ADMIN_ROLES);
+
+    // 只允許結算「已結束」的月份：本月尚未過完最後一天前，不可執行本月月結算
+    const nowTw = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+    const targetYm = data.yyyymm ?? `${nowTw.getFullYear()}${String(nowTw.getMonth() + 1).padStart(2, "0")}`;
+    const ty = Number(targetYm.slice(0, 4));
+    const tm = Number(targetYm.slice(4, 6));
+    // 該月最後一日 23:59:59（台灣時間）
+    const targetMonthEnd = new Date(ty, tm, 0, 23, 59, 59);
+    if (nowTw < targetMonthEnd) {
+      throw new Error(`月結算尚未開放：${ty}/${String(tm).padStart(2, "0")} 需於 ${tm}/${new Date(ty, tm, 0).getDate()} 當日結束後才可執行`);
+    }
+
     return settleMonthlyBonus({
       yyyymm: data.yyyymm,
       createdBy: context.userId,
