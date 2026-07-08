@@ -40,6 +40,7 @@ type Tier = {
   global_bonus_rate: number;
   global_bonus_income_threshold: number;
   maintenance_required_new_e_store: number;
+  daily_referral_rate: number;
 };
 
 
