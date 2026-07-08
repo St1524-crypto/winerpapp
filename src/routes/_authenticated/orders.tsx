@@ -615,14 +615,10 @@ function OrdersPage() {
                         </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={ORDER_STATUS[o.order_status]?.tone}>
-                            {ORDER_STATUS[o.order_status]?.label ?? o.order_status}
-                          </Badge>
+                          <OrderStatusCell orderId={o.id} value={o.order_status} onChanged={refresh} />
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={SHIPPING_STATUS[o.shipping_status]?.tone}>
-                            {SHIPPING_STATUS[o.shipping_status]?.label ?? o.shipping_status}
-                          </Badge>
+                          <ShippingStatusCell orderId={o.id} value={o.shipping_status} onChanged={refresh} />
                         </TableCell>
                         <TableCell>
                           <PaymentStatusCell
