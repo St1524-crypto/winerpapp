@@ -689,6 +689,7 @@ export type Database = {
           failed_at: string | null
           generation_level: number | null
           id: string
+          layer_level: number | null
           member_id: string
           original_member_id: string | null
           release_attempts: number
@@ -716,6 +717,7 @@ export type Database = {
           failed_at?: string | null
           generation_level?: number | null
           id?: string
+          layer_level?: number | null
           member_id: string
           original_member_id?: string | null
           release_attempts?: number
@@ -743,6 +745,7 @@ export type Database = {
           failed_at?: string | null
           generation_level?: number | null
           id?: string
+          layer_level?: number | null
           member_id?: string
           original_member_id?: string | null
           release_attempts?: number
@@ -825,6 +828,7 @@ export type Database = {
           settlement_period_end: string
           settlement_period_start: string
           settlement_type: string
+          source: string | null
           status: string
           total_bonus_points: number
           total_members: number
@@ -838,6 +842,7 @@ export type Database = {
           settlement_period_end: string
           settlement_period_start: string
           settlement_type: string
+          source?: string | null
           status?: string
           total_bonus_points?: number
           total_members?: number
@@ -851,6 +856,7 @@ export type Database = {
           settlement_period_end?: string
           settlement_period_start?: string
           settlement_type?: string
+          source?: string | null
           status?: string
           total_bonus_points?: number
           total_members?: number
