@@ -299,6 +299,9 @@ function Page() {
                 const now = new Date();
                 const dailyDate = now.toLocaleDateString();
                 const monthLabel = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}`;
+                const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                const monthlyLocked = now < monthEnd;
+                const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
                 return (
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="flex flex-col gap-1">
@@ -308,11 +311,15 @@ function Page() {
                       <span className="text-xs text-muted-foreground">結算日期：{dailyDate}</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <Button disabled={busy} variant="secondary"
+                      <Button disabled={busy || monthlyLocked} variant="secondary"
+                        title={monthlyLocked ? `本月月結算需於 ${now.getMonth() + 1}/${lastDay} 當日結束後才可執行` : undefined}
                         onClick={() => action(() => runMonthlySettlement({ data: {} }), `月結算（${monthLabel}）`)}>
                         <Play className="h-4 w-4 mr-1" />立即執行月結算（本月）
                       </Button>
-                      <span className="text-xs text-muted-foreground">結算月份：{monthLabel}</span>
+                      <span className="text-xs text-muted-foreground">
+                        結算月份：{monthLabel}
+                        {monthlyLocked && <span className="text-amber-600 ml-1">（{now.getMonth() + 1}/{lastDay} 過後才可執行）</span>}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <Button disabled={busy} variant="secondary"
