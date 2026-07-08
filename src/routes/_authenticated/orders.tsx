@@ -517,12 +517,8 @@ function OrdersPage() {
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      <Badge variant="outline" className={ORDER_STATUS[o.order_status]?.tone}>
-                        {ORDER_STATUS[o.order_status]?.label ?? o.order_status}
-                      </Badge>
-                      <Badge variant="outline" className={SHIPPING_STATUS[o.shipping_status]?.tone}>
-                        {SHIPPING_STATUS[o.shipping_status]?.label ?? o.shipping_status}
-                      </Badge>
+                      <OrderStatusCell orderId={o.id} value={o.order_status} onChanged={refresh} />
+                      <ShippingStatusCell orderId={o.id} value={o.shipping_status} onChanged={refresh} />
                       <PaymentStatusCell orderId={o.id} value={o.payment_status} onChanged={refresh} />
                     </div>
                     <div className="flex gap-2 pt-1">
