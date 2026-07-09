@@ -37,7 +37,7 @@ export function MobileBottomNav() {
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
-      <div className="grid grid-cols-4 h-16">
+      <div className="grid grid-cols-4 h-[68px]">
         {items.map((it) => {
           const active = path === it.to || (it.to !== "/shop" && path.startsWith(it.to));
           return (
