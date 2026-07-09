@@ -33,18 +33,22 @@ export function ShopContentList({ sectionType, emptyText = "內容即將上線" 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
       {pages.map((p) => {
         const isExternal = !!p.external_url;
+        const firstImage =
+          p.cover_image ||
+          (Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : null);
         const commonInner = (
           <>
-            {p.cover_image && (
+            {firstImage && (
               <div className="aspect-[16/9] overflow-hidden bg-muted">
                 <img
-                  src={p.cover_image}
+                  src={firstImage}
                   alt={p.title}
                   loading="lazy"
                   className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                 />
               </div>
             )}
+
             <div className="p-5">
               <div className="font-semibold mb-2 group-hover:text-primary flex items-center gap-1.5">
                 {p.title}
