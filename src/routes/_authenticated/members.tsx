@@ -55,6 +55,21 @@ function Page() {
   const [editProfile, setEditProfile] = useState<Member | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
   const [showFormPassword, setShowFormPassword] = useState(false);
+  const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, status: "idle" });
+
+  useEffect(() => {
+    const code = form.referrerMemberNo.trim();
+    if (!code) { setReferrerLookup({ code: "", name: null, status: "idle" }); return; }
+    let cancelled = false;
+    setReferrerLookup((prev) => ({ ...prev, code, status: "loading" }));
+    const t = setTimeout(async () => {
+      const { data } = await supabase.from("profiles").select("name, member_no").eq("member_no", code).maybeSingle();
+      if (cancelled) return;
+      if (data) setReferrerLookup({ code, name: (data as any).name ?? null, status: "found" });
+      else setReferrerLookup({ code, name: null, status: "notfound" });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [form.referrerMemberNo]);
 
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
