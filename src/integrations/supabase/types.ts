@@ -1217,6 +1217,87 @@ export type Database = {
           },
         ]
       }
+      cooperation_applications: {
+        Row: {
+          address: string | null
+          admin_note: string | null
+          application_type: string
+          audience_size: string | null
+          city: string | null
+          company_name: string | null
+          contact_name: string | null
+          created_at: string
+          email: string
+          expected_monthly_volume: string | null
+          has_referrer: boolean | null
+          id: string
+          interested_products: string | null
+          interested_topics: string[] | null
+          line_id: string | null
+          note: string | null
+          owner_name: string | null
+          phone: string
+          referrer_info: string | null
+          sales_channels: string[] | null
+          sales_platform_url: string | null
+          status: string
+          tax_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          admin_note?: string | null
+          application_type: string
+          audience_size?: string | null
+          city?: string | null
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email: string
+          expected_monthly_volume?: string | null
+          has_referrer?: boolean | null
+          id?: string
+          interested_products?: string | null
+          interested_topics?: string[] | null
+          line_id?: string | null
+          note?: string | null
+          owner_name?: string | null
+          phone: string
+          referrer_info?: string | null
+          sales_channels?: string[] | null
+          sales_platform_url?: string | null
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          admin_note?: string | null
+          application_type?: string
+          audience_size?: string | null
+          city?: string | null
+          company_name?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string
+          expected_monthly_volume?: string | null
+          has_referrer?: boolean | null
+          id?: string
+          interested_products?: string | null
+          interested_topics?: string[] | null
+          line_id?: string | null
+          note?: string | null
+          owner_name?: string | null
+          phone?: string
+          referrer_info?: string | null
+          sales_channels?: string[] | null
+          sales_platform_url?: string | null
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           code: string

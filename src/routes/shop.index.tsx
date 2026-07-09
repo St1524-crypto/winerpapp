@@ -127,7 +127,7 @@ function ShopHome() {
           </div>
 
           {/* CTA Buttons */}
-          <div className="grid grid-cols-3 md:flex md:flex-wrap md:justify-center gap-2 md:gap-4 mt-5 md:mt-8 max-w-md md:max-w-none mx-auto">
+          <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-2 md:gap-4 mt-5 md:mt-8 max-w-md md:max-w-none mx-auto">
             <Button
               size="lg"
               className="rounded-full px-2 md:px-8 h-10 md:h-12 text-xs md:text-base bg-gradient-to-r from-[oklch(0.62_0.22_255)] to-[oklch(0.70_0.18_240)] hover:opacity-90 text-white shadow-lg shadow-[oklch(0.55_0.22_260_/_0.45)] border-0"
@@ -150,6 +150,13 @@ function ShopHome() {
               asChild
             >
               <Link to="/shop/vip">升級 VIP</Link>
+            </Button>
+            <Button
+              size="lg"
+              className="rounded-full px-2 md:px-8 h-10 md:h-12 text-xs md:text-base bg-gradient-to-r from-amber-400 to-orange-500 hover:opacity-90 text-white shadow-lg border-0"
+              asChild
+            >
+              <Link to="/cooperation/apply">合作申請</Link>
             </Button>
           </div>
 
