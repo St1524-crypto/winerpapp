@@ -16,9 +16,9 @@ export function MobileBottomNav() {
 
   // 點擊要有明顯視覺回饋：底色 + 主色文字 + 縮放 + 上方指示條 + 圖示背景
   const base =
-    "relative flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-all duration-150 select-none " +
-    "active:scale-90 active:bg-primary/25 active:text-primary tap-highlight-transparent touch-manipulation";
-  const activeCls = "text-primary font-bold bg-primary/15";
+    "relative flex flex-col items-center justify-center gap-1 text-[13px] font-semibold transition-all duration-150 select-none " +
+    "active:scale-90 active:bg-primary/30 active:text-primary tap-highlight-transparent touch-manipulation";
+  const activeCls = "text-primary font-extrabold bg-primary/15";
   const inactiveCls = "text-muted-foreground hover:text-foreground";
 
   const accountActive = path.startsWith("/shop/account");
@@ -28,16 +28,16 @@ export function MobileBottomNav() {
     <span
       className={
         "flex items-center justify-center rounded-full transition-all duration-200 " +
-        (active ? "bg-primary text-primary-foreground h-8 w-8 shadow-md shadow-primary/40 scale-110" : "h-6 w-6")
+        (active ? "bg-primary text-primary-foreground h-9 w-9 shadow-md shadow-primary/40 scale-110" : "h-7 w-7")
       }
     >
-      <Icon className={active ? "h-4 w-4" : "h-5 w-5"} />
+      <Icon className={active ? "h-5 w-5" : "h-6 w-6"} />
     </span>
   );
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]">
-      <div className="grid grid-cols-4 h-16">
+      <div className="grid grid-cols-4 h-[68px]">
         {items.map((it) => {
           const active = path === it.to || (it.to !== "/shop" && path.startsWith(it.to));
           return (
