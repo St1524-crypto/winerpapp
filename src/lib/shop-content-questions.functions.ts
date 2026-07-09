@@ -55,10 +55,14 @@ export const submitShopContentQuestion = createServerFn({ method: "POST" })
     if (!authorName) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, email")
+        .select("name, display_name, email")
         .eq("id", userId)
         .maybeSingle();
-      authorName = (profile as any)?.full_name || (profile as any)?.email || "會員";
+      authorName =
+        (profile as any)?.display_name ||
+        (profile as any)?.name ||
+        (profile as any)?.email ||
+        "會員";
     }
 
     const { error: insErr } = await supabase.from("shop_content_questions").insert({
