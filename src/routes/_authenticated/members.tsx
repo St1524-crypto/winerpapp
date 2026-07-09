@@ -55,6 +55,21 @@ function Page() {
   const [editProfile, setEditProfile] = useState<Member | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
   const [showFormPassword, setShowFormPassword] = useState(false);
+  const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, status: "idle" });
+
+  useEffect(() => {
+    const code = form.referrerMemberNo.trim();
+    if (!code) { setReferrerLookup({ code: "", name: null, status: "idle" }); return; }
+    let cancelled = false;
+    setReferrerLookup((prev) => ({ ...prev, code, status: "loading" }));
+    const t = setTimeout(async () => {
+      const { data } = await supabase.from("profiles").select("name, member_no").eq("member_no", code).maybeSingle();
+      if (cancelled) return;
+      if (data) setReferrerLookup({ code, name: (data as any).name ?? null, status: "found" });
+      else setReferrerLookup({ code, name: null, status: "notfound" });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [form.referrerMemberNo]);
 
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
@@ -610,6 +625,15 @@ function Page() {
                 <Input value={form.referrerMemberNo} onChange={(e) => setForm({ ...form, referrerMemberNo: e.target.value })} placeholder="例如 M000123" className="font-mono" />
                 {editProfile.referrer_name && (
                   <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}</p>
+                )}
+                {referrerLookup.status === "loading" && (
+                  <p className="text-[11px] text-muted-foreground">查詢中…</p>
+                )}
+                {referrerLookup.status === "found" && (
+                  <p className="text-[11px] text-emerald-600">推薦人姓名：{referrerLookup.name ?? "—"}</p>
+                )}
+                {referrerLookup.status === "notfound" && (
+                  <p className="text-[11px] text-destructive">找不到會員編號 {referrerLookup.code}</p>
                 )}
               </div>
               <div className="space-y-1">
