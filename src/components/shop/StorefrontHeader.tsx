@@ -89,16 +89,17 @@ export function StorefrontHeader() {
               <SheetHeader>
                 <SheetTitle>選單</SheetTitle>
               </SheetHeader>
-              <nav className="mt-6 flex flex-col gap-1 text-sm">
-                <Link to="/shop" className="px-3 py-2 rounded-md hover:bg-accent">首頁</Link>
-                <Link to="/shop/products" className="px-3 py-2 rounded-md hover:bg-accent">全部商品</Link>
-                <Link to="/shop/wholesale" className="px-3 py-2 rounded-md hover:bg-accent text-primary font-medium">批發專區</Link>
-                <Link to="/shop/patents" className="px-3 py-2 rounded-md hover:bg-accent">專利檢驗區</Link>
-                <Link to="/shop/news" className="px-3 py-2 rounded-md hover:bg-accent">最新消息</Link>
-                <Link to="/shop/health" className="px-3 py-2 rounded-md hover:bg-accent">健康學術</Link>
-                <Link to="/shop/academy" className="px-3 py-2 rounded-md hover:bg-accent">源晶 AI 商學院</Link>
-                <Link to={user ? "/shop/account" : "/login"} className="px-3 py-2 rounded-md hover:bg-accent">會員中心</Link>
-                <Link to={user ? "/shop/account/orders" : "/login"} className="px-3 py-2 rounded-md hover:bg-accent">我的訂單</Link>
+              <nav className="mt-6 flex flex-col gap-1.5 text-base">
+                <Link to="/shop" className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">首頁</Link>
+                <Link to="/shop/products" className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">全部商品</Link>
+                <Link to="/shop/wholesale" className="px-4 py-3 rounded-lg font-bold text-primary hover:bg-primary/10 active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">批發專區</Link>
+                <Link to="/shop/patents" className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">專利檢驗區</Link>
+                <Link to="/shop/news" className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">最新消息</Link>
+                <Link to="/shop/health" className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">健康學術</Link>
+                <Link to="/shop/academy" className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">源晶 AI 商學院</Link>
+                <div className="my-2 border-t border-border/60" />
+                <Link to={user ? "/shop/account" : "/login"} className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">會員中心</Link>
+                <Link to={user ? "/shop/account/orders" : "/login"} className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">我的訂單</Link>
               </nav>
             </SheetContent>
           </Sheet>
