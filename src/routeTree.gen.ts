@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorRouteImport } from './routes/vendor'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -137,6 +138,11 @@ import { Route as AuthenticatedAdminBonusesBatchesBatchIdRouteImport } from './r
 const VendorRoute = VendorRouteImport.update({
   id: '/vendor',
   path: '/vendor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TwoFactorRoute = TwoFactorRouteImport.update({
@@ -817,6 +823,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/vendor': typeof VendorRouteWithChildren
   '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
@@ -941,6 +948,7 @@ export interface FileRoutesByTo {
   '/recruit': typeof RecruitRoute
   '/reset-password': typeof ResetPasswordRoute
   '/two-factor': typeof TwoFactorRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/vendor': typeof VendorRouteWithChildren
   '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
@@ -1065,6 +1073,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/vendor': typeof VendorRouteWithChildren
   '/_authenticated/cash-admin': typeof AuthenticatedCashAdminRoute
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
@@ -1192,6 +1201,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/two-factor'
+    | '/unsubscribe'
     | '/vendor'
     | '/cash-admin'
     | '/categories'
@@ -1316,6 +1326,7 @@ export interface FileRouteTypes {
     | '/recruit'
     | '/reset-password'
     | '/two-factor'
+    | '/unsubscribe'
     | '/vendor'
     | '/cash-admin'
     | '/categories'
@@ -1439,6 +1450,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/two-factor'
+    | '/unsubscribe'
     | '/vendor'
     | '/_authenticated/cash-admin'
     | '/_authenticated/categories'
@@ -1566,6 +1578,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRouteWithChildren
   TwoFactorRoute: typeof TwoFactorRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   VendorRoute: typeof VendorRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
   CSlugRoute: typeof CSlugRoute
@@ -1595,6 +1608,13 @@ declare module '@tanstack/react-router' {
       path: '/vendor'
       fullPath: '/vendor'
       preLoaderRoute: typeof VendorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/two-factor': {
@@ -2806,6 +2826,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRouteWithChildren,
   TwoFactorRoute: TwoFactorRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   VendorRoute: VendorRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
   CSlugRoute: CSlugRoute,
