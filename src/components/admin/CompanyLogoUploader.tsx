@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Building2, Upload, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { uploadBrandingLogo } from "@/lib/branding.functions";
+import { compressImageIfNeeded } from "@/lib/image-compress";
 
 interface Props {
   value: string | null | undefined;
@@ -20,12 +21,14 @@ export function CompanyLogoUploader({ value, onChange, disabled, companyId }: Pr
   const uploadLogo = useServerFn(uploadBrandingLogo);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error("圖片需小於 5MB"); return; }
-    if (!file.type.startsWith("image/")) { toast.error("僅支援圖片檔"); return; }
+    const raw = e.target.files?.[0];
+    if (!raw) return;
+    if (!raw.type.startsWith("image/")) { toast.error("僅支援圖片檔"); return; }
     setBusy(true);
     try {
+      // 手機直拍照片常超過 5MB — 先在瀏覽器端壓縮再上傳，避免被伺服器拒絕
+      const file = await compressImageIfNeeded(raw, { maxDimension: 1024, targetMaxBytes: 1.5 * 1024 * 1024 });
+      if (file.size > 5 * 1024 * 1024) { toast.error("圖片需小於 5MB"); return; }
       const base64 = await fileToBase64(file);
       const data = await uploadLogo({
         data: {
