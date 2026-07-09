@@ -626,6 +626,15 @@ function Page() {
                 {editProfile.referrer_name && (
                   <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}</p>
                 )}
+                {referrerLookup.status === "loading" && (
+                  <p className="text-[11px] text-muted-foreground">查詢中…</p>
+                )}
+                {referrerLookup.status === "found" && (
+                  <p className="text-[11px] text-emerald-600">推薦人姓名：{referrerLookup.name ?? "—"}</p>
+                )}
+                {referrerLookup.status === "notfound" && (
+                  <p className="text-[11px] text-destructive">找不到會員編號 {referrerLookup.code}</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label>行銷網址代稱（marketing slug，3-32 字元，可含 A-Z a-z 0-9 _ -）</Label>
