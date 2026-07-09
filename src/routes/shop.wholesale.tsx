@@ -90,13 +90,14 @@ function WholesaleArea() {
           <div className="h-14 w-14 mx-auto rounded-xl bg-primary/15 grid place-items-center text-primary">
             <Lock className="h-7 w-7" />
           </div>
-          <h1 className="text-xl md:text-2xl font-bold">VIP採購專區</h1>
+          <h1 className="text-xl md:text-2xl font-bold">VIP / 經銷商採購專區</h1>
           <p className="text-sm text-muted-foreground">
-            升級 VIP 後即可查看批發階梯價、享有更多獎勵點與專屬優惠。
+            本專區僅開放 <b>VIP 會員</b> 或 <b>經銷商</b> 進入，可查看批發階梯價並享有額外獎勵點。
           </p>
-          <div className="flex gap-2 justify-center pt-2">
+          <div className="flex flex-wrap gap-2 justify-center pt-2">
             <Button asChild><Link to="/shop/vip">升級 VIP</Link></Button>
-            <Button asChild variant="outline"><Link to="/shop">回到商城</Link></Button>
+            <Button asChild variant="outline"><Link to="/cooperation/apply">申請成為經銷商</Link></Button>
+            <Button asChild variant="ghost"><Link to="/shop">回到商城</Link></Button>
           </div>
         </div>
       </div>
