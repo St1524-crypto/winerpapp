@@ -57,7 +57,7 @@ function AdminCooperationPage() {
   const { roles } = useAuth();
   const isAdmin = roles.includes("admin") || roles.includes("super_admin");
 
-  if (!isAdmin) return <ForbiddenScreen />;
+  if (!isAdmin) return <ForbiddenScreen requiredRoles={["admin", "super_admin"]} />;
 
   const qc = useQueryClient();
   const list = useServerFn(listCooperationApplications);

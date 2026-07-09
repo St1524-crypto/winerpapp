@@ -45,7 +45,7 @@ export const submitCooperationApplication = createServerFn({ method: "POST" })
 
     const { data: inserted, error } = await supabaseAdmin
       .from("cooperation_applications")
-      .insert(payload)
+      .insert(payload as any)
       .select("id, application_type, company_name, contact_name, owner_name, phone, email, sales_channels, note")
       .single();
 
