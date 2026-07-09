@@ -114,7 +114,7 @@ export const updateCooperationApplication = createServerFn({ method: "POST" })
     if (data.admin_note !== undefined) patch.admin_note = data.admin_note;
     const { error } = await context.supabase
       .from("cooperation_applications")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
