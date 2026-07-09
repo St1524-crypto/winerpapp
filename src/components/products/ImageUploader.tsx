@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { compressImageIfNeeded } from "@/lib/image-compress";
 
 export interface UploaderImage { id?: string; url: string; sort: number; }
 
@@ -27,12 +28,14 @@ export function ImageUploader({ images, onChange, max = 8 }: Props) {
     setUploading(true);
     try {
       const next = [...images];
-      for (const f of arr) {
-        if (!f.type.startsWith("image/")) continue;
-        if (f.size > 5 * 1024 * 1024) { toast.error(`${f.name} 超過 5MB`); continue; }
-        const ext = f.name.split(".").pop() ?? "jpg";
+      for (const raw of arr) {
+        if (!raw.type.startsWith("image/")) continue;
+        // 手機拍照常常直接超過 5MB，先在客戶端壓縮再送上 Storage
+        const f = await compressImageIfNeeded(raw);
+        if (f.size > 5 * 1024 * 1024) { toast.error(`${raw.name} 超過 5MB`); continue; }
+        const ext = (f.name.split(".").pop() ?? "jpg").toLowerCase();
         const path = `${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from("product-images").upload(path, f, { cacheControl: "3600", upsert: false });
+        const { error } = await supabase.storage.from("product-images").upload(path, f, { cacheControl: "3600", upsert: false, contentType: f.type });
         if (error) { toast.error(error.message); continue; }
         const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
         next.push({ url: pub.publicUrl, sort: next.length });
