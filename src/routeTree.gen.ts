@@ -35,6 +35,7 @@ import { Route as MemberPageMemberNoRouteImport } from './routes/member-page.$me
 import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as LoginSlugRouteImport } from './routes/login.$slug'
 import { Route as GroupBuysIdRouteImport } from './routes/group-buys.$id'
+import { Route as CooperationApplyRouteImport } from './routes/cooperation.apply'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AuthenticatedWebhooksAdminRouteImport } from './routes/_authenticated/webhooks-admin'
@@ -104,6 +105,7 @@ import { Route as AuthenticatedAdminOperationsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminMemberSearchRouteImport } from './routes/_authenticated/admin.member-search'
 import { Route as AuthenticatedAdminHomepageSectionsRouteImport } from './routes/_authenticated/admin.homepage-sections'
 import { Route as AuthenticatedAdminHomepageFeaturedRouteImport } from './routes/_authenticated/admin.homepage-featured'
+import { Route as AuthenticatedAdminCooperationApplicationsRouteImport } from './routes/_authenticated/admin.cooperation-applications'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
 import { Route as AuthenticatedAdminBonusesRouteImport } from './routes/_authenticated/admin.bonuses'
 import { Route as AuthenticatedAdminBonusCenterRouteImport } from './routes/_authenticated/admin.bonus-center'
@@ -255,6 +257,11 @@ const LoginSlugRoute = LoginSlugRouteImport.update({
 const GroupBuysIdRoute = GroupBuysIdRouteImport.update({
   id: '/group-buys/$id',
   path: '/group-buys/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CooperationApplyRoute = CooperationApplyRouteImport.update({
+  id: '/cooperation/apply',
+  path: '/cooperation/apply',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CSlugRoute = CSlugRouteImport.update({
@@ -635,6 +642,12 @@ const AuthenticatedAdminHomepageFeaturedRoute =
     path: '/admin/homepage-featured',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminCooperationApplicationsRoute =
+  AuthenticatedAdminCooperationApplicationsRouteImport.update({
+    id: '/admin/cooperation-applications',
+    path: '/admin/cooperation-applications',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminCompaniesRoute =
   AuthenticatedAdminCompaniesRouteImport.update({
     id: '/admin/companies',
@@ -809,6 +822,7 @@ export interface FileRoutesByFullPath {
   '/webhooks-admin': typeof AuthenticatedWebhooksAdminRoute
   '/admin/login': typeof AdminLoginRoute
   '/c/$slug': typeof CSlugRoute
+  '/cooperation/apply': typeof CooperationApplyRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
@@ -833,6 +847,7 @@ export interface FileRoutesByFullPath {
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
+  '/admin/cooperation-applications': typeof AuthenticatedAdminCooperationApplicationsRoute
   '/admin/homepage-featured': typeof AuthenticatedAdminHomepageFeaturedRoute
   '/admin/homepage-sections': typeof AuthenticatedAdminHomepageSectionsRoute
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
@@ -926,6 +941,7 @@ export interface FileRoutesByTo {
   '/webhooks-admin': typeof AuthenticatedWebhooksAdminRoute
   '/admin/login': typeof AdminLoginRoute
   '/c/$slug': typeof CSlugRoute
+  '/cooperation/apply': typeof CooperationApplyRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
@@ -949,6 +965,7 @@ export interface FileRoutesByTo {
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
+  '/admin/cooperation-applications': typeof AuthenticatedAdminCooperationApplicationsRoute
   '/admin/homepage-featured': typeof AuthenticatedAdminHomepageFeaturedRoute
   '/admin/homepage-sections': typeof AuthenticatedAdminHomepageSectionsRoute
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
@@ -1045,6 +1062,7 @@ export interface FileRoutesById {
   '/_authenticated/webhooks-admin': typeof AuthenticatedWebhooksAdminRoute
   '/admin/login': typeof AdminLoginRoute
   '/c/$slug': typeof CSlugRoute
+  '/cooperation/apply': typeof CooperationApplyRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
@@ -1069,6 +1087,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/_authenticated/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
+  '/_authenticated/admin/cooperation-applications': typeof AuthenticatedAdminCooperationApplicationsRoute
   '/_authenticated/admin/homepage-featured': typeof AuthenticatedAdminHomepageFeaturedRoute
   '/_authenticated/admin/homepage-sections': typeof AuthenticatedAdminHomepageSectionsRoute
   '/_authenticated/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
@@ -1166,6 +1185,7 @@ export interface FileRouteTypes {
     | '/webhooks-admin'
     | '/admin/login'
     | '/c/$slug'
+    | '/cooperation/apply'
     | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
@@ -1190,6 +1210,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-center'
     | '/admin/bonuses'
     | '/admin/companies'
+    | '/admin/cooperation-applications'
     | '/admin/homepage-featured'
     | '/admin/homepage-sections'
     | '/admin/member-search'
@@ -1283,6 +1304,7 @@ export interface FileRouteTypes {
     | '/webhooks-admin'
     | '/admin/login'
     | '/c/$slug'
+    | '/cooperation/apply'
     | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
@@ -1306,6 +1328,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-center'
     | '/admin/bonuses'
     | '/admin/companies'
+    | '/admin/cooperation-applications'
     | '/admin/homepage-featured'
     | '/admin/homepage-sections'
     | '/admin/member-search'
@@ -1401,6 +1424,7 @@ export interface FileRouteTypes {
     | '/_authenticated/webhooks-admin'
     | '/admin/login'
     | '/c/$slug'
+    | '/cooperation/apply'
     | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
@@ -1425,6 +1449,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bonus-center'
     | '/_authenticated/admin/bonuses'
     | '/_authenticated/admin/companies'
+    | '/_authenticated/admin/cooperation-applications'
     | '/_authenticated/admin/homepage-featured'
     | '/_authenticated/admin/homepage-sections'
     | '/_authenticated/admin/member-search'
@@ -1494,6 +1519,7 @@ export interface RootRouteChildren {
   VendorRoute: typeof VendorRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
   CSlugRoute: typeof CSlugRoute
+  CooperationApplyRoute: typeof CooperationApplyRoute
   GroupBuysIdRoute: typeof GroupBuysIdRoute
   LoginSlugRoute: typeof LoginSlugRoute
   MSlugRoute: typeof MSlugRoute
@@ -1690,6 +1716,13 @@ declare module '@tanstack/react-router' {
       path: '/group-buys/$id'
       fullPath: '/group-buys/$id'
       preLoaderRoute: typeof GroupBuysIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cooperation/apply': {
+      id: '/cooperation/apply'
+      path: '/cooperation/apply'
+      fullPath: '/cooperation/apply'
+      preLoaderRoute: typeof CooperationApplyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/c/$slug': {
@@ -2175,6 +2208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminHomepageFeaturedRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/cooperation-applications': {
+      id: '/_authenticated/admin/cooperation-applications'
+      path: '/admin/cooperation-applications'
+      fullPath: '/admin/cooperation-applications'
+      preLoaderRoute: typeof AuthenticatedAdminCooperationApplicationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/companies': {
       id: '/_authenticated/admin/companies'
       path: '/admin/companies'
@@ -2472,6 +2512,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminBonusCenterRoute: typeof AuthenticatedAdminBonusCenterRoute
   AuthenticatedAdminBonusesRoute: typeof AuthenticatedAdminBonusesRouteWithChildren
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
+  AuthenticatedAdminCooperationApplicationsRoute: typeof AuthenticatedAdminCooperationApplicationsRoute
   AuthenticatedAdminHomepageFeaturedRoute: typeof AuthenticatedAdminHomepageFeaturedRoute
   AuthenticatedAdminHomepageSectionsRoute: typeof AuthenticatedAdminHomepageSectionsRoute
   AuthenticatedAdminMemberSearchRoute: typeof AuthenticatedAdminMemberSearchRoute
@@ -2533,6 +2574,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminBonusesRoute: AuthenticatedAdminBonusesRouteWithChildren,
   AuthenticatedAdminCompaniesRoute:
     AuthenticatedAdminCompaniesRouteWithChildren,
+  AuthenticatedAdminCooperationApplicationsRoute:
+    AuthenticatedAdminCooperationApplicationsRoute,
   AuthenticatedAdminHomepageFeaturedRoute:
     AuthenticatedAdminHomepageFeaturedRoute,
   AuthenticatedAdminHomepageSectionsRoute:
@@ -2684,6 +2727,7 @@ const rootRouteChildren: RootRouteChildren = {
   VendorRoute: VendorRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
   CSlugRoute: CSlugRoute,
+  CooperationApplyRoute: CooperationApplyRoute,
   GroupBuysIdRoute: GroupBuysIdRoute,
   LoginSlugRoute: LoginSlugRoute,
   MSlugRoute: MSlugRoute,
