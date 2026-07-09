@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorRouteImport } from './routes/vendor'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -35,6 +36,7 @@ import { Route as MemberPageMemberNoRouteImport } from './routes/member-page.$me
 import { Route as MSlugRouteImport } from './routes/m.$slug'
 import { Route as LoginSlugRouteImport } from './routes/login.$slug'
 import { Route as GroupBuysIdRouteImport } from './routes/group-buys.$id'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as CooperationApplyRouteImport } from './routes/cooperation.apply'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
@@ -82,6 +84,7 @@ import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.poi
 import { Route as ShopAccountOrdersRouteImport } from './routes/shop.account.orders'
 import { Route as ShopAccountAttendanceRouteImport } from './routes/shop.account.attendance'
 import { Route as ShopAccountAddressesRouteImport } from './routes/shop.account.addresses'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
 import { Route as AuthenticatedFinanceTransactionsRouteImport } from './routes/_authenticated/finance.transactions'
 import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_authenticated/finance.receivable'
@@ -115,6 +118,8 @@ import { Route as ShopAccountStorefrontIndexRouteImport } from './routes/shop.ac
 import { Route as AuthenticatedAdminQuotesIndexRouteImport } from './routes/_authenticated/admin.quotes.index'
 import { Route as ShopAccountStorefrontTemplatesRouteImport } from './routes/shop.account.storefront.templates'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksBonusDailyTickRouteImport } from './routes/api/public/hooks/bonus-daily-tick'
 import { Route as ApiPublicCronExpireGroupBuysRouteImport } from './routes/api/public/cron/expire-group-buys'
@@ -133,6 +138,11 @@ import { Route as AuthenticatedAdminBonusesBatchesBatchIdRouteImport } from './r
 const VendorRoute = VendorRouteImport.update({
   id: '/vendor',
   path: '/vendor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TwoFactorRoute = TwoFactorRouteImport.update({
@@ -257,6 +267,11 @@ const LoginSlugRoute = LoginSlugRouteImport.update({
 const GroupBuysIdRoute = GroupBuysIdRouteImport.update({
   id: '/group-buys/$id',
   path: '/group-buys/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CooperationApplyRoute = CooperationApplyRouteImport.update({
@@ -504,6 +519,11 @@ const ShopAccountAddressesRoute = ShopAccountAddressesRouteImport.update({
   path: '/addresses',
   getParentRoute: () => ShopAccountRoute,
 } as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedProductsProductIdRoute =
   AuthenticatedProductsProductIdRouteImport.update({
     id: '/$productId',
@@ -701,6 +721,18 @@ const ShopAccountOrdersIdRoute = ShopAccountOrdersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ShopAccountOrdersRoute,
 } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -791,6 +823,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/vendor': typeof VendorRouteWithChildren
   '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
@@ -823,6 +856,7 @@ export interface FileRoutesByFullPath {
   '/admin/login': typeof AdminLoginRoute
   '/c/$slug': typeof CSlugRoute
   '/cooperation/apply': typeof CooperationApplyRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
@@ -871,6 +905,7 @@ export interface FileRoutesByFullPath {
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
@@ -900,6 +935,8 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/admin/quotes/': typeof AuthenticatedAdminQuotesIndexRoute
@@ -911,6 +948,7 @@ export interface FileRoutesByTo {
   '/recruit': typeof RecruitRoute
   '/reset-password': typeof ResetPasswordRoute
   '/two-factor': typeof TwoFactorRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/vendor': typeof VendorRouteWithChildren
   '/cash-admin': typeof AuthenticatedCashAdminRoute
   '/categories': typeof AuthenticatedCategoriesRoute
@@ -942,6 +980,7 @@ export interface FileRoutesByTo {
   '/admin/login': typeof AdminLoginRoute
   '/c/$slug': typeof CSlugRoute
   '/cooperation/apply': typeof CooperationApplyRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
@@ -989,6 +1028,7 @@ export interface FileRoutesByTo {
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
@@ -1017,6 +1057,8 @@ export interface FileRoutesByTo {
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/admin/quotes': typeof AuthenticatedAdminQuotesIndexRoute
@@ -1031,6 +1073,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/shop': typeof ShopRouteWithChildren
   '/two-factor': typeof TwoFactorRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/vendor': typeof VendorRouteWithChildren
   '/_authenticated/cash-admin': typeof AuthenticatedCashAdminRoute
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
@@ -1063,6 +1106,7 @@ export interface FileRoutesById {
   '/admin/login': typeof AdminLoginRoute
   '/c/$slug': typeof CSlugRoute
   '/cooperation/apply': typeof CooperationApplyRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/group-buys/$id': typeof GroupBuysIdRoute
   '/login/$slug': typeof LoginSlugRoute
   '/m/$slug': typeof MSlugRoute
@@ -1111,6 +1155,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/_authenticated/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
   '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
@@ -1140,6 +1185,8 @@ export interface FileRoutesById {
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/_authenticated/admin/quotes/': typeof AuthenticatedAdminQuotesIndexRoute
@@ -1154,6 +1201,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/two-factor'
+    | '/unsubscribe'
     | '/vendor'
     | '/cash-admin'
     | '/categories'
@@ -1186,6 +1234,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/c/$slug'
     | '/cooperation/apply'
+    | '/email/unsubscribe'
     | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
@@ -1234,6 +1283,7 @@ export interface FileRouteTypes {
     | '/finance/receivable'
     | '/finance/transactions'
     | '/products/$productId'
+    | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
     | '/shop/account/orders'
@@ -1263,6 +1313,8 @@ export interface FileRouteTypes {
     | '/api/public/cron/expire-group-buys'
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
     | '/admin/quotes/'
@@ -1274,6 +1326,7 @@ export interface FileRouteTypes {
     | '/recruit'
     | '/reset-password'
     | '/two-factor'
+    | '/unsubscribe'
     | '/vendor'
     | '/cash-admin'
     | '/categories'
@@ -1305,6 +1358,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/c/$slug'
     | '/cooperation/apply'
+    | '/email/unsubscribe'
     | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
@@ -1352,6 +1406,7 @@ export interface FileRouteTypes {
     | '/finance/receivable'
     | '/finance/transactions'
     | '/products/$productId'
+    | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
     | '/shop/account/orders'
@@ -1380,6 +1435,8 @@ export interface FileRouteTypes {
     | '/api/public/cron/expire-group-buys'
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
     | '/admin/quotes'
@@ -1393,6 +1450,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/shop'
     | '/two-factor'
+    | '/unsubscribe'
     | '/vendor'
     | '/_authenticated/cash-admin'
     | '/_authenticated/categories'
@@ -1425,6 +1483,7 @@ export interface FileRouteTypes {
     | '/admin/login'
     | '/c/$slug'
     | '/cooperation/apply'
+    | '/email/unsubscribe'
     | '/group-buys/$id'
     | '/login/$slug'
     | '/m/$slug'
@@ -1473,6 +1532,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/receivable'
     | '/_authenticated/finance/transactions'
     | '/_authenticated/products/$productId'
+    | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
     | '/shop/account/orders'
@@ -1502,6 +1562,8 @@ export interface FileRouteTypes {
     | '/api/public/cron/expire-group-buys'
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
     | '/_authenticated/admin/quotes/'
@@ -1516,10 +1578,12 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ShopRoute: typeof ShopRouteWithChildren
   TwoFactorRoute: typeof TwoFactorRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   VendorRoute: typeof VendorRouteWithChildren
   AdminLoginRoute: typeof AdminLoginRoute
   CSlugRoute: typeof CSlugRoute
   CooperationApplyRoute: typeof CooperationApplyRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   GroupBuysIdRoute: typeof GroupBuysIdRoute
   LoginSlugRoute: typeof LoginSlugRoute
   MSlugRoute: typeof MSlugRoute
@@ -1528,10 +1592,13 @@ export interface RootRouteChildren {
   UCodeRoute: typeof UCodeRoute
   GroupBuysIndexRoute: typeof GroupBuysIndexRoute
   LoginIndexRoute: typeof LoginIndexRoute
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAiRecruitRoute: typeof ApiPublicAiRecruitRoute
   ApiPublicCronExpireGroupBuysRoute: typeof ApiPublicCronExpireGroupBuysRoute
   ApiPublicHooksBonusDailyTickRoute: typeof ApiPublicHooksBonusDailyTickRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1541,6 +1608,13 @@ declare module '@tanstack/react-router' {
       path: '/vendor'
       fullPath: '/vendor'
       preLoaderRoute: typeof VendorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/two-factor': {
@@ -1716,6 +1790,13 @@ declare module '@tanstack/react-router' {
       path: '/group-buys/$id'
       fullPath: '/group-buys/$id'
       preLoaderRoute: typeof GroupBuysIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cooperation/apply': {
@@ -2047,6 +2128,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopAccountAddressesRouteImport
       parentRoute: typeof ShopAccountRoute
     }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/products/$productId': {
       id: '/_authenticated/products/$productId'
       path: '/$productId'
@@ -2277,6 +2365,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/shop/account/orders/$id'
       preLoaderRoute: typeof ShopAccountOrdersIdRouteImport
       parentRoute: typeof ShopAccountOrdersRoute
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -2724,10 +2826,12 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ShopRoute: ShopRouteWithChildren,
   TwoFactorRoute: TwoFactorRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   VendorRoute: VendorRouteWithChildren,
   AdminLoginRoute: AdminLoginRoute,
   CSlugRoute: CSlugRoute,
   CooperationApplyRoute: CooperationApplyRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   GroupBuysIdRoute: GroupBuysIdRoute,
   LoginSlugRoute: LoginSlugRoute,
   MSlugRoute: MSlugRoute,
@@ -2736,10 +2840,13 @@ const rootRouteChildren: RootRouteChildren = {
   UCodeRoute: UCodeRoute,
   GroupBuysIndexRoute: GroupBuysIndexRoute,
   LoginIndexRoute: LoginIndexRoute,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAiRecruitRoute: ApiPublicAiRecruitRoute,
   ApiPublicCronExpireGroupBuysRoute: ApiPublicCronExpireGroupBuysRoute,
   ApiPublicHooksBonusDailyTickRoute: ApiPublicHooksBonusDailyTickRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

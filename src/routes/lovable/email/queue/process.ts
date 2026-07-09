@@ -1,8 +1,6 @@
-// @ts-nocheck
 import { sendLovableEmail } from '@lovable.dev/email-js'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createFileRoute } from '@tanstack/react-router'
-import { cronAuthErrorResponse, requireCronSecret } from '@/lib/cron-auth.server'
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -37,9 +35,8 @@ function getRetryAfterSeconds(error: unknown): number {
   return 60
 }
 
-// Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any, any>,
   queue: string,
   msg: { msg_id: number; message: Record<string, unknown> },
   reason: string
@@ -79,10 +76,19 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           )
         }
 
-        const auth = requireCronSecret(request)
-        if (!auth.ok) return cronAuthErrorResponse(auth)
+        // Verify the caller is authorized with the service role key.
+        // In the TanStack stack, the pg_cron job sends the service role key as a Bearer token.
+        const authHeader = request.headers.get('Authorization')
+        if (!authHeader?.startsWith('Bearer ')) {
+          return Response.json({ error: 'Unauthorized' }, { status: 401 })
+        }
 
-        const supabase = createClient(supabaseUrl, supabaseServiceKey)
+        const token = authHeader.slice('Bearer '.length).trim()
+        if (token !== supabaseServiceKey) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
+        const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
 
         // 1. Check rate-limit cooldown and read queue config
         const { data: state } = await supabase
