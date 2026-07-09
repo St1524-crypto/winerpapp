@@ -4815,6 +4815,53 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_content_questions: {
+        Row: {
+          author_name: string | null
+          content: string
+          created_at: string
+          id: string
+          is_hidden: boolean
+          page_id: string
+          replied_at: string | null
+          replied_by: string | null
+          reply: string | null
+          user_id: string | null
+        }
+        Insert: {
+          author_name?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          page_id: string
+          replied_at?: string | null
+          replied_by?: string | null
+          reply?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          author_name?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          page_id?: string
+          replied_at?: string | null
+          replied_by?: string | null
+          reply?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_content_questions_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "shop_content_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_announcements: {
         Row: {
           content: string

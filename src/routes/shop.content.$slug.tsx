@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { getPublicShopContentPage } from "@/lib/shop-content.functions";
 import { Button } from "@/components/ui/button";
+import { ShopContentQuestions } from "@/components/shop/ShopContentQuestions";
+
 
 const SECTION_LABELS: Record<string, { label: string; href: string }> = {
   wholesale: { label: "批發專區", href: "/shop/wholesale" },
@@ -123,6 +125,9 @@ function ContentDetailPage() {
           </Button>
         </div>
       )}
+
+      <ShopContentQuestions pageId={p.id} />
     </article>
   );
 }
+
