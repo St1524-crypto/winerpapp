@@ -49,7 +49,9 @@ function WholesaleArea() {
     if (!gatesReady || !user) return;
     if (!canAccess) {
       toast.info("申請合作成功才能進入批發專區");
-      navigate({ to: "/cooperation/apply" });
+      if (typeof window !== "undefined") {
+        window.location.href = "https://winerp.app/cooperation/apply";
+      }
     }
   }, [gatesReady, user, canAccess, navigate]);
 
