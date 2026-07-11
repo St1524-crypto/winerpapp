@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+
 import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { getPublicShopContentPage } from "@/lib/shop-content.functions";
 import { Button } from "@/components/ui/button";
@@ -44,13 +44,7 @@ function ContentDetailPage() {
     queryFn: () => getPublicShopContentPage({ data: { slug } }),
   });
 
-  const externalUrl = (data?.page as any)?.external_url as string | undefined;
-  const hasBody = !!(data?.page as any)?.content_html || (Array.isArray((data?.page as any)?.images) && (data?.page as any).images.length > 0);
-  useEffect(() => {
-    if (externalUrl && !hasBody) {
-      window.location.replace(externalUrl);
-    }
-  }, [externalUrl, hasBody]);
+
 
 
   if (isLoading) {
