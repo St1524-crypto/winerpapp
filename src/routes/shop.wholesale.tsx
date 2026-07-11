@@ -46,6 +46,14 @@ function WholesaleArea() {
   }, [authLoading, user, navigate]);
 
   useEffect(() => {
+    if (!gatesReady || !user) return;
+    if (!canAccess) {
+      toast.info("批發專區僅開放 VIP 會員或經銷商，請先申請合作");
+      navigate({ to: "/cooperation/apply" });
+    }
+  }, [gatesReady, user, canAccess, navigate]);
+
+  useEffect(() => {
     if (!user || !gatesReady || !canAccess) return;
     (async () => {
       setLoading(true);
