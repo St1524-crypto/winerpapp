@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Package, Sparkles, Lock } from "lucide-react";
+import { toast } from "sonner";
 import type { Product, WholesaleTier } from "@/types/product";
 
 export const Route = createFileRoute("/shop/wholesale")({
@@ -43,6 +44,14 @@ function WholesaleArea() {
       navigate({ to: "/login" });
     }
   }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (!gatesReady || !user) return;
+    if (!canAccess) {
+      toast.info("批發專區僅開放 VIP 會員或經銷商，請先申請合作");
+      navigate({ to: "/cooperation/apply" });
+    }
+  }, [gatesReady, user, canAccess, navigate]);
 
   useEffect(() => {
     if (!user || !gatesReady || !canAccess) return;
