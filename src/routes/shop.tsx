@@ -6,7 +6,7 @@ import { MobileBottomNav } from "@/components/shop/MobileBottomNav";
 import { CartDrawer } from "@/components/shop/CartDrawer";
 import { SupportChatWidget } from "@/components/shop/SupportChatWidget";
 
-import shopOgAsset from "@/assets/shop-og.jpg.asset.json";
+import shopOgAsset from "@/assets/shop-share-logo.jpg.asset.json";
 
 const SHOP_OG_IMAGE = new URL(shopOgAsset.url, "https://winerp.app").toString();
 
@@ -21,12 +21,13 @@ export const Route = createFileRoute("/shop")({
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://winerp.app/shop" },
       { property: "og:image", content: SHOP_OG_IMAGE },
-      { property: "og:image:width", content: "1024" },
-      { property: "og:image:height", content: "1024" },
+      { property: "og:image:width", content: "1367" },
+      { property: "og:image:height", content: "1198" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "源晶商城" },
       { name: "twitter:description", content: "高端電商，精選好物。" },
       { name: "twitter:image", content: SHOP_OG_IMAGE },
+
     ],
     links: [{ rel: "canonical", href: "https://winerp.app/shop" }],
   }),
