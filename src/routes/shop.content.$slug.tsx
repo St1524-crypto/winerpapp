@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { getPublicShopContentPage } from "@/lib/shop-content.functions";
 import { Button } from "@/components/ui/button";
 import { ShopContentQuestions } from "@/components/shop/ShopContentQuestions";
+
 
 
 const SECTION_LABELS: Record<string, { label: string; href: string }> = {
