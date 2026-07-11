@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Package, Sparkles, Lock } from "lucide-react";
+import { toast } from "sonner";
 import type { Product, WholesaleTier } from "@/types/product";
 
 export const Route = createFileRoute("/shop/wholesale")({
