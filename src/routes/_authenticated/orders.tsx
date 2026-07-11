@@ -2099,13 +2099,13 @@ function OrderDetailDialog({
     queryKey: ["order-vip-gifts", orderId, itemPidKey],
     enabled: !!orderId && itemProductIds.length > 0,
     queryFn: async () => {
-      // 1. 找出對應的套組
+      // 1. 找出對應的套組（僅依訂單中的「套組主商品 package_product_id」比對，
+      //    避免舊資料 product_id（贈品）誤觸發把非升級訂單顯示為 VIP 升級套組）
       const { data: pkgs } = await supabase
         .from("vip_upgrade_packages")
         .select("id, name, tier_code, bonus_points, package_product_id, product_id")
-        .or(
-          `package_product_id.in.(${itemProductIds.join(",")}),product_id.in.(${itemProductIds.join(",")})`,
-        );
+        .in("package_product_id", itemProductIds);
+
       if (!pkgs || pkgs.length === 0) return [] as any[];
       const pkgIds = pkgs.map((p: any) => p.id);
       // 2. 取得套組綁定贈品（多商品）
