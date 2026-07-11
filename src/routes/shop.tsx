@@ -6,7 +6,7 @@ import { MobileBottomNav } from "@/components/shop/MobileBottomNav";
 import { CartDrawer } from "@/components/shop/CartDrawer";
 import { SupportChatWidget } from "@/components/shop/SupportChatWidget";
 
-import shopOgAsset from "@/assets/shop-share-logo.jpg.asset.json";
+import shopOgAsset from "@/assets/shop-share-logo-v2.jpg.asset.json";
 
 const SHOP_OG_IMAGE = new URL(shopOgAsset.url, "https://winerp.app").toString();
 
