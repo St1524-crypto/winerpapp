@@ -66,11 +66,7 @@ export function ShopContentList({ sectionType, emptyText = "內容即將上線" 
           </>
         );
         const className = "group rounded-2xl border border-border/60 bg-card overflow-hidden hover:shadow-lg transition-shadow block";
-        return isExternal ? (
-          <a key={p.id} href={p.external_url} target="_blank" rel="noopener noreferrer" className={className}>
-            {commonInner}
-          </a>
-        ) : (
+        return (
           <Link key={p.id} to="/shop/content/$slug" params={{ slug: p.slug }} className={className}>
             {commonInner}
           </Link>
