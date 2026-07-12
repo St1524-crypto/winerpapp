@@ -21,7 +21,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/admin/vip-bonus-pools")({
   component: Page,
-  head: () => ({ meta: [{ title: "VIP 星級營業分紅池 — winerp" }] }),
+  head: () => ({ meta: [{ title: "VIP 星級升級分紅池 — winerp" }] }),
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     return (
