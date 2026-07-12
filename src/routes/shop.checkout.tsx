@@ -578,9 +578,28 @@ function GuestAuthPanel() {
                 <Label>收件地址 *</Label>
                 <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="台北市信義區市府路 1 號" />
               </div>
-              <Button type="submit" className="w-full" disabled={busy}>
+              <div className="space-y-1.5 rounded-md border border-dashed p-3 bg-muted/30">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-sm">Email 驗證碼 *</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={doSendOtp} disabled={busy}>
+                    {otpSent ? "重新寄送" : "寄送驗證碼"}
+                  </Button>
+                </div>
+                <Input
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  inputMode="numeric"
+                  placeholder="6 位數驗證碼"
+                  disabled={!otpSent}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  為防止濫用註冊，須先驗證 Email 才能建立會員。驗證碼 10 分鐘內有效。
+                </p>
+              </div>
+              <Button type="submit" className="w-full" disabled={busy || !otpSent}>
                 {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}建立會員並繼續結帳
               </Button>
+
             </form>
           </CardContent>
         </Card>
