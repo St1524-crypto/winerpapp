@@ -2354,6 +2354,11 @@ function OrderDetailDialog({
                       accent="text-amber-500"
                     />
                   )}
+                  {rewardEarnRows.some((r: any) => r.source === "order_earn_referrer") && (
+                    <div className="text-[11px] text-muted-foreground pt-1">
+                      {rewardEarnRows.find((r: any) => r.source === "order_earn_referrer")?.note}
+                    </div>
+                  )}
                   <div className="pt-2 space-y-1">
                     <Progress value={paymentProgress} className="h-2" />
                     <div className="flex justify-between text-xs text-muted-foreground">
