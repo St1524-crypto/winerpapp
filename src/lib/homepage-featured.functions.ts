@@ -98,8 +98,11 @@ export const adminSearchProductsForFeature = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(30);
     if (data.search) {
-      const s = `%${data.search}%`;
-      q = q.or(`name.ilike.${s},sku.ilike.${s}`);
+      const raw = (await import("@/lib/postgrest-sanitize")).sanitizePostgrestPattern(data.search);
+      if (raw) {
+        const s = `%${raw}%`;
+        q = q.or(`name.ilike.${s},sku.ilike.${s}`);
+      }
     }
     const { data: prods, error } = await q;
     if (error) return { ok: false as const, error: error.message, items: [] };

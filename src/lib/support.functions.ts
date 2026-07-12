@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sanitizePostgrestPattern } from "@/lib/postgrest-sanitize";
 
 const SYSTEM_PROMPT = `你是「源晶小幫手」，源晶商城的 AI 客服助理。
 - 用親切、簡潔、繁體中文回答客戶。
@@ -122,7 +123,9 @@ export const getCheckInStatus = createServerFn({ method: "GET" })
 
 async function fetchProductContext(query: string) {
   // Try keyword match across name / sku / category / short_description.
-  const ilike = `%${query.replace(/[%_]/g, "")}%`;
+  const safe = sanitizePostgrestPattern(query);
+  if (!safe) return null;
+  const ilike = `%${safe}%`;
   const { data } = await supabaseAdmin
     .from("products")
     .select("name, sku, price, stock, short_description, category")
@@ -176,7 +179,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
     // Fetch product context based on the latest user message
     const productCtx = await fetchProductContext(data.message);
     const productSection =
-      productCtx.length > 0
+      productCtx && productCtx.length > 0
         ? `以下是相關商品資料（請只引用真實存在的商品）：\n${productCtx
             .map(
               (p) =>
