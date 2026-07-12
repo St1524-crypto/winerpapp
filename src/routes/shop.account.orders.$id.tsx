@@ -18,17 +18,25 @@ function OrderDetail() {
   const { id } = Route.useParams();
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
+  const [rewardTx, setRewardTx] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const upgradeTriggered = useRef(false);
 
   useEffect(() => {
     (async () => {
-      const [{ data: o }, { data: it }] = await Promise.all([
+      const [{ data: o }, { data: it }, { data: rt }] = await Promise.all([
         supabase.from("sales_orders").select("*").eq("id", id).maybeSingle(),
         supabase.from("sales_order_items").select("*").eq("sales_order_id", id),
+        supabase
+          .from("point_transactions")
+          .select("amount, source, note")
+          .eq("reference_id", id)
+          .in("source", ["order_earn", "order_earn_referrer"])
+          .eq("point_type", "reward"),
       ]);
       setOrder(o as SalesOrder | null);
       setItems((it ?? []) as SalesOrderItem[]);
+      setRewardTx((rt ?? []) as any[]);
       setLoading(false);
     })();
   }, [id]);
