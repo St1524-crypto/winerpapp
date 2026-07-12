@@ -3051,6 +3051,22 @@ function EditOrderDialog({
     },
   });
 
+  const rewardTxQ = useQuery({
+    queryKey: ["order-edit-reward-tx", order.id],
+    enabled: open && !!order.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("point_transactions")
+        .select("amount, source, note")
+        .eq("reference_id", order.id)
+        .in("source", ["order_earn", "order_earn_referrer"])
+        .eq("point_type", "reward");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as RewardTxRow[];
+    },
+  });
+  const rewardNotice = resolveRewardNotice(rewardTxQ.data ?? []);
+
   const staffQ = useQuery({
     queryKey: ["company-staff-picker-edit", order.company_id],
     enabled: open && !!order.company_id,
