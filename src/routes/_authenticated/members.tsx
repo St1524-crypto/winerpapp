@@ -20,7 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 
 interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; id_no?: string | null; apply_date?: string | null; sex?: string | null; addr_mail?: string | null; addr_home?: string | null; birthday?: string | null; vip_expires_at?: string | null; is_vip?: boolean | null; legacy_bonus_total?: number | null; }
-interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; current_tier?: string | null; }
+interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; referrer_tier?: string | null; current_tier?: string | null; }
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "finance", "warehouse", "sales", "vendor", "member"];
 const ROLE_COLORS: Record<AppRole, string> = {
@@ -55,19 +55,21 @@ function Page() {
   const [editProfile, setEditProfile] = useState<Member | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
   const [showFormPassword, setShowFormPassword] = useState(false);
-  const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, status: "idle" });
-  const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null }[]>([]);
+  const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; tier: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, tier: null, status: "idle" });
+  const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null; tier: string | null }[]>([]);
 
   useEffect(() => {
     const code = form.referrerMemberNo.trim();
-    if (!code) { setReferrerLookup({ code: "", name: null, status: "idle" }); setReferrerCandidates([]); return; }
+    if (!code) { setReferrerLookup({ code: "", name: null, tier: null, status: "idle" }); setReferrerCandidates([]); return; }
     let cancelled = false;
     setReferrerLookup((prev) => ({ ...prev, code, status: "loading" }));
     const t = setTimeout(async () => {
       const { data: exact } = await supabase.from("profiles").select("id, name, member_no, phone").eq("member_no", code).maybeSingle();
       if (cancelled) return;
       if (exact) {
-        setReferrerLookup({ code, name: (exact as any).name ?? null, status: "found" });
+        const { data: ts } = await supabase.from("dealer_tier_status").select("current_tier").eq("user_id", (exact as any).id).maybeSingle();
+        if (cancelled) return;
+        setReferrerLookup({ code, name: (exact as any).name ?? null, tier: (ts as any)?.current_tier ?? null, status: "found" });
         setReferrerCandidates([]);
         return;
       }
@@ -80,8 +82,15 @@ function Page() {
         .limit(8);
       if (cancelled) return;
       const list = ((fuzzy as any[]) ?? []) as { id: string; name: string | null; member_no: string | null; phone: string | null }[];
-      setReferrerCandidates(list);
-      setReferrerLookup({ code, name: null, status: "notfound" });
+      const ids = list.map((r) => r.id);
+      const tierMap = new Map<string, string>();
+      if (ids.length > 0) {
+        const { data: tiers } = await supabase.from("dealer_tier_status").select("user_id, current_tier").in("user_id", ids);
+        (tiers ?? []).forEach((t: any) => { if (t.current_tier) tierMap.set(t.user_id, t.current_tier); });
+      }
+      if (cancelled) return;
+      setReferrerCandidates(list.map((r) => ({ ...r, tier: tierMap.get(r.id) ?? null })));
+      setReferrerLookup({ code, name: null, tier: null, status: "notfound" });
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
   }, [form.referrerMemberNo]);
@@ -142,12 +151,14 @@ function Page() {
         .filter((rid: string | null): rid is string => !!rid)
     ));
     const byId = new Map<string, any>();
+    const refTierMap = new Map<string, string>();
     if (refIds.length > 0) {
-      const { data: refProfiles } = await supabase
-        .from("profiles")
-        .select("id, member_no, name")
-        .in("id", refIds);
-      (refProfiles ?? []).forEach((r: any) => byId.set(r.id, r));
+      const [refProfilesRes, refTierRes] = await Promise.all([
+        supabase.from("profiles").select("id, member_no, name").in("id", refIds),
+        supabase.from("dealer_tier_status").select("user_id, current_tier").in("user_id", refIds),
+      ]);
+      (refProfilesRes.data ?? []).forEach((r: any) => byId.set(r.id, r));
+      (refTierRes.data ?? []).forEach((t: any) => { if (t.current_tier) refTierMap.set(t.user_id, t.current_tier); });
     }
 
     setList((profiles ?? []).map((p: any) => {
@@ -157,6 +168,7 @@ function Page() {
         roles: rolesMap.get(p.id) ?? [],
         referrer_member_no: ref?.member_no ?? null,
         referrer_name: ref?.name ?? null,
+        referrer_tier: p.referred_by ? (refTierMap.get(p.referred_by) ?? null) : null,
         current_tier: tierMap.get(p.id) ?? (p.vip_tier ?? null),
       };
     }));
@@ -639,13 +651,13 @@ function Page() {
                 <Label>推薦人（可輸入會員編號 / 姓名 / 電話，留空則清除）</Label>
                 <Input value={form.referrerMemberNo} onChange={(e) => setForm({ ...form, referrerMemberNo: e.target.value })} placeholder="例如 M000123、王小明、0912345678" />
                 {editProfile.referrer_name && (
-                  <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}</p>
+                  <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}{editProfile.referrer_tier ? ` · ${editProfile.referrer_tier}` : ""}</p>
                 )}
                 {referrerLookup.status === "loading" && (
                   <p className="text-[11px] text-muted-foreground">查詢中…</p>
                 )}
                 {referrerLookup.status === "found" && (
-                  <p className="text-[11px] text-emerald-600">推薦人姓名：{referrerLookup.name ?? "—"}</p>
+                  <p className="text-[11px] text-emerald-600">推薦人姓名：{referrerLookup.name ?? "—"}{referrerLookup.tier ? ` · ${referrerLookup.tier}` : ""}</p>
                 )}
                 {referrerLookup.status === "notfound" && referrerCandidates.length === 0 && (
                   <p className="text-[11px] text-destructive">找不到符合的會員：{referrerLookup.code}</p>
@@ -663,6 +675,7 @@ function Page() {
                         <span className="font-mono">{c.member_no ?? "—"}</span>
                         <span className="mx-2">·</span>
                         <span>{c.name ?? "—"}</span>
+                        {c.tier && <span className="ml-2 text-emerald-600">{c.tier}</span>}
                         {c.phone && <span className="ml-2 text-muted-foreground">{c.phone}</span>}
                       </button>
                     ))}
