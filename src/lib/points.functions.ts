@@ -2,6 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  computeBasePoints,
+  computeLevelPayable,
+  formatBuyerMarkerNote,
+  formatLevelNote,
+  type LevelDistribution,
+} from "./referrer-reward-distribution";
 
 type PointType = "shopping" | "reward" | "discount";
 
@@ -241,7 +248,7 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
             let currentId: string | null = ((prof as any)?.referred_by as string | null) ?? null;
             const guard = new Set<string>([userId]);
             let totalDistributed = 0;
-            const distributedTo: Array<{ level: number; amount: number; note?: string }> = [];
+            const distributedTo: LevelDistribution[] = [];
             for (let level = 1; level <= maxLevel && currentId && !guard.has(currentId); level++) {
               guard.add(currentId);
               const rate = Number(rateRows.find((r) => r.generation_level === level)?.bonus_rate ?? 0);
@@ -253,7 +260,7 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
               const upId = (up as any)?.id as string | undefined;
               const upExp = (up as any)?.vip_expires_at as string | null;
               const upVipActive = !!(up as any)?.is_vip && (!upExp || new Date(upExp) > new Date());
-              const basePoints = Math.floor((rewardEarn * rate) / 100);
+              const basePoints = computeBasePoints(rewardEarn, rate);
               if (upId && upVipActive && basePoints > 0) {
                 // 營業分紅比例 cap（依上線 VIP 位階）
                 const { data: bizRow } = await (supabaseAdmin as any).rpc("record_business_bonus_release", {
@@ -277,17 +284,16 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
                   _bonus_record_id: null,
                   _notes: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP`,
                 });
-                const bizPayable = Math.floor(Number((bizRow as any)?.payable_amount ?? 0));
-                const upgPayable = Math.floor(Number((upgRow as any)?.payable_amount ?? 0));
-                const payable = Math.max(0, Math.min(basePoints, bizPayable, upgPayable));
-                const capReason: string[] = [];
-                if (bizPayable < basePoints) capReason.push("營業分紅上限");
-                if (upgPayable < basePoints) capReason.push("升級分紅上限");
+                const { payable, capReasons } = computeLevelPayable(
+                  basePoints,
+                  Number((bizRow as any)?.payable_amount ?? 0),
+                  Number((upgRow as any)?.payable_amount ?? 0),
+                );
                 if (payable > 0) {
                   await applyDelta(upId, "reward", payable, "order_earn_referrer", {
                     reference_id: data.orderId,
                     note: `第 ${level} 代復購獎勵（${rate}%）— 來源會員 ${userId}`
-                      + (capReason.length ? `（${capReason.join("、")}部分達上限）` : ""),
+                      + (capReasons.length ? `（${capReasons.join("、")}部分達上限）` : ""),
                     created_by: userId,
                   });
                 }
@@ -295,12 +301,14 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
                 distributedTo.push({
                   level,
                   amount: payable,
-                  note: capReason.length
-                    ? (payable > 0 ? `部分達${capReason.join("、")}` : `已達${capReason.join("、")} 略過`)
-                    : undefined,
+                  note: formatLevelNote(payable, capReasons, true, basePoints),
                 });
               } else if (upId && !upVipActive && basePoints > 0) {
-                distributedTo.push({ level, amount: 0, note: "上線非有效 VIP 略過" });
+                distributedTo.push({
+                  level,
+                  amount: 0,
+                  note: formatLevelNote(0, [], false, basePoints),
+                });
               }
               currentId = ((up as any)?.referred_by as string | null) ?? null;
             }
@@ -312,10 +320,7 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
               balance_after: 0,
               source: "order_earn_referrer",
               reference_id: data.orderId,
-              note: `買家非有效 VIP，${rewardEarn} 獎勵點依復購位階折算 ${totalDistributed} 點發放至推薦人獎勵點錢包`
-                + (distributedTo.length
-                  ? `（${distributedTo.map((d) => `L${d.level} +${d.amount} 點${d.note ? `（${d.note}）` : ""}`).join(", ")}）`
-                  : "（無有效 VIP 上線可接收）"),
+              note: formatBuyerMarkerNote(rewardEarn, totalDistributed, distributedTo),
               created_by: userId,
             });
           }
