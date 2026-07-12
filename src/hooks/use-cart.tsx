@@ -43,12 +43,20 @@ const CartContext = createContext<CartCtx>({
   getItemUnitPrice: () => 0,
 });
 
+type BundleAllocInfo = {
+  price: number; // bundle_price
+  baseSum: number; // Σ(product base price × qty per set)
+  productBase: Record<string, number>; // pid → base price snapshot
+  itemsPerSet: Record<string, number>; // pid → qty per set
+};
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const isDealer = useIsDealer();
   const [cartId, setCartId] = useState<string | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
   const [tiersMap, setTiersMap] = useState<Record<string, WholesaleTier[]>>({});
+  const [bundleMap, setBundleMap] = useState<Record<string, BundleAllocInfo>>({});
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
