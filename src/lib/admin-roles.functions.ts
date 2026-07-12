@@ -48,8 +48,8 @@ export const listUsersWithRoles = createServerFn({ method: "POST" })
       .limit(data.limit);
 
     if (data.search) {
-      const s = data.search.trim();
-      pq = pq.or(`name.ilike.%${s}%,email.ilike.%${s}%`);
+      const s = (await import("@/lib/postgrest-sanitize")).sanitizePostgrestPattern(data.search);
+      if (s) pq = pq.or(`name.ilike.%${s}%,email.ilike.%${s}%`);
     }
 
     const { data: profiles, error } = await pq;
