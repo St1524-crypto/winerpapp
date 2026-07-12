@@ -124,7 +124,7 @@ function CheckoutPage() {
       const prodCompanyMap = new Map(prodRows?.map((p: any) => [p.id, p.company_id]) ?? []);
 
       const rows = items.map((it) => {
-        const unit = getEffectivePrice(it.product as any, isDealer);
+        const unit = getItemUnitPrice(it);
         return {
           company_id: (prodCompanyMap.get(it.product_id) as string) ?? companyId,
           product_id: it.product_id,
