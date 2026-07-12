@@ -121,7 +121,7 @@ export const searchProductsForGift = createServerFn({ method: "GET" })
       .eq("status", "active")
       .order("name")
       .limit(20);
-    const kw = (data.keyword ?? "").trim();
+    const kw = (await import("@/lib/postgrest-sanitize")).sanitizePostgrestPattern(data.keyword ?? "");
     if (kw) q = q.or(`name.ilike.%${kw}%,sku.ilike.%${kw}%`);
     const { data: rows, error } = await q;
     if (error) throw error;
