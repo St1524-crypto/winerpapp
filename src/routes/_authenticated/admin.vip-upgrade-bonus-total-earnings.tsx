@@ -17,10 +17,11 @@ import {
   updateTierTotalEarningsCap,
   updateUpgradeBonusTotalEarningsTypes,
 } from "@/lib/vip-upgrade-bonus-total-earnings.functions";
+import { BONUS_PAGE_LABELS, pageMetaTitle } from "@/lib/bonus-pool-labels";
 
 export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-bonus-total-earnings")({
   component: Page,
-  head: () => ({ meta: [{ title: "升級分紅總收益上限 — winerp" }] }),
+  head: () => ({ meta: [{ title: pageMetaTitle(BONUS_PAGE_LABELS.vipBusinessBonusTotalEarnings) }] }),
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     return (
@@ -102,12 +103,12 @@ function Page() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">升級分紅總收益上限管理</h1>
+        <h1 className="text-2xl font-semibold">{BONUS_PAGE_LABELS.vipBusinessBonusTotalEarnings}管理</h1>
         <Badge variant="secondary">第一階段：設定 / 試算（未接核心發放）</Badge>
       </div>
 
       <Card>
-        <CardHeader><CardTitle>各 VIP 階級 — 升級分紅總收益上限</CardTitle></CardHeader>
+        <CardHeader><CardTitle>各 VIP 階級 — {BONUS_PAGE_LABELS.vipBusinessBonusTotalEarnings}</CardTitle></CardHeader>
         <CardContent>
           {loading ? <p className="text-muted-foreground">載入中…</p> : (
             <Table>
