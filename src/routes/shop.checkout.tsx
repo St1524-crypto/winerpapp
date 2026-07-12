@@ -334,7 +334,7 @@ function CheckoutPage() {
             <div className="space-y-1 pt-1">
               <div className="flex items-center justify-between text-xs">
                 <Label className="flex items-center gap-1 text-muted-foreground font-normal">
-                  <Wallet className="h-3 w-3" />餘額支付
+                  <Wallet className="h-3 w-3" />購物點支付
                 </Label>
                 <span className="text-muted-foreground">可用 {wallet.shopping_points.toLocaleString()}</span>
               </div>
