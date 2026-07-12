@@ -228,16 +228,26 @@ export const adminProcessCashTx = createServerFn({ method: "POST" })
     const t = tx as any;
     let balanceAfter: number | null = null;
 
+    // Atomic balance changes via row-locked RPCs. Withdraw funds were already
+    // reserved on request; approval is just a state flip. Reject refunds them.
     if (data.action === "approve") {
-      const bal = await getCashBalance(t.user_id);
       if (t.tx_type === "topup") {
-        balanceAfter = Number((bal + Number(t.amount)).toFixed(2));
-        await setCashBalance(t.user_id, balanceAfter);
+        const { data: after, error: e } = await (supabaseAdmin as any).rpc(
+          "adjust_cash_balance",
+          { _user_id: t.user_id, _delta: Number(t.amount) },
+        );
+        if (e) throw new Error(e.message);
+        balanceAfter = after;
       } else if (t.tx_type === "withdraw") {
-        if (Number(t.amount) > bal) throw new Error(`會員餘額不足（目前 ${bal}）`);
-        balanceAfter = Number((bal - Number(t.amount)).toFixed(2));
-        await setCashBalance(t.user_id, balanceAfter);
+        balanceAfter = await getCashBalance(t.user_id);
       }
+    } else if (data.action === "reject" && t.tx_type === "withdraw") {
+      const { data: after, error: e } = await (supabaseAdmin as any).rpc(
+        "adjust_cash_balance",
+        { _user_id: t.user_id, _delta: Number(t.amount) },
+      );
+      if (e) throw new Error(e.message);
+      balanceAfter = after;
     }
 
     const { error: updErr } = await supabaseAdmin
@@ -254,6 +264,7 @@ export const adminProcessCashTx = createServerFn({ method: "POST" })
 
     return { ok: true, balance_after: balanceAfter };
   });
+
 
 // ============ 管理員：直接調整現金 ============
 const AdjustSchema = z.object({
