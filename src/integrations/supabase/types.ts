@@ -2239,6 +2239,7 @@ export type Database = {
       }
       homepage_section_products: {
         Row: {
+          company_id: string | null
           config_json: Json
           created_at: string
           ends_at: string | null
@@ -2251,6 +2252,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          company_id?: string | null
           config_json?: Json
           created_at?: string
           ends_at?: string | null
@@ -2263,6 +2265,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          company_id?: string | null
           config_json?: Json
           created_at?: string
           ends_at?: string | null
@@ -2293,6 +2296,7 @@ export type Database = {
       }
       homepage_sections: {
         Row: {
+          company_id: string | null
           config_json: Json
           created_at: string
           display_limit: number
@@ -2305,6 +2309,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          company_id?: string | null
           config_json?: Json
           created_at?: string
           display_limit?: number
@@ -2317,6 +2322,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          company_id?: string | null
           config_json?: Json
           created_at?: string
           display_limit?: number
