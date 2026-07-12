@@ -3307,6 +3307,19 @@ function EditOrderDialog({
             </div>
           </div>
 
+          {rewardNotice && (
+            rewardNotice.kind === "earn" ? (
+              <div className="flex items-center justify-between rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-600">
+                <span>本次發放獎勵點</span>
+                <span className="tabular-nums font-semibold">+ {rewardNotice.points.toLocaleString()} 點</span>
+              </div>
+            ) : (
+              <div className="rounded-md bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                已轉推薦人獎勵點錢包：{rewardNotice.note}
+              </div>
+            )
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>訂單來源</Label>
