@@ -2074,16 +2074,18 @@ function OrderDetailDialog({
     queryKey: ["sales-order-detail", orderId],
     enabled: !!orderId,
     queryFn: async () => {
-      const [orderRes, itemsRes, paymentsRes] = await Promise.all([
+      const [orderRes, itemsRes, paymentsRes, pointPaymentsRes] = await Promise.all([
         supabase.from("sales_orders").select("*").eq("id", orderId!).maybeSingle(),
         supabase.from("sales_order_items").select("*").eq("sales_order_id", orderId!).order("created_at"),
         supabase.from("payments").select("*").eq("sales_order_id", orderId!).order("created_at", { ascending: false }),
+        supabase.from("order_point_payments").select("*").eq("sales_order_id", orderId!).order("created_at", { ascending: false }),
       ]);
       if (orderRes.error) throw new Error(orderRes.error.message);
       return {
         order: orderRes.data as OrderRow | null,
         items: itemsRes.data ?? [],
         payments: paymentsRes.data ?? [],
+        pointPayments: pointPaymentsRes.data ?? [],
       };
     },
   });
@@ -2091,6 +2093,8 @@ function OrderDetailDialog({
   const order = detailQ.data?.order;
   const items = detailQ.data?.items ?? [];
   const payments = detailQ.data?.payments ?? [];
+  const pointPayments = (detailQ.data?.pointPayments ?? []) as any[];
+
 
   // 載入 VIP 升級套組贈品（依訂單品項中 anchor product_id 對應）
   const itemProductIds = (items as any[]).map((i) => i.product_id).filter(Boolean);
