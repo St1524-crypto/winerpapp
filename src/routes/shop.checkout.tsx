@@ -434,6 +434,8 @@ function GuestAuthPanel() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
 
   async function doLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -455,6 +457,28 @@ function GuestAuthPanel() {
     }
   }
 
+  async function doSendOtp() {
+    const cleanPhone = phone.trim().replace(/[\s-]/g, "");
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { toast.error("Email 格式錯誤"); return; }
+    if (!/^\+?\d{8,15}$/.test(cleanPhone)) { toast.error("手機格式錯誤"); return; }
+    setBusy(true);
+    try {
+      const res = await requestGuestSignupOtp({
+        data: { phone: cleanPhone, email: email.trim() },
+      }).catch(() => ({ ok: false as const, error: "send_failed" as const }));
+      if (!res.ok) {
+        if (res.error === "rate_limited") toast.error("嘗試次數過多，請稍後再試");
+        else if (res.error === "phone_invalid") toast.error("手機格式錯誤");
+        else toast.error("驗證碼發送失敗，請稍後再試");
+        return;
+      }
+      setOtpSent(true);
+      toast.success("驗證碼已寄至您的 Email，10 分鐘內有效");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function doRegister(e: React.FormEvent) {
     e.preventDefault();
     const cleanPhone = phone.trim().replace(/[\s-]/g, "");
@@ -462,14 +486,22 @@ function GuestAuthPanel() {
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) { toast.error("Email 格式錯誤"); return; }
     if (!/^\+?\d{8,15}$/.test(cleanPhone)) { toast.error("手機格式錯誤"); return; }
     if (!address.trim()) { toast.error("地址不可空白"); return; }
+    if (!/^\d{6}$/.test(otp.trim())) { toast.error("請輸入 6 位數 Email 驗證碼"); return; }
     setBusy(true);
     try {
       const res = await quickRegisterAndSignIn({
-        data: { name: name.trim(), email: email.trim(), phone: cleanPhone, address: address.trim() },
+        data: {
+          name: name.trim(),
+          email: email.trim(),
+          phone: cleanPhone,
+          address: address.trim(),
+          otp: otp.trim(),
+        },
       }).catch(() => ({ ok: false as const, error: "create_failed" as const }));
       if (!res.ok) {
         if (res.error === "phone_exists") toast.error("此手機已是會員，請使用會員登入");
         else if (res.error === "phone_invalid") toast.error("手機格式錯誤");
+        else if (res.error === "otp_invalid") toast.error("驗證碼錯誤或已過期，請重新取得");
         else toast.error("建立會員失敗，請聯絡客服");
         return;
       }
@@ -482,6 +514,7 @@ function GuestAuthPanel() {
       setBusy(false);
     }
   }
+
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
