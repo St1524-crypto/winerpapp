@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, Loader2, Plus, Trash2, Search, CheckCircle2, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { companySchema } from "@/lib/company-schema";
+import { writeClientAuditLog } from "@/lib/audit.functions";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -65,15 +66,16 @@ export function CompaniesAdminTable() {
   async function logAudit(action: string, row: Pick<CompanyRow, "id" | "company_name">, metadata: Record<string, any>) {
     if (!user) return;
     try {
-      await supabase.from("audit_logs").insert({
-        user_id: user.id,
-        action,
-        entity: "companies",
-        entity_id: row.id,
-        metadata: {
-          company_name: row.company_name,
-          occurred_at: new Date().toISOString(),
-          ...metadata,
+      await writeClientAuditLog({
+        data: {
+          action: action as any,
+          entity: "companies",
+          entity_id: row.id,
+          metadata: {
+            company_name: row.company_name,
+            occurred_at: new Date().toISOString(),
+            ...metadata,
+          },
         },
       });
       qc.invalidateQueries({ queryKey: ["company-audit-history"] });

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { writeClientAuditLog } from "@/lib/audit.functions";
 
 export interface CompanyOption {
   id: string;
@@ -152,18 +153,19 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         const to = companyId;
         const fromName = companies.find((c) => c.id === from)?.company_name ?? null;
         const toName = companies.find((c) => c.id === to)?.company_name ?? null;
-        await supabase.from("audit_logs").insert({
-          user_id: user.id,
-          action: "company.switch",
-          entity: "companies",
-          entity_id: to,
-          metadata: {
-            from_company_id: from,
-            to_company_id: to,
-            from_company_name: fromName,
-            to_company_name: toName,
-            switched_at: new Date().toISOString(),
-            user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+        await writeClientAuditLog({
+          data: {
+            action: "company.switch",
+            entity: "companies",
+            entity_id: to,
+            metadata: {
+              from_company_id: from,
+              to_company_id: to,
+              from_company_name: fromName,
+              to_company_name: toName,
+              switched_at: new Date().toISOString(),
+              user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+            },
           },
         });
       } catch (e) {

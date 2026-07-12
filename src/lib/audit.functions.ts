@@ -78,3 +78,41 @@ export const getAuditFacets = createServerFn({ method: "GET" })
     const actions = Array.from(new Set((data ?? []).map((r) => r.action))).sort();
     return { entities, actions };
   });
+
+// Allow-list of client-writable audit actions. All other audit actions must be
+// written from server code via supabaseAdmin (service role) directly.
+const CLIENT_AUDIT_ACTIONS = [
+  "company.switch",
+  "blocked_inactive_company",
+  "company.activate",
+  "company.deactivate",
+  "company.update",
+  "company.update_field",
+  "company.create",
+  "company.delete",
+] as const;
+
+export const writeClientAuditLog = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        action: z.enum(CLIENT_AUDIT_ACTIONS),
+        entity: z.string().min(1).max(80),
+        entity_id: z.string().uuid().optional().nullable(),
+        metadata: z.record(z.string(), z.any()).optional().default({}),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await supabaseAdmin.from("audit_logs").insert({
+      user_id: context.userId,
+      action: data.action,
+      entity: data.entity,
+      entity_id: data.entity_id ?? null,
+      metadata: data.metadata ?? {},
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
