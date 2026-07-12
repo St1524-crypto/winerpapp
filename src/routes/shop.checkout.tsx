@@ -300,7 +300,7 @@ function CheckoutPage() {
                     <div className="truncate text-xs">{it.product?.name}</div>
                     <div className="text-[11px] text-muted-foreground">× {it.quantity}</div>
                   </div>
-                  <div className="tabular-nums text-xs">NT$ {(getEffectivePrice(it.product as any, isDealer) * it.quantity).toLocaleString()}</div>
+                  <div className="tabular-nums text-xs">NT$ {(getItemUnitPrice(it) * it.quantity).toLocaleString()}</div>
                 </div>
               ))}
               {items.length === 0 && <div className="text-muted-foreground text-center py-4">購物車為空</div>}
