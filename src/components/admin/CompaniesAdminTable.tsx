@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, Loader2, Plus, Trash2, Search, CheckCircle2, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { companySchema } from "@/lib/company-schema";
+import { writeClientAuditLog } from "@/lib/audit.functions";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
