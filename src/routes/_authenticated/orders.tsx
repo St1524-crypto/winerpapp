@@ -2521,12 +2521,78 @@ function OrderDetailDialog({
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-primary" />
-                  點數付款分錄 ({pointPayments.length})
+                  點數付款分錄 ({filteredPointPayments.length}/{pointPayments.length})
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="space-y-3">
+                {/* 篩選 / 排序控制 */}
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                  <div className="col-span-1">
+                    <Label className="text-xs text-muted-foreground">起始日期</Label>
+                    <Input type="date" value={ppFrom} onChange={(e) => setPpFrom(e.target.value)} className="h-8" />
+                  </div>
+                  <div className="col-span-1">
+                    <Label className="text-xs text-muted-foreground">結束日期</Label>
+                    <Input type="date" value={ppTo} onChange={(e) => setPpTo(e.target.value)} className="h-8" />
+                  </div>
+                  <div className="col-span-1">
+                    <Label className="text-xs text-muted-foreground">類型</Label>
+                    <Select value={ppType} onValueChange={setPpType}>
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部</SelectItem>
+                        <SelectItem value="discount">折扣點</SelectItem>
+                        <SelectItem value="shopping">購物點</SelectItem>
+                        <SelectItem value="reward">獎勵點</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-1">
+                    <Label className="text-xs text-muted-foreground">狀態</Label>
+                    <Select value={ppStatus} onValueChange={setPpStatus}>
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部</SelectItem>
+                        {ppStatusOptions.map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-xs text-muted-foreground">排序</Label>
+                    <Select value={ppSort} onValueChange={setPpSort}>
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="created_desc">日期（新→舊）</SelectItem>
+                        <SelectItem value="created_asc">日期（舊→新）</SelectItem>
+                        <SelectItem value="points_desc">使用點數（多→少）</SelectItem>
+                        <SelectItem value="points_asc">使用點數（少→多）</SelectItem>
+                        <SelectItem value="amount_desc">折抵金額（大→小）</SelectItem>
+                        <SelectItem value="amount_asc">折抵金額（小→大）</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {(ppFrom || ppTo || ppType !== "all" || ppStatus !== "all" || ppSort !== "created_desc") && (
+                  <div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        setPpFrom(""); setPpTo(""); setPpType("all"); setPpStatus("all"); setPpSort("created_desc");
+                      }}
+                    >
+                      清除篩選
+                    </Button>
+                  </div>
+                )}
+
                 {pointPayments.length === 0 ? (
                   <div className="p-6 text-center text-sm text-muted-foreground">尚無點數付款紀錄</div>
+                ) : filteredPointPayments.length === 0 ? (
+                  <div className="p-6 text-center text-sm text-muted-foreground">此篩選條件下沒有符合的紀錄</div>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
@@ -2541,7 +2607,7 @@ function OrderDetailDialog({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {pointPayments.map((pp: any) => {
+                        {filteredPointPayments.map((pp: any) => {
                           const typeLabel =
                             pp.point_type === "discount"
                               ? "折扣點"
@@ -2583,10 +2649,10 @@ function OrderDetailDialog({
                         <TableRow>
                           <TableCell colSpan={2} className="text-right text-xs text-muted-foreground">合計</TableCell>
                           <TableCell className="text-right font-semibold">
-                            {pointPayments.reduce((s: number, p: any) => s + Number(p.points_used ?? 0), 0).toLocaleString()}
+                            {filteredPointPayments.reduce((s: number, p: any) => s + Number(p.points_used ?? 0), 0).toLocaleString()}
                           </TableCell>
                           <TableCell className="text-right font-semibold text-success">
-                            {fmt(pointPayments.reduce((s: number, p: any) => s + Number(p.amount_offset ?? 0), 0))}
+                            {fmt(filteredPointPayments.reduce((s: number, p: any) => s + Number(p.amount_offset ?? 0), 0))}
                           </TableCell>
                           <TableCell colSpan={2} />
                         </TableRow>
@@ -2596,6 +2662,7 @@ function OrderDetailDialog({
                 )}
               </CardContent>
             </Card>
+
 
             {/* Outstanding (unpaid) breakdown - expandable */}
 
