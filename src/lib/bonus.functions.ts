@@ -172,7 +172,98 @@ async function addMonthlyResponsibility(memberId: string, points: number, orderI
   }
 }
 
-async function processRepurchase(orderId: string, buyerId: string, base: number) {
+function isValidVipForBonus(profile: any, referenceDate = new Date()) {
+  if (!profile?.is_vip || !profile?.vip_expires_at) return false;
+  return new Date(profile.vip_expires_at) >= referenceDate;
+}
+
+async function getOrderGeneratedRewardPoints(orderId: string) {
+  const { data: items, error } = await supabaseAdmin
+    .from("sales_order_items")
+    .select("product_id, quantity, tier_reward_points, bundle_id")
+    .eq("sales_order_id", orderId);
+  if (error) throw new Error(error.message);
+
+  const rows = (items ?? []) as any[];
+  const bundleRows = rows.filter((row) => row.bundle_id);
+  const soloRows = rows.filter((row) => !row.bundle_id);
+  let rewardPoints = 0;
+
+  for (const row of soloRows) {
+    const quantity = Math.max(0, Number(row.quantity ?? 0));
+    let unitReward = Number(row.tier_reward_points ?? 0);
+    if (unitReward <= 0 && row.product_id) {
+      const { data: product } = await supabaseAdmin
+        .from("products")
+        .select("reward_points")
+        .eq("id", row.product_id)
+        .maybeSingle();
+      unitReward = Number((product as any)?.reward_points ?? 0);
+    }
+    rewardPoints += unitReward * quantity;
+  }
+
+  if (bundleRows.length > 0) {
+    const bundleIds = Array.from(new Set(bundleRows.map((row) => row.bundle_id as string)));
+    const [{ data: bundles }, { data: bundleItems }] = await Promise.all([
+      supabaseAdmin.from("repurchase_bundles").select("id, bundle_reward_points").in("id", bundleIds),
+      supabaseAdmin.from("repurchase_bundle_items").select("bundle_id, product_id, quantity").in("bundle_id", bundleIds),
+    ]);
+    const bundleRewardMap = new Map<string, number>(
+      (bundles ?? []).map((bundle: any) => [bundle.id, Number(bundle.bundle_reward_points ?? 0)]),
+    );
+    const bundleRequirements = new Map<string, Map<string, number>>();
+    for (const item of (bundleItems ?? []) as any[]) {
+      const bundleId = item.bundle_id as string;
+      const productMap = bundleRequirements.get(bundleId) ?? new Map<string, number>();
+      productMap.set(item.product_id as string, Number(item.quantity ?? 0));
+      bundleRequirements.set(bundleId, productMap);
+    }
+    const rowsByBundle = new Map<string, Array<{ product_id: string; quantity: number }>>();
+    for (const row of bundleRows) {
+      const bundleId = row.bundle_id as string;
+      const group = rowsByBundle.get(bundleId) ?? [];
+      group.push({ product_id: row.product_id as string, quantity: Number(row.quantity ?? 0) });
+      rowsByBundle.set(bundleId, group);
+    }
+    for (const [bundleId, group] of rowsByBundle) {
+      const requirements = bundleRequirements.get(bundleId);
+      const unitReward = bundleRewardMap.get(bundleId) ?? 0;
+      if (!requirements || unitReward <= 0) continue;
+      let copies = Number.POSITIVE_INFINITY;
+      for (const [productId, requiredQty] of requirements) {
+        if (requiredQty <= 0) continue;
+        const orderedQty = group
+          .filter((row) => row.product_id === productId)
+          .reduce((sum, row) => sum + row.quantity, 0);
+        copies = Math.min(copies, Math.floor(orderedQty / requiredQty));
+      }
+      if (Number.isFinite(copies) && copies > 0) {
+        rewardPoints += unitReward * copies;
+      }
+    }
+  }
+
+  return Math.max(0, Math.floor(rewardPoints));
+}
+
+async function hasCompletedMonthlyResponsibility(memberId: string, orderDate?: string) {
+  const refDate = orderDate ? new Date(orderDate) : new Date();
+  const ym = `${refDate.getFullYear()}${String(refDate.getMonth() + 1).padStart(2, "0")}`;
+  const [{ data: row }, { data: settings }] = await Promise.all([
+    supabaseAdmin
+      .from("monthly_responsibility_points")
+      .select("points")
+      .eq("member_id", memberId)
+      .eq("ym", ym)
+      .maybeSingle(),
+    supabaseAdmin.from("bonus_settings").select("vip_required_points").order("created_at").limit(1).maybeSingle(),
+  ]);
+  const requiredPoints = Number((settings as any)?.vip_required_points ?? 0);
+  return Number((row as any)?.points ?? 0) >= requiredPoints;
+}
+
+async function processRepurchase(orderId: string, buyerId: string, base: number, orderDate?: string) {
   if (base <= 0) return { inserted: 0, monthly: 0 };
 
   // 買家若為經銷商：自己不領獎勵點，個人月責任額全數歸屬推薦人
@@ -203,10 +294,27 @@ async function processRepurchase(orderId: string, buyerId: string, base: number)
           .select("id").eq("source_order_id", orderId)
           .eq("generation_level", level).eq("bonus_type", "repurchase").maybeSingle();
         if (!dup) {
+          const { data: uplineProfile } = await supabaseAdmin
+            .from("profiles")
+            .select("id, is_vip, vip_expires_at")
+            .eq("id", upline)
+            .maybeSingle();
+          const referenceDate = orderDate ? new Date(orderDate) : new Date();
+          const validVip = isValidVipForBonus(uplineProfile, referenceDate);
+          const responsibilityPassed = validVip
+            ? await hasCompletedMonthlyResponsibility(upline, orderDate)
+            : false;
           await supabaseAdmin.from("bonus_records").insert({
             member_id: upline, source_member_id: buyerId, source_order_id: orderId,
             bonus_type: "repurchase", generation_level: level,
-            base_amount: base, bonus_rate: rate, bonus_points: pts, status: "pending",
+            base_amount: base, bonus_rate: rate,
+            bonus_points: validVip && responsibilityPassed ? pts : 0,
+            required_points_checked: true,
+            required_points_passed: validVip && responsibilityPassed,
+            fail_reason: validVip
+              ? (responsibilityPassed ? null : "monthly responsibility not completed")
+              : "vip expired or missing vip_expires_at",
+            status: validVip && responsibilityPassed ? "pending" : "cancelled",
           });
           inserted++;
         }
@@ -282,11 +390,11 @@ async function processOrderPaymentBonusInternal(orderId: string) {
   if ((order as any).payment_status !== "paid") throw new Error("訂單未付款");
   const buyerId = (order as any).user_id as string | null;
   if (!buyerId) return { ok: true, skipped: "無買家" };
-  const base = Number((order as any).subtotal ?? 0);
+  const base = await getOrderGeneratedRewardPoints(orderId);
   const type = (order as any).order_type as string;
 
   if (type === "repurchase") {
-    const r = await processRepurchase(orderId, buyerId, base);
+    const r = await processRepurchase(orderId, buyerId, base, (order as any).created_at);
     return { ok: true, type, ...r };
   }
   if (type === "upgrade") {
@@ -1095,6 +1203,10 @@ function getBonusRecalculationBlockReason(profile: any, referenceDate: string) {
   }
 
   if (!profile.is_vip) return "會員不是有效 VIP，重新計算後不發放獎勵點";
+
+  if (!profile.vip_expires_at) {
+    return "VIP vip_expires_at is missing; treat as expired and block reward release";
+  }
 
   if (profile.vip_expires_at) {
     const releaseAt = referenceDate.includes("T")

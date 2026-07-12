@@ -305,8 +305,8 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
             .maybeSingle();
           const exp = (prof as any)?.vip_expires_at as string | null;
           const isVip = !!(prof as any)?.is_vip;
-          const vipExpired = !!exp && new Date(exp) <= new Date();
-          const buyerEligible = isVip && !vipExpired;
+          const vipActive = isVip && !!exp && new Date(exp) > new Date();
+          const buyerEligible = vipActive;
           if (buyerEligible) {
             // 買家為有效 VIP：獎勵點入自己帳戶
             await applyDelta(userId, "reward", rewardEarn, "order_earn", { reference_id: data.orderId });
@@ -335,7 +335,7 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
                 .maybeSingle();
               const upId = (up as any)?.id as string | undefined;
               const upExp = (up as any)?.vip_expires_at as string | null;
-              const upVipActive = !!(up as any)?.is_vip && (!upExp || new Date(upExp) > new Date());
+              const upVipActive = !!(up as any)?.is_vip && !!upExp && new Date(upExp) > new Date();
               const basePoints = computeBasePoints(rewardEarn, rate);
               if (upId && upVipActive && basePoints > 0) {
                 // 營業分紅比例 cap（依上線 VIP 位階）
