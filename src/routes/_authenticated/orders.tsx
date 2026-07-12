@@ -2557,8 +2557,18 @@ function OrderDetailDialog({
                     </TableBody>
                     <TableFooter>
                       <TableRow>
+                        <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">現金已收</TableCell>
+                        <TableCell className="text-right font-medium">{fmt(paidTotal)}</TableCell>
+                      </TableRow>
+                      {pointOffsetApplied > 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">點數折抵</TableCell>
+                          <TableCell className="text-right font-medium text-primary">{fmt(pointOffsetApplied)}</TableCell>
+                        </TableRow>
+                      )}
+                      <TableRow>
                         <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">已收款合計</TableCell>
-                        <TableCell className="text-right font-semibold text-success">{fmt(paidTotal)}</TableCell>
+                        <TableCell className="text-right font-semibold text-success">{fmt(totalReceived)}</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">未收款</TableCell>
@@ -2566,7 +2576,14 @@ function OrderDetailDialog({
                           {fmt(unpaid)}
                         </TableCell>
                       </TableRow>
+                      {overpaid > 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">超收金額</TableCell>
+                          <TableCell className="text-right font-semibold text-warning">{fmt(overpaid)}</TableCell>
+                        </TableRow>
+                      )}
                     </TableFooter>
+
                   </Table>
                   </div>
 
