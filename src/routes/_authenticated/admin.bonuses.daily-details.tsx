@@ -1,28 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Download, Loader2, RefreshCw, Search } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { listDailyBonusDetails } from "@/lib/bonus.functions";
 import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, DAILY_BONUS_TYPE_OPTIONS } from "@/lib/bonus-labels";
-import { PRESET_OPTIONS, computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
+import { computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
+import { BonusFiltersCard, type BonusFilters } from "@/components/admin/BonusFiltersCard";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
-const STATUS_OPTIONS = [
-  { value: "pending", label: "待結算" },
-  { value: "waiting_release", label: "待發放" },
-  { value: "released", label: "已成功發放" },
-  { value: "failed", label: "發放失敗" },
-  { value: "cancelled", label: "已取消" },
-];
 
 export const Route = createFileRoute("/_authenticated/admin/bonuses/daily-details")({ component: Guard });
 
@@ -33,17 +24,10 @@ function Guard() {
   return <Page />;
 }
 
-type Filters = {
-  dateFrom: string; dateTo: string; bonusType: string; status: string;
-  memberName: string; memberNo: string; settlementBatchId: string;
-};
-const EMPTY: Filters = { dateFrom: "", dateTo: "", bonusType: "", status: "", memberName: "", memberNo: "", settlementBatchId: "" };
+const EMPTY: BonusFilters = { dateFrom: "", dateTo: "", bonusType: "", status: "", memberName: "", memberNo: "", settlementBatchId: "" };
 
 function Page() {
-  const [filters, setFilters] = useState<Filters>(() => {
-    const p = computePreset("this_month")!;
-    return { ...EMPTY, ...p };
-  });
+  const [filters, setFilters] = useState<BonusFilters>(() => ({ ...EMPTY, ...computePreset("this_month")! }));
   const [preset, setPreset] = useState<BonusDatePreset>("this_month");
   const [loading, setLoading] = useState(false);
   const [payload, setPayload] = useState<any>(null);
