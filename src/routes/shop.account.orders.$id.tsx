@@ -11,6 +11,7 @@ import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, SHIPPING_STATUS_LABELS, typ
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
+import { applyOrderPoints } from "@/lib/points.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/shop/account/orders/$id")({ component: OrderDetail });
