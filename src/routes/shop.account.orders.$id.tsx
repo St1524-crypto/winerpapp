@@ -21,6 +21,16 @@ function OrderDetail() {
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [rewardTx, setRewardTx] = useState<any[]>([]);
+  const [tierBreakdown, setTierBreakdown] = useState<Array<{
+    product_id: string | null;
+    product_name: string;
+    sku: string | null;
+    quantity: number;
+    unit_reward_points: number;
+    line_total: number;
+    tier: { min_qty: number; max_qty: number | null } | null;
+    source: "tier" | "base";
+  }>>([]);
   const [loading, setLoading] = useState(true);
   const upgradeTriggered = useRef(false);
   const rewardBackfillTriggered = useRef(false);
@@ -38,11 +48,68 @@ function OrderDetail() {
           .eq("point_type", "reward"),
       ]);
       setOrder(o as SalesOrder | null);
-      setItems((it ?? []) as SalesOrderItem[]);
+      const itemRows = (it ?? []) as SalesOrderItem[];
+      setItems(itemRows);
       setRewardTx((rt ?? []) as any[]);
+
+      // 讀取階梯設定與基礎獎勵點以顯示本單計算明細（與伺服器發放邏輯一致）
+      const productIds = Array.from(new Set(itemRows.map((i: any) => i.product_id).filter(Boolean))) as string[];
+      if (productIds.length > 0) {
+        const [{ data: prods }, { data: tiersData }] = await Promise.all([
+          supabase.from("products").select("id, reward_points").in("id", productIds),
+          supabase
+            .from("product_wholesale_tiers")
+            .select("product_id, min_qty, max_qty, unit_reward_points")
+            .in("product_id", productIds)
+            .order("min_qty", { ascending: true }),
+        ]);
+        const baseMap = new Map<string, number>((prods ?? []).map((p: any) => [p.id, Number(p.reward_points ?? 0)]));
+        const tiersMap = new Map<string, Array<{ min_qty: number; max_qty: number | null; unit_reward_points: number }>>();
+        for (const t of (tiersData ?? []) as any[]) {
+          const arr = tiersMap.get(t.product_id) ?? [];
+          arr.push({
+            min_qty: Number(t.min_qty ?? 0),
+            max_qty: t.max_qty == null ? null : Number(t.max_qty),
+            unit_reward_points: Number(t.unit_reward_points ?? 0),
+          });
+          tiersMap.set(t.product_id, arr);
+        }
+        const breakdown = itemRows.map((row: any) => {
+          const pid = row.product_id as string | null;
+          const qty = Number(row.quantity ?? 0);
+          const tiers = pid ? tiersMap.get(pid) ?? [] : [];
+          const matched = tiers.filter((t) => qty >= t.min_qty && (t.max_qty == null || qty <= t.max_qty));
+          if (matched.length > 0) {
+            const best = matched.reduce((b, c) => (c.unit_reward_points > b.unit_reward_points ? c : b));
+            return {
+              product_id: pid,
+              product_name: row.product_name,
+              sku: row.sku,
+              quantity: qty,
+              unit_reward_points: best.unit_reward_points,
+              line_total: best.unit_reward_points * qty,
+              tier: { min_qty: best.min_qty, max_qty: best.max_qty },
+              source: "tier" as const,
+            };
+          }
+          const unit = pid ? baseMap.get(pid) ?? 0 : 0;
+          return {
+            product_id: pid,
+            product_name: row.product_name,
+            sku: row.sku,
+            quantity: qty,
+            unit_reward_points: unit,
+            line_total: unit * qty,
+            tier: null,
+            source: "base" as const,
+          };
+        });
+        setTierBreakdown(breakdown);
+      }
       setLoading(false);
     })();
   }, [id]);
+
 
   // 付款成功後：自動觸發年費 VIP 升級 hook（冪等；非年費規則不影響流程）
   useEffect(() => {
@@ -221,6 +288,73 @@ function OrderDetail() {
               </div>
             </div>
           </div>
+
+          {tierBreakdown.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <div className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                  <Gift className="h-4 w-4 text-amber-500" />本單獎勵點階梯計算明細
+                </div>
+                <div className="rounded-lg border border-border/60 overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/40 text-muted-foreground">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium">商品</th>
+                        <th className="text-left px-3 py-2 font-medium">採用階梯</th>
+                        <th className="text-right px-3 py-2 font-medium">每件點數</th>
+                        <th className="text-right px-3 py-2 font-medium">件數</th>
+                        <th className="text-right px-3 py-2 font-medium">計算</th>
+                        <th className="text-right px-3 py-2 font-medium">小計</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tierBreakdown.map((b, idx) => {
+                        const tierLabel = b.tier
+                          ? `${b.tier.min_qty}${b.tier.max_qty == null ? "+" : `–${b.tier.max_qty}`} 件`
+                          : "基礎（無符合階梯）";
+                        return (
+                          <tr key={idx} className="border-t border-border/40">
+                            <td className="px-3 py-2">
+                              <div className="font-medium">{b.product_name}</div>
+                              {b.sku && <div className="text-[10px] text-muted-foreground">{b.sku}</div>}
+                            </td>
+                            <td className="px-3 py-2">
+                              <Badge variant={b.source === "tier" ? "default" : "outline"} className="text-[10px]">
+                                {tierLabel}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums">{b.unit_reward_points}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{b.quantity}</td>
+                            <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                              {b.unit_reward_points} × {b.quantity}
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-500">
+                              {b.line_total.toLocaleString()}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-border/60 bg-muted/30">
+                        <td colSpan={5} className="px-3 py-2 text-right font-medium">本單獎勵點總計</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-500">
+                          {tierBreakdown.reduce((s, b) => s + b.line_total, 0).toLocaleString()} 點
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
+                  規則：每一列商品以本行件數落在的階梯區間 [min_qty, max_qty] 之 unit_reward_points 計算，
+                  若多階梯符合則取每件點數最高者；若無任何階梯符合，改用商品基礎每件獎勵點。
+                </p>
+              </div>
+            </>
+          )}
+
+
 
 
           {order.notes && (
