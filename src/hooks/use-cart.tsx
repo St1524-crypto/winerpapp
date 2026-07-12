@@ -145,12 +145,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const pids = Array.from(new Set(itemList.map((i) => i.product_id).filter(Boolean)));
       const tmap = await fetchTiersByProductIds(pids);
       setTiersMap(tmap);
+
+      // ---- Bundle price allocation snapshot ----
+      const bundleIds = Array.from(
+        new Set(itemList.map((i) => (i as any).bundle_id).filter(Boolean) as string[])
+      );
+      if (bundleIds.length) {
+        const [{ data: bundles }, { data: bItems }] = await Promise.all([
+          db.from("repurchase_bundles").select("id, bundle_price").in("id", bundleIds),
+          db.from("repurchase_bundle_items").select("bundle_id, product_id, quantity").in("bundle_id", bundleIds),
+        ]);
+        // product base prices (dealer-effective) come from the cart item's joined product
+        const productBase: Record<string, number> = {};
+        for (const it of itemList) {
+          if (it.product && !productBase[it.product_id]) {
+            productBase[it.product_id] = Number(getEffectivePrice(it.product as any, isDealer)) || 0;
+          }
+        }
+        const map: Record<string, BundleAllocInfo> = {};
+        for (const b of (bundles ?? []) as any[]) {
+          const rows = (bItems ?? []).filter((r: any) => r.bundle_id === b.id);
+          const itemsPerSet: Record<string, number> = {};
+          let baseSum = 0;
+          for (const r of rows as any[]) {
+            itemsPerSet[r.product_id] = Number(r.quantity);
+            baseSum += (productBase[r.product_id] ?? 0) * Number(r.quantity);
+          }
+          map[b.id] = {
+            price: Number(b.bundle_price),
+            baseSum,
+            productBase,
+            itemsPerSet,
+          };
+        }
+        setBundleMap(map);
+      } else {
+        setBundleMap({});
+      }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [ensureCart, getDb]);
+  }, [ensureCart, getDb, isDealer]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
