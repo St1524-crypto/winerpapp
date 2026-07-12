@@ -21,6 +21,16 @@ function OrderDetail() {
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [rewardTx, setRewardTx] = useState<any[]>([]);
+  const [tierBreakdown, setTierBreakdown] = useState<Array<{
+    product_id: string | null;
+    product_name: string;
+    sku: string | null;
+    quantity: number;
+    unit_reward_points: number;
+    line_total: number;
+    tier: { min_qty: number; max_qty: number | null } | null;
+    source: "tier" | "base";
+  }>>([]);
   const [loading, setLoading] = useState(true);
   const upgradeTriggered = useRef(false);
   const rewardBackfillTriggered = useRef(false);
@@ -38,11 +48,68 @@ function OrderDetail() {
           .eq("point_type", "reward"),
       ]);
       setOrder(o as SalesOrder | null);
-      setItems((it ?? []) as SalesOrderItem[]);
+      const itemRows = (it ?? []) as SalesOrderItem[];
+      setItems(itemRows);
       setRewardTx((rt ?? []) as any[]);
+
+      // 讀取階梯設定與基礎獎勵點以顯示本單計算明細（與伺服器發放邏輯一致）
+      const productIds = Array.from(new Set(itemRows.map((i: any) => i.product_id).filter(Boolean))) as string[];
+      if (productIds.length > 0) {
+        const [{ data: prods }, { data: tiersData }] = await Promise.all([
+          supabase.from("products").select("id, reward_points").in("id", productIds),
+          supabase
+            .from("product_wholesale_tiers")
+            .select("product_id, min_qty, max_qty, unit_reward_points")
+            .in("product_id", productIds)
+            .order("min_qty", { ascending: true }),
+        ]);
+        const baseMap = new Map<string, number>((prods ?? []).map((p: any) => [p.id, Number(p.reward_points ?? 0)]));
+        const tiersMap = new Map<string, Array<{ min_qty: number; max_qty: number | null; unit_reward_points: number }>>();
+        for (const t of (tiersData ?? []) as any[]) {
+          const arr = tiersMap.get(t.product_id) ?? [];
+          arr.push({
+            min_qty: Number(t.min_qty ?? 0),
+            max_qty: t.max_qty == null ? null : Number(t.max_qty),
+            unit_reward_points: Number(t.unit_reward_points ?? 0),
+          });
+          tiersMap.set(t.product_id, arr);
+        }
+        const breakdown = itemRows.map((row: any) => {
+          const pid = row.product_id as string | null;
+          const qty = Number(row.quantity ?? 0);
+          const tiers = pid ? tiersMap.get(pid) ?? [] : [];
+          const matched = tiers.filter((t) => qty >= t.min_qty && (t.max_qty == null || qty <= t.max_qty));
+          if (matched.length > 0) {
+            const best = matched.reduce((b, c) => (c.unit_reward_points > b.unit_reward_points ? c : b));
+            return {
+              product_id: pid,
+              product_name: row.product_name,
+              sku: row.sku,
+              quantity: qty,
+              unit_reward_points: best.unit_reward_points,
+              line_total: best.unit_reward_points * qty,
+              tier: { min_qty: best.min_qty, max_qty: best.max_qty },
+              source: "tier" as const,
+            };
+          }
+          const unit = pid ? baseMap.get(pid) ?? 0 : 0;
+          return {
+            product_id: pid,
+            product_name: row.product_name,
+            sku: row.sku,
+            quantity: qty,
+            unit_reward_points: unit,
+            line_total: unit * qty,
+            tier: null,
+            source: "base" as const,
+          };
+        });
+        setTierBreakdown(breakdown);
+      }
       setLoading(false);
     })();
   }, [id]);
+
 
   // 付款成功後：自動觸發年費 VIP 升級 hook（冪等；非年費規則不影響流程）
   useEffect(() => {
