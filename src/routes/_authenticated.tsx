@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCurrentCompany } from "@/hooks/use-current-company";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentSessionStatus } from "@/lib/security.functions";
+import { writeClientAuditLog } from "@/lib/audit.functions";
 import { getPortalRouteForRoles, isAdminPortalRole } from "@/lib/roles";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
