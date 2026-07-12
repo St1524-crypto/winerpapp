@@ -68,12 +68,14 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
 import { Route as AuthenticatedCashAdminRouteImport } from './routes/_authenticated/cash-admin'
+import { Route as ShopBundlesIndexRouteImport } from './routes/shop.bundles.index'
 import { Route as ShopAccountIndexRouteImport } from './routes/shop.account.index'
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ShopProductIdRouteImport } from './routes/shop.product.$id'
 import { Route as ShopContentSlugRouteImport } from './routes/shop.content.$slug'
 import { Route as ShopCategorySlugRouteImport } from './routes/shop.category.$slug'
+import { Route as ShopBundlesSlugRouteImport } from './routes/shop.bundles.$slug'
 import { Route as ShopAccountWorkbenchRouteImport } from './routes/shop.account.workbench'
 import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wallet'
 import { Route as ShopAccountVipRouteImport } from './routes/shop.account.vip'
@@ -101,6 +103,7 @@ import { Route as AuthenticatedAdminStorefrontTemplatesRouteImport } from './rou
 import { Route as AuthenticatedAdminShopContentRouteImport } from './routes/_authenticated/admin.shop-content'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
+import { Route as AuthenticatedAdminRepurchaseBundlesRouteImport } from './routes/_authenticated/admin.repurchase-bundles'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
 import { Route as AuthenticatedAdminReferralTreeRouteImport } from './routes/_authenticated/admin.referral-tree'
 import { Route as AuthenticatedAdminQuoteSettingsRouteImport } from './routes/_authenticated/admin.quote-settings'
@@ -439,6 +442,11 @@ const AuthenticatedCashAdminRoute = AuthenticatedCashAdminRouteImport.update({
   path: '/cash-admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ShopBundlesIndexRoute = ShopBundlesIndexRouteImport.update({
+  id: '/bundles/',
+  path: '/bundles/',
+  getParentRoute: () => ShopRoute,
+} as any)
 const ShopAccountIndexRoute = ShopAccountIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -468,6 +476,11 @@ const ShopContentSlugRoute = ShopContentSlugRouteImport.update({
 const ShopCategorySlugRoute = ShopCategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
+  getParentRoute: () => ShopRoute,
+} as any)
+const ShopBundlesSlugRoute = ShopBundlesSlugRouteImport.update({
+  id: '/bundles/$slug',
+  path: '/bundles/$slug',
   getParentRoute: () => ShopRoute,
 } as any)
 const ShopAccountWorkbenchRoute = ShopAccountWorkbenchRouteImport.update({
@@ -619,6 +632,12 @@ const AuthenticatedAdminRoleManagerRoute =
   AuthenticatedAdminRoleManagerRouteImport.update({
     id: '/admin/role-manager',
     path: '/admin/role-manager',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminRepurchaseBundlesRoute =
+  AuthenticatedAdminRepurchaseBundlesRouteImport.update({
+    id: '/admin/repurchase-bundles',
+    path: '/admin/repurchase-bundles',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminReferralsRoute =
@@ -895,6 +914,7 @@ export interface FileRoutesByFullPath {
   '/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
+  '/admin/repurchase-bundles': typeof AuthenticatedAdminRepurchaseBundlesRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
@@ -922,12 +942,14 @@ export interface FileRoutesByFullPath {
   '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
+  '/shop/bundles/$slug': typeof ShopBundlesSlugRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/content/$slug': typeof ShopContentSlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
+  '/shop/bundles/': typeof ShopBundlesIndexRoute
   '/admin/bonuses/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
@@ -1019,6 +1041,7 @@ export interface FileRoutesByTo {
   '/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
+  '/admin/repurchase-bundles': typeof AuthenticatedAdminRepurchaseBundlesRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
@@ -1045,12 +1068,14 @@ export interface FileRoutesByTo {
   '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
+  '/shop/bundles/$slug': typeof ShopBundlesSlugRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/content/$slug': typeof ShopContentSlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/finance': typeof AuthenticatedFinanceIndexRoute
   '/shop/account': typeof ShopAccountIndexRoute
+  '/shop/bundles': typeof ShopBundlesIndexRoute
   '/admin/bonuses/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
@@ -1147,6 +1172,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
   '/_authenticated/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
+  '/_authenticated/admin/repurchase-bundles': typeof AuthenticatedAdminRepurchaseBundlesRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
@@ -1174,12 +1200,14 @@ export interface FileRoutesById {
   '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
   '/shop/account/workbench': typeof ShopAccountWorkbenchRoute
+  '/shop/bundles/$slug': typeof ShopBundlesSlugRoute
   '/shop/category/$slug': typeof ShopCategorySlugRoute
   '/shop/content/$slug': typeof ShopContentSlugRoute
   '/shop/product/$id': typeof ShopProductIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
+  '/shop/bundles/': typeof ShopBundlesIndexRoute
   '/_authenticated/admin/bonuses_/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/_authenticated/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
@@ -1276,6 +1304,7 @@ export interface FileRouteTypes {
     | '/admin/quote-settings'
     | '/admin/referral-tree'
     | '/admin/referrals'
+    | '/admin/repurchase-bundles'
     | '/admin/role-manager'
     | '/admin/security'
     | '/admin/shop-content'
@@ -1303,12 +1332,14 @@ export interface FileRouteTypes {
     | '/shop/account/vip'
     | '/shop/account/wallet'
     | '/shop/account/workbench'
+    | '/shop/bundles/$slug'
     | '/shop/category/$slug'
     | '/shop/content/$slug'
     | '/shop/product/$id'
     | '/admin/'
     | '/finance/'
     | '/shop/account/'
+    | '/shop/bundles/'
     | '/admin/bonuses/vip-detail'
     | '/admin/companies/new'
     | '/admin/operations/assistant'
@@ -1400,6 +1431,7 @@ export interface FileRouteTypes {
     | '/admin/quote-settings'
     | '/admin/referral-tree'
     | '/admin/referrals'
+    | '/admin/repurchase-bundles'
     | '/admin/role-manager'
     | '/admin/security'
     | '/admin/shop-content'
@@ -1426,12 +1458,14 @@ export interface FileRouteTypes {
     | '/shop/account/vip'
     | '/shop/account/wallet'
     | '/shop/account/workbench'
+    | '/shop/bundles/$slug'
     | '/shop/category/$slug'
     | '/shop/content/$slug'
     | '/shop/product/$id'
     | '/admin'
     | '/finance'
     | '/shop/account'
+    | '/shop/bundles'
     | '/admin/bonuses/vip-detail'
     | '/admin/companies/new'
     | '/admin/operations/assistant'
@@ -1527,6 +1561,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/quote-settings'
     | '/_authenticated/admin/referral-tree'
     | '/_authenticated/admin/referrals'
+    | '/_authenticated/admin/repurchase-bundles'
     | '/_authenticated/admin/role-manager'
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/shop-content'
@@ -1554,12 +1589,14 @@ export interface FileRouteTypes {
     | '/shop/account/vip'
     | '/shop/account/wallet'
     | '/shop/account/workbench'
+    | '/shop/bundles/$slug'
     | '/shop/category/$slug'
     | '/shop/content/$slug'
     | '/shop/product/$id'
     | '/_authenticated/admin/'
     | '/_authenticated/finance/'
     | '/shop/account/'
+    | '/shop/bundles/'
     | '/_authenticated/admin/bonuses_/vip-detail'
     | '/_authenticated/admin/companies/new'
     | '/_authenticated/admin/operations/assistant'
@@ -2028,6 +2065,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCashAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/shop/bundles/': {
+      id: '/shop/bundles/'
+      path: '/bundles'
+      fullPath: '/shop/bundles/'
+      preLoaderRoute: typeof ShopBundlesIndexRouteImport
+      parentRoute: typeof ShopRoute
+    }
     '/shop/account/': {
       id: '/shop/account/'
       path: '/'
@@ -2068,6 +2112,13 @@ declare module '@tanstack/react-router' {
       path: '/category/$slug'
       fullPath: '/shop/category/$slug'
       preLoaderRoute: typeof ShopCategorySlugRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/shop/bundles/$slug': {
+      id: '/shop/bundles/$slug'
+      path: '/bundles/$slug'
+      fullPath: '/shop/bundles/$slug'
+      preLoaderRoute: typeof ShopBundlesSlugRouteImport
       parentRoute: typeof ShopRoute
     }
     '/shop/account/workbench': {
@@ -2257,6 +2308,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/role-manager'
       fullPath: '/admin/role-manager'
       preLoaderRoute: typeof AuthenticatedAdminRoleManagerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/repurchase-bundles': {
+      id: '/_authenticated/admin/repurchase-bundles'
+      path: '/admin/repurchase-bundles'
+      fullPath: '/admin/repurchase-bundles'
+      preLoaderRoute: typeof AuthenticatedAdminRepurchaseBundlesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/referrals': {
@@ -2641,6 +2699,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminQuoteSettingsRoute: typeof AuthenticatedAdminQuoteSettingsRoute
   AuthenticatedAdminReferralTreeRoute: typeof AuthenticatedAdminReferralTreeRoute
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
+  AuthenticatedAdminRepurchaseBundlesRoute: typeof AuthenticatedAdminRepurchaseBundlesRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedAdminShopContentRoute: typeof AuthenticatedAdminShopContentRoute
@@ -2707,6 +2766,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminQuoteSettingsRoute: AuthenticatedAdminQuoteSettingsRoute,
   AuthenticatedAdminReferralTreeRoute: AuthenticatedAdminReferralTreeRoute,
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
+  AuthenticatedAdminRepurchaseBundlesRoute:
+    AuthenticatedAdminRepurchaseBundlesRoute,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
   AuthenticatedAdminShopContentRoute: AuthenticatedAdminShopContentRoute,
@@ -2816,9 +2877,11 @@ interface ShopRouteChildren {
   ShopVipRoute: typeof ShopVipRoute
   ShopWholesaleRoute: typeof ShopWholesaleRoute
   ShopIndexRoute: typeof ShopIndexRoute
+  ShopBundlesSlugRoute: typeof ShopBundlesSlugRoute
   ShopCategorySlugRoute: typeof ShopCategorySlugRoute
   ShopContentSlugRoute: typeof ShopContentSlugRoute
   ShopProductIdRoute: typeof ShopProductIdRoute
+  ShopBundlesIndexRoute: typeof ShopBundlesIndexRoute
 }
 
 const ShopRouteChildren: ShopRouteChildren = {
@@ -2832,9 +2895,11 @@ const ShopRouteChildren: ShopRouteChildren = {
   ShopVipRoute: ShopVipRoute,
   ShopWholesaleRoute: ShopWholesaleRoute,
   ShopIndexRoute: ShopIndexRoute,
+  ShopBundlesSlugRoute: ShopBundlesSlugRoute,
   ShopCategorySlugRoute: ShopCategorySlugRoute,
   ShopContentSlugRoute: ShopContentSlugRoute,
   ShopProductIdRoute: ShopProductIdRoute,
+  ShopBundlesIndexRoute: ShopBundlesIndexRoute,
 }
 
 const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)

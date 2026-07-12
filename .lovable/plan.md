@@ -1,83 +1,73 @@
-# 合作申請功能實作計畫
+## 復購優惠套組 規劃
 
-## 資料表 (migration)
+### 功能目標
+建立「復購優惠套組」：管理員可將多項商品＋數量組合成套組，設定整組價格與整組獎勵點。會員於購物車/結帳時以套組為單位加入，結帳時整組發放獎勵點（不再逐商品計算）。
 
-建立 `cooperation_applications` 表：
-- 欄位依規格書（application_type、公司/個人資料、聯絡方式、sales_channels/interested_topics 陣列、status、admin_note、時間戳）
-- `status` 預設 `pending`，允許 pending/contacted/approved/rejected/archived
-- 加 `honeypot` 欄位不入 DB（僅前端阻擋）
-- GRANT：
-  - `INSERT` TO anon, authenticated（讓任何人可送出）
-  - `SELECT/UPDATE` TO authenticated（後台 admin 用；由 RLS 限制）
-  - `ALL` TO service_role
-- RLS：
-  - Insert：anon + authenticated 皆可（欄位驗證交給 server function）
-  - Select/Update：僅 `has_role(auth.uid(),'admin')` 或 `super_admin`
-  - 無 DELETE 政策（規格要求不刪除）
-- `updated_at` 觸發器沿用現有 `update_updated_at_column()`
+### 資料模型（新增 2 張表）
 
-## 前台
+**`repurchase_bundles`** — 套組主檔
+- `name` 套組名稱
+- `slug` 網址代稱（唯一）
+- `description` 說明
+- `cover_image` 封面圖
+- `bundle_price` 套組售價（整組價，會員實付）
+- `bundle_reward_points` 整組發放獎勵點
+- `visibility` `all` / `vip` / `dealer`（誰可購買）
+- `status` `active` / `inactive` / `draft`
+- `start_at` / `end_at` 上下架時間（可空）
+- `max_per_order` 單筆訂單最多可買組數（可空＝不限）
+- `sort_order`
 
-**路由 `/cooperation/apply`** (`src/routes/cooperation.apply.tsx`)：
-- Head/SEO metadata
-- 標題「與源晶生技合作」+ 副標
-- 三張卡片切換申請類型（dealer/reseller/vip）
-- 依類型動態顯示對應欄位（React Hook Form + zod 驗證）
-- Honeypot 隱藏欄位 `website_url`（bots 常填）
-- 必填：姓名/聯絡人、電話、Email、type
-- Submit 呼叫 server function `submitCooperationApplication`
-- 成功顯示：「申請已送出，源晶團隊將儘快與您聯繫。」
+**`repurchase_bundle_items`** — 套組明細
+- `bundle_id` FK → repurchase_bundles
+- `product_id` FK → products
+- `quantity` 該商品在套組內的件數
+- `sort_order`
+- Unique(`bundle_id`, `product_id`)
 
-**首頁入口**：在 `src/routes/shop.index.tsx`（或 shop layout 已有的位置）加「合作申請」按鈕，`Link to="/cooperation/apply"`。
+RLS：
+- `authenticated` 讀 `status=active` 且在有效期內＋依 visibility 篩選
+- `anon` 讀公開套組（`visibility=all`）
+- 管理員（super_admin / admin / finance）完整 CRUD
 
-## Server function
+GRANT + `service_role` ALL 依專案慣例。
 
-**檔案** `src/lib/cooperation.functions.ts`：
+### 結帳與獎勵點邏輯（修改 `applyOrderPoints`）
 
-1. `submitCooperationApplication`（公開，無 auth 中介層）
-   - zod 驗證輸入 + honeypot 檢查（若填了直接回成功但不寫入）
-   - 用 server publishable client 或直接 handler 內動態 import supabaseAdmin 插入
-   - 呼叫 email 通知（見下）
-   - 回傳 `{ ok: true }`
+訂單項需能標記「屬於哪個套組」。做法：
+- `sales_order_items` 已存在，新增可空欄位 `bundle_id`（FK）與 `bundle_line_key`（同一組實例的識別，例如 `${bundle_id}:${nth}`）。
+- 加入購物車時，套組會展開成多筆 `sales_order_items` 並帶上 `bundle_id` + `bundle_line_key`；單品訂單項 `bundle_id` 為 NULL，走現有階梯邏輯。
 
-2. `listCooperationApplications`、`updateCooperationApplication`
-   - `.middleware([requireSupabaseAuth])`
-   - handler 內先 `has_role` 驗 admin/super_admin，非 admin 丟錯
-   - 支援 type/status filter、更新 status / admin_note
+`applyOrderPoints` 的 `rewardEarn` 計算調整為：
+1. 先將訂單品項依 `bundle_line_key` 分組。
+2. 每組（＝一份套組實例）→ 加上 `bundle_reward_points`（從 `repurchase_bundles` 讀）。
+3. 未帶 `bundle_id` 的品項 → 沿用現有階梯 / `products.reward_points` 計算。
+4. 買家為有效 VIP → 入自己；否則走現有推薦人分配（不變）。
 
-## Email 通知
+訂單詳情頁的「階梯計算明細」新增區塊：顯示各套組（套組名、份數、每組獎勵點、小計），與單品階梯明細並列。
 
-專案目前 **只有 email queue processor**，沒有 transactional send route 或 template registry。依規格「如果沒有，先建立 server function stub，回報需要設定 email provider，不要硬寫假寄信」：
+### 管理與前台頁面
 
-- 建立 `src/lib/cooperation-email.server.ts` 內 `notifyAdminOfApplication(app)` stub
-- 使用 `console.info` 記錄摘要 + TODO 註解說明尚未串接
-- 不呼叫 `sendLovableEmail`、不假造 send
-- 在回報中請使用者若需真正寄信，執行 email 網域設定 + `scaffold_transactional_email`
+- 管理端：`/_authenticated/admin.repurchase-bundles.tsx`（列表 + 新增/編輯 dialog：基本資料、加入商品明細、售價、獎勵點、可見性、上下架期間）。
+- 前台：`/shop.bundles.index.tsx`（清單）、`/shop.bundles.$slug.tsx`（詳情＋「加入購物車」）。
+- 加入購物車：cart 需支援「套組列」（groupKey）。最小改動＝在 `cart_items` 新增 `bundle_id` + `bundle_line_key` 兩欄，UI 以 `bundle_line_key` 聚合顯示為一組，數量以「組」為單位增減；結帳時原樣落到 `sales_order_items`。
 
-## 管理員後台
+### 伺服器函式（`src/lib/repurchase-bundles.functions.ts`）
+- `listBundles`（公開，僅回 active 且符合可見性）
+- `getBundleBySlug`（公開）
+- `adminListBundles` / `adminUpsertBundle` / `adminDeleteBundle`（admin）
+- `addBundleToCart({ bundleId, quantity })`：展開 items、寫入 `bundle_line_key`
+- `removeBundleFromCart({ bundleLineKey })`
 
-**路由 `/admin/cooperation-applications`**  
-（`src/routes/_authenticated/admin.cooperation-applications.tsx`）：
-- `_authenticated` 已由 layout gate；元件內以 `useAuth` 檢查 `admin`/`super_admin`，非授權顯示 `ForbiddenScreen`
-- 表格 + 篩選（type、status）
-- 詳情 Dialog：完整欄位 + 狀態下拉 + admin_note 文字區 + 儲存
-- 「封存」＝將 status 設為 archived（無刪除鈕）
-- 資料透過 `useQuery` 呼叫 `listCooperationApplications`
+### 交付步驟
+1. Migration：兩張新表 + `sales_order_items.bundle_id/bundle_line_key` + `cart_items.bundle_id/bundle_line_key` + RLS + GRANT。
+2. Server functions（上述清單）。
+3. 管理頁（CRUD + 明細編輯）。
+4. 前台清單 / 詳情 / 加入購物車 UI；購物車與結帳以「組」呈現。
+5. 修改 `applyOrderPoints`：套組發整組點、單品沿用階梯。
+6. 訂單詳情頁：新增「套組獎勵明細」區塊。
 
-## 安全
-
-- Service role 僅 server 端動態 import
-- Honeypot 前後端雙檢
-- Server function 驗證 zod schema、限制字串長度
-- Email 及後台密鑰未暴露前端
-- Admin 端點以 `requireSupabaseAuth` + role 檢查雙層保護
-- 不影響會員/訂單/獎金/VIP 等既有表
-
-## 驗證
-
-- 建置由 harness 自動跑
-- routeTree.gen.ts 自動生成，不手動編輯
-
-## 完成回報
-
-- migration 檔名、修改檔案清單、新路由、新表、Email 狀態（stub + 需求）、build 結果
+### 待確認
+- 套組內某商品缺貨時：整組不可下單 vs 逐品扣庫存但整組出貨？（建議整組不可下單）
+- 套組是否允許與折扣點/購物點折抵並用？（建議允許，但折抵不影響 `bundle_reward_points` 發放）
+- 套組價與階梯價衝突：套組一律用 `bundle_price`，忽略單品階梯（建議）

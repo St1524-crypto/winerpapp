@@ -4,6 +4,8 @@ export interface CartItem {
   product_id: string;
   quantity: number;
   created_at: string;
+  bundle_id?: string | null;
+  bundle_line_key?: string | null;
   product?: {
     id: string;
     name: string;

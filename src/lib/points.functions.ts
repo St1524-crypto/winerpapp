@@ -205,10 +205,14 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
       if (!dup) {
         const { data: items } = await supabaseAdmin
           .from("sales_order_items")
-          .select("product_id, quantity")
+          .select("product_id, quantity, bundle_id, bundle_line_key")
           .eq("sales_order_id", data.orderId);
-        const productIds = Array.from(new Set((items ?? []).map((i: any) => i.product_id).filter(Boolean)));
+        // 分成 [套組列] 與 [非套組列]
+        const bundleRows = (items ?? []).filter((i: any) => i.bundle_id);
+        const soloRows = (items ?? []).filter((i: any) => !i.bundle_id);
+        const productIds = Array.from(new Set(soloRows.map((i: any) => i.product_id).filter(Boolean)));
         let rewardEarn = 0;
+        // ---- 非套組：沿用單品階梯／基礎每件獎勵點 ----
         if (productIds.length > 0) {
           const { data: prods } = await supabaseAdmin
             .from("products")
@@ -217,9 +221,6 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
           const baseRewardMap = new Map<string, number>(
             (prods ?? []).map((p: any) => [p.id, Number(p.reward_points ?? 0)]),
           );
-          // 讀取階梯設定：依「本行件數」落在哪個 [min_qty, max_qty] 區間，
-          // 使用該階梯的 unit_reward_points 發放；若該商品無階梯或本行件數不落於任何階梯，
-          // 則退回 products.reward_points（基礎每件獎勵點）。
           const { data: tiersData } = await supabaseAdmin
             .from("product_wholesale_tiers")
             .select("product_id, min_qty, max_qty, unit_reward_points")
@@ -236,7 +237,7 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
             });
             tiersMap.set(pid, arr);
           }
-          for (const it of items ?? []) {
+          for (const it of soloRows) {
             const pid = (it as any).product_id as string | null;
             const qty = Number((it as any).quantity ?? 0);
             if (!pid || qty <= 0) continue;
@@ -246,7 +247,6 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
             );
             let unitReward: number;
             if (matched.length > 0) {
-              // 多階梯符合時取每件獎勵點最高者（對買家最有利，與階梯價格「最低單價」概念一致）
               unitReward = matched.reduce(
                 (best, cur) => (cur.unit_reward_points > best ? cur.unit_reward_points : best),
                 0,
@@ -255,6 +255,46 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
               unitReward = baseRewardMap.get(pid) ?? 0;
             }
             rewardEarn += unitReward * qty;
+          }
+        }
+        // ---- 套組：依 bundle_id 分組，整組發放 bundle_reward_points × 組數 ----
+        if (bundleRows.length > 0) {
+          const bundleIds = Array.from(new Set(bundleRows.map((r: any) => r.bundle_id as string)));
+          const [{ data: bundles }, { data: bItems }] = await Promise.all([
+            supabaseAdmin.from("repurchase_bundles").select("id, bundle_reward_points").in("id", bundleIds),
+            supabaseAdmin.from("repurchase_bundle_items").select("bundle_id, product_id, quantity").in("bundle_id", bundleIds),
+          ]);
+          const bundleRewardMap = new Map<string, number>(
+            (bundles ?? []).map((b: any) => [b.id, Number(b.bundle_reward_points ?? 0)]),
+          );
+          const perBundleQtyMap = new Map<string, Map<string, number>>();
+          for (const bi of (bItems ?? []) as any[]) {
+            const bid = bi.bundle_id as string;
+            const m = perBundleQtyMap.get(bid) ?? new Map<string, number>();
+            m.set(bi.product_id as string, Number(bi.quantity ?? 0));
+            perBundleQtyMap.set(bid, m);
+          }
+          // 依 bundle_id 分組本訂單的套組列，計算「組數」= 每個成員商品 (下單件數 / 每組件數) 的最小值
+          const rowsByBundle = new Map<string, Array<{ product_id: string; quantity: number }>>();
+          for (const r of bundleRows as any[]) {
+            const bid = r.bundle_id as string;
+            const arr = rowsByBundle.get(bid) ?? [];
+            arr.push({ product_id: r.product_id as string, quantity: Number(r.quantity ?? 0) });
+            rowsByBundle.set(bid, arr);
+          }
+          for (const [bid, rows] of rowsByBundle) {
+            const perMap = perBundleQtyMap.get(bid);
+            const unitReward = bundleRewardMap.get(bid) ?? 0;
+            if (!perMap || perMap.size === 0 || unitReward <= 0) continue;
+            let copies = Number.POSITIVE_INFINITY;
+            for (const [pid, need] of perMap) {
+              const ordered = rows.filter((r) => r.product_id === pid).reduce((s, r) => s + r.quantity, 0);
+              if (need <= 0) continue;
+              copies = Math.min(copies, Math.floor(ordered / need));
+            }
+            if (Number.isFinite(copies) && copies > 0) {
+              rewardEarn += unitReward * copies;
+            }
           }
         }
         if (rewardEarn > 0) {

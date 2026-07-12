@@ -31,6 +31,13 @@ function OrderDetail() {
     tier: { min_qty: number; max_qty: number | null } | null;
     source: "tier" | "base";
   }>>([]);
+  const [bundleBreakdown, setBundleBreakdown] = useState<Array<{
+    bundle_id: string;
+    bundle_name: string;
+    copies: number;
+    unit_reward_points: number;
+    line_total: number;
+  }>>([]);
   const [loading, setLoading] = useState(true);
   const upgradeTriggered = useRef(false);
   const rewardBackfillTriggered = useRef(false);
@@ -39,7 +46,7 @@ function OrderDetail() {
     (async () => {
       const [{ data: o }, { data: it }, { data: rt }] = await Promise.all([
         supabase.from("sales_orders").select("*").eq("id", id).maybeSingle(),
-        supabase.from("sales_order_items").select("*").eq("sales_order_id", id),
+        supabase.from("sales_order_items").select("*, bundle_id, bundle_line_key").eq("sales_order_id", id),
         supabase
           .from("point_transactions")
           .select("amount, source, note")
@@ -48,12 +55,15 @@ function OrderDetail() {
           .eq("point_type", "reward"),
       ]);
       setOrder(o as SalesOrder | null);
-      const itemRows = (it ?? []) as SalesOrderItem[];
-      setItems(itemRows);
+      const itemRows = (it ?? []) as any[];
+      setItems(itemRows as SalesOrderItem[]);
       setRewardTx((rt ?? []) as any[]);
 
-      // 讀取階梯設定與基礎獎勵點以顯示本單計算明細（與伺服器發放邏輯一致）
-      const productIds = Array.from(new Set(itemRows.map((i: any) => i.product_id).filter(Boolean))) as string[];
+      const soloRows = itemRows.filter((r) => !r.bundle_id);
+      const bundleRows = itemRows.filter((r) => r.bundle_id);
+
+      // 讀取階梯設定與基礎獎勵點以顯示本單計算明細（僅非套組列）
+      const productIds = Array.from(new Set(soloRows.map((i: any) => i.product_id).filter(Boolean))) as string[];
       if (productIds.length > 0) {
         const [{ data: prods }, { data: tiersData }] = await Promise.all([
           supabase.from("products").select("id, reward_points").in("id", productIds),
@@ -74,7 +84,7 @@ function OrderDetail() {
           });
           tiersMap.set(t.product_id, arr);
         }
-        const breakdown = itemRows.map((row: any) => {
+        const breakdown = soloRows.map((row: any) => {
           const pid = row.product_id as string | null;
           const qty = Number(row.quantity ?? 0);
           const tiers = pid ? tiersMap.get(pid) ?? [] : [];
@@ -105,6 +115,51 @@ function OrderDetail() {
           };
         });
         setTierBreakdown(breakdown);
+      }
+
+      // 套組獎勵明細
+      if (bundleRows.length > 0) {
+        const bundleIds = Array.from(new Set(bundleRows.map((r: any) => r.bundle_id as string)));
+        const [{ data: bundles }, { data: bItems }] = await Promise.all([
+          supabase.from("repurchase_bundles").select("id, name, bundle_reward_points").in("id", bundleIds),
+          supabase.from("repurchase_bundle_items").select("bundle_id, product_id, quantity").in("bundle_id", bundleIds),
+        ]);
+        const bMap = new Map<string, { name: string; unit: number }>(
+          (bundles ?? []).map((b: any) => [b.id, { name: b.name, unit: Number(b.bundle_reward_points ?? 0) }]),
+        );
+        const perQty = new Map<string, Map<string, number>>();
+        for (const bi of (bItems ?? []) as any[]) {
+          const m = perQty.get(bi.bundle_id) ?? new Map<string, number>();
+          m.set(bi.product_id, Number(bi.quantity ?? 0));
+          perQty.set(bi.bundle_id, m);
+        }
+        const grouped = new Map<string, Array<{ product_id: string; quantity: number }>>();
+        for (const r of bundleRows as any[]) {
+          const arr = grouped.get(r.bundle_id) ?? [];
+          arr.push({ product_id: r.product_id, quantity: Number(r.quantity ?? 0) });
+          grouped.set(r.bundle_id, arr);
+        }
+        const out: Array<{ bundle_id: string; bundle_name: string; copies: number; unit_reward_points: number; line_total: number }> = [];
+        for (const [bid, rows] of grouped) {
+          const info = bMap.get(bid);
+          const per = perQty.get(bid);
+          if (!info || !per) continue;
+          let copies = Number.POSITIVE_INFINITY;
+          for (const [pid, need] of per) {
+            const ordered = rows.filter((r) => r.product_id === pid).reduce((s, r) => s + r.quantity, 0);
+            if (need <= 0) continue;
+            copies = Math.min(copies, Math.floor(ordered / need));
+          }
+          if (!Number.isFinite(copies) || copies <= 0) copies = 0;
+          out.push({
+            bundle_id: bid,
+            bundle_name: info.name,
+            copies,
+            unit_reward_points: info.unit,
+            line_total: info.unit * copies,
+          });
+        }
+        setBundleBreakdown(out);
       }
       setLoading(false);
     })();
@@ -353,6 +408,53 @@ function OrderDetail() {
               </div>
             </>
           )}
+
+          {bundleBreakdown.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <div className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                  <Gift className="h-4 w-4 text-amber-500" />本單套組獎勵明細
+                </div>
+                <div className="rounded-lg border border-border/60 overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/40 text-muted-foreground">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium">套組</th>
+                        <th className="text-right px-3 py-2 font-medium">組數</th>
+                        <th className="text-right px-3 py-2 font-medium">每組獎勵點</th>
+                        <th className="text-right px-3 py-2 font-medium">小計</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bundleBreakdown.map((b) => (
+                        <tr key={b.bundle_id} className="border-t border-border/40">
+                          <td className="px-3 py-2 font-medium">{b.bundle_name}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{b.copies}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{b.unit_reward_points}</td>
+                          <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-500">
+                            {b.line_total.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-border/60 bg-muted/30">
+                        <td colSpan={3} className="px-3 py-2 text-right font-medium">套組獎勵總計</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-500">
+                          {bundleBreakdown.reduce((s, b) => s + b.line_total, 0).toLocaleString()} 點
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
+                  規則：套組以整組為單位計算，每組發放固定 bundle_reward_points；組數 = 每項成員商品下單件數 ÷ 每組件數，取最小整數。
+                </p>
+              </div>
+            </>
+          )}
+
 
 
 
