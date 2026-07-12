@@ -229,7 +229,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const bid = (i as any).bundle_id as string | undefined;
     if (bid && bundleMap[bid]) {
       const info = bundleMap[bid];
-      const base = info.productBase[i.product_id] ?? Number(getEffectivePrice(i.product as any, isDealer)) || 0;
+      const base = info.productBase[i.product_id] ?? (Number(getEffectivePrice(i.product as any, isDealer)) || 0);
       if (info.baseSum > 0) {
         return Math.round(base * (info.price / info.baseSum));
       }
