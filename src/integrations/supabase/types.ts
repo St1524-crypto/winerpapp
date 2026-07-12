@@ -2150,6 +2150,42 @@ export type Database = {
           },
         ]
       }
+      guest_signup_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          ip: string | null
+          phone: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          ip?: string | null
+          phone: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          ip?: string | null
+          phone?: string
+        }
+        Relationships: []
+      }
       homepage_featured_products: {
         Row: {
           company_id: string | null
@@ -6448,6 +6484,10 @@ export type Database = {
       }
     }
     Functions: {
+      adjust_cash_balance: {
+        Args: { _delta: number; _user_id: string }
+        Returns: number
+      }
       calc_business_bonus_release: {
         Args: { _bonus_amount: number; _member_id: string; _tier_code: string }
         Returns: {
@@ -6499,6 +6539,10 @@ export type Database = {
           pool_id: string
           status: string
         }[]
+      }
+      check_guest_signup_rate_limit: {
+        Args: { _ip: string; _phone: string }
+        Returns: undefined
       }
       create_sales_order_with_items: {
         Args: { _items: Json; _order: Json; _payments?: Json }
@@ -6865,6 +6909,18 @@ export type Database = {
         Returns: Json
       }
       slugify_company_name: { Args: { _name: string }; Returns: string }
+      spend_cash_balance: {
+        Args: { _amount: number; _user_id: string }
+        Returns: number
+      }
+      spend_shopping_points: {
+        Args: { _amount: number; _user_id: string }
+        Returns: number
+      }
+      verify_guest_signup_otp: {
+        Args: { _code_hash: string; _email: string; _phone: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:
