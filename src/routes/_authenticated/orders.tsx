@@ -2101,6 +2101,11 @@ function OrderDetailDialog({
   const items = detailQ.data?.items ?? [];
   const payments = detailQ.data?.payments ?? [];
   const pointPayments = (detailQ.data?.pointPayments ?? []) as any[];
+  const rewardEarnRows = (detailQ.data?.rewardEarn ?? []) as any[];
+  const rewardPointsIssued = rewardEarnRows.reduce(
+    (s: number, r: any) => s + Number(r.amount ?? 0),
+    0,
+  );
 
   // 點數付款分錄篩選 / 排序
   const [ppFrom, setPpFrom] = useState<string>("");
