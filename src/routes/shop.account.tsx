@@ -35,16 +35,20 @@ function AccountLayout() {
 
   useEffect(() => {
     if (!user) { setVipTier(null); return; }
-    supabase
-      .from("profiles")
-      .select("vip_tier,is_vip")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        const tier = (data?.vip_tier as string | null) || null;
-        setVipTier(tier || (data?.is_vip ? "VIP" : "一般會員"));
-      });
+    (async () => {
+      const [{ data: tierStatus }, { data: profile }] = await Promise.all([
+        supabase.from("dealer_tier_status").select("current_tier").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profiles").select("vip_tier,is_vip,legacy_rank").eq("id", user.id).maybeSingle(),
+      ]);
+      const tier =
+        (tierStatus?.current_tier as string | null) ||
+        (profile?.vip_tier as string | null) ||
+        (profile?.legacy_rank as string | null) ||
+        (profile?.is_vip ? "VIP" : "一般會員");
+      setVipTier(tier);
+    })();
   }, [user?.id]);
+
 
   if (loading || !user) {
     return (
