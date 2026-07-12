@@ -199,7 +199,7 @@ function CheckoutPage() {
 
       await clear();
       toast.success(`訂單建立成功：${order_no}`);
-      navigate({ to: "/shop/account/orders/$id", params: { id: orderId } });
+      navigate({ to: "/shop/checkout/success/$id", params: { id: orderId } });
 
     } catch (e: any) {
       toast.error(formatCheckoutPointPaymentError(e));
