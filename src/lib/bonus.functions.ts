@@ -1572,8 +1572,8 @@ export const listMemberBonusDetails = createServerFn({ method: "POST" })
     if (data.status) q = q.eq("status", data.status);
     if (data.settlementBatchId) q = q.eq("settlement_batch_id", data.settlementBatchId);
     if (memberIdFilter) q = q.in("member_id", memberIdFilter);
-    if (data.dateFrom) q = q.gte("created_at", `${data.dateFrom}T00:00:00Z`);
-    if (data.dateTo) q = q.lte("created_at", `${data.dateTo}T23:59:59Z`);
+    if (data.dateFrom) q = q.gte("settlement_date", data.dateFrom);
+    if (data.dateTo) q = q.lte("settlement_date", data.dateTo);
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
