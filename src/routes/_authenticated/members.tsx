@@ -60,14 +60,16 @@ function Page() {
 
   useEffect(() => {
     const code = form.referrerMemberNo.trim();
-    if (!code) { setReferrerLookup({ code: "", name: null, status: "idle" }); setReferrerCandidates([]); return; }
+    if (!code) { setReferrerLookup({ code: "", name: null, tier: null, status: "idle" }); setReferrerCandidates([]); return; }
     let cancelled = false;
     setReferrerLookup((prev) => ({ ...prev, code, status: "loading" }));
     const t = setTimeout(async () => {
       const { data: exact } = await supabase.from("profiles").select("id, name, member_no, phone").eq("member_no", code).maybeSingle();
       if (cancelled) return;
       if (exact) {
-        setReferrerLookup({ code, name: (exact as any).name ?? null, status: "found" });
+        const { data: ts } = await supabase.from("dealer_tier_status").select("current_tier").eq("user_id", (exact as any).id).maybeSingle();
+        if (cancelled) return;
+        setReferrerLookup({ code, name: (exact as any).name ?? null, tier: (ts as any)?.current_tier ?? null, status: "found" });
         setReferrerCandidates([]);
         return;
       }
@@ -80,8 +82,15 @@ function Page() {
         .limit(8);
       if (cancelled) return;
       const list = ((fuzzy as any[]) ?? []) as { id: string; name: string | null; member_no: string | null; phone: string | null }[];
-      setReferrerCandidates(list);
-      setReferrerLookup({ code, name: null, status: "notfound" });
+      const ids = list.map((r) => r.id);
+      const tierMap = new Map<string, string>();
+      if (ids.length > 0) {
+        const { data: tiers } = await supabase.from("dealer_tier_status").select("user_id, current_tier").in("user_id", ids);
+        (tiers ?? []).forEach((t: any) => { if (t.current_tier) tierMap.set(t.user_id, t.current_tier); });
+      }
+      if (cancelled) return;
+      setReferrerCandidates(list.map((r) => ({ ...r, tier: tierMap.get(r.id) ?? null })));
+      setReferrerLookup({ code, name: null, tier: null, status: "notfound" });
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
   }, [form.referrerMemberNo]);
