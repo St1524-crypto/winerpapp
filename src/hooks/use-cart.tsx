@@ -225,6 +225,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const getItemUnitPrice = (i: CartItem) => {
+    // 套組列：以 bundle_price 依基礎單價比例分攤，忽略單品階梯
+    const bid = (i as any).bundle_id as string | undefined;
+    if (bid && bundleMap[bid]) {
+      const info = bundleMap[bid];
+      const base = info.productBase[i.product_id] ?? Number(getEffectivePrice(i.product as any, isDealer)) || 0;
+      if (info.baseSum > 0) {
+        return Math.round(base * (info.price / info.baseSum));
+      }
+      // fallback: 平均分攤
+      const totalUnits = Object.values(info.itemsPerSet).reduce((s, q) => s + q, 0);
+      return totalUnits > 0 ? Math.round(info.price / totalUnits) : 0;
+    }
     const base = getEffectivePrice(i.product as any, isDealer);
     const tiers = tiersMap[i.product_id] ?? [];
     return applyWholesalePricing(base, 0, tiers, i.quantity).unitPrice;
