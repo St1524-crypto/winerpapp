@@ -134,6 +134,8 @@ function CheckoutPage() {
           unit_price: unit,
           quantity: it.quantity,
           subtotal: unit * it.quantity,
+          bundle_id: (it as any).bundle_id ?? null,
+          bundle_line_key: (it as any).bundle_line_key ?? null,
         };
       });
 
