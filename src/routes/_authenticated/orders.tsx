@@ -2139,6 +2139,20 @@ function OrderDetailDialog({
     return Array.from(s);
   }, [pointPayments]);
 
+  // 分頁
+  const [ppPageSize, setPpPageSize] = useState<number>(10);
+  const [ppPage, setPpPage] = useState<number>(1);
+  const ppTotalPages = Math.max(1, Math.ceil(filteredPointPayments.length / ppPageSize));
+  useEffect(() => {
+    if (ppPage > ppTotalPages) setPpPage(1);
+  }, [ppPage, ppTotalPages]);
+  useEffect(() => { setPpPage(1); }, [ppFrom, ppTo, ppType, ppStatus, ppSort, ppPageSize]);
+  const pagedPointPayments = useMemo(
+    () => filteredPointPayments.slice((ppPage - 1) * ppPageSize, ppPage * ppPageSize),
+    [filteredPointPayments, ppPage, ppPageSize],
+  );
+
+
 
 
   // 載入 VIP 升級套組贈品（依訂單品項中 anchor product_id 對應）
