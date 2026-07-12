@@ -189,7 +189,7 @@ function OrderDetail() {
                   if (ref) {
                     return (
                       <div className="pt-1 text-[11px] text-muted-foreground leading-relaxed">
-                        {ref.note ?? "本次獎勵點依復購位階制度發放至推薦人現金餘額。"}
+                        {ref.note ?? "本次獎勵點依復購位階制度發放至推薦人獎勵點錢包（依營業分紅比例與 VIP 升級分紅上限）。"}
                       </div>
                     );
                   }
