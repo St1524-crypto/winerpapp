@@ -965,6 +965,8 @@ export type Database = {
       }
       cart_items: {
         Row: {
+          bundle_id: string | null
+          bundle_line_key: string | null
           cart_id: string
           created_at: string
           id: string
@@ -972,6 +974,8 @@ export type Database = {
           quantity: number
         }
         Insert: {
+          bundle_id?: string | null
+          bundle_line_key?: string | null
           cart_id: string
           created_at?: string
           id?: string
@@ -979,6 +983,8 @@ export type Database = {
           quantity?: number
         }
         Update: {
+          bundle_id?: string | null
+          bundle_line_key?: string | null
           cart_id?: string
           created_at?: string
           id?: string
@@ -986,6 +992,13 @@ export type Database = {
           quantity?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "cart_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "repurchase_bundles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cart_items_cart_id_fkey"
             columns: ["cart_id"]
@@ -4456,6 +4469,105 @@ export type Database = {
         }
         Relationships: []
       }
+      repurchase_bundle_items: {
+        Row: {
+          bundle_id: string
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          sort_order: number
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity: number
+          sort_order?: number
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repurchase_bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "repurchase_bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repurchase_bundle_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      repurchase_bundles: {
+        Row: {
+          bundle_price: number
+          bundle_reward_points: number
+          cover_image: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_at: string | null
+          id: string
+          max_per_order: number | null
+          name: string
+          slug: string
+          sort_order: number
+          start_at: string | null
+          status: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          bundle_price?: number
+          bundle_reward_points?: number
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          max_per_order?: number | null
+          name: string
+          slug: string
+          sort_order?: number
+          start_at?: string | null
+          status?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          bundle_price?: number
+          bundle_reward_points?: number
+          cover_image?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_at?: string | null
+          id?: string
+          max_per_order?: number | null
+          name?: string
+          slug?: string
+          sort_order?: number
+          start_at?: string | null
+          status?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: []
+      }
       retail_reward_splits: {
         Row: {
           base_reward_points: number
@@ -4593,6 +4705,8 @@ export type Database = {
       }
       sales_order_items: {
         Row: {
+          bundle_id: string | null
+          bundle_line_key: string | null
           company_id: string
           created_at: string
           id: string
@@ -4611,6 +4725,8 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          bundle_id?: string | null
+          bundle_line_key?: string | null
           company_id: string
           created_at?: string
           id?: string
@@ -4629,6 +4745,8 @@ export type Database = {
           unit_price?: number
         }
         Update: {
+          bundle_id?: string | null
+          bundle_line_key?: string | null
           company_id?: string
           created_at?: string
           id?: string
@@ -4647,6 +4765,13 @@ export type Database = {
           unit_price?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "sales_order_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "repurchase_bundles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sales_order_items_company_id_fkey"
             columns: ["company_id"]
