@@ -137,6 +137,7 @@ import { Route as AuthenticatedAdminOperationsAttendanceRouteImport } from './ro
 import { Route as AuthenticatedAdminOperationsAssistantRouteImport } from './routes/_authenticated/admin.operations.assistant'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 import { Route as AuthenticatedAdminBonusesVipDetailRouteImport } from './routes/_authenticated/admin.bonuses_.vip-detail'
+import { Route as AuthenticatedAdminBonusesMemberDetailsRouteImport } from './routes/_authenticated/admin.bonuses.member-details'
 import { Route as AuthenticatedAdminBonusesBatchesBatchIdRouteImport } from './routes/_authenticated/admin.bonuses.batches.$batchId'
 
 const VendorRoute = VendorRouteImport.update({
@@ -835,6 +836,12 @@ const AuthenticatedAdminBonusesVipDetailRoute =
     path: '/admin/bonuses/vip-detail',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminBonusesMemberDetailsRoute =
+  AuthenticatedAdminBonusesMemberDetailsRouteImport.update({
+    id: '/member-details',
+    path: '/member-details',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
 const AuthenticatedAdminBonusesBatchesBatchIdRoute =
   AuthenticatedAdminBonusesBatchesBatchIdRouteImport.update({
     id: '/batches/$batchId',
@@ -950,6 +957,7 @@ export interface FileRoutesByFullPath {
   '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/shop/bundles/': typeof ShopBundlesIndexRoute
+  '/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
   '/admin/bonuses/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
@@ -1076,6 +1084,7 @@ export interface FileRoutesByTo {
   '/finance': typeof AuthenticatedFinanceIndexRoute
   '/shop/account': typeof ShopAccountIndexRoute
   '/shop/bundles': typeof ShopBundlesIndexRoute
+  '/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
   '/admin/bonuses/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
@@ -1208,6 +1217,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/shop/bundles/': typeof ShopBundlesIndexRoute
+  '/_authenticated/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
   '/_authenticated/admin/bonuses_/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/_authenticated/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
@@ -1340,6 +1350,7 @@ export interface FileRouteTypes {
     | '/finance/'
     | '/shop/account/'
     | '/shop/bundles/'
+    | '/admin/bonuses/member-details'
     | '/admin/bonuses/vip-detail'
     | '/admin/companies/new'
     | '/admin/operations/assistant'
@@ -1466,6 +1477,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/shop/account'
     | '/shop/bundles'
+    | '/admin/bonuses/member-details'
     | '/admin/bonuses/vip-detail'
     | '/admin/companies/new'
     | '/admin/operations/assistant'
@@ -1597,6 +1609,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/'
     | '/shop/account/'
     | '/shop/bundles/'
+    | '/_authenticated/admin/bonuses/member-details'
     | '/_authenticated/admin/bonuses_/vip-detail'
     | '/_authenticated/admin/companies/new'
     | '/_authenticated/admin/operations/assistant'
@@ -2548,6 +2561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBonusesVipDetailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/bonuses/member-details': {
+      id: '/_authenticated/admin/bonuses/member-details'
+      path: '/member-details'
+      fullPath: '/admin/bonuses/member-details'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesMemberDetailsRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
     '/_authenticated/admin/bonuses/batches/$batchId': {
       id: '/_authenticated/admin/bonuses/batches/$batchId'
       path: '/batches/$batchId'
@@ -2591,11 +2611,14 @@ const AuthenticatedProductsRouteWithChildren =
   )
 
 interface AuthenticatedAdminBonusesRouteChildren {
+  AuthenticatedAdminBonusesMemberDetailsRoute: typeof AuthenticatedAdminBonusesMemberDetailsRoute
   AuthenticatedAdminBonusesBatchesBatchIdRoute: typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 
 const AuthenticatedAdminBonusesRouteChildren: AuthenticatedAdminBonusesRouteChildren =
   {
+    AuthenticatedAdminBonusesMemberDetailsRoute:
+      AuthenticatedAdminBonusesMemberDetailsRoute,
     AuthenticatedAdminBonusesBatchesBatchIdRoute:
       AuthenticatedAdminBonusesBatchesBatchIdRoute,
   }
