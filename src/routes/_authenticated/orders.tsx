@@ -2095,6 +2095,51 @@ function OrderDetailDialog({
   const payments = detailQ.data?.payments ?? [];
   const pointPayments = (detailQ.data?.pointPayments ?? []) as any[];
 
+  // 點數付款分錄篩選 / 排序
+  const [ppFrom, setPpFrom] = useState<string>("");
+  const [ppTo, setPpTo] = useState<string>("");
+  const [ppType, setPpType] = useState<string>("all");
+  const [ppStatus, setPpStatus] = useState<string>("all");
+  const [ppSort, setPpSort] = useState<string>("created_desc");
+
+  const filteredPointPayments = useMemo(() => {
+    const fromTs = ppFrom ? new Date(ppFrom + "T00:00:00").getTime() : -Infinity;
+    const toTs = ppTo ? new Date(ppTo + "T23:59:59.999").getTime() : Infinity;
+    const list = pointPayments.filter((p) => {
+      const t = new Date(p.created_at).getTime();
+      if (t < fromTs || t > toTs) return false;
+      if (ppType !== "all" && p.point_type !== ppType) return false;
+      if (ppStatus !== "all" && (p.status ?? "") !== ppStatus) return false;
+      return true;
+    });
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      switch (ppSort) {
+        case "created_asc":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "points_desc":
+          return Number(b.points_used ?? 0) - Number(a.points_used ?? 0);
+        case "points_asc":
+          return Number(a.points_used ?? 0) - Number(b.points_used ?? 0);
+        case "amount_desc":
+          return Number(b.amount_offset ?? 0) - Number(a.amount_offset ?? 0);
+        case "amount_asc":
+          return Number(a.amount_offset ?? 0) - Number(b.amount_offset ?? 0);
+        case "created_desc":
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+    return sorted;
+  }, [pointPayments, ppFrom, ppTo, ppType, ppStatus, ppSort]);
+
+  const ppStatusOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of pointPayments) if (p.status) s.add(p.status);
+    return Array.from(s);
+  }, [pointPayments]);
+
+
 
   // 載入 VIP 升級套組贈品（依訂單品項中 anchor product_id 對應）
   const itemProductIds = (items as any[]).map((i) => i.product_id).filter(Boolean);
