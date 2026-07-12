@@ -11,6 +11,7 @@ import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, SHIPPING_STATUS_LABELS, typ
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
+import { applyOrderPoints } from "@/lib/points.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/shop/account/orders/$id")({ component: OrderDetail });
@@ -22,6 +23,7 @@ function OrderDetail() {
   const [rewardTx, setRewardTx] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const upgradeTriggered = useRef(false);
+  const rewardBackfillTriggered = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -81,6 +83,29 @@ function OrderDetail() {
       }
     })();
   }, [order, id]);
+
+  // 回填：已付款但尚未產生獎勵點紀錄時，補呼叫伺服器端 applyOrderPoints（冪等）
+  useEffect(() => {
+    if (!order || rewardBackfillTriggered.current) return;
+    if (order.payment_status !== "paid") return;
+    if (rewardTx.length > 0) return;
+    rewardBackfillTriggered.current = true;
+    (async () => {
+      try {
+        await applyOrderPoints({ data: { orderId: id, shopping_redeem: 0, reward_redeem: 0, discount_redeem: 0 } });
+        const { data: rt } = await supabase
+          .from("point_transactions")
+          .select("amount, source, note")
+          .eq("reference_id", id)
+          .in("source", ["order_earn", "order_earn_referrer"])
+          .eq("point_type", "reward");
+        setRewardTx((rt ?? []) as any[]);
+      } catch (err) {
+        console.error("[order-detail] reward backfill failed", err);
+      }
+    })();
+  }, [order, id, rewardTx.length]);
+
 
 
   if (loading) return <Skeleton className="h-96" />;
