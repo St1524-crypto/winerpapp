@@ -1520,3 +1520,87 @@ export const getMemberBonusBreakdown = createServerFn({ method: "POST" })
       monthly: { records: monthlyRecords, summary: summarize(monthlyRecords) },
     };
   });
+
+/* ───────────── Admin：會員日/月獎金明細查詢 ───────────── */
+export const listMemberBonusDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      category: z.enum(["daily", "monthly"]),
+      memberName: z.string().trim().optional(),
+      memberNo: z.string().trim().optional(),
+      memberId: z.string().uuid().optional(),
+      bonusType: z.string().trim().optional(),
+      status: z.string().trim().optional(),
+      settlementBatchId: z.string().uuid().optional(),
+      dateFrom: z.string().optional(),
+      dateTo: z.string().optional(),
+      limit: z.number().int().min(1).max(500).default(200),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, VIEW_ROLES);
+
+    const allowedTypes =
+      data.category === "daily" ? DAILY_BONUS_TYPES : MONTHLY_BONUS_TYPES;
+
+    let memberIdFilter: string[] | null = null;
+    if (data.memberId) {
+      memberIdFilter = [data.memberId];
+    } else if (data.memberName || data.memberNo) {
+      let pq = supabaseAdmin.from("profiles").select("id").limit(500);
+      if (data.memberNo) pq = pq.eq("member_no", data.memberNo);
+      if (data.memberName) pq = pq.ilike("name", `%${data.memberName}%`);
+      const { data: profs, error: pErr } = await pq;
+      if (pErr) throw new Error(pErr.message);
+      memberIdFilter = (profs ?? []).map((p: any) => p.id);
+      if (memberIdFilter.length === 0) return { records: [], members: {}, batches: {} };
+    }
+
+    let q = supabaseAdmin
+      .from("bonus_records")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+
+    if (data.bonusType && allowedTypes.includes(data.bonusType)) {
+      q = q.eq("bonus_type", data.bonusType);
+    } else {
+      q = q.in("bonus_type", allowedTypes);
+    }
+    if (data.status) q = q.eq("status", data.status);
+    if (data.settlementBatchId) q = q.eq("settlement_batch_id", data.settlementBatchId);
+    if (memberIdFilter) q = q.in("member_id", memberIdFilter);
+    if (data.dateFrom) q = q.gte("created_at", `${data.dateFrom}T00:00:00Z`);
+    if (data.dateTo) q = q.lte("created_at", `${data.dateTo}T23:59:59Z`);
+
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const records = rows ?? [];
+    if (records.length === 0) return { records: [], members: {}, batches: {} };
+
+    const memberIds = Array.from(new Set(
+      records.flatMap((r: any) => [
+        r.member_id, r.source_member_id, r.released_member_id, r.original_member_id,
+      ]).filter(Boolean),
+    ));
+    const batchIds = Array.from(new Set(
+      records.map((r: any) => r.settlement_batch_id).filter(Boolean),
+    ));
+
+    const [profRes, batchRes] = await Promise.all([
+      memberIds.length
+        ? supabaseAdmin.from("profiles").select("id, name, member_no").in("id", memberIds)
+        : Promise.resolve({ data: [], error: null }),
+      batchIds.length
+        ? supabaseAdmin.from("bonus_settlement_batches").select("*").in("id", batchIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    const members: Record<string, any> = {};
+    (profRes.data ?? []).forEach((p: any) => { members[p.id] = p; });
+    const batches: Record<string, any> = {};
+    (batchRes.data ?? []).forEach((b: any) => { batches[b.id] = b; });
+
+    return { records, members, batches };
+  });
