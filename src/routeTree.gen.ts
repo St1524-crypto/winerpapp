@@ -137,7 +137,10 @@ import { Route as AuthenticatedAdminOperationsAttendanceRouteImport } from './ro
 import { Route as AuthenticatedAdminOperationsAssistantRouteImport } from './routes/_authenticated/admin.operations.assistant'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 import { Route as AuthenticatedAdminBonusesVipDetailRouteImport } from './routes/_authenticated/admin.bonuses_.vip-detail'
+import { Route as AuthenticatedAdminBonusesSummaryRouteImport } from './routes/_authenticated/admin.bonuses.summary'
+import { Route as AuthenticatedAdminBonusesMonthlyDetailsRouteImport } from './routes/_authenticated/admin.bonuses.monthly-details'
 import { Route as AuthenticatedAdminBonusesMemberDetailsRouteImport } from './routes/_authenticated/admin.bonuses.member-details'
+import { Route as AuthenticatedAdminBonusesDailyDetailsRouteImport } from './routes/_authenticated/admin.bonuses.daily-details'
 import { Route as AuthenticatedAdminBonusesBatchesBatchIdRouteImport } from './routes/_authenticated/admin.bonuses.batches.$batchId'
 
 const VendorRoute = VendorRouteImport.update({
@@ -836,10 +839,28 @@ const AuthenticatedAdminBonusesVipDetailRoute =
     path: '/admin/bonuses/vip-detail',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminBonusesSummaryRoute =
+  AuthenticatedAdminBonusesSummaryRouteImport.update({
+    id: '/summary',
+    path: '/summary',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
+const AuthenticatedAdminBonusesMonthlyDetailsRoute =
+  AuthenticatedAdminBonusesMonthlyDetailsRouteImport.update({
+    id: '/monthly-details',
+    path: '/monthly-details',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
 const AuthenticatedAdminBonusesMemberDetailsRoute =
   AuthenticatedAdminBonusesMemberDetailsRouteImport.update({
     id: '/member-details',
     path: '/member-details',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
+const AuthenticatedAdminBonusesDailyDetailsRoute =
+  AuthenticatedAdminBonusesDailyDetailsRouteImport.update({
+    id: '/daily-details',
+    path: '/daily-details',
     getParentRoute: () => AuthenticatedAdminBonusesRoute,
   } as any)
 const AuthenticatedAdminBonusesBatchesBatchIdRoute =
@@ -957,7 +978,10 @@ export interface FileRoutesByFullPath {
   '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/shop/bundles/': typeof ShopBundlesIndexRoute
+  '/admin/bonuses/daily-details': typeof AuthenticatedAdminBonusesDailyDetailsRoute
   '/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
+  '/admin/bonuses/monthly-details': typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  '/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
   '/admin/bonuses/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
@@ -1084,7 +1108,10 @@ export interface FileRoutesByTo {
   '/finance': typeof AuthenticatedFinanceIndexRoute
   '/shop/account': typeof ShopAccountIndexRoute
   '/shop/bundles': typeof ShopBundlesIndexRoute
+  '/admin/bonuses/daily-details': typeof AuthenticatedAdminBonusesDailyDetailsRoute
   '/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
+  '/admin/bonuses/monthly-details': typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  '/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
   '/admin/bonuses/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
@@ -1217,7 +1244,10 @@ export interface FileRoutesById {
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/shop/bundles/': typeof ShopBundlesIndexRoute
+  '/_authenticated/admin/bonuses/daily-details': typeof AuthenticatedAdminBonusesDailyDetailsRoute
   '/_authenticated/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
+  '/_authenticated/admin/bonuses/monthly-details': typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  '/_authenticated/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
   '/_authenticated/admin/bonuses_/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/_authenticated/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
@@ -1350,7 +1380,10 @@ export interface FileRouteTypes {
     | '/finance/'
     | '/shop/account/'
     | '/shop/bundles/'
+    | '/admin/bonuses/daily-details'
     | '/admin/bonuses/member-details'
+    | '/admin/bonuses/monthly-details'
+    | '/admin/bonuses/summary'
     | '/admin/bonuses/vip-detail'
     | '/admin/companies/new'
     | '/admin/operations/assistant'
@@ -1477,7 +1510,10 @@ export interface FileRouteTypes {
     | '/finance'
     | '/shop/account'
     | '/shop/bundles'
+    | '/admin/bonuses/daily-details'
     | '/admin/bonuses/member-details'
+    | '/admin/bonuses/monthly-details'
+    | '/admin/bonuses/summary'
     | '/admin/bonuses/vip-detail'
     | '/admin/companies/new'
     | '/admin/operations/assistant'
@@ -1609,7 +1645,10 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/'
     | '/shop/account/'
     | '/shop/bundles/'
+    | '/_authenticated/admin/bonuses/daily-details'
     | '/_authenticated/admin/bonuses/member-details'
+    | '/_authenticated/admin/bonuses/monthly-details'
+    | '/_authenticated/admin/bonuses/summary'
     | '/_authenticated/admin/bonuses_/vip-detail'
     | '/_authenticated/admin/companies/new'
     | '/_authenticated/admin/operations/assistant'
@@ -2561,11 +2600,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBonusesVipDetailRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/bonuses/summary': {
+      id: '/_authenticated/admin/bonuses/summary'
+      path: '/summary'
+      fullPath: '/admin/bonuses/summary'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesSummaryRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
+    '/_authenticated/admin/bonuses/monthly-details': {
+      id: '/_authenticated/admin/bonuses/monthly-details'
+      path: '/monthly-details'
+      fullPath: '/admin/bonuses/monthly-details'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesMonthlyDetailsRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
     '/_authenticated/admin/bonuses/member-details': {
       id: '/_authenticated/admin/bonuses/member-details'
       path: '/member-details'
       fullPath: '/admin/bonuses/member-details'
       preLoaderRoute: typeof AuthenticatedAdminBonusesMemberDetailsRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
+    '/_authenticated/admin/bonuses/daily-details': {
+      id: '/_authenticated/admin/bonuses/daily-details'
+      path: '/daily-details'
+      fullPath: '/admin/bonuses/daily-details'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesDailyDetailsRouteImport
       parentRoute: typeof AuthenticatedAdminBonusesRoute
     }
     '/_authenticated/admin/bonuses/batches/$batchId': {
@@ -2611,14 +2671,23 @@ const AuthenticatedProductsRouteWithChildren =
   )
 
 interface AuthenticatedAdminBonusesRouteChildren {
+  AuthenticatedAdminBonusesDailyDetailsRoute: typeof AuthenticatedAdminBonusesDailyDetailsRoute
   AuthenticatedAdminBonusesMemberDetailsRoute: typeof AuthenticatedAdminBonusesMemberDetailsRoute
+  AuthenticatedAdminBonusesMonthlyDetailsRoute: typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  AuthenticatedAdminBonusesSummaryRoute: typeof AuthenticatedAdminBonusesSummaryRoute
   AuthenticatedAdminBonusesBatchesBatchIdRoute: typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 
 const AuthenticatedAdminBonusesRouteChildren: AuthenticatedAdminBonusesRouteChildren =
   {
+    AuthenticatedAdminBonusesDailyDetailsRoute:
+      AuthenticatedAdminBonusesDailyDetailsRoute,
     AuthenticatedAdminBonusesMemberDetailsRoute:
       AuthenticatedAdminBonusesMemberDetailsRoute,
+    AuthenticatedAdminBonusesMonthlyDetailsRoute:
+      AuthenticatedAdminBonusesMonthlyDetailsRoute,
+    AuthenticatedAdminBonusesSummaryRoute:
+      AuthenticatedAdminBonusesSummaryRoute,
     AuthenticatedAdminBonusesBatchesBatchIdRoute:
       AuthenticatedAdminBonusesBatchesBatchIdRoute,
   }

@@ -1530,7 +1530,7 @@ export const getMyBonusRecords = createServerFn({ method: "GET" })
 
 /* ───────────── VIP 個人日 / 月獎金明細 ───────────── */
 const DAILY_BONUS_TYPES = ["referral", "repurchase"];
-const MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate"];
+const MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate", "rank_diff_rebate"];
 
 export const searchBonusMembers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1813,4 +1813,145 @@ function emptyDetailPayload() {
     waitingReleasePoints: 0, failedPoints: 0,
   };
 }
+
+/* ───────────── Admin：日/月獎金明細表 + 獎金總表（唯讀） ───────────── */
+
+const detailFilterSchema = z.object({
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  bonusType: z.string().trim().optional(),
+  status: z.string().trim().optional(),
+  memberName: z.string().trim().optional(),
+  memberNo: z.string().trim().optional(),
+  settlementBatchId: z.string().uuid().optional(),
+  limit: z.number().int().min(1).max(2000).default(1000),
+});
+
+async function resolveMemberFilter(memberName?: string, memberNo?: string) {
+  if (!memberName && !memberNo) return null;
+  let pq = supabaseAdmin.from("profiles").select("id").limit(1000);
+  if (memberNo) pq = pq.eq("member_no", memberNo);
+  if (memberName) pq = pq.ilike("name", `%${memberName}%`);
+  const { data, error } = await pq;
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((p: any) => p.id);
+}
+
+async function fetchDetailRows(
+  types: string[],
+  data: z.infer<typeof detailFilterSchema>,
+) {
+  const memberIdFilter = await resolveMemberFilter(data.memberName, data.memberNo);
+  if (memberIdFilter && memberIdFilter.length === 0) {
+    return { rows: [] as any[], members: {} as Record<string, any>, batches: {} as Record<string, any>, orders: {} as Record<string, any> };
+  }
+  let q = supabaseAdmin.from("bonus_records").select("*")
+    .order("settlement_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(data.limit);
+  if (data.bonusType && types.includes(data.bonusType)) q = q.eq("bonus_type", data.bonusType);
+  else q = q.in("bonus_type", types);
+  if (data.status) q = q.eq("status", data.status);
+  if (data.settlementBatchId) q = q.eq("settlement_batch_id", data.settlementBatchId);
+  if (memberIdFilter) q = q.in("member_id", memberIdFilter);
+  if (data.dateFrom) q = q.gte("settlement_date", data.dateFrom);
+  if (data.dateTo) q = q.lte("settlement_date", data.dateTo);
+  const { data: rows, error } = await q;
+  if (error) throw new Error(error.message);
+  const list = rows ?? [];
+  const memberIds = Array.from(new Set(list.flatMap((r: any) => [r.member_id, r.source_member_id, r.released_member_id, r.original_member_id]).filter(Boolean)));
+  const batchIds = Array.from(new Set(list.map((r: any) => r.settlement_batch_id).filter(Boolean)));
+  const orderIds = Array.from(new Set(list.map((r: any) => r.source_order_id).filter(Boolean)));
+  const [profRes, batchRes, orderRes] = await Promise.all([
+    memberIds.length ? supabaseAdmin.from("profiles").select("id, name, member_no").in("id", memberIds) : Promise.resolve({ data: [], error: null } as any),
+    batchIds.length ? supabaseAdmin.from("bonus_settlement_batches").select("*").in("id", batchIds) : Promise.resolve({ data: [], error: null } as any),
+    orderIds.length ? supabaseAdmin.from("sales_orders").select("id, order_no, total_amount").in("id", orderIds) : Promise.resolve({ data: [], error: null } as any),
+  ]);
+  const members: Record<string, any> = {};
+  (profRes.data ?? []).forEach((p: any) => { members[p.id] = p; });
+  const batches: Record<string, any> = {};
+  (batchRes.data ?? []).forEach((b: any) => { batches[b.id] = b; });
+  const orders: Record<string, any> = {};
+  (orderRes.data ?? []).forEach((o: any) => { orders[o.id] = o; });
+  return { rows: list, members, batches, orders };
+}
+
+export const listDailyBonusDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => detailFilterSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    return await fetchDetailRows(DAILY_BONUS_TYPES, data);
+  });
+
+export const listMonthlyBonusDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => detailFilterSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    return await fetchDetailRows(MONTHLY_BONUS_TYPES, data);
+  });
+
+export const getBonusSummaryReport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => detailFilterSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const memberIdFilter = await resolveMemberFilter(data.memberName, data.memberNo);
+    if (memberIdFilter && memberIdFilter.length === 0) {
+      return {
+        totals: { total: 0, released: 0, waiting_release: 0, pending: 0, failed: 0, cancelled: 0, daily: 0, monthly: 0 },
+        counts: { records: 0, members: 0, batches: 0 },
+        byType: [] as any[],
+        byStatus: [] as any[],
+      };
+    }
+    let q = supabaseAdmin.from("bonus_records")
+      .select("bonus_type,status,bonus_points,member_id,settlement_batch_id,settlement_date")
+      .limit(50000);
+    if (data.bonusType) q = q.eq("bonus_type", data.bonusType);
+    if (data.status) q = q.eq("status", data.status);
+    if (data.settlementBatchId) q = q.eq("settlement_batch_id", data.settlementBatchId);
+    if (memberIdFilter) q = q.in("member_id", memberIdFilter);
+    if (data.dateFrom) q = q.gte("settlement_date", data.dateFrom);
+    if (data.dateTo) q = q.lte("settlement_date", data.dateTo);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    const list = (rows ?? []) as any[];
+    const totals = { total: 0, released: 0, waiting_release: 0, pending: 0, failed: 0, cancelled: 0, daily: 0, monthly: 0 };
+    const typeMap = new Map<string, { count: number; points: number; released: number; waiting: number; failed: number; pending: number; cancelled: number }>();
+    const statusMap = new Map<string, { count: number; points: number }>();
+    const memberSet = new Set<string>();
+    const batchSet = new Set<string>();
+    for (const r of list) {
+      const pts = Number(r.bonus_points ?? 0);
+      totals.total += pts;
+      if (DAILY_BONUS_TYPES.includes(r.bonus_type)) totals.daily += pts;
+      else if (MONTHLY_BONUS_TYPES.includes(r.bonus_type)) totals.monthly += pts;
+      if (r.status === "released") totals.released += pts;
+      else if (r.status === "waiting_release") totals.waiting_release += pts;
+      else if (r.status === "pending") totals.pending += pts;
+      else if (r.status === "failed") totals.failed += pts;
+      else if (r.status === "cancelled") totals.cancelled += pts;
+      if (r.member_id) memberSet.add(r.member_id);
+      if (r.settlement_batch_id) batchSet.add(r.settlement_batch_id);
+      const t = typeMap.get(r.bonus_type) ?? { count: 0, points: 0, released: 0, waiting: 0, failed: 0, pending: 0, cancelled: 0 };
+      t.count += 1; t.points += pts;
+      if (r.status === "released") t.released += pts;
+      else if (r.status === "waiting_release") t.waiting += pts;
+      else if (r.status === "pending") t.pending += pts;
+      else if (r.status === "failed") t.failed += pts;
+      else if (r.status === "cancelled") t.cancelled += pts;
+      typeMap.set(r.bonus_type, t);
+      const s = statusMap.get(r.status) ?? { count: 0, points: 0 };
+      s.count += 1; s.points += pts;
+      statusMap.set(r.status, s);
+    }
+    return {
+      totals,
+      counts: { records: list.length, members: memberSet.size, batches: batchSet.size },
+      byType: Array.from(typeMap.entries()).map(([bonus_type, v]) => ({ bonus_type, ...v })).sort((a, b) => b.points - a.points),
+      byStatus: Array.from(statusMap.entries()).map(([status, v]) => ({ status, ...v })).sort((a, b) => b.points - a.points),
+    };
+  });
 

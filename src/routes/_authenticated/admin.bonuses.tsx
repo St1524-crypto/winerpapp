@@ -247,7 +247,25 @@ function BonusOperationsPage() {
             管理日獎金、月獎金、推薦獎勵、復購獎勵與獎勵點發放狀態。
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link to="/admin/bonuses/daily-details">
+              <Search className="mr-2 h-4 w-4" />
+              每日獎金明細表
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/admin/bonuses/monthly-details">
+              <Search className="mr-2 h-4 w-4" />
+              月獎金明細表
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/admin/bonuses/summary">
+              <Search className="mr-2 h-4 w-4" />
+              獎金總表
+            </Link>
+          </Button>
           <Button asChild variant="outline">
             <Link to="/admin/bonuses/member-details">
               <Search className="mr-2 h-4 w-4" />
