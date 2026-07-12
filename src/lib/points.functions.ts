@@ -214,11 +214,47 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
             .from("products")
             .select("id, reward_points")
             .in("id", productIds);
-          const ptsMap = new Map<string, number>(
+          const baseRewardMap = new Map<string, number>(
             (prods ?? []).map((p: any) => [p.id, Number(p.reward_points ?? 0)]),
           );
+          // 讀取階梯設定：依「本行件數」落在哪個 [min_qty, max_qty] 區間，
+          // 使用該階梯的 unit_reward_points 發放；若該商品無階梯或本行件數不落於任何階梯，
+          // 則退回 products.reward_points（基礎每件獎勵點）。
+          const { data: tiersData } = await supabaseAdmin
+            .from("product_wholesale_tiers")
+            .select("product_id, min_qty, max_qty, unit_reward_points")
+            .in("product_id", productIds)
+            .order("min_qty", { ascending: true });
+          const tiersMap = new Map<string, Array<{ min_qty: number; max_qty: number | null; unit_reward_points: number }>>();
+          for (const t of (tiersData ?? []) as any[]) {
+            const pid = t.product_id as string;
+            const arr = tiersMap.get(pid) ?? [];
+            arr.push({
+              min_qty: Number(t.min_qty ?? 0),
+              max_qty: t.max_qty == null ? null : Number(t.max_qty),
+              unit_reward_points: Number(t.unit_reward_points ?? 0),
+            });
+            tiersMap.set(pid, arr);
+          }
           for (const it of items ?? []) {
-            rewardEarn += (ptsMap.get((it as any).product_id) ?? 0) * Number((it as any).quantity ?? 0);
+            const pid = (it as any).product_id as string | null;
+            const qty = Number((it as any).quantity ?? 0);
+            if (!pid || qty <= 0) continue;
+            const tiers = tiersMap.get(pid) ?? [];
+            const matched = tiers.filter(
+              (t) => qty >= t.min_qty && (t.max_qty == null || qty <= t.max_qty),
+            );
+            let unitReward: number;
+            if (matched.length > 0) {
+              // 多階梯符合時取每件獎勵點最高者（對買家最有利，與階梯價格「最低單價」概念一致）
+              unitReward = matched.reduce(
+                (best, cur) => (cur.unit_reward_points > best ? cur.unit_reward_points : best),
+                0,
+              );
+            } else {
+              unitReward = baseRewardMap.get(pid) ?? 0;
+            }
+            rewardEarn += unitReward * qty;
           }
         }
         if (rewardEarn > 0) {
