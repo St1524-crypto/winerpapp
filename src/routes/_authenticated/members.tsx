@@ -56,17 +56,32 @@ function Page() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
   const [showFormPassword, setShowFormPassword] = useState(false);
   const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, status: "idle" });
+  const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null }[]>([]);
 
   useEffect(() => {
     const code = form.referrerMemberNo.trim();
-    if (!code) { setReferrerLookup({ code: "", name: null, status: "idle" }); return; }
+    if (!code) { setReferrerLookup({ code: "", name: null, status: "idle" }); setReferrerCandidates([]); return; }
     let cancelled = false;
     setReferrerLookup((prev) => ({ ...prev, code, status: "loading" }));
     const t = setTimeout(async () => {
-      const { data } = await supabase.from("profiles").select("name, member_no").eq("member_no", code).maybeSingle();
+      const { data: exact } = await supabase.from("profiles").select("id, name, member_no, phone").eq("member_no", code).maybeSingle();
       if (cancelled) return;
-      if (data) setReferrerLookup({ code, name: (data as any).name ?? null, status: "found" });
-      else setReferrerLookup({ code, name: null, status: "notfound" });
+      if (exact) {
+        setReferrerLookup({ code, name: (exact as any).name ?? null, status: "found" });
+        setReferrerCandidates([]);
+        return;
+      }
+      const esc = code.replace(/[%,]/g, "");
+      const { data: fuzzy } = await supabase
+        .from("profiles")
+        .select("id, name, member_no, phone")
+        .or(`name.ilike.%${esc}%,phone.ilike.%${esc}%,member_no.ilike.%${esc}%`)
+        .not("member_no", "is", null)
+        .limit(8);
+      if (cancelled) return;
+      const list = ((fuzzy as any[]) ?? []) as { id: string; name: string | null; member_no: string | null; phone: string | null }[];
+      setReferrerCandidates(list);
+      setReferrerLookup({ code, name: null, status: "notfound" });
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
   }, [form.referrerMemberNo]);
@@ -621,8 +636,8 @@ function Page() {
               <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
               <div className="space-y-1"><Label>電話號碼</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
               <div className="space-y-1">
-                <Label>推薦人會員編號（留空則清除）</Label>
-                <Input value={form.referrerMemberNo} onChange={(e) => setForm({ ...form, referrerMemberNo: e.target.value })} placeholder="例如 M000123" className="font-mono" />
+                <Label>推薦人（可輸入會員編號 / 姓名 / 電話，留空則清除）</Label>
+                <Input value={form.referrerMemberNo} onChange={(e) => setForm({ ...form, referrerMemberNo: e.target.value })} placeholder="例如 M000123、王小明、0912345678" />
                 {editProfile.referrer_name && (
                   <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}</p>
                 )}
@@ -632,8 +647,26 @@ function Page() {
                 {referrerLookup.status === "found" && (
                   <p className="text-[11px] text-emerald-600">推薦人姓名：{referrerLookup.name ?? "—"}</p>
                 )}
-                {referrerLookup.status === "notfound" && (
-                  <p className="text-[11px] text-destructive">找不到會員編號 {referrerLookup.code}</p>
+                {referrerLookup.status === "notfound" && referrerCandidates.length === 0 && (
+                  <p className="text-[11px] text-destructive">找不到符合的會員：{referrerLookup.code}</p>
+                )}
+                {referrerLookup.status === "notfound" && referrerCandidates.length > 0 && (
+                  <div className="rounded-md border border-border bg-muted/30 divide-y">
+                    <div className="px-2 py-1 text-[11px] text-muted-foreground">找到 {referrerCandidates.length} 位相似會員，點擊選擇：</div>
+                    {referrerCandidates.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full text-left px-2 py-1.5 text-xs hover:bg-accent"
+                        onClick={() => setForm((f) => ({ ...f, referrerMemberNo: c.member_no ?? "" }))}
+                      >
+                        <span className="font-mono">{c.member_no ?? "—"}</span>
+                        <span className="mx-2">·</span>
+                        <span>{c.name ?? "—"}</span>
+                        {c.phone && <span className="ml-2 text-muted-foreground">{c.phone}</span>}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
               <div className="space-y-1">
