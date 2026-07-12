@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertOrderTotalsInvariant } from "./order-payment-totals";
 
 const paymentSchema = z.object({
   amount: z.coerce.number().min(0),
