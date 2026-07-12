@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { listMonthlyBonusDetails } from "@/lib/bonus.functions";
 import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, MONTHLY_BONUS_TYPE_OPTIONS } from "@/lib/bonus-labels";
 import { computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
-import { FiltersCard } from "./admin.bonuses.daily-details";
+import { BonusFiltersCard, type BonusFilters } from "@/components/admin/BonusFiltersCard";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
