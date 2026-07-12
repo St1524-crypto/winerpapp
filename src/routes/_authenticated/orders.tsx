@@ -2621,7 +2621,7 @@ function OrderDetailDialog({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredPointPayments.map((pp: any) => {
+                        {pagedPointPayments.map((pp: any) => {
                           const typeLabel =
                             pp.point_type === "discount"
                               ? "折扣點"
