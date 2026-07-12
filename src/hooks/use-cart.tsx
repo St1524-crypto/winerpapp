@@ -150,7 +150,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const id = cartId ?? (await ensureCart());
     if (!cartId) setCartId(id);
     const db = getDb();
-    const existing = items.find((i) => i.product_id === productId);
+    // 只與「非套組」的同商品列合併；套組列（bundle_line_key 非空）永遠獨立
+    const existing = items.find((i) => i.product_id === productId && !i.bundle_line_key);
     if (existing) {
       await db.from("cart_items").update({ quantity: existing.quantity + qty }).eq("id", existing.id);
     } else {
