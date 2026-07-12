@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   ShoppingCart, Search, Plus, Loader2, Eye, Truck, CreditCard,
   PackageCheck, XCircle, RotateCw, Receipt, UserSearch, Check, UserPlus,
-  Package, Trash2, Printer, Pencil, Wallet,
+  Package, Trash2, Printer, Pencil, Wallet, Download,
 } from "lucide-react";
 import { exportOrderPdf, exportOrdersPdf } from "@/lib/order-pdf";
 import { useBranding } from "@/hooks/use-branding";
