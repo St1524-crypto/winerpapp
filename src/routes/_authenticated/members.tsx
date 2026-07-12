@@ -651,13 +651,13 @@ function Page() {
                 <Label>推薦人（可輸入會員編號 / 姓名 / 電話，留空則清除）</Label>
                 <Input value={form.referrerMemberNo} onChange={(e) => setForm({ ...form, referrerMemberNo: e.target.value })} placeholder="例如 M000123、王小明、0912345678" />
                 {editProfile.referrer_name && (
-                  <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}</p>
+                  <p className="text-[11px] text-muted-foreground">目前推薦人：{editProfile.referrer_member_no} · {editProfile.referrer_name}{editProfile.referrer_tier ? ` · ${editProfile.referrer_tier}` : ""}</p>
                 )}
                 {referrerLookup.status === "loading" && (
                   <p className="text-[11px] text-muted-foreground">查詢中…</p>
                 )}
                 {referrerLookup.status === "found" && (
-                  <p className="text-[11px] text-emerald-600">推薦人姓名：{referrerLookup.name ?? "—"}</p>
+                  <p className="text-[11px] text-emerald-600">推薦人姓名：{referrerLookup.name ?? "—"}{referrerLookup.tier ? ` · ${referrerLookup.tier}` : ""}</p>
                 )}
                 {referrerLookup.status === "notfound" && referrerCandidates.length === 0 && (
                   <p className="text-[11px] text-destructive">找不到符合的會員：{referrerLookup.code}</p>
@@ -675,6 +675,7 @@ function Page() {
                         <span className="font-mono">{c.member_no ?? "—"}</span>
                         <span className="mx-2">·</span>
                         <span>{c.name ?? "—"}</span>
+                        {c.tier && <span className="ml-2 text-emerald-600">{c.tier}</span>}
                         {c.phone && <span className="ml-2 text-muted-foreground">{c.phone}</span>}
                       </button>
                     ))}
