@@ -151,12 +151,14 @@ function Page() {
         .filter((rid: string | null): rid is string => !!rid)
     ));
     const byId = new Map<string, any>();
+    const refTierMap = new Map<string, string>();
     if (refIds.length > 0) {
-      const { data: refProfiles } = await supabase
-        .from("profiles")
-        .select("id, member_no, name")
-        .in("id", refIds);
-      (refProfiles ?? []).forEach((r: any) => byId.set(r.id, r));
+      const [refProfilesRes, refTierRes] = await Promise.all([
+        supabase.from("profiles").select("id, member_no, name").in("id", refIds),
+        supabase.from("dealer_tier_status").select("user_id, current_tier").in("user_id", refIds),
+      ]);
+      (refProfilesRes.data ?? []).forEach((r: any) => byId.set(r.id, r));
+      (refTierRes.data ?? []).forEach((t: any) => { if (t.current_tier) refTierMap.set(t.user_id, t.current_tier); });
     }
 
     setList((profiles ?? []).map((p: any) => {
@@ -166,6 +168,7 @@ function Page() {
         roles: rolesMap.get(p.id) ?? [],
         referrer_member_no: ref?.member_no ?? null,
         referrer_name: ref?.name ?? null,
+        referrer_tier: p.referred_by ? (refTierMap.get(p.referred_by) ?? null) : null,
         current_tier: tierMap.get(p.id) ?? (p.vip_tier ?? null),
       };
     }));
