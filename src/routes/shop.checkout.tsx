@@ -32,11 +32,11 @@ const FREE_SHIPPING = 2000;
 
 function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, clear } = useCart();
+  const { items, clear, getItemUnitPrice } = useCart();
   const isDealer = useIsDealer();
   const subtotal = useMemo(
-    () => items.reduce((s, it) => s + getEffectivePrice(it.product as any, isDealer) * it.quantity, 0),
-    [items, isDealer]
+    () => items.reduce((s, it) => s + getItemUnitPrice(it) * it.quantity, 0),
+    [items, getItemUnitPrice]
   );
   const { addresses, defaultAddress, loading: addrLoading } = useAddresses();
   const { wallet, refresh: refreshWallet } = useWallet();
