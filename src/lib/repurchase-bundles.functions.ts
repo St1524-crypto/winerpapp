@@ -205,12 +205,15 @@ export const addBundleToCart = createServerFn({ method: "POST" })
     const { data: existingCarts } = await supabase
       .from("carts").select("id").eq("user_id", userId)
       .order("created_at", { ascending: false }).limit(1);
-    let cartId = existingCarts?.[0]?.id;
-    if (!cartId) {
+    let cartId: string;
+    const existingCartId = existingCarts?.[0]?.id as string | undefined;
+    if (existingCartId) {
+      cartId = existingCartId;
+    } else {
       const { data: created, error: cErr } = await supabase
         .from("carts").insert({ user_id: userId }).select("id").single();
       if (cErr) throw new Error(cErr.message);
-      cartId = (created as any).id;
+      cartId = (created as any).id as string;
     }
     const lineKey = data.bundleId;
     for (const bi of bItems as any[]) {
