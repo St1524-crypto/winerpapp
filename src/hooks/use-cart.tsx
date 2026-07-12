@@ -10,15 +10,32 @@ import { toast } from "sonner";
 
 const SESSION_KEY = "yj_cart_token";
 
+// 訪客購物車 session token：使用 256 位隨機值以 hex 表示，
+// 由 WebCrypto 產生，不可猜測；僅透過 `x-cart-session` request header 傳送
+// （不出現在 URL / Referer / 伺服器 access log），並存放在 localStorage。
+// RLS 以此 token 精確比對 carts.session_token，因此 token 就是持有即擁有的憑證。
+function generateSessionToken() {
+  const bytes = new Uint8Array(32); // 256-bit
+  crypto.getRandomValues(bytes);
+  let hex = "";
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
 function getOrCreateSessionToken() {
   if (typeof window === "undefined") return "";
   let t = localStorage.getItem(SESSION_KEY);
-  if (!t) {
-    t = crypto.randomUUID();
+  // 舊格式（UUID，含 "-"）自動升級為 256-bit token，
+  // 讓所有訪客獲得更高熵值的憑證。
+  if (!t || t.includes("-") || t.length < 48) {
+    t = generateSessionToken();
     localStorage.setItem(SESSION_KEY, t);
   }
   return t;
 }
+
 
 interface CartCtx {
   cartId: string | null;
