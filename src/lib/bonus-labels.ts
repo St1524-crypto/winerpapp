@@ -5,6 +5,7 @@ export const BONUS_TYPE_LABEL: Record<string, string> = {
   repurchase: "復購獎勵",
   monthly_vip: "月 VIP 獎勵",
   rank_rebate: "階級回饋",
+  rank_diff_rebate: "階級差額回饋",
   business_bonus: "營業分紅",
   upgrade_bonus: "升級分紅",
 };
@@ -43,6 +44,5 @@ export const DAILY_BONUS_TYPE_OPTIONS = [
 export const MONTHLY_BONUS_TYPE_OPTIONS = [
   { value: "monthly_vip", label: BONUS_TYPE_LABEL.monthly_vip },
   { value: "rank_rebate", label: BONUS_TYPE_LABEL.rank_rebate },
-  { value: "business_bonus", label: BONUS_TYPE_LABEL.business_bonus },
-  { value: "upgrade_bonus", label: BONUS_TYPE_LABEL.upgrade_bonus },
+  { value: "rank_diff_rebate", label: BONUS_TYPE_LABEL.rank_diff_rebate },
 ];

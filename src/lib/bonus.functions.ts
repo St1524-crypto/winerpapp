@@ -1530,7 +1530,7 @@ export const getMyBonusRecords = createServerFn({ method: "GET" })
 
 /* ───────────── VIP 個人日 / 月獎金明細 ───────────── */
 const DAILY_BONUS_TYPES = ["referral", "repurchase"];
-const MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate"];
+const MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate", "rank_diff_rebate"];
 
 export const searchBonusMembers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
