@@ -43,12 +43,20 @@ const CartContext = createContext<CartCtx>({
   getItemUnitPrice: () => 0,
 });
 
+type BundleAllocInfo = {
+  price: number; // bundle_price
+  baseSum: number; // Σ(product base price × qty per set)
+  productBase: Record<string, number>; // pid → base price snapshot
+  itemsPerSet: Record<string, number>; // pid → qty per set
+};
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const isDealer = useIsDealer();
   const [cartId, setCartId] = useState<string | null>(null);
   const [items, setItems] = useState<CartItem[]>([]);
   const [tiersMap, setTiersMap] = useState<Record<string, WholesaleTier[]>>({});
+  const [bundleMap, setBundleMap] = useState<Record<string, BundleAllocInfo>>({});
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
@@ -137,12 +145,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const pids = Array.from(new Set(itemList.map((i) => i.product_id).filter(Boolean)));
       const tmap = await fetchTiersByProductIds(pids);
       setTiersMap(tmap);
+
+      // ---- Bundle price allocation snapshot ----
+      const bundleIds = Array.from(
+        new Set(itemList.map((i) => (i as any).bundle_id).filter(Boolean) as string[])
+      );
+      if (bundleIds.length) {
+        const [{ data: bundles }, { data: bItems }] = await Promise.all([
+          db.from("repurchase_bundles").select("id, bundle_price").in("id", bundleIds),
+          db.from("repurchase_bundle_items").select("bundle_id, product_id, quantity").in("bundle_id", bundleIds),
+        ]);
+        // product base prices (dealer-effective) come from the cart item's joined product
+        const productBase: Record<string, number> = {};
+        for (const it of itemList) {
+          if (it.product && !productBase[it.product_id]) {
+            productBase[it.product_id] = Number(getEffectivePrice(it.product as any, isDealer)) || 0;
+          }
+        }
+        const map: Record<string, BundleAllocInfo> = {};
+        for (const b of (bundles ?? []) as any[]) {
+          const rows = (bItems ?? []).filter((r: any) => r.bundle_id === b.id);
+          const itemsPerSet: Record<string, number> = {};
+          let baseSum = 0;
+          for (const r of rows as any[]) {
+            itemsPerSet[r.product_id] = Number(r.quantity);
+            baseSum += (productBase[r.product_id] ?? 0) * Number(r.quantity);
+          }
+          map[b.id] = {
+            price: Number(b.bundle_price),
+            baseSum,
+            productBase,
+            itemsPerSet,
+          };
+        }
+        setBundleMap(map);
+      } else {
+        setBundleMap({});
+      }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [ensureCart, getDb]);
+  }, [ensureCart, getDb, isDealer]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -180,6 +225,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const getItemUnitPrice = (i: CartItem) => {
+    // 套組列：以 bundle_price 依基礎單價比例分攤，忽略單品階梯
+    const bid = (i as any).bundle_id as string | undefined;
+    if (bid && bundleMap[bid]) {
+      const info = bundleMap[bid];
+      const base = info.productBase[i.product_id] ?? (Number(getEffectivePrice(i.product as any, isDealer)) || 0);
+      if (info.baseSum > 0) {
+        return Math.round(base * (info.price / info.baseSum));
+      }
+      // fallback: 平均分攤
+      const totalUnits = Object.values(info.itemsPerSet).reduce((s, q) => s + q, 0);
+      return totalUnits > 0 ? Math.round(info.price / totalUnits) : 0;
+    }
     const base = getEffectivePrice(i.product as any, isDealer);
     const tiers = tiersMap[i.product_id] ?? [];
     return applyWholesalePricing(base, 0, tiers, i.quantity).unitPrice;
