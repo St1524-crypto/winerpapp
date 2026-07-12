@@ -18,10 +18,11 @@ import {
   deleteVipBonusPool,
   previewVipBonusPool,
 } from "@/lib/vip-bonus-pools.functions";
+import { BONUS_PAGE_LABELS, pageMetaTitle, poolDisplayName } from "@/lib/bonus-pool-labels";
 
 export const Route = createFileRoute("/_authenticated/admin/vip-bonus-pools")({
   component: Page,
-  head: () => ({ meta: [{ title: "VIP 星級升級分紅池 — winerp" }] }),
+  head: () => ({ meta: [{ title: pageMetaTitle(BONUS_PAGE_LABELS.vipUpgradePool) }] }),
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     return (
@@ -126,7 +127,7 @@ function Page() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">VIP 星級升級分紅池</h1>
+        <h1 className="text-2xl font-bold">{BONUS_PAGE_LABELS.vipUpgradePool}</h1>
         <div className="flex gap-2">
           <Badge variant="secondary">第一階段：設定 / 試算（未接核心發放）</Badge>
           <Button onClick={add}><Plus className="h-4 w-4 mr-1" />新增分紅池</Button>
@@ -151,7 +152,7 @@ function Page() {
             <TableBody>
               {rows.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-medium">{r.name}</TableCell>
+                  <TableCell className="font-medium">{poolDisplayName(r)}</TableCell>
                   <TableCell className="text-xs">{r.code}</TableCell>
                   <TableCell>{(r.tier_codes ?? []).join(" / ") || "—"}</TableCell>
                   <TableCell>{(Number(r.bonus_rate) * 100).toFixed(2)}%</TableCell>
