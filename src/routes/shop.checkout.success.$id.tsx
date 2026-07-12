@@ -37,13 +37,14 @@ function CheckoutSuccessPage() {
   const { id } = Route.useParams();
   const [order, setOrder] = useState<OrderSummary | null>(null);
   const [points, setPoints] = useState<PointPayment[]>([]);
+  const [rewardTx, setRewardTx] = useState<Array<{ amount: number; source: string; note: string | null }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [{ data: o }, { data: p }] = await Promise.all([
+      const [{ data: o }, { data: p }, { data: rt }] = await Promise.all([
         supabase
           .from("sales_orders")
           .select("id, order_no, subtotal, shipping_fee, discount_amount, total_amount, payment_status")
@@ -53,10 +54,17 @@ function CheckoutSuccessPage() {
           .from("order_point_payments" as any)
           .select("point_type, points_used, amount_offset")
           .eq("sales_order_id", id),
+        supabase
+          .from("point_transactions")
+          .select("amount, source, note")
+          .eq("reference_id", id)
+          .in("source", ["order_earn", "order_earn_referrer"])
+          .eq("point_type", "reward"),
       ]);
       if (cancelled) return;
       setOrder((o as any) ?? null);
       setPoints(((p as any) ?? []) as PointPayment[]);
+      setRewardTx(((rt as any) ?? []) as any[]);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -140,7 +148,29 @@ function CheckoutSuccessPage() {
             {order.payment_status === "paid" && (
               <div className="text-xs text-green-600 text-right">已完成付款</div>
             )}
+            {(() => {
+              const earn = rewardTx.find((r) => r.source === "order_earn");
+              const ref = rewardTx.find((r) => r.source === "order_earn_referrer");
+              const earnPts = Number(earn?.amount ?? 0);
+              if (earnPts > 0) {
+                return (
+                  <div className="mt-2 flex justify-between items-center rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-600">
+                    <span className="flex items-center gap-1.5"><Gift className="h-4 w-4" />本次發放獎勵點</span>
+                    <span className="tabular-nums font-semibold">+ {earnPts.toLocaleString()} 點</span>
+                  </div>
+                );
+              }
+              if (ref) {
+                return (
+                  <div className="mt-2 rounded-md bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                    {ref.note ?? "本次獎勵點依復購位階制度發放至推薦人獎勵點錢包（依營業分紅比例與 VIP 升級分紅上限）。"}
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
+
 
           <div className="flex flex-col sm:flex-row gap-2">
             <Button asChild className="flex-1">
