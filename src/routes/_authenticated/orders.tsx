@@ -2074,11 +2074,17 @@ function OrderDetailDialog({
     queryKey: ["sales-order-detail", orderId],
     enabled: !!orderId,
     queryFn: async () => {
-      const [orderRes, itemsRes, paymentsRes, pointPaymentsRes] = await Promise.all([
+      const [orderRes, itemsRes, paymentsRes, pointPaymentsRes, rewardEarnRes] = await Promise.all([
         supabase.from("sales_orders").select("*").eq("id", orderId!).maybeSingle(),
         supabase.from("sales_order_items").select("*").eq("sales_order_id", orderId!).order("created_at"),
         supabase.from("payments").select("*").eq("sales_order_id", orderId!).order("created_at", { ascending: false }),
         supabase.from("order_point_payments").select("*").eq("sales_order_id", orderId!).order("created_at", { ascending: false }),
+        supabase
+          .from("point_transactions")
+          .select("id, amount, point_type, source, created_at, note")
+          .eq("reference_id", orderId!)
+          .eq("source", "order_earn")
+          .eq("point_type", "reward"),
       ]);
       if (orderRes.error) throw new Error(orderRes.error.message);
       return {
@@ -2086,6 +2092,7 @@ function OrderDetailDialog({
         items: itemsRes.data ?? [],
         payments: paymentsRes.data ?? [],
         pointPayments: pointPaymentsRes.data ?? [],
+        rewardEarn: rewardEarnRes.data ?? [],
       };
     },
   });
