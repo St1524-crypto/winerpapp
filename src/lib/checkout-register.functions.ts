@@ -1,19 +1,133 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
-import { randomBytes } from "crypto";
+import { createHash, randomBytes, randomInt } from "crypto";
+import { getRequestHeader } from "@tanstack/react-start/server";
+
+function getClientIp(): string | null {
+  return (
+    getRequestHeader("cf-connecting-ip") ??
+    getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ??
+    getRequestHeader("x-real-ip") ??
+    null
+  );
+}
+
+function hashOtp(phone: string, email: string, code: string): string {
+  return createHash("sha256")
+    .update(`${phone}|${email.toLowerCase()}|${code}`)
+    .digest("hex");
+}
 
 /**
- * Guest checkout quick-register:
- * - Verifies phone is not already a member.
- * - Creates auth user (email_confirm=true) with synthetic phone email
- *   `{phone}@phone.local` and default password `st{phone}`.
- * - Trigger `handle_new_user` creates the profile + member_no.
- * - Updates profile (real email/phone/name) and inserts the default
- *   shipping address.
- * - Returns session tokens so the client can call supabase.auth.setSession.
+ * Step 1 of guest signup: request an OTP be emailed to the user.
  *
- * Never returns secrets. Service role key stays server-side.
+ * Anti-abuse:
+ * - Rate-limited server-side (per-IP and per-phone) by
+ *   `check_guest_signup_rate_limit` — max 5/hour per IP, 3/hour per phone.
+ * - OTP is stored hashed; only the 6-digit code is sent via email.
+ * - Response never reveals whether the phone is already registered.
+ */
+export const requestGuestSignupOtp = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        phone: z.string().trim().min(8).max(20),
+        email: z.string().trim().email().max(120),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const phone = data.phone.replace(/[\s-]/g, "");
+    if (!/^\+?\d{8,15}$/.test(phone)) {
+      return { ok: false as const, error: "phone_invalid" as const };
+    }
+    const email = data.email.trim().toLowerCase();
+    const ip = getClientIp();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Rate limit BEFORE any expensive work (email send / user lookup).
+    const { error: rateErr } = await (supabaseAdmin as any).rpc(
+      "check_guest_signup_rate_limit",
+      { _ip: ip, _phone: phone },
+    );
+    if (rateErr) {
+      const msg = String(rateErr.message);
+      if (msg.includes("rate_limited_ip")) {
+        return { ok: false as const, error: "rate_limited" as const };
+      }
+      if (msg.includes("rate_limited_phone")) {
+        return { ok: false as const, error: "rate_limited" as const };
+      }
+      // Fail closed on unexpected error.
+      return { ok: false as const, error: "send_failed" as const };
+    }
+
+    // Generate a 6-digit numeric OTP with 10-min expiry.
+    const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+    const codeHash = hashOtp(phone, email, code);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+    const { error: insErr } = await supabaseAdmin
+      .from("guest_signup_otps")
+      .insert({
+        phone,
+        email,
+        code_hash: codeHash,
+        ip,
+        expires_at: expiresAt,
+      });
+    if (insErr) {
+      return { ok: false as const, error: "send_failed" as const };
+    }
+
+    // Enqueue OTP email via existing transactional queue.
+    try {
+      const messageId = crypto.randomUUID();
+      const subject = "【源晶商城】會員註冊驗證碼";
+      const html = `<div style="font-family:sans-serif;line-height:1.6"><p>您的會員註冊驗證碼是：</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;color:#0f172a">${code}</p><p style="color:#64748b;font-size:13px">此驗證碼 10 分鐘內有效。若非本人操作請忽略本信。</p></div>`;
+      const text = `您的會員註冊驗證碼是：${code}（10 分鐘內有效）`;
+      await supabaseAdmin.from("email_send_log").insert({
+        message_id: messageId,
+        template_name: "guest-signup-otp",
+        recipient_email: email,
+        status: "pending",
+      });
+      await (supabaseAdmin as any).rpc("enqueue_email", {
+        queue_name: "transactional_emails",
+        payload: {
+          message_id: messageId,
+          to: email,
+          from: "winerpapp <noreply@winerp.app>",
+          sender_domain: "win889999.winerp.app",
+          subject,
+          html,
+          text,
+          purpose: "transactional",
+          label: "guest-signup-otp",
+          queued_at: new Date().toISOString(),
+        },
+      });
+    } catch (e) {
+      console.error("[guest-otp] email enqueue failed", e);
+      return { ok: false as const, error: "send_failed" as const };
+    }
+
+    return { ok: true as const, expiresInMinutes: 10 };
+  });
+
+/**
+ * Step 2: verify OTP and create the auth account.
+ *
+ * Guest checkout quick-register:
+ * - REQUIRES a valid OTP from `requestGuestSignupOtp` (prevents automated
+ *   account farming and free-points abuse).
+ * - Creates auth user (email_confirm=true) with synthetic phone email
+ *   `{phone}@phone.local` and cryptographically random password; the
+ *   returned session tokens are what persist on the client.
+ * - Grants the configured signup discount points (default 1000) only after
+ *   OTP verification succeeds.
  */
 export const quickRegisterAndSignIn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
@@ -23,6 +137,7 @@ export const quickRegisterAndSignIn = createServerFn({ method: "POST" })
         email: z.string().trim().email("Email 格式錯誤").max(120),
         phone: z.string().trim().min(8, "手機格式錯誤").max(20),
         address: z.string().trim().min(1, "地址不可空白").max(200),
+        otp: z.string().trim().regex(/^\d{6}$/, "驗證碼格式錯誤"),
       })
       .parse(d),
   )
@@ -31,8 +146,19 @@ export const quickRegisterAndSignIn = createServerFn({ method: "POST" })
     if (!/^\+?\d{8,15}$/.test(phone)) {
       return { ok: false as const, error: "phone_invalid" as const };
     }
+    const email = data.email.trim().toLowerCase();
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Verify OTP FIRST — no side effects (auth user / points) unless valid.
+    const codeHash = hashOtp(phone, email, data.otp);
+    const { data: verified, error: verifyErr } = await (supabaseAdmin as any).rpc(
+      "verify_guest_signup_otp",
+      { _phone: phone, _email: email, _code_hash: codeHash },
+    );
+    if (verifyErr || !verified) {
+      return { ok: false as const, error: "otp_invalid" as const };
+    }
 
     // Phone already registered?
     const { data: existing } = await supabaseAdmin
@@ -46,7 +172,6 @@ export const quickRegisterAndSignIn = createServerFn({ method: "POST" })
     }
 
     const syntheticEmail = `${phone.replace(/^\+/, "")}@phone.local`;
-    // Cryptographically random transient password; session tokens are what persist on the client.
     const password = randomBytes(24).toString("base64url");
 
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
@@ -60,11 +185,9 @@ export const quickRegisterAndSignIn = createServerFn({ method: "POST" })
     }
     const userId = created.user.id;
 
-    // Trigger handle_new_user already inserted profile row.
-    // Patch the real email + ensure name/phone are populated.
     await supabaseAdmin
       .from("profiles")
-      .update({ name: data.name, phone, email: data.email })
+      .update({ name: data.name, phone, email })
       .eq("id", userId);
 
     await supabaseAdmin.from("customer_addresses").insert({
@@ -107,7 +230,6 @@ export const quickRegisterAndSignIn = createServerFn({ method: "POST" })
       console.error("[signup bonus] failed", e);
     }
 
-    // Sign in via publishable client to obtain session tokens.
     const pub = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_PUBLISHABLE_KEY!,
