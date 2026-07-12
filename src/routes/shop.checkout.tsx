@@ -33,12 +33,11 @@ const FREE_SHIPPING = 2000;
 function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
   const { items, clear } = useCart();
-  const isDealerForSub = useIsDealer();
-  const subtotal = useMemo(
-    () => items.reduce((s, it) => s + getEffectivePrice(it.product as any, isDealerForSub) * it.quantity, 0),
-    [items, isDealerForSub]
-  );
   const isDealer = useIsDealer();
+  const subtotal = useMemo(
+    () => items.reduce((s, it) => s + getEffectivePrice(it.product as any, isDealer) * it.quantity, 0),
+    [items, isDealer]
+  );
   const { addresses, defaultAddress, loading: addrLoading } = useAddresses();
   const { wallet, refresh: refreshWallet } = useWallet();
   const { is_vip } = useVipStatus();
