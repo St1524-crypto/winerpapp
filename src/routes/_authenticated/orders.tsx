@@ -2074,11 +2074,17 @@ function OrderDetailDialog({
     queryKey: ["sales-order-detail", orderId],
     enabled: !!orderId,
     queryFn: async () => {
-      const [orderRes, itemsRes, paymentsRes, pointPaymentsRes] = await Promise.all([
+      const [orderRes, itemsRes, paymentsRes, pointPaymentsRes, rewardEarnRes] = await Promise.all([
         supabase.from("sales_orders").select("*").eq("id", orderId!).maybeSingle(),
         supabase.from("sales_order_items").select("*").eq("sales_order_id", orderId!).order("created_at"),
         supabase.from("payments").select("*").eq("sales_order_id", orderId!).order("created_at", { ascending: false }),
         supabase.from("order_point_payments").select("*").eq("sales_order_id", orderId!).order("created_at", { ascending: false }),
+        supabase
+          .from("point_transactions")
+          .select("id, amount, point_type, source, created_at, note")
+          .eq("reference_id", orderId!)
+          .eq("source", "order_earn")
+          .eq("point_type", "reward"),
       ]);
       if (orderRes.error) throw new Error(orderRes.error.message);
       return {
@@ -2086,6 +2092,7 @@ function OrderDetailDialog({
         items: itemsRes.data ?? [],
         payments: paymentsRes.data ?? [],
         pointPayments: pointPaymentsRes.data ?? [],
+        rewardEarn: rewardEarnRes.data ?? [],
       };
     },
   });
@@ -2094,6 +2101,11 @@ function OrderDetailDialog({
   const items = detailQ.data?.items ?? [];
   const payments = detailQ.data?.payments ?? [];
   const pointPayments = (detailQ.data?.pointPayments ?? []) as any[];
+  const rewardEarnRows = (detailQ.data?.rewardEarn ?? []) as any[];
+  const rewardPointsIssued = rewardEarnRows.reduce(
+    (s: number, r: any) => s + Number(r.amount ?? 0),
+    0,
+  );
 
   // 點數付款分錄篩選 / 排序
   const [ppFrom, setPpFrom] = useState<string>("");
@@ -2210,7 +2222,14 @@ function OrderDetailDialog({
     .reduce((s: number, p: any) => s + Number(p.amount), 0);
   const pendingPayments = payments.filter((p: any) => p.payment_status !== "completed");
   const pendingPaymentsTotal = pendingPayments.reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
-  const unpaid = order ? Math.max(0, Number(order.total_amount) - paidTotal) : 0;
+  // 已套用的點數折抵金額（購物/獎勵/折扣點）— 需列入「已收款」以正確計算未收款。
+  const pointOffsetApplied = pointPayments
+    .filter((p: any) => p.status === "applied" || p.status === "completed")
+    .reduce((s: number, p: any) => s + Number(p.amount_offset ?? 0), 0);
+  const totalReceived = paidTotal + pointOffsetApplied;
+  const unpaid = order ? Math.max(0, Number(order.total_amount) - totalReceived) : 0;
+  const totalAmountNum = order ? Number(order.total_amount) : 0;
+  const paymentProgress = totalAmountNum > 0 ? Math.min(100, (totalReceived / totalAmountNum) * 100) : 0;
 
   const updateStatus = useMutation({
     mutationFn: async (patch: Partial<Pick<OrderRow, "order_status" | "shipping_status" | "payment_status">>) => {
@@ -2305,22 +2324,27 @@ function OrderDetailDialog({
                   <Row k="折扣" v={`- ${fmt(order.discount_amount)}`} />
                   <div className="border-t border-border my-1" />
                   <Row k="訂單總額" v={fmt(order.total_amount)} bold />
-                  <Row k="已收款" v={fmt(paidTotal)} accent="text-success" />
-                  <Row k="未收款" v={fmt(unpaid)} accent={unpaid > 0 ? "text-warning" : "text-success"} />
-                  <div className="pt-2 space-y-1">
-                    <Progress
-                      value={Number(order.total_amount) > 0
-                        ? Math.min(100, (paidTotal / Number(order.total_amount)) * 100)
-                        : 0}
-                      className="h-2"
+                  {pointOffsetApplied > 0 && (
+                    <Row
+                      k="點數折抵"
+                      v={`- ${fmt(pointOffsetApplied)}`}
+                      accent="text-primary"
                     />
+                  )}
+                  <Row k="已收款" v={fmt(totalReceived)} accent="text-success" />
+                  <Row k="未收款" v={fmt(unpaid)} accent={unpaid > 0 ? "text-warning" : "text-success"} />
+                  {rewardPointsIssued > 0 && (
+                    <Row
+                      k="本次發放獎勵點"
+                      v={`+ ${Number(rewardPointsIssued).toLocaleString()} 點`}
+                      accent="text-amber-500"
+                    />
+                  )}
+                  <div className="pt-2 space-y-1">
+                    <Progress value={paymentProgress} className="h-2" />
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>收款進度</span>
-                      <span>
-                        {Number(order.total_amount) > 0
-                          ? Math.round((paidTotal / Number(order.total_amount)) * 100)
-                          : 0}%
-                      </span>
+                      <span>{Math.round(paymentProgress)}%</span>
                     </div>
                   </div>
                 </CardContent>
