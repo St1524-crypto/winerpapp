@@ -114,18 +114,36 @@ export const requestWithdraw = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => WithdrawSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const bal = await getCashBalance(context.userId);
-    if (data.amount > bal) throw new Error(`現金餘額不足（目前 ${bal}）`);
+    // Atomic reserve: lock and deduct in one RPC call to prevent race-based
+    // double-withdraw. On approval failure we re-credit via adjust_cash_balance.
+    const { data: newBal, error: reserveErr } = await (supabaseAdmin as any).rpc(
+      "spend_cash_balance",
+      { _user_id: context.userId, _amount: data.amount },
+    );
+    if (reserveErr) {
+      if (String(reserveErr.message).includes("insufficient cash balance")) {
+        throw new Error("現金餘額不足");
+      }
+      throw new Error(reserveErr.message);
+    }
     const { error } = await supabaseAdmin.from("cash_transactions").insert({
       user_id: context.userId,
       tx_type: "withdraw",
       amount: data.amount,
+      balance_after: newBal,
       status: "pending",
       bank_info: data.bank_info,
       note: data.note ?? null,
       created_by: context.userId,
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      // rollback the reservation
+      await (supabaseAdmin as any).rpc("adjust_cash_balance", {
+        _user_id: context.userId,
+        _delta: data.amount,
+      });
+      throw new Error(error.message);
+    }
     return { ok: true };
   });
 
@@ -138,12 +156,19 @@ export const buyShoppingPoints = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => BuyPointsSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const bal = await getCashBalance(context.userId);
-    if (data.amount > bal) throw new Error(`現金餘額不足（目前 ${bal}）`);
-    const newCash = Number((bal - data.amount).toFixed(2));
     const points = Math.floor(data.amount * POINTS_PER_NTD);
 
-    await setCashBalance(context.userId, newCash);
+    // Atomic cash deduction (row-locked; throws if insufficient)
+    const { data: newCash, error: spendErr } = await (supabaseAdmin as any).rpc(
+      "spend_cash_balance",
+      { _user_id: context.userId, _amount: data.amount },
+    );
+    if (spendErr) {
+      if (String(spendErr.message).includes("insufficient cash balance")) {
+        throw new Error("現金餘額不足");
+      }
+      throw new Error(spendErr.message);
+    }
 
     const { data: tx, error: txErr } = await supabaseAdmin
       .from("cash_transactions")
@@ -161,7 +186,14 @@ export const buyShoppingPoints = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (txErr) throw new Error(txErr.message);
+    if (txErr) {
+      // rollback the cash deduction
+      await (supabaseAdmin as any).rpc("adjust_cash_balance", {
+        _user_id: context.userId,
+        _delta: data.amount,
+      });
+      throw new Error(txErr.message);
+    }
 
     const newPoints = await addShoppingPoints(
       context.userId,
@@ -171,6 +203,7 @@ export const buyShoppingPoints = createServerFn({ method: "POST" })
     );
     return { cash_balance: newCash, shopping_points: newPoints, points_added: points };
   });
+
 
 // ============ 管理員：核准 / 拒絕 ============
 const ProcessSchema = z.object({
@@ -195,16 +228,26 @@ export const adminProcessCashTx = createServerFn({ method: "POST" })
     const t = tx as any;
     let balanceAfter: number | null = null;
 
+    // Atomic balance changes via row-locked RPCs. Withdraw funds were already
+    // reserved on request; approval is just a state flip. Reject refunds them.
     if (data.action === "approve") {
-      const bal = await getCashBalance(t.user_id);
       if (t.tx_type === "topup") {
-        balanceAfter = Number((bal + Number(t.amount)).toFixed(2));
-        await setCashBalance(t.user_id, balanceAfter);
+        const { data: after, error: e } = await (supabaseAdmin as any).rpc(
+          "adjust_cash_balance",
+          { _user_id: t.user_id, _delta: Number(t.amount) },
+        );
+        if (e) throw new Error(e.message);
+        balanceAfter = after;
       } else if (t.tx_type === "withdraw") {
-        if (Number(t.amount) > bal) throw new Error(`會員餘額不足（目前 ${bal}）`);
-        balanceAfter = Number((bal - Number(t.amount)).toFixed(2));
-        await setCashBalance(t.user_id, balanceAfter);
+        balanceAfter = await getCashBalance(t.user_id);
       }
+    } else if (data.action === "reject" && t.tx_type === "withdraw") {
+      const { data: after, error: e } = await (supabaseAdmin as any).rpc(
+        "adjust_cash_balance",
+        { _user_id: t.user_id, _delta: Number(t.amount) },
+      );
+      if (e) throw new Error(e.message);
+      balanceAfter = after;
     }
 
     const { error: updErr } = await supabaseAdmin
@@ -222,6 +265,7 @@ export const adminProcessCashTx = createServerFn({ method: "POST" })
     return { ok: true, balance_after: balanceAfter };
   });
 
+
 // ============ 管理員：直接調整現金 ============
 const AdjustSchema = z.object({
   userId: z.string().uuid(),
@@ -234,10 +278,17 @@ export const adminAdjustCash = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AdjustSchema.parse(d))
   .handler(async ({ data, context }) => {
     if (!(await isFinanceAdmin(context.userId))) throw new Error("沒有權限");
-    const bal = await getCashBalance(data.userId);
-    const after = Number((bal + data.amount).toFixed(2));
-    if (after < 0) throw new Error(`餘額不足（目前 ${bal}）`);
-    await setCashBalance(data.userId, after);
+    // Atomic adjust (row-locked; rejects if result would be negative)
+    const { data: after, error: adjErr } = await (supabaseAdmin as any).rpc(
+      "adjust_cash_balance",
+      { _user_id: data.userId, _delta: data.amount },
+    );
+    if (adjErr) {
+      if (String(adjErr.message).includes("cannot go negative")) {
+        throw new Error("餘額不足");
+      }
+      throw new Error(adjErr.message);
+    }
     const { error } = await supabaseAdmin.from("cash_transactions").insert({
       user_id: data.userId,
       tx_type: "adjust",
@@ -249,9 +300,17 @@ export const adminAdjustCash = createServerFn({ method: "POST" })
       processed_by: context.userId,
       processed_at: new Date().toISOString(),
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      // rollback
+      await (supabaseAdmin as any).rpc("adjust_cash_balance", {
+        _user_id: data.userId,
+        _delta: -data.amount,
+      });
+      throw new Error(error.message);
+    }
     return { balance_after: after };
   });
+
 
 // ============ 管理員：會員現金 / 點數餘額查詢 ============
 const AdminWalletListSchema = z.object({

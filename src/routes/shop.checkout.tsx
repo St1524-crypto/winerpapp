@@ -18,7 +18,7 @@ import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { buildShippingSnapshot } from "@/lib/order-snapshot";
 import { useWallet, useVipStatus } from "@/hooks/use-wallet";
 import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
-import { quickRegisterAndSignIn } from "@/lib/checkout-register.functions";
+import { quickRegisterAndSignIn, requestGuestSignupOtp } from "@/lib/checkout-register.functions";
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 
 
@@ -434,6 +434,8 @@ function GuestAuthPanel() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
 
   async function doLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -455,6 +457,28 @@ function GuestAuthPanel() {
     }
   }
 
+  async function doSendOtp() {
+    const cleanPhone = phone.trim().replace(/[\s-]/g, "");
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) { toast.error("Email 格式錯誤"); return; }
+    if (!/^\+?\d{8,15}$/.test(cleanPhone)) { toast.error("手機格式錯誤"); return; }
+    setBusy(true);
+    try {
+      const res = await requestGuestSignupOtp({
+        data: { phone: cleanPhone, email: email.trim() },
+      }).catch(() => ({ ok: false as const, error: "send_failed" as const }));
+      if (!res.ok) {
+        if (res.error === "rate_limited") toast.error("嘗試次數過多，請稍後再試");
+        else if (res.error === "phone_invalid") toast.error("手機格式錯誤");
+        else toast.error("驗證碼發送失敗，請稍後再試");
+        return;
+      }
+      setOtpSent(true);
+      toast.success("驗證碼已寄至您的 Email，10 分鐘內有效");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function doRegister(e: React.FormEvent) {
     e.preventDefault();
     const cleanPhone = phone.trim().replace(/[\s-]/g, "");
@@ -462,14 +486,22 @@ function GuestAuthPanel() {
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) { toast.error("Email 格式錯誤"); return; }
     if (!/^\+?\d{8,15}$/.test(cleanPhone)) { toast.error("手機格式錯誤"); return; }
     if (!address.trim()) { toast.error("地址不可空白"); return; }
+    if (!/^\d{6}$/.test(otp.trim())) { toast.error("請輸入 6 位數 Email 驗證碼"); return; }
     setBusy(true);
     try {
       const res = await quickRegisterAndSignIn({
-        data: { name: name.trim(), email: email.trim(), phone: cleanPhone, address: address.trim() },
+        data: {
+          name: name.trim(),
+          email: email.trim(),
+          phone: cleanPhone,
+          address: address.trim(),
+          otp: otp.trim(),
+        },
       }).catch(() => ({ ok: false as const, error: "create_failed" as const }));
       if (!res.ok) {
         if (res.error === "phone_exists") toast.error("此手機已是會員，請使用會員登入");
         else if (res.error === "phone_invalid") toast.error("手機格式錯誤");
+        else if (res.error === "otp_invalid") toast.error("驗證碼錯誤或已過期，請重新取得");
         else toast.error("建立會員失敗，請聯絡客服");
         return;
       }
@@ -482,6 +514,7 @@ function GuestAuthPanel() {
       setBusy(false);
     }
   }
+
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -545,9 +578,28 @@ function GuestAuthPanel() {
                 <Label>收件地址 *</Label>
                 <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="台北市信義區市府路 1 號" />
               </div>
-              <Button type="submit" className="w-full" disabled={busy}>
+              <div className="space-y-1.5 rounded-md border border-dashed p-3 bg-muted/30">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-sm">Email 驗證碼 *</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={doSendOtp} disabled={busy}>
+                    {otpSent ? "重新寄送" : "寄送驗證碼"}
+                  </Button>
+                </div>
+                <Input
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  inputMode="numeric"
+                  placeholder="6 位數驗證碼"
+                  disabled={!otpSent}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  為防止濫用註冊，須先驗證 Email 才能建立會員。驗證碼 10 分鐘內有效。
+                </p>
+              </div>
+              <Button type="submit" className="w-full" disabled={busy || !otpSent}>
                 {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}建立會員並繼續結帳
               </Button>
+
             </form>
           </CardContent>
         </Card>

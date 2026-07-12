@@ -325,11 +325,42 @@ export const adminResetMemberPassword = createServerFn({ method: "POST" })
 
 const ImpersonateSchema = z.object({ userId: z.string().uuid() });
 
+async function assertSuperAdmin(userId: string) {
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "super_admin")
+    .limit(1);
+  if (!data || data.length === 0) throw new Error("Forbidden: 需要 super_admin 權限");
+}
+
+async function targetHasPrivilegedRole(userId: string) {
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", ["super_admin", "admin"])
+    .limit(1);
+  return !!(data && data.length > 0);
+}
+
 export const adminImpersonateMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ImpersonateSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    // Only super_admin can issue impersonation links (privilege-escalation defense).
+    await assertSuperAdmin(context.userId);
+
+    // Never allow impersonating another super_admin or admin — that would let
+    // a compromised super_admin session pivot into another top-level account
+    // via a magic link and creates cross-admin blast-radius.
+    if (data.userId === context.userId) {
+      throw new Error("不可對自己產生代登入連結");
+    }
+    if (await targetHasPrivilegedRole(data.userId)) {
+      throw new Error("不可對管理員 / super_admin 帳號產生代登入連結");
+    }
 
     const { data: target } = await supabaseAdmin
       .from("profiles")
@@ -359,3 +390,4 @@ export const adminImpersonateMember = createServerFn({ method: "POST" })
       expiresInMinutes: 60,
     };
   });
+

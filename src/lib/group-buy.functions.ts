@@ -104,13 +104,17 @@ export const joinGroupBuy = createServerFn({ method: "POST" })
     }
 
     if (pointsUsed > 0) {
-      const { data: wallet } = await supabaseAdmin
-        .from("member_points_wallet").select("shopping_points").eq("user_id", userId).maybeSingle();
-      if (!wallet || wallet.shopping_points < pointsUsed) throw new Error("購物點不足");
-      await supabaseAdmin
-        .from("member_points_wallet")
-        .update({ shopping_points: wallet.shopping_points - pointsUsed, updated_at: new Date().toISOString() })
-        .eq("user_id", userId);
+      // Atomic deduction: row-locked RPC prevents concurrent double-spend.
+      const { error: spendErr } = await (supabaseAdmin as any).rpc(
+        "spend_shopping_points",
+        { _user_id: userId, _amount: pointsUsed },
+      );
+      if (spendErr) {
+        if (String(spendErr.message).includes("insufficient shopping points")) {
+          throw new Error("購物點不足");
+        }
+        throw new Error(spendErr.message);
+      }
     }
 
     // mark paid immediately when fully covered by points; otherwise pending_payment (匯款)
@@ -129,13 +133,22 @@ export const joinGroupBuy = createServerFn({ method: "POST" })
     }).select().single();
     if (error) {
       if (pointsUsed > 0) {
-        const { data: w } = await supabaseAdmin
-          .from("member_points_wallet").select("shopping_points").eq("user_id", userId).maybeSingle();
-        if (w) await supabaseAdmin.from("member_points_wallet")
-          .update({ shopping_points: w.shopping_points + pointsUsed }).eq("user_id", userId);
+        // Refund the atomically-deducted points on order-insert failure.
+        const { data: w2 } = await supabaseAdmin
+          .from("member_points_wallet")
+          .select("shopping_points")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const cur = Number((w2 as any)?.shopping_points ?? 0);
+        await supabaseAdmin
+          .from("member_points_wallet")
+          .update({ shopping_points: cur + pointsUsed, updated_at: new Date().toISOString() })
+          .eq("user_id", userId);
       }
       throw error;
     }
+
+
     return { order };
   });
 
