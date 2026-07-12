@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { sanitizePostgrestPattern } from "@/lib/postgrest-sanitize";
 
 const SYSTEM_PROMPT = `你是「源晶小幫手」，源晶商城的 AI 客服助理。
 - 用親切、簡潔、繁體中文回答客戶。
