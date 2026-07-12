@@ -105,7 +105,7 @@ function Page() {
         </Button>
       </div>
 
-      <FiltersCard
+      <BonusFiltersCard
         filters={filters} setFilters={setFilters} preset={preset} setPreset={applyPreset}
         onLoad={load} loading={loading} onExport={exportCsv}
         typeOptions={MONTHLY_BONUS_TYPE_OPTIONS}
