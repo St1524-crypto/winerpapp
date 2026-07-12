@@ -122,7 +122,9 @@ export const getCheckInStatus = createServerFn({ method: "GET" })
 
 async function fetchProductContext(query: string) {
   // Try keyword match across name / sku / category / short_description.
-  const ilike = `%${query.replace(/[%_]/g, "")}%`;
+  const safe = sanitizePostgrestPattern(query);
+  if (!safe) return null;
+  const ilike = `%${safe}%`;
   const { data } = await supabaseAdmin
     .from("products")
     .select("name, sku, price, stock, short_description, category")
