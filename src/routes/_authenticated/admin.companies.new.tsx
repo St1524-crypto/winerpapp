@@ -54,29 +54,17 @@ function NewCompanyPage() {
 
   const m = useMutation({
     mutationFn: async (values: CompanyFormValues) => {
-      const { data, error } = await supabase
-        .from("companies")
-        .insert({
+      const { createCompany } = await import("@/lib/companies-admin.functions");
+      const data = await createCompany({
+        data: {
           company_name: values.company_name,
           tax_id: values.tax_id || null,
           email: values.email || null,
           phone: values.phone || null,
           address: values.address || null,
           logo_url: values.logo_url || null,
-          status: "active",
-        })
-        .select()
-        .single();
-      if (error) throw new Error(`公司建立失敗：${error.message}（${error.code || "unknown"}）`);
-
-      if (user) {
-        const { error: memErr } = await supabase
-          .from("company_members")
-          .insert({ company_id: data.id, user_id: user.id, role: "admin" });
-        if (memErr && !memErr.message.toLowerCase().includes("duplicate")) {
-          throw new Error(`成員加入失敗：${memErr.message}（${memErr.code || "unknown"}）`);
-        }
-      }
+        },
+      });
       return data;
     },
     onSuccess: async (data) => {
