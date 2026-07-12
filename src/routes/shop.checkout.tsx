@@ -18,7 +18,7 @@ import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { buildShippingSnapshot } from "@/lib/order-snapshot";
 import { useWallet, useVipStatus } from "@/hooks/use-wallet";
 import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
-import { quickRegisterAndSignIn } from "@/lib/checkout-register.functions";
+import { quickRegisterAndSignIn, requestGuestSignupOtp } from "@/lib/checkout-register.functions";
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 
 
