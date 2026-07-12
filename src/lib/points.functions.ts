@@ -228,8 +228,9 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
             // 買家為有效 VIP：獎勵點入自己帳戶
             await applyDelta(userId, "reward", rewardEarn, "order_earn", { reference_id: data.orderId });
           } else {
-            // 訪客 / 到期 VIP：獎勵點歸屬推薦人，依位階制度復購獎勵點發放；
-            // 折算為現金（1 點 = NT$1）發放到「有效 VIP」上線的現金餘額。
+            // 訪客 / 到期 VIP：獎勵點歸屬推薦人，依 repurchase_bonus_settings 位階（第 1、2 代…）
+            // 折算為獎勵點，發放到「有效 VIP」上線的獎勵點錢包，
+            // 並依營業分紅比例與 VIP 升級分紅上限進行 cap 檢查（任一上限已滿則不可領）。
             const { data: rates } = await supabaseAdmin
               .from("repurchase_bonus_settings")
               .select("generation_level, bonus_rate, enabled")
@@ -240,7 +241,7 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
             let currentId: string | null = ((prof as any)?.referred_by as string | null) ?? null;
             const guard = new Set<string>([userId]);
             let totalDistributed = 0;
-            const distributedTo: Array<{ level: number; amount: number }> = [];
+            const distributedTo: Array<{ level: number; amount: number; note?: string }> = [];
             for (let level = 1; level <= maxLevel && currentId && !guard.has(currentId); level++) {
               guard.add(currentId);
               const rate = Number(rateRows.find((r) => r.generation_level === level)?.bonus_rate ?? 0);
@@ -249,32 +250,61 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
                 .select("id, is_vip, vip_expires_at, referred_by")
                 .eq("id", currentId)
                 .maybeSingle();
+              const upId = (up as any)?.id as string | undefined;
               const upExp = (up as any)?.vip_expires_at as string | null;
               const upVipActive = !!(up as any)?.is_vip && (!upExp || new Date(upExp) > new Date());
-              const cashAmount = Math.floor((rewardEarn * rate) / 100);
-              if (upVipActive && cashAmount > 0) {
-                const { data: newCash } = await (supabaseAdmin as any).rpc("adjust_cash_balance", {
-                  _user_id: (up as any).id,
-                  _delta: cashAmount,
+              const basePoints = Math.floor((rewardEarn * rate) / 100);
+              if (upId && upVipActive && basePoints > 0) {
+                // 營業分紅比例 cap（依上線 VIP 位階）
+                const { data: bizRow } = await (supabaseAdmin as any).rpc("record_business_bonus_release", {
+                  _member_id: upId,
+                  _bonus_amount: basePoints,
+                  _source_member_id: userId,
+                  _source_order_id: data.orderId,
+                  _tier_code: null,
+                  _dedupe_key: `order:${data.orderId}:biz:L${level}`,
+                  _bonus_record_id: null,
+                  _notes: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP`,
                 });
-                await supabaseAdmin.from("cash_transactions").insert({
-                  user_id: (up as any).id,
-                  tx_type: "referral_reward",
-                  amount: cashAmount,
-                  balance_after: newCash,
-                  status: "completed",
-                  related_point_amount: rewardEarn,
-                  note: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP，來源訂單 ${data.orderId}`,
-                  created_by: userId,
-                  processed_by: userId,
-                  processed_at: new Date().toISOString(),
+                // VIP 升級分紅上限 cap
+                const { data: upgRow } = await (supabaseAdmin as any).rpc("record_upgrade_bonus_release", {
+                  _member_id: upId,
+                  _bonus_amount: basePoints,
+                  _source_member_id: userId,
+                  _source_order_id: data.orderId,
+                  _tier_code: null,
+                  _dedupe_key: `order:${data.orderId}:upg:L${level}`,
+                  _bonus_record_id: null,
+                  _notes: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP`,
                 });
-                totalDistributed += cashAmount;
-                distributedTo.push({ level, amount: cashAmount });
+                const bizPayable = Math.floor(Number((bizRow as any)?.payable_amount ?? 0));
+                const upgPayable = Math.floor(Number((upgRow as any)?.payable_amount ?? 0));
+                const payable = Math.max(0, Math.min(basePoints, bizPayable, upgPayable));
+                const capReason: string[] = [];
+                if (bizPayable < basePoints) capReason.push("營業分紅上限");
+                if (upgPayable < basePoints) capReason.push("升級分紅上限");
+                if (payable > 0) {
+                  await applyDelta(upId, "reward", payable, "order_earn_referrer", {
+                    reference_id: data.orderId,
+                    note: `第 ${level} 代復購獎勵（${rate}%）— 來源會員 ${userId}`
+                      + (capReason.length ? `（${capReason.join("、")}部分達上限）` : ""),
+                    created_by: userId,
+                  });
+                }
+                totalDistributed += payable;
+                distributedTo.push({
+                  level,
+                  amount: payable,
+                  note: capReason.length
+                    ? (payable > 0 ? `部分達${capReason.join("、")}` : `已達${capReason.join("、")} 略過`)
+                    : undefined,
+                });
+              } else if (upId && !upVipActive && basePoints > 0) {
+                distributedTo.push({ level, amount: 0, note: "上線非有效 VIP 略過" });
               }
               currentId = ((up as any)?.referred_by as string | null) ?? null;
             }
-            // 於訂單留下標記（0 點）：訂單詳情可顯示「本次獎勵點已轉推薦人」
+            // 於訂單留下標記（0 點）：訂單詳情可顯示「本次獎勵點已轉推薦人獎勵點錢包」
             await supabaseAdmin.from("point_transactions").insert({
               user_id: userId,
               point_type: "reward",
@@ -282,8 +312,10 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
               balance_after: 0,
               source: "order_earn_referrer",
               reference_id: data.orderId,
-              note: `買家非有效 VIP，${rewardEarn} 獎勵點依復購位階折算 NT$${totalDistributed} 發放至推薦人現金餘額`
-                + (distributedTo.length ? `（${distributedTo.map((d) => `L${d.level} +${d.amount}`).join(", ")}）` : "（無有效 VIP 上線可接收）"),
+              note: `買家非有效 VIP，${rewardEarn} 獎勵點依復購位階折算 ${totalDistributed} 點發放至推薦人獎勵點錢包`
+                + (distributedTo.length
+                  ? `（${distributedTo.map((d) => `L${d.level} +${d.amount} 點${d.note ? `（${d.note}）` : ""}`).join(", ")}）`
+                  : "（無有效 VIP 上線可接收）"),
               created_by: userId,
             });
           }
