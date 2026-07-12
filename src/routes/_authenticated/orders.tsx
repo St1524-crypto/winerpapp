@@ -2377,7 +2377,12 @@ function OrderDetailDialog({
                 <div className="grid grid-cols-3 gap-3">
                   <Card><CardContent className="pt-4">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">已收</div>
-                    <div className="text-xl font-bold mt-1 text-success">{fmt(paidTotal)}</div>
+                    <div className="text-xl font-bold mt-1 text-success">{fmt(totalReceived)}</div>
+                    {pointOffsetApplied > 0 && (
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        現金 {fmt(paidTotal)} + 點數 {fmt(pointOffsetApplied)}
+                      </div>
+                    )}
                   </CardContent></Card>
                   <Card><CardContent className="pt-4">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">應收</div>
@@ -2394,6 +2399,7 @@ function OrderDetailDialog({
                       </div>
                     </CardContent>
                   </Card>
+
                 </div>
               );
             })()}
