@@ -32,11 +32,11 @@ const FREE_SHIPPING = 2000;
 
 function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, clear } = useCart();
+  const { items, clear, getItemUnitPrice } = useCart();
   const isDealer = useIsDealer();
   const subtotal = useMemo(
-    () => items.reduce((s, it) => s + getEffectivePrice(it.product as any, isDealer) * it.quantity, 0),
-    [items, isDealer]
+    () => items.reduce((s, it) => s + getItemUnitPrice(it) * it.quantity, 0),
+    [items, getItemUnitPrice]
   );
   const { addresses, defaultAddress, loading: addrLoading } = useAddresses();
   const { wallet, refresh: refreshWallet } = useWallet();
@@ -124,7 +124,7 @@ function CheckoutPage() {
       const prodCompanyMap = new Map(prodRows?.map((p: any) => [p.id, p.company_id]) ?? []);
 
       const rows = items.map((it) => {
-        const unit = getEffectivePrice(it.product as any, isDealer);
+        const unit = getItemUnitPrice(it);
         return {
           company_id: (prodCompanyMap.get(it.product_id) as string) ?? companyId,
           product_id: it.product_id,
@@ -300,7 +300,7 @@ function CheckoutPage() {
                     <div className="truncate text-xs">{it.product?.name}</div>
                     <div className="text-[11px] text-muted-foreground">× {it.quantity}</div>
                   </div>
-                  <div className="tabular-nums text-xs">NT$ {(getEffectivePrice(it.product as any, isDealer) * it.quantity).toLocaleString()}</div>
+                  <div className="tabular-nums text-xs">NT$ {(getItemUnitPrice(it) * it.quantity).toLocaleString()}</div>
                 </div>
               ))}
               {items.length === 0 && <div className="text-muted-foreground text-center py-4">購物車為空</div>}
