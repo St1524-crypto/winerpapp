@@ -179,7 +179,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
     // Fetch product context based on the latest user message
     const productCtx = await fetchProductContext(data.message);
     const productSection =
-      productCtx.length > 0
+      productCtx && productCtx.length > 0
         ? `以下是相關商品資料（請只引用真實存在的商品）：\n${productCtx
             .map(
               (p) =>
