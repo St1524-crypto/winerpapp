@@ -226,7 +226,7 @@ describe("整合：多代折算 + cap 檢查（模擬 handler 迴圈）", () => 
     expect(r.total).toBe(5);
     expect(r.note).toContain("L1 +0 點（已達營業分紅上限 略過）");
     expect(r.note).toContain("L2 +0 點（上線非有效 VIP 略過）");
-    expect(r.note).toContain("L3 +5 點（部分達營業分紅上限、升級分紅上限）");
+    expect(r.note).toContain("L3 +5 點（部分達升級分紅上限）");
   });
 
   it("所有代皆 payable=0 → total=0，但 note 逐級列出原因（不是「無有效上線」）", () => {
