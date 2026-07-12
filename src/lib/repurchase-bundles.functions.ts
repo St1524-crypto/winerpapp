@@ -133,10 +133,11 @@ export const adminUpsertBundle = createServerFn({ method: "POST" })
       max_per_order: rest.max_per_order ?? null,
       updated_at: new Date().toISOString(),
     };
-    let bundleId = id;
-    if (bundleId) {
-      const { error } = await supabaseAdmin.from("repurchase_bundles").update(payload).eq("id", bundleId);
+    let bundleId: string;
+    if (id) {
+      const { error } = await supabaseAdmin.from("repurchase_bundles").update(payload).eq("id", id);
       if (error) throw new Error(error.message);
+      bundleId = id;
     } else {
       payload.created_by = context.userId;
       const { data: ins, error } = await supabaseAdmin
@@ -145,7 +146,7 @@ export const adminUpsertBundle = createServerFn({ method: "POST" })
         .select("id")
         .single();
       if (error) throw new Error(error.message);
-      bundleId = (ins as any).id;
+      bundleId = (ins as any).id as string;
     }
     // Replace items
     await supabaseAdmin.from("repurchase_bundle_items").delete().eq("bundle_id", bundleId);
