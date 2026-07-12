@@ -58,7 +58,7 @@ const GROUPS: AdminNavGroup[] = [
       { title: "VIP 升級套組", url: "/admin/vip-upgrade-packages", icon: Crown },
       { title: "VIP 升級分紅上限", url: "/admin/vip-upgrade-bonus-cap", icon: Crown },
       { title: "VIP 營業分紅上限", url: "/admin/vip-business-bonus-cap", icon: Crown },
-      { title: "VIP 星級分紅池", url: "/admin/vip-bonus-pools", icon: Crown },
+      { title: "VIP 星級升級分紅池", url: "/admin/vip-bonus-pools", icon: Crown },
       { title: "升級分紅總收益上限", url: "/admin/vip-upgrade-bonus-total-earnings", icon: Crown },
       { title: "年費自動升 VIP", url: "/admin/annual-fee-vip", icon: Crown, roles: ["super_admin", "admin"] },
       { title: "推廣總覽 / 結算", url: "/admin/referrals", icon: TrendingUp, roles: ["super_admin", "admin", "finance", "sales"] },
