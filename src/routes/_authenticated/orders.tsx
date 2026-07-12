@@ -20,6 +20,7 @@ import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 import { computeOrderPaymentTotals } from "@/lib/order-payment-totals";
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
+import { logOrderRewardPointsAudit } from "@/lib/audit.functions";
 
 /** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/升級獎金（失敗不擋主流程） */
 async function autoSettleCommission(orderId: string, nextStatus: string) {
@@ -3111,6 +3112,8 @@ function EditOrderDialog({
     setPickerOpen(false);
   }
 
+  const logRewardAudit = useServerFn(logOrderRewardPointsAudit);
+
   const m = useMutation({
     mutationFn: async () => {
       if (!customerName.trim() || !address.trim() || !phone.trim()) {
@@ -3122,6 +3125,16 @@ function EditOrderDialog({
       if (editItems.some((it) => !it.quantity || it.quantity <= 0 || it.unit_price < 0)) {
         throw new Error("商品數量需大於 0，且單價不可為負");
       }
+
+      // Snapshot 編輯前的「本次發放獎勵點」狀態
+      const beforeNotice = resolveRewardNotice(rewardTxQ.data ?? []);
+
+      // 記錄要進審計的欄位變更（金額 / 品項會影響獎勵點）
+      const changedFields: string[] = [];
+      if (Number(order.subtotal ?? 0) !== subtotalNum) changedFields.push("subtotal");
+      if (Number(order.shipping_fee ?? 0) !== Number(shippingFee || 0)) changedFields.push("shipping_fee");
+      if (Number(order.discount_amount ?? 0) !== Number(discount || 0)) changedFields.push("discount_amount");
+      if (Number(order.total_amount ?? 0) !== total) changedFields.push("total_amount");
 
       // 1) 更新訂單主檔
       const { error: upErr } = await supabase
@@ -3168,6 +3181,35 @@ function EditOrderDialog({
           })),
         );
       if (insErr) throw new Error(`寫入新品項失敗：${insErr.message}`);
+
+      // 3) 重新讀取獎勵點交易，寫入審計紀錄
+      const { data: afterRows } = await supabase
+        .from("point_transactions")
+        .select("amount, source, note")
+        .eq("reference_id", order.id)
+        .in("source", ["order_earn", "order_earn_referrer"])
+        .eq("point_type", "reward");
+      const afterNotice = resolveRewardNotice((afterRows ?? []) as RewardTxRow[]);
+      const toPayload = (n: ReturnType<typeof resolveRewardNotice>) =>
+        n === null
+          ? { kind: "none" as const, points: 0, note: null }
+          : n.kind === "earn"
+            ? { kind: "earn" as const, points: n.points, note: null }
+            : { kind: "referrer" as const, points: 0, note: n.note };
+      try {
+        await logRewardAudit({
+          data: {
+            orderId: order.id,
+            orderNo: order.order_no,
+            before: toPayload(beforeNotice),
+            after: toPayload(afterNotice),
+            changedFields,
+          },
+        });
+      } catch (e) {
+        // 審計失敗不阻擋主流程
+        console.warn("[edit-order] reward-points audit failed:", e);
+      }
     },
     onSuccess: () => {
       toast.success("訂單已更新");
@@ -3175,6 +3217,7 @@ function EditOrderDialog({
     },
     onError: (e: any) => toast.error(e?.message ?? "更新失敗"),
   });
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
