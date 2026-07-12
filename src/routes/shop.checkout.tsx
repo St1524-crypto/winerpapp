@@ -32,8 +32,12 @@ const FREE_SHIPPING = 2000;
 
 function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, subtotal, clear } = useCart();
+  const { items, clear } = useCart();
   const isDealer = useIsDealer();
+  const subtotal = useMemo(
+    () => items.reduce((s, it) => s + getEffectivePrice(it.product as any, isDealer) * it.quantity, 0),
+    [items, isDealer]
+  );
   const { addresses, defaultAddress, loading: addrLoading } = useAddresses();
   const { wallet, refresh: refreshWallet } = useWallet();
   const { is_vip } = useVipStatus();

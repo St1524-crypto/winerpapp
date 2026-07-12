@@ -3236,6 +3236,69 @@ export type Database = {
         }
         Relationships: []
       }
+      order_point_payments: {
+        Row: {
+          amount_offset: number
+          created_at: string
+          created_by: string | null
+          dedupe_key: string
+          id: string
+          member_id: string
+          note: string | null
+          point_transaction_id: string | null
+          point_type: string
+          points_used: number
+          sales_order_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_offset?: number
+          created_at?: string
+          created_by?: string | null
+          dedupe_key: string
+          id?: string
+          member_id: string
+          note?: string | null
+          point_transaction_id?: string | null
+          point_type: string
+          points_used: number
+          sales_order_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_offset?: number
+          created_at?: string
+          created_by?: string | null
+          dedupe_key?: string
+          id?: string
+          member_id?: string
+          note?: string | null
+          point_transaction_id?: string | null
+          point_type?: string
+          points_used?: number
+          sales_order_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_point_payments_point_transaction_id_fkey"
+            columns: ["point_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "point_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_point_payments_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           company_id: string
