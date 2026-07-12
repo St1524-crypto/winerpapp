@@ -55,8 +55,8 @@ function Page() {
   const [editProfile, setEditProfile] = useState<Member | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
   const [showFormPassword, setShowFormPassword] = useState(false);
-  const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, status: "idle" });
-  const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null }[]>([]);
+  const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; tier: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, tier: null, status: "idle" });
+  const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null; tier: string | null }[]>([]);
 
   useEffect(() => {
     const code = form.referrerMemberNo.trim();
