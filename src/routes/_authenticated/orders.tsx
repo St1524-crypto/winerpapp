@@ -2368,7 +2368,7 @@ function OrderDetailDialog({
             {/* 收款摘要：已收 / 應收 / 差額 */}
             {(() => {
               const receivable = Number(order.total_amount);
-              const diff = paidTotal - receivable; // 負數表示尚有未收
+              const diff = totalReceived - receivable; // 負數表示尚有未收
               const diffNegative = diff < 0;
               const diffColor = diffNegative
                 ? "text-destructive"
