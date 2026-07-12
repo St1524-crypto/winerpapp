@@ -116,3 +116,66 @@ export const writeClientAuditLog = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Log an "edit order → reward points change" event to audit_logs.
+ * Called by the admin EditOrderDialog after save so the before/after
+ * snapshot of `本次發放獎勵點` is queryable in the audit log viewer.
+ *
+ * Entity/action are fixed so operators can filter by:
+ *   entity = "sales_order"
+ *   action = "order.reward_points_change"
+ */
+const rewardNoticeSchema = z
+  .object({
+    kind: z.enum(["earn", "referrer", "none"]),
+    points: z.number().int().nonnegative().optional().nullable(),
+    note: z.string().max(500).optional().nullable(),
+  })
+  .nullable();
+
+export const logOrderRewardPointsAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        orderId: z.string().uuid(),
+        orderNo: z.string().max(80).optional().nullable(),
+        before: rewardNoticeSchema,
+        after: rewardNoticeSchema,
+        changedFields: z.array(z.string().max(80)).optional().default([]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    // Only staff who can edit orders should be allowed to write this log.
+    // Reuse admin/finance gate for parity with other audit tools; the row
+    // is also written with supabaseAdmin so it survives RLS.
+    await assertAdmin(context.userId);
+
+    const beforeKind = data.before?.kind ?? "none";
+    const afterKind = data.after?.kind ?? "none";
+    const beforePts = data.before?.points ?? 0;
+    const afterPts = data.after?.points ?? 0;
+    const changed =
+      beforeKind !== afterKind ||
+      beforePts !== afterPts ||
+      (data.before?.note ?? null) !== (data.after?.note ?? null);
+
+    const { error } = await supabaseAdmin.from("audit_logs").insert({
+      user_id: context.userId,
+      action: "order.reward_points_change",
+      entity: "sales_order",
+      entity_id: data.orderId,
+      metadata: {
+        order_no: data.orderNo ?? null,
+        before: data.before,
+        after: data.after,
+        changed,
+        changed_fields: data.changedFields ?? [],
+      },
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true, changed };
+  });
+
+
