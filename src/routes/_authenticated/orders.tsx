@@ -19,6 +19,7 @@ import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 import { computeOrderPaymentTotals } from "@/lib/order-payment-totals";
+import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
 
 /** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/升級獎金（失敗不擋主流程） */
 async function autoSettleCommission(orderId: string, nextStatus: string) {
@@ -3050,6 +3051,22 @@ function EditOrderDialog({
     },
   });
 
+  const rewardTxQ = useQuery({
+    queryKey: ["order-edit-reward-tx", order.id],
+    enabled: open && !!order.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("point_transactions")
+        .select("amount, source, note")
+        .eq("reference_id", order.id)
+        .in("source", ["order_earn", "order_earn_referrer"])
+        .eq("point_type", "reward");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as RewardTxRow[];
+    },
+  });
+  const rewardNotice = resolveRewardNotice(rewardTxQ.data ?? []);
+
   const staffQ = useQuery({
     queryKey: ["company-staff-picker-edit", order.company_id],
     enabled: open && !!order.company_id,
@@ -3289,6 +3306,19 @@ function EditOrderDialog({
               訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
             </div>
           </div>
+
+          {rewardNotice && (
+            rewardNotice.kind === "earn" ? (
+              <div className="flex items-center justify-between rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-600">
+                <span>本次發放獎勵點</span>
+                <span className="tabular-nums font-semibold">+ {rewardNotice.points.toLocaleString()} 點</span>
+              </div>
+            ) : (
+              <div className="rounded-md bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                已轉推薦人獎勵點錢包：{rewardNotice.note}
+              </div>
+            )
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
