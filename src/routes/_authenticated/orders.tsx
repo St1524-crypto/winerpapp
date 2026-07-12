@@ -2532,12 +2532,57 @@ function OrderDetailDialog({
 
             {/* 點數付款分錄 (order_point_payments) */}
             <Card>
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-primary" />
                   點數付款分錄 ({filteredPointPayments.length}/{pointPayments.length})
                 </CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7"
+                  disabled={filteredPointPayments.length === 0}
+                  onClick={() => {
+                    const typeLabelOf = (t: string) =>
+                      t === "discount" ? "折扣點" : t === "shopping" ? "購物點" : t === "reward" ? "獎勵點" : t ?? "";
+                    const esc = (v: any) => {
+                      const s = v == null ? "" : String(v);
+                      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                    };
+                    const headers = [
+                      "建立時間", "點數類型", "使用點數", "折抵金額", "狀態",
+                      "備註", "Dedupe Key", "會員 ID", "點數交易 ID", "分錄 ID",
+                    ];
+                    const rows = filteredPointPayments.map((p: any) => [
+                      new Date(p.created_at).toISOString(),
+                      typeLabelOf(p.point_type),
+                      p.points_used ?? 0,
+                      p.amount_offset ?? 0,
+                      p.status ?? "",
+                      p.note ?? "",
+                      p.dedupe_key ?? "",
+                      p.member_id ?? "",
+                      p.point_transaction_id ?? "",
+                      p.id,
+                    ]);
+                    const csv = [headers, ...rows].map((r) => r.map(esc).join(",")).join("\n");
+                    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+                    a.href = url;
+                    a.download = `point_payments_${order?.order_no ?? orderId}_${ts}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    toast.success(`已匯出 ${filteredPointPayments.length} 筆`);
+                  }}
+                >
+                  <Download className="h-3.5 w-3.5 mr-1" /> 匯出 CSV
+                </Button>
               </CardHeader>
+
               <CardContent className="space-y-3">
                 {/* 篩選 / 排序控制 */}
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
