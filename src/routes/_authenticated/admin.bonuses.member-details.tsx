@@ -20,50 +20,22 @@ import {
 } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { listMemberBonusDetails, getBonusRecordDetail } from "@/lib/bonus.functions";
+import {
+  bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT,
+  DAILY_BONUS_TYPE_OPTIONS, MONTHLY_BONUS_TYPE_OPTIONS,
+} from "@/lib/bonus-labels";
 
 const ALLOWED_ROLES: AppRole[] = ["super_admin", "admin", "finance"];
 
 type Category = "daily" | "monthly";
 
-const DAILY_TYPES = [
-  { value: "referral", label: "推薦獎勵" },
-  { value: "repurchase", label: "復購獎勵" },
-];
-const MONTHLY_TYPES = [
-  { value: "monthly_vip", label: "月獎金" },
-  { value: "rank_rebate", label: "位階回饋" },
-];
-
 const STATUS_OPTIONS = [
   { value: "pending", label: "待結算" },
   { value: "waiting_release", label: "待發放" },
-  { value: "released", label: "已發放" },
+  { value: "released", label: "已成功發放" },
   { value: "failed", label: "發放失敗" },
   { value: "cancelled", label: "已取消" },
 ];
-
-const TYPE_LABEL: Record<string, string> = {
-  referral: "推薦獎勵",
-  repurchase: "復購獎勵",
-  monthly_vip: "月獎金",
-  rank_rebate: "位階回饋",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  waiting_release: "待發放",
-  released: "已發放",
-  failed: "發放失敗",
-  pending: "待結算",
-  cancelled: "已取消",
-};
-
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  released: "default",
-  waiting_release: "secondary",
-  pending: "outline",
-  failed: "destructive",
-  cancelled: "outline",
-};
 
 export const Route = createFileRoute("/_authenticated/admin/bonuses/member-details")({
   component: Guard,
@@ -109,7 +81,9 @@ function MemberBonusDetailsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">會員獎金明細</h1>
-          <p className="mt-1 text-sm text-muted-foreground">依會員、獎金類型、狀態、結算批次或日期區間查詢日獎金與月獎金明細。</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            按制度分組顯示日獎金 / 月獎金產生的獎勵點，並依會員、狀態、批次或日期區間篩選。
+          </p>
         </div>
         <Button asChild variant="outline">
           <Link to="/admin/bonuses"><ArrowLeft className="mr-2 h-4 w-4" />返回獎金營運中心</Link>
@@ -135,30 +109,26 @@ function MemberBonusDetailsPage() {
 function DetailSection({ category }: { category: Category }) {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [loading, setLoading] = useState(false);
-  const [records, setRecords] = useState<any[]>([]);
-  const [members, setMembers] = useState<Record<string, any>>({});
-  const [batches, setBatches] = useState<Record<string, any>>({});
+  const [payload, setPayload] = useState<any>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
 
-  const typeOptions = category === "daily" ? DAILY_TYPES : MONTHLY_TYPES;
+  const typeOptions = category === "daily" ? DAILY_BONUS_TYPE_OPTIONS : MONTHLY_BONUS_TYPE_OPTIONS;
+  const isDaily = category === "daily";
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const payload: any = { category, limit: 200 };
-      if (filters.memberName.trim()) payload.memberName = filters.memberName.trim();
-      if (filters.memberNo.trim()) payload.memberNo = filters.memberNo.trim();
-      if (filters.memberId.trim()) payload.memberId = filters.memberId.trim();
-      if (filters.bonusType) payload.bonusType = filters.bonusType;
-      if (filters.status) payload.status = filters.status;
-      if (filters.settlementBatchId.trim()) payload.settlementBatchId = filters.settlementBatchId.trim();
-      if (filters.dateFrom) payload.dateFrom = filters.dateFrom;
-      if (filters.dateTo) payload.dateTo = filters.dateTo;
-
-      const res = await listMemberBonusDetails({ data: payload });
-      setRecords(res.records ?? []);
-      setMembers(res.members ?? {});
-      setBatches(res.batches ?? {});
+      const p: any = { category, limit: 500 };
+      if (filters.memberName.trim()) p.memberName = filters.memberName.trim();
+      if (filters.memberNo.trim()) p.memberNo = filters.memberNo.trim();
+      if (filters.memberId.trim()) p.memberId = filters.memberId.trim();
+      if (filters.bonusType) p.bonusType = filters.bonusType;
+      if (filters.status) p.status = filters.status;
+      if (filters.settlementBatchId.trim()) p.settlementBatchId = filters.settlementBatchId.trim();
+      if (filters.dateFrom) p.dateFrom = filters.dateFrom;
+      if (filters.dateTo) p.dateTo = filters.dateTo;
+      const res = await listMemberBonusDetails({ data: p });
+      setPayload(res);
     } catch (e: any) {
       toast.error(e?.message ?? "查詢獎金明細失敗");
     } finally {
@@ -167,47 +137,45 @@ function DetailSection({ category }: { category: Category }) {
   }, [category, filters]);
 
   useEffect(() => {
-    // 每次切換 tab 時清空並重新查詢當前分類
-    setRecords([]);
+    setPayload(null);
     setFilters(EMPTY_FILTERS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
-  const totalPoints = useMemo(
-    () => records.reduce((s, r: any) => s + Number(r.bonus_points ?? 0), 0),
-    [records],
-  );
+  const records: any[] = payload?.records ?? [];
+  const members: Record<string, any> = payload?.members ?? {};
+  const batches: Record<string, any> = payload?.batches ?? {};
+  const summary = payload?.summary;
+  const groupedByBonusType: any[] = payload?.groupedByBonusType ?? [];
+  const groupedByStatus: any[] = payload?.groupedByStatus ?? [];
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-base">搜尋條件</CardTitle>
-          <CardDescription>可組合多個條件；未填寫的欄位不參與篩選。</CardDescription>
+          <CardDescription>可組合多個條件；未填寫欄位不參與篩選。總計會依當前結果即時計算。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="space-y-1.5">
-              <Label>會員名稱</Label>
+            <Field label="會員名稱">
               <Input value={filters.memberName}
                 onChange={(e) => setFilters({ ...filters, memberName: e.target.value })}
                 placeholder="模糊搜尋姓名" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>會員編號</Label>
+            </Field>
+            <Field label="會員編號">
               <Input value={filters.memberNo}
                 onChange={(e) => setFilters({ ...filters, memberNo: e.target.value })}
                 placeholder="member_no" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>member_id</Label>
+            </Field>
+            <Field label="member_id">
               <Input className="font-mono" value={filters.memberId}
                 onChange={(e) => setFilters({ ...filters, memberId: e.target.value })}
                 placeholder="profiles.id" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>獎金類型</Label>
-              <Select value={filters.bonusType || "all"} onValueChange={(v) => setFilters({ ...filters, bonusType: v === "all" ? "" : v })}>
+            </Field>
+            <Field label="獎金制度">
+              <Select value={filters.bonusType || "all"}
+                onValueChange={(v) => setFilters({ ...filters, bonusType: v === "all" ? "" : v })}>
                 <SelectTrigger><SelectValue placeholder="全部" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部</SelectItem>
@@ -216,10 +184,10 @@ function DetailSection({ category }: { category: Category }) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>狀態</Label>
-              <Select value={filters.status || "all"} onValueChange={(v) => setFilters({ ...filters, status: v === "all" ? "" : v })}>
+            </Field>
+            <Field label="狀態">
+              <Select value={filters.status || "all"}
+                onValueChange={(v) => setFilters({ ...filters, status: v === "all" ? "" : v })}>
                 <SelectTrigger><SelectValue placeholder="全部" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部</SelectItem>
@@ -228,23 +196,20 @@ function DetailSection({ category }: { category: Category }) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>結算批次 ID</Label>
+            </Field>
+            <Field label="結算批次 ID">
               <Input className="font-mono" value={filters.settlementBatchId}
                 onChange={(e) => setFilters({ ...filters, settlementBatchId: e.target.value })}
                 placeholder="bonus_settlement_batches.id" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>結算日期起</Label>
+            </Field>
+            <Field label="結算日期起">
               <Input type="date" value={filters.dateFrom}
                 onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>結算日期迄</Label>
+            </Field>
+            <Field label="結算日期迄">
               <Input type="date" value={filters.dateTo}
                 onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })} />
-            </div>
+            </Field>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={load} disabled={loading}>
@@ -257,22 +222,105 @@ function DetailSection({ category }: { category: Category }) {
             <Button variant="outline" onClick={load} disabled={loading}>
               <RefreshCw className="mr-2 h-4 w-4" />重新整理
             </Button>
-            <div className="ml-auto text-sm text-muted-foreground">
-              共 {records.length} 筆，合計 {formatNumber(totalPoints)} 點
-            </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* ── 總覽卡片 ── */}
+      <SummaryCards category={category} summary={summary} loading={loading} />
+
+      {/* ── 制度分組表 ── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            {category === "daily" ? "日獎金明細" : "月獎金明細"}
+            {isDaily ? "日獎金制度分組" : "月獎金制度分組"}
+          </CardTitle>
+          <CardDescription>依 bonus_type 統計各制度產生的獎勵點與狀態分佈。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {groupedByBonusType.length === 0 ? (
+            <EmptyRow loading={loading} />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>制度</TableHead>
+                    <TableHead className="text-right">筆數</TableHead>
+                    <TableHead className="text-right">總計應發</TableHead>
+                    <TableHead className="text-right">已成功發放</TableHead>
+                    <TableHead className="text-right">待發放</TableHead>
+                    <TableHead className="text-right">發放失敗</TableHead>
+                    <TableHead className="text-right">涉及會員</TableHead>
+                    <TableHead className="text-right">涉及批次</TableHead>
+                    {!isDaily && <TableHead>結算期間</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {groupedByBonusType.map((g) => (
+                    <TableRow key={g.bonus_type}>
+                      <TableCell>
+                        <div className="font-medium">{bonusTypeLabel(g.bonus_type)}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{g.bonus_type}</div>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{fmt(g.count)}</TableCell>
+                      <TableCell className="text-right tabular-nums font-semibold">{fmt(g.total_points)}</TableCell>
+                      <TableCell className="text-right tabular-nums text-primary">{fmt(g.released_points)}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmt(g.waiting_release_points + g.pending_points)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-destructive">{fmt(g.failed_points)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{fmt(g.member_count)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{fmt(g.batch_count)}</TableCell>
+                      {!isDaily && (
+                        <TableCell className="text-xs">
+                          {g.periods?.length ? g.periods.join(", ") : "—"}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── 狀態分布 ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">狀態分布</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {groupedByStatus.length === 0 ? (
+            <EmptyRow loading={loading} />
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {groupedByStatus.map((s) => (
+                <div key={s.status} className="rounded-md border px-3 py-2 text-sm">
+                  <Badge variant={BONUS_STATUS_VARIANT[s.status] ?? "outline"} className="mr-2">
+                    {bonusStatusLabel(s.status)}
+                  </Badge>
+                  <span className="text-muted-foreground">{fmt(s.count)} 筆 / </span>
+                  <span className="font-semibold tabular-nums">{fmt(s.points)}</span>
+                  <span className="text-muted-foreground"> 點</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── 明細表格 ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            {isDaily ? "日獎金明細" : "月獎金明細"}
           </CardTitle>
           <CardDescription>
-            {category === "daily"
-              ? "顯示 bonus_records 中屬於日獎金類型（推薦、復購）之紀錄。"
-              : "顯示 bonus_records 中屬於月獎金類型（月獎金、位階回饋）之紀錄。"}
+            {isDaily
+              ? "顯示 bonus_records 中屬於日獎金類型之紀錄。"
+              : "顯示 bonus_records 中屬於月獎金類型之紀錄。"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -290,13 +338,13 @@ function DetailSection({ category }: { category: Category }) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>會員</TableHead>
-                    <TableHead>獎金類型</TableHead>
+                    <TableHead>獎金制度</TableHead>
                     <TableHead className="text-right">點數</TableHead>
                     <TableHead>狀態</TableHead>
-                    <TableHead>{category === "daily" ? "結算日期" : "結算月份"}</TableHead>
+                    <TableHead>{isDaily ? "結算日期" : "結算月份"}</TableHead>
                     <TableHead>結算批次</TableHead>
                     <TableHead>預計發放日</TableHead>
-                    <TableHead>發放時間</TableHead>
+                    <TableHead>實際發放時間</TableHead>
                     <TableHead>重試 / 來源</TableHead>
                     <TableHead>來源會員</TableHead>
                     <TableHead>失敗原因</TableHead>
@@ -304,7 +352,7 @@ function DetailSection({ category }: { category: Category }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {records.map((r: any) => {
+                  {records.map((r) => {
                     const m = members[r.member_id];
                     const batch = batches[r.settlement_batch_id];
                     const releasedMember = r.released_member_id && members[r.released_member_id];
@@ -315,23 +363,26 @@ function DetailSection({ category }: { category: Category }) {
                           <div className="font-medium">{m?.name ?? "—"}</div>
                           <div className="text-xs text-muted-foreground">{m?.member_no ?? shortId(r.member_id)}</div>
                         </TableCell>
-                        <TableCell>{TYPE_LABEL[r.bonus_type] ?? r.bonus_type}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatNumber(r.bonus_points)}</TableCell>
                         <TableCell>
-                          <Badge variant={STATUS_VARIANT[r.status] ?? "outline"}>
-                            {STATUS_LABEL[r.status] ?? r.status}
+                          <div>{bonusTypeLabel(r.bonus_type)}</div>
+                          <div className="text-xs text-muted-foreground font-mono">{r.bonus_type}</div>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{fmt(r.bonus_points)}</TableCell>
+                        <TableCell>
+                          <Badge variant={BONUS_STATUS_VARIANT[r.status] ?? "outline"}>
+                            {bonusStatusLabel(r.status)}
                           </Badge>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          {category === "monthly"
-                            ? (batch?.period ?? formatMonth(r.settlement_date ?? batch?.settlement_date))
-                            : formatDate(r.settlement_date ?? batch?.settlement_date)}
+                          {isDaily
+                            ? fmtDate(r.settlement_date ?? batch?.settlement_date)
+                            : (batch?.period ?? fmtMonth(r.settlement_date ?? batch?.settlement_date))}
                         </TableCell>
                         <TableCell className="font-mono text-xs">
                           {r.settlement_batch_id ? shortId(r.settlement_batch_id) : "—"}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDate(r.release_date)}</TableCell>
-                        <TableCell className="whitespace-nowrap">{formatDateTime(r.released_at)}</TableCell>
+                        <TableCell className="whitespace-nowrap">{fmtDate(r.release_date)}</TableCell>
+                        <TableCell className="whitespace-nowrap">{fmtDateTime(r.released_at)}</TableCell>
                         <TableCell className="whitespace-nowrap text-xs">
                           <div>重試 {r.release_attempts ?? 0} 次</div>
                           <div className="text-muted-foreground">{r.release_source ?? "—"}</div>
@@ -361,12 +412,74 @@ function DetailSection({ category }: { category: Category }) {
         </CardContent>
       </Card>
 
-      <RecordDetailDialog recordId={detailId} onOpenChange={(o) => !o && setDetailId(null)} />
+      <RecordDetailDialog
+        recordId={detailId}
+        onOpenChange={(o) => !o && setDetailId(null)}
+        members={members}
+      />
     </div>
   );
 }
 
-function RecordDetailDialog({ recordId, onOpenChange }: { recordId: string | null; onOpenChange: (o: boolean) => void }) {
+function SummaryCards({
+  category, summary, loading,
+}: { category: Category; summary: any; loading: boolean }) {
+  const isDaily = category === "daily";
+  const label = isDaily ? "日獎金" : "月獎金";
+  const s = summary ?? {
+    total_count: 0, total_points: 0,
+    waiting_release_points: 0, pending_points: 0,
+    released_points: 0, failed_points: 0,
+    member_count: 0, batch_count: 0,
+  };
+  const waiting = (s.waiting_release_points ?? 0) + (s.pending_points ?? 0);
+  const items = [
+    { label: `${label}總筆數`, value: fmt(s.total_count) },
+    { label: `${label}總計應發獎勵點`, value: fmt(s.total_points), strong: true },
+    { label: `${label}已成功發放`, value: fmt(s.released_points), color: "text-primary" },
+    { label: `${label}待發放`, value: fmt(waiting) },
+    { label: `${label}發放失敗`, value: fmt(s.failed_points), color: "text-destructive" },
+    { label: "涉及會員", value: fmt(s.member_count) },
+    { label: "涉及批次", value: fmt(s.batch_count) },
+  ];
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+      {items.map((it) => (
+        <div key={it.label} className="rounded-lg border bg-card p-3">
+          <div className="text-xs text-muted-foreground">{it.label}</div>
+          <div className={`mt-1 text-xl tabular-nums ${it.strong ? "font-bold" : "font-semibold"} ${it.color ?? ""}`}>
+            {loading ? "…" : it.value}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function EmptyRow({ loading }: { loading: boolean }) {
+  return (
+    <div className="rounded-md border border-dashed py-8 text-center text-sm text-muted-foreground">
+      {loading ? "載入中…" : "尚無資料"}
+    </div>
+  );
+}
+
+function RecordDetailDialog({
+  recordId, onOpenChange, members,
+}: {
+  recordId: string | null;
+  onOpenChange: (o: boolean) => void;
+  members: Record<string, any>;
+}) {
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<any | null>(null);
 
@@ -381,9 +494,11 @@ function RecordDetailDialog({ recordId, onOpenChange }: { recordId: string | nul
     return () => { cancelled = true; };
   }, [recordId]);
 
+  const rec = detail?.record ?? detail;
+
   return (
     <Dialog open={!!recordId} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>獎金紀錄明細</DialogTitle>
           <DialogDescription>{recordId ? `record: ${recordId}` : ""}</DialogDescription>
@@ -392,32 +507,76 @@ function RecordDetailDialog({ recordId, onOpenChange }: { recordId: string | nul
           <div className="flex justify-center py-10">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
-        ) : detail ? (
-          <div className="max-h-[60vh] overflow-auto space-y-3 text-sm">
-            <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto">
-{JSON.stringify(detail, null, 2)}
-            </pre>
-          </div>
-        ) : (
+        ) : !detail ? (
           <div className="py-6 text-center text-sm text-muted-foreground">無資料</div>
+        ) : (
+          <div className="max-h-[70vh] overflow-auto space-y-4 text-sm">
+            {rec && (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <KV k="制度" v={`${bonusTypeLabel(rec.bonus_type)}（${rec.bonus_type}）`} />
+                <KV k="狀態" v={bonusStatusLabel(rec.status)} />
+                <KV k="點數" v={fmt(rec.bonus_points)} />
+                <KV k="結算批次" v={rec.settlement_batch_id ?? "—"} mono />
+                <KV k="結算日期" v={fmtDate(rec.settlement_date)} />
+                <KV k="預計發放日" v={fmtDate(rec.release_date)} />
+                <KV k="實際發放時間" v={fmtDateTime(rec.released_at)} />
+                <KV k="release_source" v={rec.release_source ?? "—"} />
+                <KV k="release_attempts" v={String(rec.release_attempts ?? 0)} />
+                <KV k="失敗原因" v={rec.failed_reason ?? "—"} />
+                <KV
+                  k="original_member_id"
+                  v={renderMember(rec.original_member_id, members)}
+                  mono
+                />
+                <KV
+                  k="released_member_id"
+                  v={renderMember(rec.released_member_id, members)}
+                  mono
+                />
+                <KV k="release_redirect_reason" v={rec.release_redirect_reason ?? "—"} />
+              </div>
+            )}
+            <details className="rounded-md border">
+              <summary className="cursor-pointer px-3 py-2 text-xs text-muted-foreground">原始 JSON</summary>
+              <pre className="rounded-b-md bg-muted p-3 text-xs overflow-x-auto">
+{JSON.stringify(detail, null, 2)}
+              </pre>
+            </details>
+          </div>
         )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function formatNumber(n: number | null | undefined) {
+function renderMember(id: string | null | undefined, members: Record<string, any>) {
+  if (!id) return "—";
+  const m = members[id];
+  if (!m) return id;
+  return `${m.name ?? "?"}（${m.member_no ?? shortId(id)}） · ${id}`;
+}
+
+function KV({ k, v, mono }: { k: string; v: React.ReactNode; mono?: boolean }) {
+  return (
+    <div className="rounded-md border p-2">
+      <div className="text-xs text-muted-foreground">{k}</div>
+      <div className={`mt-0.5 text-sm ${mono ? "font-mono break-all" : ""}`}>{v}</div>
+    </div>
+  );
+}
+
+function fmt(n: number | null | undefined) {
   return Number(n ?? 0).toLocaleString("zh-TW");
 }
-function formatDate(s: string | null | undefined) {
+function fmtDate(s: string | null | undefined) {
   if (!s) return "—";
   try { return new Date(s).toLocaleDateString("zh-TW"); } catch { return s; }
 }
-function formatDateTime(s: string | null | undefined) {
+function fmtDateTime(s: string | null | undefined) {
   if (!s) return "—";
   try { return new Date(s).toLocaleString("zh-TW"); } catch { return s; }
 }
-function formatMonth(s: string | null | undefined) {
+function fmtMonth(s: string | null | undefined) {
   if (!s) return "—";
   try {
     const d = new Date(s);
