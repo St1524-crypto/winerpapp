@@ -1535,11 +1535,12 @@ export const listMemberBonusDetails = createServerFn({ method: "POST" })
       settlementBatchId: z.string().uuid().optional(),
       dateFrom: z.string().optional(),
       dateTo: z.string().optional(),
-      limit: z.number().int().min(1).max(500).default(200),
+      limit: z.number().int().min(1).max(1000).default(500),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await assertRoles(context.userId, VIEW_ROLES);
+    // 明細頁只允許 super_admin / admin / finance
+    await assertRoles(context.userId, ADMIN_ROLES);
 
     const allowedTypes =
       data.category === "daily" ? DAILY_BONUS_TYPES : MONTHLY_BONUS_TYPES;
@@ -1554,7 +1555,7 @@ export const listMemberBonusDetails = createServerFn({ method: "POST" })
       const { data: profs, error: pErr } = await pq;
       if (pErr) throw new Error(pErr.message);
       memberIdFilter = (profs ?? []).map((p: any) => p.id);
-      if (memberIdFilter.length === 0) return { records: [], members: {}, batches: {} };
+      if (memberIdFilter.length === 0) return emptyDetailPayload();
     }
 
     let q = supabaseAdmin
@@ -1577,7 +1578,7 @@ export const listMemberBonusDetails = createServerFn({ method: "POST" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const records = rows ?? [];
-    if (records.length === 0) return { records: [], members: {}, batches: {} };
+    if (records.length === 0) return emptyDetailPayload();
 
     const memberIds = Array.from(new Set(
       records.flatMap((r: any) => [
@@ -1602,5 +1603,102 @@ export const listMemberBonusDetails = createServerFn({ method: "POST" })
     const batches: Record<string, any> = {};
     (batchRes.data ?? []).forEach((b: any) => { batches[b.id] = b; });
 
-    return { records, members, batches };
+    // ── 統計：制度分組、狀態分布、總計 ──
+    const num = (v: any) => Number(v ?? 0);
+    const bucketBlank = () => ({
+      count: 0, totalPoints: 0,
+      pendingPoints: 0, waitingReleasePoints: 0,
+      releasedPoints: 0, failedPoints: 0, cancelledPoints: 0,
+      memberIds: new Set<string>(),
+      batchIds: new Set<string>(),
+      periods: new Set<string>(),
+    });
+
+    const typeBuckets: Record<string, ReturnType<typeof bucketBlank>> = {};
+    const statusBuckets: Record<string, { count: number; points: number }> = {};
+
+    let totalPoints = 0, pendingPoints = 0, waitingReleasePoints = 0,
+      releasedPoints = 0, failedPoints = 0, cancelledPoints = 0;
+
+    for (const r of records as any[]) {
+      const pts = num(r.bonus_points);
+      const t = r.bonus_type || "unknown";
+      const s = r.status || "unknown";
+      if (!typeBuckets[t]) typeBuckets[t] = bucketBlank();
+      const b = typeBuckets[t];
+      b.count += 1;
+      b.totalPoints += pts;
+      if (r.member_id) b.memberIds.add(r.member_id);
+      if (r.settlement_batch_id) b.batchIds.add(r.settlement_batch_id);
+      const batch = r.settlement_batch_id ? batches[r.settlement_batch_id] : null;
+      const period = batch?.period
+        ?? (r.settlement_date ? String(r.settlement_date).slice(0, 7) : null);
+      if (period) b.periods.add(period);
+
+      switch (s) {
+        case "pending": b.pendingPoints += pts; pendingPoints += pts; break;
+        case "waiting_release": b.waitingReleasePoints += pts; waitingReleasePoints += pts; break;
+        case "released": b.releasedPoints += pts; releasedPoints += pts; break;
+        case "failed": b.failedPoints += pts; failedPoints += pts; break;
+        case "cancelled": b.cancelledPoints += pts; cancelledPoints += pts; break;
+      }
+      totalPoints += pts;
+
+      if (!statusBuckets[s]) statusBuckets[s] = { count: 0, points: 0 };
+      statusBuckets[s].count += 1;
+      statusBuckets[s].points += pts;
+    }
+
+    const groupedByBonusType = Object.entries(typeBuckets).map(([bonus_type, v]) => ({
+      bonus_type,
+      count: v.count,
+      total_points: v.totalPoints,
+      pending_points: v.pendingPoints,
+      waiting_release_points: v.waitingReleasePoints,
+      released_points: v.releasedPoints,
+      failed_points: v.failedPoints,
+      cancelled_points: v.cancelledPoints,
+      member_count: v.memberIds.size,
+      batch_count: v.batchIds.size,
+      periods: Array.from(v.periods).sort(),
+    })).sort((a, b) => b.total_points - a.total_points);
+
+    const groupedByStatus = Object.entries(statusBuckets).map(([status, v]) => ({
+      status, count: v.count, points: v.points,
+    })).sort((a, b) => b.points - a.points);
+
+    const summary = {
+      total_count: records.length,
+      total_points: totalPoints,
+      pending_points: pendingPoints,
+      waiting_release_points: waitingReleasePoints,
+      released_points: releasedPoints,
+      failed_points: failedPoints,
+      cancelled_points: cancelledPoints,
+      member_count: new Set(records.map((r: any) => r.member_id).filter(Boolean)).size,
+      batch_count: batchIds.length,
+    };
+
+    return {
+      records, members, batches,
+      summary, groupedByBonusType, groupedByStatus,
+      totalPoints, releasedPoints, waitingReleasePoints, failedPoints,
+    };
   });
+
+function emptyDetailPayload() {
+  return {
+    records: [], members: {}, batches: {},
+    summary: {
+      total_count: 0, total_points: 0,
+      pending_points: 0, waiting_release_points: 0,
+      released_points: 0, failed_points: 0, cancelled_points: 0,
+      member_count: 0, batch_count: 0,
+    },
+    groupedByBonusType: [] as any[],
+    groupedByStatus: [] as any[],
+    totalPoints: 0, releasedPoints: 0,
+    waitingReleasePoints: 0, failedPoints: 0,
+  };
+}
+
