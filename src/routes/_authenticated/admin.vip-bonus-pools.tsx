@@ -126,7 +126,7 @@ function Page() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">VIP 星級營業分紅池</h1>
+        <h1 className="text-2xl font-bold">VIP 星級升級分紅池</h1>
         <div className="flex gap-2">
           <Badge variant="secondary">第一階段：設定 / 試算（未接核心發放）</Badge>
           <Button onClick={add}><Plus className="h-4 w-4 mr-1" />新增分紅池</Button>
