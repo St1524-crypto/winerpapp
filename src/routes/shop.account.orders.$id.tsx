@@ -31,6 +31,13 @@ function OrderDetail() {
     tier: { min_qty: number; max_qty: number | null } | null;
     source: "tier" | "base";
   }>>([]);
+  const [bundleBreakdown, setBundleBreakdown] = useState<Array<{
+    bundle_id: string;
+    bundle_name: string;
+    copies: number;
+    unit_reward_points: number;
+    line_total: number;
+  }>>([]);
   const [loading, setLoading] = useState(true);
   const upgradeTriggered = useRef(false);
   const rewardBackfillTriggered = useRef(false);
