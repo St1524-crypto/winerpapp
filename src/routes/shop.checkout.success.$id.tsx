@@ -37,13 +37,14 @@ function CheckoutSuccessPage() {
   const { id } = Route.useParams();
   const [order, setOrder] = useState<OrderSummary | null>(null);
   const [points, setPoints] = useState<PointPayment[]>([]);
+  const [rewardTx, setRewardTx] = useState<Array<{ amount: number; source: string; note: string | null }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [{ data: o }, { data: p }] = await Promise.all([
+      const [{ data: o }, { data: p }, { data: rt }] = await Promise.all([
         supabase
           .from("sales_orders")
           .select("id, order_no, subtotal, shipping_fee, discount_amount, total_amount, payment_status")
@@ -53,10 +54,17 @@ function CheckoutSuccessPage() {
           .from("order_point_payments" as any)
           .select("point_type, points_used, amount_offset")
           .eq("sales_order_id", id),
+        supabase
+          .from("point_transactions")
+          .select("amount, source, note")
+          .eq("reference_id", id)
+          .in("source", ["order_earn", "order_earn_referrer"])
+          .eq("point_type", "reward"),
       ]);
       if (cancelled) return;
       setOrder((o as any) ?? null);
       setPoints(((p as any) ?? []) as PointPayment[]);
+      setRewardTx(((rt as any) ?? []) as any[]);
       setLoading(false);
     })();
     return () => { cancelled = true; };
