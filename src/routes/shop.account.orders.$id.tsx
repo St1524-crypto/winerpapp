@@ -18,17 +18,25 @@ function OrderDetail() {
   const { id } = Route.useParams();
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
+  const [rewardTx, setRewardTx] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const upgradeTriggered = useRef(false);
 
   useEffect(() => {
     (async () => {
-      const [{ data: o }, { data: it }] = await Promise.all([
+      const [{ data: o }, { data: it }, { data: rt }] = await Promise.all([
         supabase.from("sales_orders").select("*").eq("id", id).maybeSingle(),
         supabase.from("sales_order_items").select("*").eq("sales_order_id", id),
+        supabase
+          .from("point_transactions")
+          .select("amount, source, note")
+          .eq("reference_id", id)
+          .in("source", ["order_earn", "order_earn_referrer"])
+          .eq("point_type", "reward"),
       ]);
       setOrder(o as SalesOrder | null);
       setItems((it ?? []) as SalesOrderItem[]);
+      setRewardTx((rt ?? []) as any[]);
       setLoading(false);
     })();
   }, [id]);
@@ -166,9 +174,31 @@ function OrderDetail() {
                 )}
                 <Separator className="my-2" />
                 <div className="flex justify-between font-semibold text-base"><span>總計</span><span className="tabular-nums text-primary">NT$ {Number(order.total_amount).toLocaleString()}</span></div>
+                {(() => {
+                  const earn = rewardTx.find((r) => r.source === "order_earn");
+                  const ref = rewardTx.find((r) => r.source === "order_earn_referrer");
+                  const earnPts = Number(earn?.amount ?? 0);
+                  if (earnPts > 0) {
+                    return (
+                      <div className="flex justify-between text-amber-500 text-sm pt-1">
+                        <span>本次發放獎勵點</span>
+                        <span className="tabular-nums">+ {earnPts.toLocaleString()} 點</span>
+                      </div>
+                    );
+                  }
+                  if (ref) {
+                    return (
+                      <div className="pt-1 text-[11px] text-muted-foreground leading-relaxed">
+                        {ref.note ?? "本次獎勵點依復購位階制度發放至推薦人現金餘額。"}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </div>
           </div>
+
 
           {order.notes && (
             <>

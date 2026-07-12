@@ -2084,7 +2084,7 @@ function OrderDetailDialog({
           .from("point_transactions")
           .select("id, amount, point_type, source, created_at, note")
           .eq("reference_id", orderId!)
-          .eq("source", "order_earn")
+          .in("source", ["order_earn", "order_earn_referrer"])
           .eq("point_type", "reward"),
       ]);
       if (orderRes.error) throw new Error(orderRes.error.message);
@@ -2353,6 +2353,11 @@ function OrderDetailDialog({
                       v={`+ ${Number(rewardPointsIssued).toLocaleString()} 點`}
                       accent="text-amber-500"
                     />
+                  )}
+                  {rewardEarnRows.some((r: any) => r.source === "order_earn_referrer") && (
+                    <div className="text-[11px] text-muted-foreground pt-1">
+                      {rewardEarnRows.find((r: any) => r.source === "order_earn_referrer")?.note}
+                    </div>
                   )}
                   <div className="pt-2 space-y-1">
                     <Progress value={paymentProgress} className="h-2" />

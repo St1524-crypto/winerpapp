@@ -215,17 +215,77 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
           }
         }
         if (rewardEarn > 0) {
-          // VIP 到期會員不可領取
           const { data: prof } = await supabaseAdmin
             .from("profiles")
-            .select("is_vip, vip_expires_at")
+            .select("is_vip, vip_expires_at, referred_by")
             .eq("id", userId)
             .maybeSingle();
           const exp = (prof as any)?.vip_expires_at as string | null;
           const isVip = !!(prof as any)?.is_vip;
           const vipExpired = !!exp && new Date(exp) <= new Date();
-          if (isVip && !vipExpired) {
+          const buyerEligible = isVip && !vipExpired;
+          if (buyerEligible) {
+            // 買家為有效 VIP：獎勵點入自己帳戶
             await applyDelta(userId, "reward", rewardEarn, "order_earn", { reference_id: data.orderId });
+          } else {
+            // 訪客 / 到期 VIP：獎勵點歸屬推薦人，依位階制度復購獎勵點發放；
+            // 折算為現金（1 點 = NT$1）發放到「有效 VIP」上線的現金餘額。
+            const { data: rates } = await supabaseAdmin
+              .from("repurchase_bonus_settings")
+              .select("generation_level, bonus_rate, enabled")
+              .eq("enabled", true)
+              .order("generation_level");
+            const rateRows = (rates ?? []) as any[];
+            const maxLevel = rateRows.reduce((m, r) => Math.max(m, Number(r.generation_level ?? 0)), 0);
+            let currentId: string | null = ((prof as any)?.referred_by as string | null) ?? null;
+            const guard = new Set<string>([userId]);
+            let totalDistributed = 0;
+            const distributedTo: Array<{ level: number; amount: number }> = [];
+            for (let level = 1; level <= maxLevel && currentId && !guard.has(currentId); level++) {
+              guard.add(currentId);
+              const rate = Number(rateRows.find((r) => r.generation_level === level)?.bonus_rate ?? 0);
+              const { data: up } = await supabaseAdmin
+                .from("profiles")
+                .select("id, is_vip, vip_expires_at, referred_by")
+                .eq("id", currentId)
+                .maybeSingle();
+              const upExp = (up as any)?.vip_expires_at as string | null;
+              const upVipActive = !!(up as any)?.is_vip && (!upExp || new Date(upExp) > new Date());
+              const cashAmount = Math.floor((rewardEarn * rate) / 100);
+              if (upVipActive && cashAmount > 0) {
+                const { data: newCash } = await (supabaseAdmin as any).rpc("adjust_cash_balance", {
+                  _user_id: (up as any).id,
+                  _delta: cashAmount,
+                });
+                await supabaseAdmin.from("cash_transactions").insert({
+                  user_id: (up as any).id,
+                  tx_type: "referral_reward",
+                  amount: cashAmount,
+                  balance_after: newCash,
+                  status: "completed",
+                  related_point_amount: rewardEarn,
+                  note: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP，來源訂單 ${data.orderId}`,
+                  created_by: userId,
+                  processed_by: userId,
+                  processed_at: new Date().toISOString(),
+                });
+                totalDistributed += cashAmount;
+                distributedTo.push({ level, amount: cashAmount });
+              }
+              currentId = ((up as any)?.referred_by as string | null) ?? null;
+            }
+            // 於訂單留下標記（0 點）：訂單詳情可顯示「本次獎勵點已轉推薦人」
+            await supabaseAdmin.from("point_transactions").insert({
+              user_id: userId,
+              point_type: "reward",
+              amount: 0,
+              balance_after: 0,
+              source: "order_earn_referrer",
+              reference_id: data.orderId,
+              note: `買家非有效 VIP，${rewardEarn} 獎勵點依復購位階折算 NT$${totalDistributed} 發放至推薦人現金餘額`
+                + (distributedTo.length ? `（${distributedTo.map((d) => `L${d.level} +${d.amount}`).join(", ")}）` : "（無有效 VIP 上線可接收）"),
+              created_by: userId,
+            });
           }
         }
       }
