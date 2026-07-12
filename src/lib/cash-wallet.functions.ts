@@ -267,10 +267,17 @@ export const adminAdjustCash = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AdjustSchema.parse(d))
   .handler(async ({ data, context }) => {
     if (!(await isFinanceAdmin(context.userId))) throw new Error("沒有權限");
-    const bal = await getCashBalance(data.userId);
-    const after = Number((bal + data.amount).toFixed(2));
-    if (after < 0) throw new Error(`餘額不足（目前 ${bal}）`);
-    await setCashBalance(data.userId, after);
+    // Atomic adjust (row-locked; rejects if result would be negative)
+    const { data: after, error: adjErr } = await (supabaseAdmin as any).rpc(
+      "adjust_cash_balance",
+      { _user_id: data.userId, _delta: data.amount },
+    );
+    if (adjErr) {
+      if (String(adjErr.message).includes("cannot go negative")) {
+        throw new Error("餘額不足");
+      }
+      throw new Error(adjErr.message);
+    }
     const { error } = await supabaseAdmin.from("cash_transactions").insert({
       user_id: data.userId,
       tx_type: "adjust",
@@ -282,9 +289,17 @@ export const adminAdjustCash = createServerFn({ method: "POST" })
       processed_by: context.userId,
       processed_at: new Date().toISOString(),
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      // rollback
+      await (supabaseAdmin as any).rpc("adjust_cash_balance", {
+        _user_id: data.userId,
+        _delta: -data.amount,
+      });
+      throw new Error(error.message);
+    }
     return { balance_after: after };
   });
+
 
 // ============ 管理員：會員現金 / 點數餘額查詢 ============
 const AdminWalletListSchema = z.object({
