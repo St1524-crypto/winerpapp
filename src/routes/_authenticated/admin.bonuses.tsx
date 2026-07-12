@@ -249,6 +249,12 @@ function BonusOperationsPage() {
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
+            <Link to="/admin/bonuses/member-details">
+              <Search className="mr-2 h-4 w-4" />
+              會員日/月獎金明細
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link to="/admin/bonuses/vip-detail">
               <Search className="mr-2 h-4 w-4" />
               VIP 個人明細
