@@ -2084,7 +2084,7 @@ function OrderDetailDialog({
           .from("point_transactions")
           .select("id, amount, point_type, source, created_at, note")
           .eq("reference_id", orderId!)
-          .eq("source", "order_earn")
+          .in("source", ["order_earn", "order_earn_referrer"])
           .eq("point_type", "reward"),
       ]);
       if (orderRes.error) throw new Error(orderRes.error.message);
