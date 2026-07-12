@@ -2222,7 +2222,14 @@ function OrderDetailDialog({
     .reduce((s: number, p: any) => s + Number(p.amount), 0);
   const pendingPayments = payments.filter((p: any) => p.payment_status !== "completed");
   const pendingPaymentsTotal = pendingPayments.reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
-  const unpaid = order ? Math.max(0, Number(order.total_amount) - paidTotal) : 0;
+  // 已套用的點數折抵金額（購物/獎勵/折扣點）— 需列入「已收款」以正確計算未收款。
+  const pointOffsetApplied = pointPayments
+    .filter((p: any) => p.status === "applied" || p.status === "completed")
+    .reduce((s: number, p: any) => s + Number(p.amount_offset ?? 0), 0);
+  const totalReceived = paidTotal + pointOffsetApplied;
+  const unpaid = order ? Math.max(0, Number(order.total_amount) - totalReceived) : 0;
+  const totalAmountNum = order ? Number(order.total_amount) : 0;
+  const paymentProgress = totalAmountNum > 0 ? Math.min(100, (totalReceived / totalAmountNum) * 100) : 0;
 
   const updateStatus = useMutation({
     mutationFn: async (patch: Partial<Pick<OrderRow, "order_status" | "shipping_status" | "payment_status">>) => {
