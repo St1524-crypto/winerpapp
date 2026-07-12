@@ -2074,16 +2074,18 @@ function OrderDetailDialog({
     queryKey: ["sales-order-detail", orderId],
     enabled: !!orderId,
     queryFn: async () => {
-      const [orderRes, itemsRes, paymentsRes] = await Promise.all([
+      const [orderRes, itemsRes, paymentsRes, pointPaymentsRes] = await Promise.all([
         supabase.from("sales_orders").select("*").eq("id", orderId!).maybeSingle(),
         supabase.from("sales_order_items").select("*").eq("sales_order_id", orderId!).order("created_at"),
         supabase.from("payments").select("*").eq("sales_order_id", orderId!).order("created_at", { ascending: false }),
+        supabase.from("order_point_payments").select("*").eq("sales_order_id", orderId!).order("created_at", { ascending: false }),
       ]);
       if (orderRes.error) throw new Error(orderRes.error.message);
       return {
         order: orderRes.data as OrderRow | null,
         items: itemsRes.data ?? [],
         payments: paymentsRes.data ?? [],
+        pointPayments: pointPaymentsRes.data ?? [],
       };
     },
   });
@@ -2091,6 +2093,8 @@ function OrderDetailDialog({
   const order = detailQ.data?.order;
   const items = detailQ.data?.items ?? [];
   const payments = detailQ.data?.payments ?? [];
+  const pointPayments = (detailQ.data?.pointPayments ?? []) as any[];
+
 
   // 載入 VIP 升級套組贈品（依訂單品項中 anchor product_id 對應）
   const itemProductIds = (items as any[]).map((i) => i.product_id).filter(Boolean);
@@ -2467,7 +2471,89 @@ function OrderDetailDialog({
               </CardContent>
             </Card>
 
+            {/* 點數付款分錄 (order_point_payments) */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-primary" />
+                  點數付款分錄 ({pointPayments.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {pointPayments.length === 0 ? (
+                  <div className="p-6 text-center text-sm text-muted-foreground">尚無點數付款紀錄</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>日期</TableHead>
+                          <TableHead>點數類型</TableHead>
+                          <TableHead className="text-right">使用點數</TableHead>
+                          <TableHead className="text-right">折抵金額</TableHead>
+                          <TableHead>狀態</TableHead>
+                          <TableHead>備註 / Dedupe</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {pointPayments.map((pp: any) => {
+                          const typeLabel =
+                            pp.point_type === "discount"
+                              ? "折扣點"
+                              : pp.point_type === "shopping"
+                              ? "購物點"
+                              : pp.point_type === "reward"
+                              ? "獎勵點"
+                              : pp.point_type;
+                          const typeClass =
+                            pp.point_type === "discount"
+                              ? "bg-blue-500/15 text-blue-400 border-blue-500/30"
+                              : pp.point_type === "shopping"
+                              ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                              : "bg-amber-500/15 text-amber-400 border-amber-500/30";
+                          return (
+                            <TableRow key={pp.id}>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {new Date(pp.created_at).toLocaleString("zh-TW")}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={typeClass}>{typeLabel}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-medium">{Number(pp.points_used).toLocaleString()}</TableCell>
+                              <TableCell className="text-right font-medium">{fmt(pp.amount_offset)}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={pp.status === "completed" ? "bg-success/15 text-success border-success/30" : "bg-muted"}>
+                                  {pp.status ?? "—"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground max-w-[220px]">
+                                <div className="truncate">{pp.note ?? "—"}</div>
+                                <div className="truncate font-mono text-[10px] opacity-70">{pp.dedupe_key ?? ""}</div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                      <TableFooter>
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-right text-xs text-muted-foreground">合計</TableCell>
+                          <TableCell className="text-right font-semibold">
+                            {pointPayments.reduce((s: number, p: any) => s + Number(p.points_used ?? 0), 0).toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold text-success">
+                            {fmt(pointPayments.reduce((s: number, p: any) => s + Number(p.amount_offset ?? 0), 0))}
+                          </TableCell>
+                          <TableCell colSpan={2} />
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Outstanding (unpaid) breakdown - expandable */}
+
             {unpaid > 0 && (
               <Card>
                 <CardContent className="p-0">
