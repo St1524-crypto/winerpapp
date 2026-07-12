@@ -2139,6 +2139,20 @@ function OrderDetailDialog({
     return Array.from(s);
   }, [pointPayments]);
 
+  // 分頁
+  const [ppPageSize, setPpPageSize] = useState<number>(10);
+  const [ppPage, setPpPage] = useState<number>(1);
+  const ppTotalPages = Math.max(1, Math.ceil(filteredPointPayments.length / ppPageSize));
+  useEffect(() => {
+    if (ppPage > ppTotalPages) setPpPage(1);
+  }, [ppPage, ppTotalPages]);
+  useEffect(() => { setPpPage(1); }, [ppFrom, ppTo, ppType, ppStatus, ppSort, ppPageSize]);
+  const pagedPointPayments = useMemo(
+    () => filteredPointPayments.slice((ppPage - 1) * ppPageSize, ppPage * ppPageSize),
+    [filteredPointPayments, ppPage, ppPageSize],
+  );
+
+
 
 
   // 載入 VIP 升級套組贈品（依訂單品項中 anchor product_id 對應）
@@ -2607,7 +2621,7 @@ function OrderDetailDialog({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredPointPayments.map((pp: any) => {
+                        {pagedPointPayments.map((pp: any) => {
                           const typeLabel =
                             pp.point_type === "discount"
                               ? "折扣點"
@@ -2660,6 +2674,35 @@ function OrderDetailDialog({
                     </Table>
                   </div>
                 )}
+
+                {/* 分頁控制 */}
+                {filteredPointPayments.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>每頁</span>
+                      <Select value={String(ppPageSize)} onValueChange={(v) => setPpPageSize(Number(v))}>
+                        <SelectTrigger className="h-7 w-20"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[5, 10, 20, 50, 100].map((n) => (
+                            <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span>
+                        顯示 {(ppPage - 1) * ppPageSize + 1}–
+                        {Math.min(ppPage * ppPageSize, filteredPointPayments.length)} / {filteredPointPayments.length}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button variant="outline" size="sm" className="h-7 px-2" disabled={ppPage <= 1} onClick={() => setPpPage(1)}>«</Button>
+                      <Button variant="outline" size="sm" className="h-7 px-2" disabled={ppPage <= 1} onClick={() => setPpPage((p) => Math.max(1, p - 1))}>‹</Button>
+                      <span className="text-xs px-2">{ppPage} / {ppTotalPages}</span>
+                      <Button variant="outline" size="sm" className="h-7 px-2" disabled={ppPage >= ppTotalPages} onClick={() => setPpPage((p) => Math.min(ppTotalPages, p + 1))}>›</Button>
+                      <Button variant="outline" size="sm" className="h-7 px-2" disabled={ppPage >= ppTotalPages} onClick={() => setPpPage(ppTotalPages)}>»</Button>
+                    </div>
+                  </div>
+                )}
+
               </CardContent>
             </Card>
 
