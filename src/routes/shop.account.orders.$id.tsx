@@ -23,6 +23,7 @@ function OrderDetail() {
   const [rewardTx, setRewardTx] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const upgradeTriggered = useRef(false);
+  const rewardBackfillTriggered = useRef(false);
 
   useEffect(() => {
     (async () => {
