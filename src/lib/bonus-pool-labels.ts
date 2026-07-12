@@ -16,7 +16,8 @@ export const BONUS_PAGE_LABELS = {
   vipUpgradePool: "VIP 星級升級分紅池",
   vipUpgradeBonusCap: "VIP 升級分紅上限",
   vipBusinessBonusCap: "VIP 營業分紅上限",
-  vipUpgradeBonusTotalEarnings: "升級分紅總收益上限",
+  /** V/S/T/E/A 只領營業分紅，故此上限對應「營業分紅總收益上限」 */
+  vipBusinessBonusTotalEarnings: "營業分紅總收益上限",
 } as const;
 
 /** 產生一致的瀏覽器 tab 標題（`<meta title>`） */
