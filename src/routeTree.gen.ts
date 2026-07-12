@@ -101,6 +101,7 @@ import { Route as AuthenticatedAdminStorefrontTemplatesRouteImport } from './rou
 import { Route as AuthenticatedAdminShopContentRouteImport } from './routes/_authenticated/admin.shop-content'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
 import { Route as AuthenticatedAdminRoleManagerRouteImport } from './routes/_authenticated/admin.role-manager'
+import { Route as AuthenticatedAdminRepurchaseBundlesRouteImport } from './routes/_authenticated/admin.repurchase-bundles'
 import { Route as AuthenticatedAdminReferralsRouteImport } from './routes/_authenticated/admin.referrals'
 import { Route as AuthenticatedAdminReferralTreeRouteImport } from './routes/_authenticated/admin.referral-tree'
 import { Route as AuthenticatedAdminQuoteSettingsRouteImport } from './routes/_authenticated/admin.quote-settings'
@@ -621,6 +622,12 @@ const AuthenticatedAdminRoleManagerRoute =
     path: '/admin/role-manager',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminRepurchaseBundlesRoute =
+  AuthenticatedAdminRepurchaseBundlesRouteImport.update({
+    id: '/admin/repurchase-bundles',
+    path: '/admin/repurchase-bundles',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminReferralsRoute =
   AuthenticatedAdminReferralsRouteImport.update({
     id: '/admin/referrals',
@@ -895,6 +902,7 @@ export interface FileRoutesByFullPath {
   '/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
+  '/admin/repurchase-bundles': typeof AuthenticatedAdminRepurchaseBundlesRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
@@ -1019,6 +1027,7 @@ export interface FileRoutesByTo {
   '/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
   '/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/admin/referrals': typeof AuthenticatedAdminReferralsRoute
+  '/admin/repurchase-bundles': typeof AuthenticatedAdminRepurchaseBundlesRoute
   '/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
@@ -1147,6 +1156,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/quote-settings': typeof AuthenticatedAdminQuoteSettingsRoute
   '/_authenticated/admin/referral-tree': typeof AuthenticatedAdminReferralTreeRoute
   '/_authenticated/admin/referrals': typeof AuthenticatedAdminReferralsRoute
+  '/_authenticated/admin/repurchase-bundles': typeof AuthenticatedAdminRepurchaseBundlesRoute
   '/_authenticated/admin/role-manager': typeof AuthenticatedAdminRoleManagerRoute
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
@@ -1276,6 +1286,7 @@ export interface FileRouteTypes {
     | '/admin/quote-settings'
     | '/admin/referral-tree'
     | '/admin/referrals'
+    | '/admin/repurchase-bundles'
     | '/admin/role-manager'
     | '/admin/security'
     | '/admin/shop-content'
@@ -1400,6 +1411,7 @@ export interface FileRouteTypes {
     | '/admin/quote-settings'
     | '/admin/referral-tree'
     | '/admin/referrals'
+    | '/admin/repurchase-bundles'
     | '/admin/role-manager'
     | '/admin/security'
     | '/admin/shop-content'
@@ -1527,6 +1539,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/quote-settings'
     | '/_authenticated/admin/referral-tree'
     | '/_authenticated/admin/referrals'
+    | '/_authenticated/admin/repurchase-bundles'
     | '/_authenticated/admin/role-manager'
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/shop-content'
@@ -2259,6 +2272,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRoleManagerRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/repurchase-bundles': {
+      id: '/_authenticated/admin/repurchase-bundles'
+      path: '/admin/repurchase-bundles'
+      fullPath: '/admin/repurchase-bundles'
+      preLoaderRoute: typeof AuthenticatedAdminRepurchaseBundlesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/referrals': {
       id: '/_authenticated/admin/referrals'
       path: '/admin/referrals'
@@ -2641,6 +2661,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminQuoteSettingsRoute: typeof AuthenticatedAdminQuoteSettingsRoute
   AuthenticatedAdminReferralTreeRoute: typeof AuthenticatedAdminReferralTreeRoute
   AuthenticatedAdminReferralsRoute: typeof AuthenticatedAdminReferralsRoute
+  AuthenticatedAdminRepurchaseBundlesRoute: typeof AuthenticatedAdminRepurchaseBundlesRoute
   AuthenticatedAdminRoleManagerRoute: typeof AuthenticatedAdminRoleManagerRoute
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedAdminShopContentRoute: typeof AuthenticatedAdminShopContentRoute
@@ -2707,6 +2728,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminQuoteSettingsRoute: AuthenticatedAdminQuoteSettingsRoute,
   AuthenticatedAdminReferralTreeRoute: AuthenticatedAdminReferralTreeRoute,
   AuthenticatedAdminReferralsRoute: AuthenticatedAdminReferralsRoute,
+  AuthenticatedAdminRepurchaseBundlesRoute:
+    AuthenticatedAdminRepurchaseBundlesRoute,
   AuthenticatedAdminRoleManagerRoute: AuthenticatedAdminRoleManagerRoute,
   AuthenticatedAdminSecurityRoute: AuthenticatedAdminSecurityRoute,
   AuthenticatedAdminShopContentRoute: AuthenticatedAdminShopContentRoute,
