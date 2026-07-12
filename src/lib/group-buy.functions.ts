@@ -134,17 +134,20 @@ export const joinGroupBuy = createServerFn({ method: "POST" })
     if (error) {
       if (pointsUsed > 0) {
         // Refund the atomically-deducted points on order-insert failure.
+        const { data: w2 } = await supabaseAdmin
+          .from("member_points_wallet")
+          .select("shopping_points")
+          .eq("user_id", userId)
+          .maybeSingle();
+        const cur = Number((w2 as any)?.shopping_points ?? 0);
         await supabaseAdmin
           .from("member_points_wallet")
-          .update({ shopping_points: (await supabaseAdmin
-            .from("member_points_wallet")
-            .select("shopping_points")
-            .eq("user_id", userId)
-            .maybeSingle()).data?.shopping_points! + pointsUsed })
+          .update({ shopping_points: cur + pointsUsed, updated_at: new Date().toISOString() })
           .eq("user_id", userId);
       }
       throw error;
     }
+
 
     return { order };
   });
