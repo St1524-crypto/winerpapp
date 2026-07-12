@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertOrderTotalsInvariant } from "./order-payment-totals";
 
 const paymentSchema = z.object({
   amount: z.coerce.number().min(0),
@@ -77,15 +78,18 @@ export const createSalesOrderWithPointPayments = createServerFn({ method: "POST"
       (sum, payment) => sum + payment.amount_offset,
       0,
     );
-    if (pointOffsetTotal > data.order.total_amount) {
-      throw new Error("Point offset total cannot exceed order total.");
-    }
-
-    const cashAmountDue = data.order.total_amount - pointOffsetTotal;
     const paymentTotal = data.payments.reduce((sum, payment) => sum + payment.amount, 0);
-    if (paymentTotal > cashAmountDue) {
-      throw new Error("Cash payment total cannot exceed cash amount due.");
-    }
+
+    assertOrderTotalsInvariant({
+      orderTotal: data.order.total_amount,
+      subtotal: data.order.subtotal,
+      shippingFee: data.order.shipping_fee,
+      discountAmount: data.order.discount_amount,
+      paymentsTotal: paymentTotal,
+      pointOffsetTotal,
+      paymentStatus: data.order.payment_status,
+    });
+
 
     const { data: order, error } = (await (context.supabase.rpc as any).call(
       context.supabase,

@@ -18,6 +18,7 @@ import { processOrderPaymentBonus } from "@/lib/bonus.functions";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
+import { computeOrderPaymentTotals } from "@/lib/order-payment-totals";
 
 /** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/升級獎金（失敗不擋主流程） */
 async function autoSettleCommission(orderId: string, nextStatus: string) {
@@ -2217,19 +2218,32 @@ function OrderDetailDialog({
   });
   const vipPackages = (giftsQ.data ?? []) as any[];
 
-  const paidTotal = payments
-    .filter((p: any) => p.payment_status === "completed")
-    .reduce((s: number, p: any) => s + Number(p.amount), 0);
+  const totalAmountNum = order ? Number(order.total_amount) : 0;
+  const totals = computeOrderPaymentTotals({
+    totalAmount: totalAmountNum,
+    payments,
+    pointPayments,
+  });
+  const paidTotal = totals.cashPaid;
   const pendingPayments = payments.filter((p: any) => p.payment_status !== "completed");
   const pendingPaymentsTotal = pendingPayments.reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
-  // 已套用的點數折抵金額（購物/獎勵/折扣點）— 需列入「已收款」以正確計算未收款。
-  const pointOffsetApplied = pointPayments
-    .filter((p: any) => p.status === "applied" || p.status === "completed")
-    .reduce((s: number, p: any) => s + Number(p.amount_offset ?? 0), 0);
-  const totalReceived = paidTotal + pointOffsetApplied;
-  const unpaid = order ? Math.max(0, Number(order.total_amount) - totalReceived) : 0;
-  const totalAmountNum = order ? Number(order.total_amount) : 0;
+  const pointOffsetApplied = totals.pointOffsetApplied;
+  const totalReceived = totals.totalReceived;
+  const unpaid = order ? totals.unpaid : 0;
+  const overpaid = order ? totals.overpaid : 0;
   const paymentProgress = totalAmountNum > 0 ? Math.min(100, (totalReceived / totalAmountNum) * 100) : 0;
+  // 前後端一致性斷言：totalReceived + unpaid 必等於 totalAmount（除非超收）
+  if (order && Math.abs(totalReceived + unpaid - overpaid - totalAmountNum) > 0.5) {
+    // eslint-disable-next-line no-console
+    console.warn("[order-totals-mismatch]", {
+      orderId: order.id,
+      totalAmount: totalAmountNum,
+      totalReceived,
+      unpaid,
+      overpaid,
+    });
+  }
+
 
   const updateStatus = useMutation({
     mutationFn: async (patch: Partial<Pick<OrderRow, "order_status" | "shipping_status" | "payment_status">>) => {
@@ -2354,7 +2368,7 @@ function OrderDetailDialog({
             {/* 收款摘要：已收 / 應收 / 差額 */}
             {(() => {
               const receivable = Number(order.total_amount);
-              const diff = paidTotal - receivable; // 負數表示尚有未收
+              const diff = totalReceived - receivable; // 負數表示尚有未收
               const diffNegative = diff < 0;
               const diffColor = diffNegative
                 ? "text-destructive"
@@ -2363,7 +2377,12 @@ function OrderDetailDialog({
                 <div className="grid grid-cols-3 gap-3">
                   <Card><CardContent className="pt-4">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">已收</div>
-                    <div className="text-xl font-bold mt-1 text-success">{fmt(paidTotal)}</div>
+                    <div className="text-xl font-bold mt-1 text-success">{fmt(totalReceived)}</div>
+                    {pointOffsetApplied > 0 && (
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        現金 {fmt(paidTotal)} + 點數 {fmt(pointOffsetApplied)}
+                      </div>
+                    )}
                   </CardContent></Card>
                   <Card><CardContent className="pt-4">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">應收</div>
@@ -2380,6 +2399,7 @@ function OrderDetailDialog({
                       </div>
                     </CardContent>
                   </Card>
+
                 </div>
               );
             })()}
@@ -2537,8 +2557,18 @@ function OrderDetailDialog({
                     </TableBody>
                     <TableFooter>
                       <TableRow>
+                        <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">現金已收</TableCell>
+                        <TableCell className="text-right font-medium">{fmt(paidTotal)}</TableCell>
+                      </TableRow>
+                      {pointOffsetApplied > 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">點數折抵</TableCell>
+                          <TableCell className="text-right font-medium text-primary">{fmt(pointOffsetApplied)}</TableCell>
+                        </TableRow>
+                      )}
+                      <TableRow>
                         <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">已收款合計</TableCell>
-                        <TableCell className="text-right font-semibold text-success">{fmt(paidTotal)}</TableCell>
+                        <TableCell className="text-right font-semibold text-success">{fmt(totalReceived)}</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">未收款</TableCell>
@@ -2546,7 +2576,14 @@ function OrderDetailDialog({
                           {fmt(unpaid)}
                         </TableCell>
                       </TableRow>
+                      {overpaid > 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-right text-xs text-muted-foreground">超收金額</TableCell>
+                          <TableCell className="text-right font-semibold text-warning">{fmt(overpaid)}</TableCell>
+                        </TableRow>
+                      )}
                     </TableFooter>
+
                   </Table>
                   </div>
 
