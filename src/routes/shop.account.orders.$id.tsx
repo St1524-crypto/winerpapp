@@ -84,6 +84,29 @@ function OrderDetail() {
     })();
   }, [order, id]);
 
+  // 回填：已付款但尚未產生獎勵點紀錄時，補呼叫伺服器端 applyOrderPoints（冪等）
+  useEffect(() => {
+    if (!order || rewardBackfillTriggered.current) return;
+    if (order.payment_status !== "paid") return;
+    if (rewardTx.length > 0) return;
+    rewardBackfillTriggered.current = true;
+    (async () => {
+      try {
+        await applyOrderPoints({ data: { orderId: id, shopping_redeem: 0, reward_redeem: 0, discount_redeem: 0 } });
+        const { data: rt } = await supabase
+          .from("point_transactions")
+          .select("amount, source, note")
+          .eq("reference_id", id)
+          .in("source", ["order_earn", "order_earn_referrer"])
+          .eq("point_type", "reward");
+        setRewardTx((rt ?? []) as any[]);
+      } catch (err) {
+        console.error("[order-detail] reward backfill failed", err);
+      }
+    })();
+  }, [order, id, rewardTx.length]);
+
+
 
   if (loading) return <Skeleton className="h-96" />;
   if (!order) {
