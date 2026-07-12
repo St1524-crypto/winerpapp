@@ -56,17 +56,32 @@ function Page() {
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
   const [showFormPassword, setShowFormPassword] = useState(false);
   const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, status: "idle" });
+  const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null }[]>([]);
 
   useEffect(() => {
     const code = form.referrerMemberNo.trim();
-    if (!code) { setReferrerLookup({ code: "", name: null, status: "idle" }); return; }
+    if (!code) { setReferrerLookup({ code: "", name: null, status: "idle" }); setReferrerCandidates([]); return; }
     let cancelled = false;
     setReferrerLookup((prev) => ({ ...prev, code, status: "loading" }));
     const t = setTimeout(async () => {
-      const { data } = await supabase.from("profiles").select("name, member_no").eq("member_no", code).maybeSingle();
+      const { data: exact } = await supabase.from("profiles").select("id, name, member_no, phone").eq("member_no", code).maybeSingle();
       if (cancelled) return;
-      if (data) setReferrerLookup({ code, name: (data as any).name ?? null, status: "found" });
-      else setReferrerLookup({ code, name: null, status: "notfound" });
+      if (exact) {
+        setReferrerLookup({ code, name: (exact as any).name ?? null, status: "found" });
+        setReferrerCandidates([]);
+        return;
+      }
+      const esc = code.replace(/[%,]/g, "");
+      const { data: fuzzy } = await supabase
+        .from("profiles")
+        .select("id, name, member_no, phone")
+        .or(`name.ilike.%${esc}%,phone.ilike.%${esc}%,member_no.ilike.%${esc}%`)
+        .not("member_no", "is", null)
+        .limit(8);
+      if (cancelled) return;
+      const list = ((fuzzy as any[]) ?? []) as { id: string; name: string | null; member_no: string | null; phone: string | null }[];
+      setReferrerCandidates(list);
+      setReferrerLookup({ code, name: null, status: "notfound" });
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
   }, [form.referrerMemberNo]);
