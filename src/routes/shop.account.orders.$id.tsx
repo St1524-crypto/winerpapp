@@ -176,25 +176,22 @@ function OrderDetail() {
                 <Separator className="my-2" />
                 <div className="flex justify-between font-semibold text-base"><span>總計</span><span className="tabular-nums text-primary">NT$ {Number(order.total_amount).toLocaleString()}</span></div>
                 {(() => {
-                  const earn = rewardTx.find((r) => r.source === "order_earn");
-                  const ref = rewardTx.find((r) => r.source === "order_earn_referrer");
-                  const earnPts = Number(earn?.amount ?? 0);
-                  if (earnPts > 0) {
+                  const notice = resolveRewardNotice(rewardTx as RewardTxRow[]);
+                  if (!notice) return null;
+                  if (notice.kind === "earn") {
                     return (
-                      <div className="flex justify-between text-amber-500 text-sm pt-1">
-                        <span>本次發放獎勵點</span>
-                        <span className="tabular-nums">+ {earnPts.toLocaleString()} 點</span>
+                      <div className="mt-2 flex justify-between items-center rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-500">
+                        <span className="flex items-center gap-1.5"><Gift className="h-4 w-4" />本次發放獎勵點</span>
+                        <span className="tabular-nums font-semibold">+ {notice.points.toLocaleString()} 點</span>
                       </div>
                     );
                   }
-                  if (ref) {
-                    return (
-                      <div className="pt-1 text-[11px] text-muted-foreground leading-relaxed">
-                        {ref.note ?? "本次獎勵點依復購位階制度發放至推薦人獎勵點錢包（依營業分紅比例與 VIP 升級分紅上限）。"}
-                      </div>
-                    );
-                  }
-                  return null;
+                  return (
+                    <div className="mt-2 rounded-md bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                      <div className="font-medium text-foreground/80 mb-0.5 flex items-center gap-1.5"><Gift className="h-3.5 w-3.5" />本次發放獎勵點</div>
+                      {notice.note}
+                    </div>
+                  );
                 })()}
               </div>
             </div>
