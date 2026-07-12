@@ -116,6 +116,7 @@ import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminAnnualFeeVipRouteImport } from './routes/_authenticated/admin.annual-fee-vip'
 import { Route as ShopAccountStorefrontIndexRouteImport } from './routes/shop.account.storefront.index'
 import { Route as AuthenticatedAdminQuotesIndexRouteImport } from './routes/_authenticated/admin.quotes.index'
+import { Route as ShopCheckoutSuccessIdRouteImport } from './routes/shop.checkout.success.$id'
 import { Route as ShopAccountStorefrontTemplatesRouteImport } from './routes/shop.account.storefront.templates'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
@@ -710,6 +711,11 @@ const AuthenticatedAdminQuotesIndexRoute =
     path: '/admin/quotes/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ShopCheckoutSuccessIdRoute = ShopCheckoutSuccessIdRouteImport.update({
+  id: '/success/$id',
+  path: '/success/$id',
+  getParentRoute: () => ShopCheckoutRoute,
+} as any)
 const ShopAccountStorefrontTemplatesRoute =
   ShopAccountStorefrontTemplatesRouteImport.update({
     id: '/templates',
@@ -864,7 +870,7 @@ export interface FileRoutesByFullPath {
   '/r/$phone': typeof RPhoneRoute
   '/shop/academy': typeof ShopAcademyRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
-  '/shop/checkout': typeof ShopCheckoutRoute
+  '/shop/checkout': typeof ShopCheckoutRouteWithChildren
   '/shop/health': typeof ShopHealthRoute
   '/shop/news': typeof ShopNewsRoute
   '/shop/patents': typeof ShopPatentsRoute
@@ -939,6 +945,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
+  '/shop/checkout/success/$id': typeof ShopCheckoutSuccessIdRoute
   '/admin/quotes/': typeof AuthenticatedAdminQuotesIndexRoute
   '/shop/account/storefront/': typeof ShopAccountStorefrontIndexRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
@@ -987,7 +994,7 @@ export interface FileRoutesByTo {
   '/member-page/$memberNo': typeof MemberPageMemberNoRoute
   '/r/$phone': typeof RPhoneRoute
   '/shop/academy': typeof ShopAcademyRoute
-  '/shop/checkout': typeof ShopCheckoutRoute
+  '/shop/checkout': typeof ShopCheckoutRouteWithChildren
   '/shop/health': typeof ShopHealthRoute
   '/shop/news': typeof ShopNewsRoute
   '/shop/patents': typeof ShopPatentsRoute
@@ -1061,6 +1068,7 @@ export interface FileRoutesByTo {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
+  '/shop/checkout/success/$id': typeof ShopCheckoutSuccessIdRoute
   '/admin/quotes': typeof AuthenticatedAdminQuotesIndexRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontIndexRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
@@ -1114,7 +1122,7 @@ export interface FileRoutesById {
   '/r/$phone': typeof RPhoneRoute
   '/shop/academy': typeof ShopAcademyRoute
   '/shop/account': typeof ShopAccountRouteWithChildren
-  '/shop/checkout': typeof ShopCheckoutRoute
+  '/shop/checkout': typeof ShopCheckoutRouteWithChildren
   '/shop/health': typeof ShopHealthRoute
   '/shop/news': typeof ShopNewsRoute
   '/shop/patents': typeof ShopPatentsRoute
@@ -1189,6 +1197,7 @@ export interface FileRoutesById {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
+  '/shop/checkout/success/$id': typeof ShopCheckoutSuccessIdRoute
   '/_authenticated/admin/quotes/': typeof AuthenticatedAdminQuotesIndexRoute
   '/shop/account/storefront/': typeof ShopAccountStorefrontIndexRoute
   '/_authenticated/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
@@ -1317,6 +1326,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
+    | '/shop/checkout/success/$id'
     | '/admin/quotes/'
     | '/shop/account/storefront/'
     | '/admin/bonuses/batches/$batchId'
@@ -1439,6 +1449,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
+    | '/shop/checkout/success/$id'
     | '/admin/quotes'
     | '/shop/account/storefront'
     | '/admin/bonuses/batches/$batchId'
@@ -1566,6 +1577,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
+    | '/shop/checkout/success/$id'
     | '/_authenticated/admin/quotes/'
     | '/shop/account/storefront/'
     | '/_authenticated/admin/bonuses/batches/$batchId'
@@ -2352,6 +2364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminQuotesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/shop/checkout/success/$id': {
+      id: '/shop/checkout/success/$id'
+      path: '/success/$id'
+      fullPath: '/shop/checkout/success/$id'
+      preLoaderRoute: typeof ShopCheckoutSuccessIdRouteImport
+      parentRoute: typeof ShopCheckoutRoute
+    }
     '/shop/account/storefront/templates': {
       id: '/shop/account/storefront/templates'
       path: '/templates'
@@ -2774,10 +2793,22 @@ const ShopAccountRouteWithChildren = ShopAccountRoute._addFileChildren(
   ShopAccountRouteChildren,
 )
 
+interface ShopCheckoutRouteChildren {
+  ShopCheckoutSuccessIdRoute: typeof ShopCheckoutSuccessIdRoute
+}
+
+const ShopCheckoutRouteChildren: ShopCheckoutRouteChildren = {
+  ShopCheckoutSuccessIdRoute: ShopCheckoutSuccessIdRoute,
+}
+
+const ShopCheckoutRouteWithChildren = ShopCheckoutRoute._addFileChildren(
+  ShopCheckoutRouteChildren,
+)
+
 interface ShopRouteChildren {
   ShopAcademyRoute: typeof ShopAcademyRoute
   ShopAccountRoute: typeof ShopAccountRouteWithChildren
-  ShopCheckoutRoute: typeof ShopCheckoutRoute
+  ShopCheckoutRoute: typeof ShopCheckoutRouteWithChildren
   ShopHealthRoute: typeof ShopHealthRoute
   ShopNewsRoute: typeof ShopNewsRoute
   ShopPatentsRoute: typeof ShopPatentsRoute
@@ -2793,7 +2824,7 @@ interface ShopRouteChildren {
 const ShopRouteChildren: ShopRouteChildren = {
   ShopAcademyRoute: ShopAcademyRoute,
   ShopAccountRoute: ShopAccountRouteWithChildren,
-  ShopCheckoutRoute: ShopCheckoutRoute,
+  ShopCheckoutRoute: ShopCheckoutRouteWithChildren,
   ShopHealthRoute: ShopHealthRoute,
   ShopNewsRoute: ShopNewsRoute,
   ShopPatentsRoute: ShopPatentsRoute,
