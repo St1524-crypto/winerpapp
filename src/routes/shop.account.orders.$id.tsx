@@ -409,6 +409,53 @@ function OrderDetail() {
             </>
           )}
 
+          {bundleBreakdown.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <div className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                  <Gift className="h-4 w-4 text-amber-500" />本單套組獎勵明細
+                </div>
+                <div className="rounded-lg border border-border/60 overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/40 text-muted-foreground">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium">套組</th>
+                        <th className="text-right px-3 py-2 font-medium">組數</th>
+                        <th className="text-right px-3 py-2 font-medium">每組獎勵點</th>
+                        <th className="text-right px-3 py-2 font-medium">小計</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bundleBreakdown.map((b) => (
+                        <tr key={b.bundle_id} className="border-t border-border/40">
+                          <td className="px-3 py-2 font-medium">{b.bundle_name}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{b.copies}</td>
+                          <td className="px-3 py-2 text-right tabular-nums">{b.unit_reward_points}</td>
+                          <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-500">
+                            {b.line_total.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-border/60 bg-muted/30">
+                        <td colSpan={3} className="px-3 py-2 text-right font-medium">套組獎勵總計</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-500">
+                          {bundleBreakdown.reduce((s, b) => s + b.line_total, 0).toLocaleString()} 點
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
+                  規則：套組以整組為單位計算，每組發放固定 bundle_reward_points；組數 = 每項成員商品下單件數 ÷ 每組件數，取最小整數。
+                </p>
+              </div>
+            </>
+          )}
+
+
 
 
 
