@@ -87,6 +87,9 @@ const CLIENT_AUDIT_ACTIONS = [
   "company.activate",
   "company.deactivate",
   "company.update",
+  "company.update_field",
+  "company.create",
+  "company.delete",
 ] as const;
 
 export const writeClientAuditLog = createServerFn({ method: "POST" })
