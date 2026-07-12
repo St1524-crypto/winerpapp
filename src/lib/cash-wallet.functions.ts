@@ -114,18 +114,36 @@ export const requestWithdraw = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => WithdrawSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const bal = await getCashBalance(context.userId);
-    if (data.amount > bal) throw new Error(`現金餘額不足（目前 ${bal}）`);
+    // Atomic reserve: lock and deduct in one RPC call to prevent race-based
+    // double-withdraw. On approval failure we re-credit via adjust_cash_balance.
+    const { data: newBal, error: reserveErr } = await (supabaseAdmin as any).rpc(
+      "spend_cash_balance",
+      { _user_id: context.userId, _amount: data.amount },
+    );
+    if (reserveErr) {
+      if (String(reserveErr.message).includes("insufficient cash balance")) {
+        throw new Error("現金餘額不足");
+      }
+      throw new Error(reserveErr.message);
+    }
     const { error } = await supabaseAdmin.from("cash_transactions").insert({
       user_id: context.userId,
       tx_type: "withdraw",
       amount: data.amount,
+      balance_after: newBal,
       status: "pending",
       bank_info: data.bank_info,
       note: data.note ?? null,
       created_by: context.userId,
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      // rollback the reservation
+      await (supabaseAdmin as any).rpc("adjust_cash_balance", {
+        _user_id: context.userId,
+        _delta: data.amount,
+      });
+      throw new Error(error.message);
+    }
     return { ok: true };
   });
 
@@ -138,12 +156,19 @@ export const buyShoppingPoints = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => BuyPointsSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const bal = await getCashBalance(context.userId);
-    if (data.amount > bal) throw new Error(`現金餘額不足（目前 ${bal}）`);
-    const newCash = Number((bal - data.amount).toFixed(2));
     const points = Math.floor(data.amount * POINTS_PER_NTD);
 
-    await setCashBalance(context.userId, newCash);
+    // Atomic cash deduction (row-locked; throws if insufficient)
+    const { data: newCash, error: spendErr } = await (supabaseAdmin as any).rpc(
+      "spend_cash_balance",
+      { _user_id: context.userId, _amount: data.amount },
+    );
+    if (spendErr) {
+      if (String(spendErr.message).includes("insufficient cash balance")) {
+        throw new Error("現金餘額不足");
+      }
+      throw new Error(spendErr.message);
+    }
 
     const { data: tx, error: txErr } = await supabaseAdmin
       .from("cash_transactions")
@@ -161,7 +186,14 @@ export const buyShoppingPoints = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (txErr) throw new Error(txErr.message);
+    if (txErr) {
+      // rollback the cash deduction
+      await (supabaseAdmin as any).rpc("adjust_cash_balance", {
+        _user_id: context.userId,
+        _delta: data.amount,
+      });
+      throw new Error(txErr.message);
+    }
 
     const newPoints = await addShoppingPoints(
       context.userId,
@@ -171,6 +203,7 @@ export const buyShoppingPoints = createServerFn({ method: "POST" })
     );
     return { cash_balance: newCash, shopping_points: newPoints, points_added: points };
   });
+
 
 // ============ 管理員：核准 / 拒絕 ============
 const ProcessSchema = z.object({
