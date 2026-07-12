@@ -18,13 +18,15 @@ export const listShopContentQuestions = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { data: rows, error } = await publicDb()
       .from("shop_content_questions")
-      .select("id, author_name, content, reply, replied_at, created_at")
+      .select("id, content, reply, replied_at, created_at")
       .eq("page_id", data.page_id)
       .eq("is_hidden", false)
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
-    return { questions: rows ?? [] };
+    // Do not expose author_name publicly — return a generic label only.
+    const masked = (rows ?? []).map((r: any) => ({ ...r, author_name: "會員" }));
+    return { questions: masked };
   });
 
 export const submitShopContentQuestion = createServerFn({ method: "POST" })
