@@ -2324,22 +2324,27 @@ function OrderDetailDialog({
                   <Row k="折扣" v={`- ${fmt(order.discount_amount)}`} />
                   <div className="border-t border-border my-1" />
                   <Row k="訂單總額" v={fmt(order.total_amount)} bold />
-                  <Row k="已收款" v={fmt(paidTotal)} accent="text-success" />
-                  <Row k="未收款" v={fmt(unpaid)} accent={unpaid > 0 ? "text-warning" : "text-success"} />
-                  <div className="pt-2 space-y-1">
-                    <Progress
-                      value={Number(order.total_amount) > 0
-                        ? Math.min(100, (paidTotal / Number(order.total_amount)) * 100)
-                        : 0}
-                      className="h-2"
+                  {pointOffsetApplied > 0 && (
+                    <Row
+                      k="點數折抵"
+                      v={`- ${fmt(pointOffsetApplied)}`}
+                      accent="text-primary"
                     />
+                  )}
+                  <Row k="已收款" v={fmt(totalReceived)} accent="text-success" />
+                  <Row k="未收款" v={fmt(unpaid)} accent={unpaid > 0 ? "text-warning" : "text-success"} />
+                  {rewardPointsIssued > 0 && (
+                    <Row
+                      k="本次發放獎勵點"
+                      v={`+ ${Number(rewardPointsIssued).toLocaleString()} 點`}
+                      accent="text-amber-500"
+                    />
+                  )}
+                  <div className="pt-2 space-y-1">
+                    <Progress value={paymentProgress} className="h-2" />
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>收款進度</span>
-                      <span>
-                        {Number(order.total_amount) > 0
-                          ? Math.round((paidTotal / Number(order.total_amount)) * 100)
-                          : 0}%
-                      </span>
+                      <span>{Math.round(paymentProgress)}%</span>
                     </div>
                   </div>
                 </CardContent>
