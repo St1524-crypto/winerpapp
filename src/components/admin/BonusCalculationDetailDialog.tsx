@@ -35,6 +35,7 @@ export function BonusCalculationDetailDialog({
     ? record.calculation_detail
     : null;
   const missing = !detail;
+  const isBackfilled = detail?.backfill_mode === "derived_from_existing_bonus_records";
 
   const owner = members?.[record?.member_id] ?? {};
   const source = members?.[record?.source_member_id];
