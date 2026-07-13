@@ -197,10 +197,10 @@ export const adminCreateSalesReturn = createServerFn({ method: "POST" })
       .in("id", requestedIds);
     if (itemsError) throw new Error(itemsError.message);
 
-    const itemMap = new Map((orderItems ?? []).map((item: any) => [item.id, item]));
+    const itemMap = new Map<string, any>((orderItems ?? []).map((item: any) => [item.id, item]));
     let subtotal = 0;
     const lines = data.items.map((item) => {
-      const original = itemMap.get(item.sales_order_item_id);
+      const original: any = itemMap.get(item.sales_order_item_id);
       if (!original) throw new Error("選擇的訂單明細不存在。");
       if (original.sales_order_id !== data.sales_order_id) throw new Error("選擇的明細不屬於此訂單。");
       if (item.quantity > asInt(original.quantity)) {
