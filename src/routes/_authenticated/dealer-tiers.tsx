@@ -75,7 +75,7 @@ function DealerTiersAdmin() {
     <div className="space-y-6 max-w-6xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Crown className="h-6 w-6 text-primary" />經銷商階級管理
+          <Crown className="h-6 w-6 text-primary" />VIP階級管理
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           管理 V / S / T / E / A / V1–V8 階級的晉升條件與獎勵設定。所有條件可動態調整，系統會依此自動判定升階。
