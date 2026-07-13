@@ -119,6 +119,18 @@ export function BonusCalculationDetailDialog({
           </div>
         )}
 
+        {isBackfilled && (
+          <div className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3 text-sm flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+            <div className="text-amber-900 dark:text-amber-200">
+              此筆為歷史回填資料，僅依既有 bonus_records 推導，非原始即時計算快照。
+              <div className="text-xs mt-1 text-amber-800 dark:text-amber-300">
+                需 Codex 於 {mode === "daily" ? "processRepurchase / processUpgrade / settle_daily_bonus" : "settle_monthly_bonus"} 原生寫入 calculation_detail 後，新資料才會呈現完整演算來源。
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm mt-2">
           {fields.map((f) => (
             <div key={f.label} className="flex justify-between border-b py-1.5 gap-3">
