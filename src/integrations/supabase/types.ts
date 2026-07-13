@@ -5015,6 +5015,175 @@ export type Database = {
           },
         ]
       }
+      sales_return_items: {
+        Row: {
+          condition_note: string | null
+          created_at: string
+          id: string
+          inventory_action: Database["public"]["Enums"]["sales_return_inventory_action"]
+          product_id: string | null
+          product_name: string
+          quantity: number
+          reason: string | null
+          sales_order_item_id: string
+          sales_return_id: string
+          sku: string | null
+          subtotal: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          condition_note?: string | null
+          created_at?: string
+          id?: string
+          inventory_action?: Database["public"]["Enums"]["sales_return_inventory_action"]
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          reason?: string | null
+          sales_order_item_id: string
+          sales_return_id: string
+          sku?: string | null
+          subtotal?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          condition_note?: string | null
+          created_at?: string
+          id?: string
+          inventory_action?: Database["public"]["Enums"]["sales_return_inventory_action"]
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          reason?: string | null
+          sales_order_item_id?: string
+          sales_return_id?: string
+          sku?: string | null
+          subtotal?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_return_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_sales_order_item_id_fkey"
+            columns: ["sales_order_item_id"]
+            isOneToOne: false
+            referencedRelation: "sales_order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_return_items_sales_return_id_fkey"
+            columns: ["sales_return_id"]
+            isOneToOne: false
+            referencedRelation: "sales_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_returns: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          company_id: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          inventory_status: string
+          notes: string | null
+          points_reverse_status: string
+          points_reverse_summary: Json
+          reason: string | null
+          refund_amount: number
+          return_no: string
+          return_type: Database["public"]["Enums"]["sales_return_type"]
+          sales_order_id: string
+          status: Database["public"]["Enums"]["sales_return_status"]
+          submitted_at: string | null
+          submitted_by: string | null
+          subtotal: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          company_id?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_status?: string
+          notes?: string | null
+          points_reverse_status?: string
+          points_reverse_summary?: Json
+          reason?: string | null
+          refund_amount?: number
+          return_no: string
+          return_type?: Database["public"]["Enums"]["sales_return_type"]
+          sales_order_id: string
+          status?: Database["public"]["Enums"]["sales_return_status"]
+          submitted_at?: string | null
+          submitted_by?: string | null
+          subtotal?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          company_id?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_status?: string
+          notes?: string | null
+          points_reverse_status?: string
+          points_reverse_summary?: Json
+          reason?: string | null
+          refund_amount?: number
+          return_no?: string
+          return_type?: Database["public"]["Enums"]["sales_return_type"]
+          sales_order_id?: string
+          status?: Database["public"]["Enums"]["sales_return_status"]
+          submitted_at?: string | null
+          submitted_by?: string | null
+          subtotal?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_returns_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipments: {
         Row: {
           company_id: string
@@ -7075,6 +7244,18 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "overdue"
+      sales_return_inventory_action: "restock" | "scrap" | "no_stock_change"
+      sales_return_status:
+        | "draft"
+        | "submitted"
+        | "approved"
+        | "completed"
+        | "cancelled"
+      sales_return_type:
+        | "partial_return"
+        | "full_return"
+        | "exchange"
+        | "refund_only"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7221,6 +7402,20 @@ export const Constants = {
         "completed",
         "cancelled",
         "overdue",
+      ],
+      sales_return_inventory_action: ["restock", "scrap", "no_stock_change"],
+      sales_return_status: [
+        "draft",
+        "submitted",
+        "approved",
+        "completed",
+        "cancelled",
+      ],
+      sales_return_type: [
+        "partial_return",
+        "full_return",
+        "exchange",
+        "refund_only",
       ],
     },
   },
