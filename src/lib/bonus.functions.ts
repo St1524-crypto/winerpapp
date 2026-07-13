@@ -1843,7 +1843,14 @@ async function fetchDetailRows(
 ) {
   const memberIdFilter = await resolveMemberFilter(data.memberName, data.memberNo);
   if (memberIdFilter && memberIdFilter.length === 0) {
-    return { rows: [] as any[], members: {} as Record<string, any>, batches: {} as Record<string, any>, orders: {} as Record<string, any> };
+    return {
+      rows: [] as any[],
+      members: {} as Record<string, any>,
+      batches: {} as Record<string, any>,
+      orders: {} as Record<string, any>,
+      tiers: {} as Record<string, string>,
+      missingCalculationDetail: 0,
+    };
   }
   let q = supabaseAdmin.from("bonus_records").select("*")
     .order("settlement_date", { ascending: false })
@@ -1862,10 +1869,11 @@ async function fetchDetailRows(
   const memberIds = Array.from(new Set(list.flatMap((r: any) => [r.member_id, r.source_member_id, r.released_member_id, r.original_member_id]).filter(Boolean)));
   const batchIds = Array.from(new Set(list.map((r: any) => r.settlement_batch_id).filter(Boolean)));
   const orderIds = Array.from(new Set(list.map((r: any) => r.source_order_id).filter(Boolean)));
-  const [profRes, batchRes, orderRes] = await Promise.all([
-    memberIds.length ? supabaseAdmin.from("profiles").select("id, name, member_no").in("id", memberIds) : Promise.resolve({ data: [], error: null } as any),
+  const [profRes, batchRes, orderRes, tierRes] = await Promise.all([
+    memberIds.length ? supabaseAdmin.from("profiles").select("id, name, member_no, is_vip, vip_expires_at").in("id", memberIds) : Promise.resolve({ data: [], error: null } as any),
     batchIds.length ? supabaseAdmin.from("bonus_settlement_batches").select("*").in("id", batchIds) : Promise.resolve({ data: [], error: null } as any),
-    orderIds.length ? supabaseAdmin.from("sales_orders").select("id, order_no, total_amount").in("id", orderIds) : Promise.resolve({ data: [], error: null } as any),
+    orderIds.length ? supabaseAdmin.from("sales_orders").select("id, order_no, total_amount, order_type").in("id", orderIds) : Promise.resolve({ data: [], error: null } as any),
+    memberIds.length ? supabaseAdmin.from("dealer_tier_status").select("user_id, current_tier").in("user_id", memberIds) : Promise.resolve({ data: [], error: null } as any),
   ]);
   const members: Record<string, any> = {};
   (profRes.data ?? []).forEach((p: any) => { members[p.id] = p; });
@@ -1873,7 +1881,10 @@ async function fetchDetailRows(
   (batchRes.data ?? []).forEach((b: any) => { batches[b.id] = b; });
   const orders: Record<string, any> = {};
   (orderRes.data ?? []).forEach((o: any) => { orders[o.id] = o; });
-  return { rows: list, members, batches, orders };
+  const tiers: Record<string, string> = {};
+  (tierRes.data ?? []).forEach((t: any) => { if (t.current_tier) tiers[t.user_id] = t.current_tier; });
+  const missingCalculationDetail = list.filter((r: any) => !r.calculation_detail).length;
+  return { rows: list, members, batches, orders, tiers, missingCalculationDetail };
 }
 
 export const listDailyBonusDetails = createServerFn({ method: "POST" })
