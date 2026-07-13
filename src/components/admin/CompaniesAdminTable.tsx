@@ -12,6 +12,8 @@ import { Building2, Loader2, Plus, Trash2, Search, CheckCircle2, ExternalLink, C
 import { toast } from "sonner";
 import { companySchema } from "@/lib/company-schema";
 import { writeClientAuditLog } from "@/lib/audit.functions";
+import { createCompany as createCompanyServerFn } from "@/lib/companies-admin.functions";
+
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -201,22 +203,20 @@ export function CompaniesAdminTable() {
     const err = validateField("company_name", name);
     if (err) { toast.error("無法新增", { description: err }); return; }
     setAdding(true);
-    const { data, error } = await supabase
-      .from("companies")
-      .insert({ company_name: name, status: "active" })
-      .select("id, company_name")
-      .single();
-    setAdding(false);
-    if (error) {
-      toast.error("新增失敗", { description: error.message });
-      return;
+    try {
+      const inserted = await createCompanyServerFn({ data: { company_name: name } });
+      toast.success("已新增公司");
+      if (inserted) await logAudit("company.create", inserted as any, { initial_status: "active" });
+      setNewName("");
+      qc.invalidateQueries({ queryKey: ["admin-companies-table"] });
+      refresh();
+    } catch (e: any) {
+      toast.error("新增失敗", { description: e?.message ?? "未知錯誤" });
+    } finally {
+      setAdding(false);
     }
-    toast.success("已新增公司");
-    if (data) await logAudit("company.create", data as any, { initial_status: "active" });
-    setNewName("");
-    qc.invalidateQueries({ queryKey: ["admin-companies-table"] });
-    refresh();
   }
+
 
   return (
     <Card className="bg-card/60 backdrop-blur border-border/60">

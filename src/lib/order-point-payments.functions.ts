@@ -58,6 +58,7 @@ const createOrderWithPointPaymentsSchema = z.object({
   items: z.array(orderItemSchema).min(1),
   payments: z.array(paymentSchema).default([]),
   pointPayments: z.array(pointPaymentSchema).default([]),
+  taxAmount: z.coerce.number().min(0).optional(),
 });
 
 export const createSalesOrderWithPointPayments = createServerFn({ method: "POST" })
@@ -85,10 +86,12 @@ export const createSalesOrderWithPointPayments = createServerFn({ method: "POST"
       subtotal: data.order.subtotal,
       shippingFee: data.order.shipping_fee,
       discountAmount: data.order.discount_amount,
+      taxAmount: data.taxAmount,
       paymentsTotal: paymentTotal,
       pointOffsetTotal,
       paymentStatus: data.order.payment_status,
     });
+
 
 
     const { data: order, error } = (await (context.supabase.rpc as any).call(

@@ -76,6 +76,7 @@ export function assertOrderTotalsInvariant(input: {
   subtotal?: number;
   shippingFee?: number;
   discountAmount?: number;
+  taxAmount?: number;
   paymentsTotal: number;
   pointOffsetTotal: number;
   paymentStatus?: string;
@@ -85,20 +86,32 @@ export function assertOrderTotalsInvariant(input: {
     subtotal,
     shippingFee = 0,
     discountAmount = 0,
+    taxAmount = 0,
     paymentsTotal,
     pointOffsetTotal,
     paymentStatus,
   } = input;
 
   if (subtotal !== undefined) {
-    const expected = subtotal + shippingFee - discountAmount;
-    // allow 1 元 rounding tolerance
-    if (Math.abs(expected - orderTotal) > 1) {
+    // 正規語意：訂單總額 = 小計 + 運費 + 稅額 − 折扣
+    const expected = subtotal + shippingFee + taxAmount - discountAmount;
+    // 相容 shop 前台歷史行為：checkout 將點數折抵值寫入 discount_amount，
+    // 但 total_amount 不會減去該值（點數折抵透過 pointPayments 收款覆蓋）。
+    // 因此在 discountAmount 剛好等於 pointOffsetTotal 時，orderTotal 允許等於
+    // subtotal + shipping + tax（不扣 discount）。
+    const expectedIgnoringPointDiscount = subtotal + shippingFee + taxAmount;
+    const withinExpected = Math.abs(expected - orderTotal) <= 1;
+    const withinPointDiscountPattern =
+      pointOffsetTotal > 0 &&
+      Math.abs(discountAmount - pointOffsetTotal) <= 1 &&
+      Math.abs(expectedIgnoringPointDiscount - orderTotal) <= 1;
+    if (!withinExpected && !withinPointDiscountPattern) {
       throw new Error(
-        `訂單金額不一致：小計 ${subtotal} + 運費 ${shippingFee} - 折扣 ${discountAmount} ≠ 總額 ${orderTotal}`,
+        `訂單金額不一致：小計 ${subtotal} + 運費 ${shippingFee} + 稅額 ${taxAmount} - 折扣 ${discountAmount} ≠ 總額 ${orderTotal}`,
       );
     }
   }
+
 
   if (pointOffsetTotal < 0 || paymentsTotal < 0) {
     throw new Error("金額不可為負數");
