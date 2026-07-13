@@ -1335,7 +1335,9 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           })),
           payments: paymentsPayload,
           pointPayments,
+          taxAmount,
         },
+
       });
 
       // 寫入訂單來源 / 業務人員 / 會員關聯（RPC 不包含這些欄位，建立後補上；建檔人員由 DB trigger 自動寫入）
