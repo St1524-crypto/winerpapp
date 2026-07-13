@@ -9,7 +9,7 @@ import {
   adminListSalesReturns,
   adminUpdateSalesReturnStatus,
 } from "@/lib/sales-returns.functions";
-import { adminListOrders } from "@/lib/orders-admin.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { Button } from "@/components/ui/button";
