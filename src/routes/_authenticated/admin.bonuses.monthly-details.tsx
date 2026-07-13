@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Info, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
@@ -12,6 +12,7 @@ import { listMonthlyBonusDetails } from "@/lib/bonus.functions";
 import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, MONTHLY_BONUS_TYPE_OPTIONS } from "@/lib/bonus-labels";
 import { computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
 import { BonusFiltersCard } from "@/components/admin/BonusFiltersCard";
+import { MONTHLY_RULE_INTRO, bonusRuleMeta, vipStatusLabel, calculationNote } from "@/lib/bonus-rules";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
