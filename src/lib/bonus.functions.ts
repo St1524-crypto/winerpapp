@@ -177,6 +177,41 @@ function isValidVipForBonus(profile: any, referenceDate = new Date()) {
   return new Date(profile.vip_expires_at) >= referenceDate;
 }
 
+function bonusYmFromDate(date?: string | Date) {
+  const refDate = date ? new Date(date) : new Date();
+  return `${refDate.getFullYear()}${String(refDate.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function buildVipSnapshot(profile: any, referenceDate = new Date()) {
+  return {
+    is_vip: !!profile?.is_vip,
+    vip_expires_at: profile?.vip_expires_at ?? null,
+    valid_at: referenceDate.toISOString(),
+    valid: isValidVipForBonus(profile, referenceDate),
+  };
+}
+
+async function getMonthlyResponsibilitySnapshot(memberId: string, orderDate?: string) {
+  const ym = bonusYmFromDate(orderDate);
+  const [{ data: row }, { data: settings }] = await Promise.all([
+    supabaseAdmin
+      .from("monthly_responsibility_points")
+      .select("points")
+      .eq("member_id", memberId)
+      .eq("ym", ym)
+      .maybeSingle(),
+    supabaseAdmin.from("bonus_settings").select("vip_required_points").order("created_at").limit(1).maybeSingle(),
+  ]);
+  const points = Number((row as any)?.points ?? 0);
+  const requiredPoints = Number((settings as any)?.vip_required_points ?? 0);
+  return {
+    ym,
+    points,
+    required_points: requiredPoints,
+    passed: points >= requiredPoints,
+  };
+}
+
 async function getOrderGeneratedRewardPoints(orderId: string) {
   const { data: items, error } = await supabaseAdmin
     .from("sales_order_items")
@@ -248,19 +283,8 @@ async function getOrderGeneratedRewardPoints(orderId: string) {
 }
 
 async function hasCompletedMonthlyResponsibility(memberId: string, orderDate?: string) {
-  const refDate = orderDate ? new Date(orderDate) : new Date();
-  const ym = `${refDate.getFullYear()}${String(refDate.getMonth() + 1).padStart(2, "0")}`;
-  const [{ data: row }, { data: settings }] = await Promise.all([
-    supabaseAdmin
-      .from("monthly_responsibility_points")
-      .select("points")
-      .eq("member_id", memberId)
-      .eq("ym", ym)
-      .maybeSingle(),
-    supabaseAdmin.from("bonus_settings").select("vip_required_points").order("created_at").limit(1).maybeSingle(),
-  ]);
-  const requiredPoints = Number((settings as any)?.vip_required_points ?? 0);
-  return Number((row as any)?.points ?? 0) >= requiredPoints;
+  const snapshot = await getMonthlyResponsibilitySnapshot(memberId, orderDate);
+  return snapshot.passed;
 }
 
 async function processRepurchase(orderId: string, buyerId: string, base: number, orderDate?: string) {
@@ -286,7 +310,8 @@ async function processRepurchase(orderId: string, buyerId: string, base: number,
       .from("profiles").select("referred_by").eq("id", currentId).maybeSingle();
     const upline = (cur as any)?.referred_by as string | null;
     if (!upline) break;
-    const rate = Number((rates ?? []).find((r: any) => r.generation_level === level)?.bonus_rate ?? 0);
+    const rateRow = (rates ?? []).find((r: any) => r.generation_level === level) as any;
+    const rate = Number(rateRow?.bonus_rate ?? 0);
     if (rate > 0) {
       const pts = Math.floor(base * rate / 100);
       if (pts > 0) {
@@ -301,20 +326,54 @@ async function processRepurchase(orderId: string, buyerId: string, base: number,
             .maybeSingle();
           const referenceDate = orderDate ? new Date(orderDate) : new Date();
           const validVip = isValidVipForBonus(uplineProfile, referenceDate);
-          const responsibilityPassed = validVip
-            ? await hasCompletedMonthlyResponsibility(upline, orderDate)
-            : false;
+          const responsibilitySnapshot = validVip
+            ? await getMonthlyResponsibilitySnapshot(upline, orderDate)
+            : {
+                ym: bonusYmFromDate(orderDate),
+                points: 0,
+                required_points: 0,
+                passed: false,
+              };
+          const responsibilityPassed = validVip && responsibilitySnapshot.passed;
+          const failReason = validVip
+            ? (responsibilityPassed ? null : "monthly responsibility not completed")
+            : "vip expired or missing vip_expires_at";
+          const status = responsibilityPassed ? "pending" : "cancelled";
           await supabaseAdmin.from("bonus_records").insert({
             member_id: upline, source_member_id: buyerId, source_order_id: orderId,
             bonus_type: "repurchase", generation_level: level,
             base_amount: base, bonus_rate: rate,
-            bonus_points: validVip && responsibilityPassed ? pts : 0,
+            bonus_points: responsibilityPassed ? pts : 0,
             required_points_checked: true,
             required_points_passed: validVip && responsibilityPassed,
-            fail_reason: validVip
-              ? (responsibilityPassed ? null : "monthly responsibility not completed")
-              : "vip expired or missing vip_expires_at",
-            status: validVip && responsibilityPassed ? "pending" : "cancelled",
+            fail_reason: failReason,
+            status,
+            calculation_detail: {
+              schema_version: 1,
+              calculation_kind: "daily_repurchase",
+              created_from: "processRepurchase",
+              source_order_id: orderId,
+              source_member_id: buyerId,
+              recipient_id: upline,
+              generation_level: level,
+              source_reward_points: base,
+              base_amount: base,
+              bonus_rate: rate,
+              calculated_points_before_eligibility: pts,
+              bonus_points: responsibilityPassed ? pts : 0,
+              status_decision: status,
+              fail_reason: failReason,
+              rule_table: "repurchase_bonus_settings",
+              rule_id: rateRow?.id ?? null,
+              vip_snapshot: buildVipSnapshot(uplineProfile, referenceDate),
+              responsibility_snapshot: responsibilitySnapshot,
+              buyer_snapshot: {
+                is_dealer: buyerIsDealer,
+                referred_by: buyerReferrer,
+              },
+              monthly_responsibility_recipient: monthlyRecipient,
+              order_date: orderDate ?? null,
+            },
           });
           inserted++;
         }
@@ -366,10 +425,39 @@ async function processUpgrade(orderId: string, buyerId: string, base: number) {
           .select("id").eq("source_order_id", orderId)
           .eq("member_id", upline).eq("bonus_type", "referral").maybeSingle();
         if (!dup) {
+          const { data: uplineProfile } = await supabaseAdmin
+            .from("profiles")
+            .select("id, is_vip, vip_expires_at")
+            .eq("id", upline)
+            .maybeSingle();
+          const referenceDate = new Date();
           await supabaseAdmin.from("bonus_records").insert({
             member_id: upline, source_member_id: buyerId, source_order_id: orderId,
             bonus_type: "referral", generation_level: i + 1,
             base_amount: base, bonus_rate: diff, bonus_points: pts, status: "pending",
+            calculation_detail: {
+              schema_version: 1,
+              calculation_kind: "daily_referral_upgrade",
+              created_from: "processUpgrade",
+              source_order_id: orderId,
+              source_member_id: buyerId,
+              recipient_id: upline,
+              generation_level: i + 1,
+              source_reward_points: base,
+              base_amount: base,
+              bonus_rate: diff,
+              calculated_points_before_eligibility: pts,
+              bonus_points: pts,
+              rule_table: "dealer_tiers",
+              rule_id: tierCode ?? null,
+              tier_snapshot: {
+                recipient_tier_code: tierCode ?? null,
+                recipient_tier_rate: tierRate,
+                paid_rate_before: paidRate,
+                applied_diff_rate: diff,
+              },
+              vip_snapshot: buildVipSnapshot(uplineProfile, referenceDate),
+            },
           });
           inserted++;
         }
