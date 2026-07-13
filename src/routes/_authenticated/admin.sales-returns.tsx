@@ -83,7 +83,7 @@ function fmtDate(v: any) {
 function SalesReturnsPage() {
   const { roles } = useAuth();
   const allowed = roles.some((r) => (ADMIN_ROLES as readonly string[]).includes(r));
-  if (!allowed) return <ForbiddenScreen requiredRoles={ADMIN_ROLES as unknown as string[]} />;
+  if (!allowed) return <ForbiddenScreen requiredRoles={ADMIN_ROLES as unknown as any} />;
 
   const qc = useQueryClient();
   const listFn = useServerFn(adminListSalesReturns);
