@@ -21,6 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "商品分類", url: "/categories", icon: Tag, roles: ["super_admin", "sales", "warehouse"] },
   { title: "庫存管理", url: "/inventory", icon: Boxes, roles: ["super_admin", "warehouse"] },
   { title: "訂單管理", url: "/orders", icon: ShoppingCart, roles: ["super_admin", "sales", "finance"] },
+  { title: "退貨單管理", url: "/admin/sales-returns", icon: ArrowRightLeft, roles: ["super_admin", "admin", "finance"] },
   { title: "供應商管理", url: "/suppliers", icon: Building2, roles: ["super_admin", "warehouse", "finance"] },
   { title: "B2B 廠商會員", url: "/b2b/accounts", icon: Briefcase, roles: ["super_admin", "sales", "finance"] },
   { title: "採購管理", url: "/purchases", icon: Truck, roles: ["super_admin", "warehouse", "vendor"] },
