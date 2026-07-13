@@ -76,7 +76,6 @@ WITH targets AS (
     br.created_at,
     br.updated_at,
     br.failed_at,
-    br.released_by,
     br.release_source,
     br.release_attempts,
     br.original_member_id,
@@ -207,7 +206,6 @@ snapshots AS (
       'release_recipient_snapshot', jsonb_strip_nulls(jsonb_build_object(
         'original_member_id', t.original_member_id,
         'released_member_id', t.released_member_id,
-        'released_by', t.released_by,
         'release_redirect_reason', t.release_redirect_reason
       )),
       'display_math', jsonb_strip_nulls(jsonb_build_object(
