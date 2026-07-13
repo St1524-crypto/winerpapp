@@ -140,9 +140,12 @@ import { Route as AuthenticatedAdminOperationsAssistantRouteImport } from './rou
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
 import { Route as AuthenticatedAdminBonusesVipDetailRouteImport } from './routes/_authenticated/admin.bonuses_.vip-detail'
 import { Route as AuthenticatedAdminBonusesSummaryRouteImport } from './routes/_authenticated/admin.bonuses.summary'
+import { Route as AuthenticatedAdminBonusesMonthlySummaryRouteImport } from './routes/_authenticated/admin.bonuses.monthly-summary'
 import { Route as AuthenticatedAdminBonusesMonthlyDetailsRouteImport } from './routes/_authenticated/admin.bonuses.monthly-details'
+import { Route as AuthenticatedAdminBonusesMonthlyDetailSplitRouteImport } from './routes/_authenticated/admin.bonuses.monthly-detail-split'
 import { Route as AuthenticatedAdminBonusesMemberDetailsRouteImport } from './routes/_authenticated/admin.bonuses.member-details'
 import { Route as AuthenticatedAdminBonusesDailySummarySplitRouteImport } from './routes/_authenticated/admin.bonuses.daily-summary-split'
+import { Route as AuthenticatedAdminBonusesDailySummaryMergedRouteImport } from './routes/_authenticated/admin.bonuses.daily-summary-merged'
 import { Route as AuthenticatedAdminBonusesDailyDetailsRouteImport } from './routes/_authenticated/admin.bonuses.daily-details'
 import { Route as AuthenticatedAdminBonusesBatchesBatchIdRouteImport } from './routes/_authenticated/admin.bonuses.batches.$batchId'
 
@@ -860,10 +863,22 @@ const AuthenticatedAdminBonusesSummaryRoute =
     path: '/summary',
     getParentRoute: () => AuthenticatedAdminBonusesRoute,
   } as any)
+const AuthenticatedAdminBonusesMonthlySummaryRoute =
+  AuthenticatedAdminBonusesMonthlySummaryRouteImport.update({
+    id: '/monthly-summary',
+    path: '/monthly-summary',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
 const AuthenticatedAdminBonusesMonthlyDetailsRoute =
   AuthenticatedAdminBonusesMonthlyDetailsRouteImport.update({
     id: '/monthly-details',
     path: '/monthly-details',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
+const AuthenticatedAdminBonusesMonthlyDetailSplitRoute =
+  AuthenticatedAdminBonusesMonthlyDetailSplitRouteImport.update({
+    id: '/monthly-detail-split',
+    path: '/monthly-detail-split',
     getParentRoute: () => AuthenticatedAdminBonusesRoute,
   } as any)
 const AuthenticatedAdminBonusesMemberDetailsRoute =
@@ -876,6 +891,12 @@ const AuthenticatedAdminBonusesDailySummarySplitRoute =
   AuthenticatedAdminBonusesDailySummarySplitRouteImport.update({
     id: '/daily-summary-split',
     path: '/daily-summary-split',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
+const AuthenticatedAdminBonusesDailySummaryMergedRoute =
+  AuthenticatedAdminBonusesDailySummaryMergedRouteImport.update({
+    id: '/daily-summary-merged',
+    path: '/daily-summary-merged',
     getParentRoute: () => AuthenticatedAdminBonusesRoute,
   } as any)
 const AuthenticatedAdminBonusesDailyDetailsRoute =
@@ -1001,9 +1022,12 @@ export interface FileRoutesByFullPath {
   '/shop/account/': typeof ShopAccountIndexRoute
   '/shop/bundles/': typeof ShopBundlesIndexRoute
   '/admin/bonuses/daily-details': typeof AuthenticatedAdminBonusesDailyDetailsRoute
+  '/admin/bonuses/daily-summary-merged': typeof AuthenticatedAdminBonusesDailySummaryMergedRoute
   '/admin/bonuses/daily-summary-split': typeof AuthenticatedAdminBonusesDailySummarySplitRoute
   '/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
+  '/admin/bonuses/monthly-detail-split': typeof AuthenticatedAdminBonusesMonthlyDetailSplitRoute
   '/admin/bonuses/monthly-details': typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  '/admin/bonuses/monthly-summary': typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   '/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
   '/admin/bonuses/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
@@ -1133,9 +1157,12 @@ export interface FileRoutesByTo {
   '/shop/account': typeof ShopAccountIndexRoute
   '/shop/bundles': typeof ShopBundlesIndexRoute
   '/admin/bonuses/daily-details': typeof AuthenticatedAdminBonusesDailyDetailsRoute
+  '/admin/bonuses/daily-summary-merged': typeof AuthenticatedAdminBonusesDailySummaryMergedRoute
   '/admin/bonuses/daily-summary-split': typeof AuthenticatedAdminBonusesDailySummarySplitRoute
   '/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
+  '/admin/bonuses/monthly-detail-split': typeof AuthenticatedAdminBonusesMonthlyDetailSplitRoute
   '/admin/bonuses/monthly-details': typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  '/admin/bonuses/monthly-summary': typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   '/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
   '/admin/bonuses/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
@@ -1272,9 +1299,12 @@ export interface FileRoutesById {
   '/shop/account/': typeof ShopAccountIndexRoute
   '/shop/bundles/': typeof ShopBundlesIndexRoute
   '/_authenticated/admin/bonuses/daily-details': typeof AuthenticatedAdminBonusesDailyDetailsRoute
+  '/_authenticated/admin/bonuses/daily-summary-merged': typeof AuthenticatedAdminBonusesDailySummaryMergedRoute
   '/_authenticated/admin/bonuses/daily-summary-split': typeof AuthenticatedAdminBonusesDailySummarySplitRoute
   '/_authenticated/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
+  '/_authenticated/admin/bonuses/monthly-detail-split': typeof AuthenticatedAdminBonusesMonthlyDetailSplitRoute
   '/_authenticated/admin/bonuses/monthly-details': typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  '/_authenticated/admin/bonuses/monthly-summary': typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   '/_authenticated/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
   '/_authenticated/admin/bonuses_/vip-detail': typeof AuthenticatedAdminBonusesVipDetailRoute
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
@@ -1411,9 +1441,12 @@ export interface FileRouteTypes {
     | '/shop/account/'
     | '/shop/bundles/'
     | '/admin/bonuses/daily-details'
+    | '/admin/bonuses/daily-summary-merged'
     | '/admin/bonuses/daily-summary-split'
     | '/admin/bonuses/member-details'
+    | '/admin/bonuses/monthly-detail-split'
     | '/admin/bonuses/monthly-details'
+    | '/admin/bonuses/monthly-summary'
     | '/admin/bonuses/summary'
     | '/admin/bonuses/vip-detail'
     | '/admin/companies/new'
@@ -1543,9 +1576,12 @@ export interface FileRouteTypes {
     | '/shop/account'
     | '/shop/bundles'
     | '/admin/bonuses/daily-details'
+    | '/admin/bonuses/daily-summary-merged'
     | '/admin/bonuses/daily-summary-split'
     | '/admin/bonuses/member-details'
+    | '/admin/bonuses/monthly-detail-split'
     | '/admin/bonuses/monthly-details'
+    | '/admin/bonuses/monthly-summary'
     | '/admin/bonuses/summary'
     | '/admin/bonuses/vip-detail'
     | '/admin/companies/new'
@@ -1681,9 +1717,12 @@ export interface FileRouteTypes {
     | '/shop/account/'
     | '/shop/bundles/'
     | '/_authenticated/admin/bonuses/daily-details'
+    | '/_authenticated/admin/bonuses/daily-summary-merged'
     | '/_authenticated/admin/bonuses/daily-summary-split'
     | '/_authenticated/admin/bonuses/member-details'
+    | '/_authenticated/admin/bonuses/monthly-detail-split'
     | '/_authenticated/admin/bonuses/monthly-details'
+    | '/_authenticated/admin/bonuses/monthly-summary'
     | '/_authenticated/admin/bonuses/summary'
     | '/_authenticated/admin/bonuses_/vip-detail'
     | '/_authenticated/admin/companies/new'
@@ -2658,11 +2697,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBonusesSummaryRouteImport
       parentRoute: typeof AuthenticatedAdminBonusesRoute
     }
+    '/_authenticated/admin/bonuses/monthly-summary': {
+      id: '/_authenticated/admin/bonuses/monthly-summary'
+      path: '/monthly-summary'
+      fullPath: '/admin/bonuses/monthly-summary'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesMonthlySummaryRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
     '/_authenticated/admin/bonuses/monthly-details': {
       id: '/_authenticated/admin/bonuses/monthly-details'
       path: '/monthly-details'
       fullPath: '/admin/bonuses/monthly-details'
       preLoaderRoute: typeof AuthenticatedAdminBonusesMonthlyDetailsRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
+    '/_authenticated/admin/bonuses/monthly-detail-split': {
+      id: '/_authenticated/admin/bonuses/monthly-detail-split'
+      path: '/monthly-detail-split'
+      fullPath: '/admin/bonuses/monthly-detail-split'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesMonthlyDetailSplitRouteImport
       parentRoute: typeof AuthenticatedAdminBonusesRoute
     }
     '/_authenticated/admin/bonuses/member-details': {
@@ -2677,6 +2730,13 @@ declare module '@tanstack/react-router' {
       path: '/daily-summary-split'
       fullPath: '/admin/bonuses/daily-summary-split'
       preLoaderRoute: typeof AuthenticatedAdminBonusesDailySummarySplitRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
+    '/_authenticated/admin/bonuses/daily-summary-merged': {
+      id: '/_authenticated/admin/bonuses/daily-summary-merged'
+      path: '/daily-summary-merged'
+      fullPath: '/admin/bonuses/daily-summary-merged'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesDailySummaryMergedRouteImport
       parentRoute: typeof AuthenticatedAdminBonusesRoute
     }
     '/_authenticated/admin/bonuses/daily-details': {
@@ -2730,9 +2790,12 @@ const AuthenticatedProductsRouteWithChildren =
 
 interface AuthenticatedAdminBonusesRouteChildren {
   AuthenticatedAdminBonusesDailyDetailsRoute: typeof AuthenticatedAdminBonusesDailyDetailsRoute
+  AuthenticatedAdminBonusesDailySummaryMergedRoute: typeof AuthenticatedAdminBonusesDailySummaryMergedRoute
   AuthenticatedAdminBonusesDailySummarySplitRoute: typeof AuthenticatedAdminBonusesDailySummarySplitRoute
   AuthenticatedAdminBonusesMemberDetailsRoute: typeof AuthenticatedAdminBonusesMemberDetailsRoute
+  AuthenticatedAdminBonusesMonthlyDetailSplitRoute: typeof AuthenticatedAdminBonusesMonthlyDetailSplitRoute
   AuthenticatedAdminBonusesMonthlyDetailsRoute: typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  AuthenticatedAdminBonusesMonthlySummaryRoute: typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   AuthenticatedAdminBonusesSummaryRoute: typeof AuthenticatedAdminBonusesSummaryRoute
   AuthenticatedAdminBonusesIndexRoute: typeof AuthenticatedAdminBonusesIndexRoute
   AuthenticatedAdminBonusesBatchesBatchIdRoute: typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
@@ -2742,12 +2805,18 @@ const AuthenticatedAdminBonusesRouteChildren: AuthenticatedAdminBonusesRouteChil
   {
     AuthenticatedAdminBonusesDailyDetailsRoute:
       AuthenticatedAdminBonusesDailyDetailsRoute,
+    AuthenticatedAdminBonusesDailySummaryMergedRoute:
+      AuthenticatedAdminBonusesDailySummaryMergedRoute,
     AuthenticatedAdminBonusesDailySummarySplitRoute:
       AuthenticatedAdminBonusesDailySummarySplitRoute,
     AuthenticatedAdminBonusesMemberDetailsRoute:
       AuthenticatedAdminBonusesMemberDetailsRoute,
+    AuthenticatedAdminBonusesMonthlyDetailSplitRoute:
+      AuthenticatedAdminBonusesMonthlyDetailSplitRoute,
     AuthenticatedAdminBonusesMonthlyDetailsRoute:
       AuthenticatedAdminBonusesMonthlyDetailsRoute,
+    AuthenticatedAdminBonusesMonthlySummaryRoute:
+      AuthenticatedAdminBonusesMonthlySummaryRoute,
     AuthenticatedAdminBonusesSummaryRoute:
       AuthenticatedAdminBonusesSummaryRoute,
     AuthenticatedAdminBonusesIndexRoute: AuthenticatedAdminBonusesIndexRoute,
