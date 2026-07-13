@@ -278,6 +278,30 @@ function BonusOperationsPage() {
               VIP 個人明細
             </Link>
           </Button>
+          <Button asChild variant="outline">
+            <Link to="/admin/bonuses/daily-summary-split">
+              <Search className="mr-2 h-4 w-4" />
+              日總表（分開）
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/admin/bonuses/daily-summary-merged">
+              <Search className="mr-2 h-4 w-4" />
+              日總表（合計）
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/admin/bonuses/monthly-summary">
+              <Search className="mr-2 h-4 w-4" />
+              月總表
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/admin/bonuses/monthly-detail-split">
+              <Search className="mr-2 h-4 w-4" />
+              月明細（分開/列印）
+            </Link>
+          </Button>
           <Button variant="outline" onClick={loadData} disabled={loading || busy}>
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
             重新整理
