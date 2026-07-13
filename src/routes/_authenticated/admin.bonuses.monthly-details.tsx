@@ -162,6 +162,8 @@ function Page() {
   const rows: any[] = payload?.rows ?? [];
   const members = payload?.members ?? {};
   const batches = payload?.batches ?? {};
+  const tiers: Record<string, string> = payload?.tiers ?? {};
+  const missingDetail = payload?.missingCalculationDetail ?? 0;
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -169,13 +171,22 @@ function Page() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">月獎金明細</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            顯示月達成、階級回饋與階級差額回饋，包含自我消費、第一代消費、月達成基礎點數與超額點數。
+            月達成 / 階級回饋 / 階級差額回饋，依 VIP制度設定 與 VIP階級管理 演算。
           </p>
         </div>
         <Button asChild variant="outline">
           <Link to="/admin/bonuses"><ArrowLeft className="mr-2 h-4 w-4" />回獎金營運中心</Link>
         </Button>
       </div>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2"><Info className="h-4 w-4" />月結獎金演算規則</CardTitle>
+        </CardHeader>
+        <CardContent className="text-xs text-muted-foreground space-y-1">
+          {MONTHLY_RULE_INTRO.map((line, i) => <div key={i}>{line}</div>)}
+        </CardContent>
+      </Card>
 
       <BonusFiltersCard
         filters={filters}
@@ -188,11 +199,28 @@ function Page() {
         typeOptions={MONTHLY_BONUS_TYPE_OPTIONS}
       />
 
+      {missingDetail > 0 && (
+        <Card className="border-amber-500/50 bg-amber-500/10">
+          <CardContent className="py-3 flex items-start gap-2 text-sm">
+            <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+            <div>
+              <div className="font-medium text-amber-900 dark:text-amber-200">
+                有 {missingDetail} 筆記錄缺少 calculation_detail 快照。
+              </div>
+              <div className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
+                UI 目前以 base_amount / bonus_rate / required_points_passed 推導呈現；
+                精確的『自我消費 / 第一代消費 / 月達成基礎 / 超額點數 / 責任額門檻』需 Codex 於 settle_monthly_bonus RPC 寫入 calculation_detail JSON（建議：self_points、first_generation_points、total_base_points、excess_points、required_points、tier_snapshot、vip_snapshot），重新結算後才能完整還原。
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">明細：{rows.length} 筆</CardTitle>
           <CardDescription>
-            新月結算會寫入 calculation_detail 作為演算快照；舊資料若尚未具備快照，會以 base_amount 顯示月達成基礎點數。
+            新月結算會寫入 calculation_detail 作為演算快照；舊資料以 base_amount 顯示月達成基礎點數。
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -207,21 +235,23 @@ function Page() {
                   <TableRow>
                     <TableHead>結算月份</TableHead>
                     <TableHead>結算日期</TableHead>
-                    <TableHead>預計發放日</TableHead>
-                    <TableHead>會員</TableHead>
+                    <TableHead>會員 / 編號</TableHead>
+                    <TableHead>VIP階級</TableHead>
+                    <TableHead>是否有效VIP</TableHead>
                     <TableHead>獎金類型</TableHead>
+                    <TableHead>適用制度</TableHead>
                     <TableHead className="text-right">自我消費</TableHead>
                     <TableHead className="text-right">第一代消費</TableHead>
-                    <TableHead className="text-right">月達成基礎點數</TableHead>
+                    <TableHead className="text-right">自我+第一代</TableHead>
+                    <TableHead className="text-right">月達成基礎</TableHead>
                     <TableHead className="text-right">超額點數</TableHead>
                     <TableHead className="text-right">責任額</TableHead>
                     <TableHead>是否達成</TableHead>
                     <TableHead className="text-right">比例%</TableHead>
-                    <TableHead className="text-right">應發獎勵點</TableHead>
-                    <TableHead className="text-right">實發獎勵點</TableHead>
+                    <TableHead className="text-right">應發</TableHead>
+                    <TableHead className="text-right">實發</TableHead>
                     <TableHead>狀態</TableHead>
-                    <TableHead>失敗原因</TableHead>
-                    <TableHead>批次</TableHead>
+                    <TableHead>計算說明</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -230,18 +260,26 @@ function Page() {
                     const b = batches[r.settlement_batch_id];
                     const released = r.status === "released" ? Number(r.bonus_points ?? 0) : 0;
                     const detail = calcDetail(r);
+                    const combined = detail.selfPoints + detail.firstGenerationPoints;
+                    const vip = vipStatusLabel(m, r.settlement_date);
+                    const meta = bonusRuleMeta(r.bonus_type);
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="whitespace-nowrap">{b?.period ?? (r.settlement_date ? String(r.settlement_date).slice(0, 7) : "—")}</TableCell>
                         <TableCell className="whitespace-nowrap">{r.settlement_date ?? "—"}</TableCell>
-                        <TableCell className="whitespace-nowrap">{r.release_date ?? "—"}</TableCell>
                         <TableCell>
                           <div className="font-medium">{m.name ?? "—"}</div>
                           <div className="text-xs text-muted-foreground">{m.member_no ?? "—"}</div>
                         </TableCell>
+                        <TableCell className="text-xs">{tiers[r.member_id] ?? "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={vip.valid ? "default" : "destructive"} title={vip.reason}>{vip.label}</Badge>
+                        </TableCell>
                         <TableCell>{bonusTypeLabel(r.bonus_type)}</TableCell>
+                        <TableCell className="text-xs max-w-[180px]">{meta.rule}</TableCell>
                         <TableCell className="text-right tabular-nums">{fmt(detail.selfPoints)}</TableCell>
                         <TableCell className="text-right tabular-nums">{fmt(detail.firstGenerationPoints)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{fmt(combined)}</TableCell>
                         <TableCell className="text-right tabular-nums">{fmt(detail.totalBasePoints)}</TableCell>
                         <TableCell className="text-right tabular-nums">{fmt(detail.excessPoints)}</TableCell>
                         <TableCell className="text-right tabular-nums">{fmt(detail.requiredPoints)}</TableCell>
@@ -254,8 +292,7 @@ function Page() {
                         <TableCell className="text-right tabular-nums font-semibold">{fmt(r.bonus_points)}</TableCell>
                         <TableCell className="text-right tabular-nums text-primary">{fmt(released)}</TableCell>
                         <TableCell><Badge variant={BONUS_STATUS_VARIANT[r.status] ?? "outline"}>{bonusStatusLabel(r.status)}</Badge></TableCell>
-                        <TableCell className="max-w-[220px] truncate text-xs text-muted-foreground">{r.fail_reason ?? "—"}</TableCell>
-                        <TableCell className="font-mono text-xs">{r.settlement_batch_id ? r.settlement_batch_id.slice(0, 8) : "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[240px] whitespace-normal">{calculationNote(r)}</TableCell>
                       </TableRow>
                     );
                   })}
