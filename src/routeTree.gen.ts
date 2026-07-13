@@ -119,6 +119,7 @@ import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminAnnualFeeVipRouteImport } from './routes/_authenticated/admin.annual-fee-vip'
 import { Route as ShopAccountStorefrontIndexRouteImport } from './routes/shop.account.storefront.index'
 import { Route as AuthenticatedAdminQuotesIndexRouteImport } from './routes/_authenticated/admin.quotes.index'
+import { Route as AuthenticatedAdminBonusesIndexRouteImport } from './routes/_authenticated/admin.bonuses.index'
 import { Route as ShopCheckoutSuccessIdRouteImport } from './routes/shop.checkout.success.$id'
 import { Route as ShopAccountStorefrontTemplatesRouteImport } from './routes/shop.account.storefront.templates'
 import { Route as ShopAccountOrdersIdRouteImport } from './routes/shop.account.orders.$id'
@@ -734,6 +735,12 @@ const AuthenticatedAdminQuotesIndexRoute =
     path: '/admin/quotes/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminBonusesIndexRoute =
+  AuthenticatedAdminBonusesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
 const ShopCheckoutSuccessIdRoute = ShopCheckoutSuccessIdRouteImport.update({
   id: '/success/$id',
   path: '/success/$id',
@@ -1000,6 +1007,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/shop/checkout/success/$id': typeof ShopCheckoutSuccessIdRoute
+  '/admin/bonuses/': typeof AuthenticatedAdminBonusesIndexRoute
   '/admin/quotes/': typeof AuthenticatedAdminQuotesIndexRoute
   '/shop/account/storefront/': typeof ShopAccountStorefrontIndexRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
@@ -1063,7 +1071,6 @@ export interface FileRoutesByTo {
   '/admin/annual-fee-vip': typeof AuthenticatedAdminAnnualFeeVipRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
-  '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/cooperation-applications': typeof AuthenticatedAdminCooperationApplicationsRoute
   '/admin/homepage-featured': typeof AuthenticatedAdminHomepageFeaturedRoute
@@ -1130,6 +1137,7 @@ export interface FileRoutesByTo {
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/shop/checkout/success/$id': typeof ShopCheckoutSuccessIdRoute
+  '/admin/bonuses': typeof AuthenticatedAdminBonusesIndexRoute
   '/admin/quotes': typeof AuthenticatedAdminQuotesIndexRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontIndexRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
@@ -1266,6 +1274,7 @@ export interface FileRoutesById {
   '/shop/account/orders/$id': typeof ShopAccountOrdersIdRoute
   '/shop/account/storefront/templates': typeof ShopAccountStorefrontTemplatesRoute
   '/shop/checkout/success/$id': typeof ShopCheckoutSuccessIdRoute
+  '/_authenticated/admin/bonuses/': typeof AuthenticatedAdminBonusesIndexRoute
   '/_authenticated/admin/quotes/': typeof AuthenticatedAdminQuotesIndexRoute
   '/shop/account/storefront/': typeof ShopAccountStorefrontIndexRoute
   '/_authenticated/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
@@ -1402,6 +1411,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
     | '/shop/checkout/success/$id'
+    | '/admin/bonuses/'
     | '/admin/quotes/'
     | '/shop/account/storefront/'
     | '/admin/bonuses/batches/$batchId'
@@ -1465,7 +1475,6 @@ export interface FileRouteTypes {
     | '/admin/annual-fee-vip'
     | '/admin/audit-logs'
     | '/admin/bonus-center'
-    | '/admin/bonuses'
     | '/admin/companies'
     | '/admin/cooperation-applications'
     | '/admin/homepage-featured'
@@ -1532,6 +1541,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
     | '/shop/checkout/success/$id'
+    | '/admin/bonuses'
     | '/admin/quotes'
     | '/shop/account/storefront'
     | '/admin/bonuses/batches/$batchId'
@@ -1667,6 +1677,7 @@ export interface FileRouteTypes {
     | '/shop/account/orders/$id'
     | '/shop/account/storefront/templates'
     | '/shop/checkout/success/$id'
+    | '/_authenticated/admin/bonuses/'
     | '/_authenticated/admin/quotes/'
     | '/shop/account/storefront/'
     | '/_authenticated/admin/bonuses/batches/$batchId'
@@ -2474,6 +2485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminQuotesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/bonuses/': {
+      id: '/_authenticated/admin/bonuses/'
+      path: '/'
+      fullPath: '/admin/bonuses/'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
     '/shop/checkout/success/$id': {
       id: '/shop/checkout/success/$id'
       path: '/success/$id'
@@ -2675,6 +2693,7 @@ interface AuthenticatedAdminBonusesRouteChildren {
   AuthenticatedAdminBonusesMemberDetailsRoute: typeof AuthenticatedAdminBonusesMemberDetailsRoute
   AuthenticatedAdminBonusesMonthlyDetailsRoute: typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
   AuthenticatedAdminBonusesSummaryRoute: typeof AuthenticatedAdminBonusesSummaryRoute
+  AuthenticatedAdminBonusesIndexRoute: typeof AuthenticatedAdminBonusesIndexRoute
   AuthenticatedAdminBonusesBatchesBatchIdRoute: typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
 
@@ -2688,6 +2707,7 @@ const AuthenticatedAdminBonusesRouteChildren: AuthenticatedAdminBonusesRouteChil
       AuthenticatedAdminBonusesMonthlyDetailsRoute,
     AuthenticatedAdminBonusesSummaryRoute:
       AuthenticatedAdminBonusesSummaryRoute,
+    AuthenticatedAdminBonusesIndexRoute: AuthenticatedAdminBonusesIndexRoute,
     AuthenticatedAdminBonusesBatchesBatchIdRoute:
       AuthenticatedAdminBonusesBatchesBatchIdRoute,
   }
@@ -3039,3 +3059,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
