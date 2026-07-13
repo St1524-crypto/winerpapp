@@ -13,6 +13,7 @@ import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, DAILY_BONUS_TYP
 import { computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
 import { BonusFiltersCard, type BonusFilters } from "@/components/admin/BonusFiltersCard";
 import { DAILY_RULE_INTRO, bonusRuleMeta, vipStatusLabel, calculationNote } from "@/lib/bonus-rules";
+import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -174,6 +175,7 @@ function Page() {
                     <TableHead>實際領取人</TableHead>
                     <TableHead>狀態</TableHead>
                     <TableHead>計算說明</TableHead>
+                    <TableHead>詳情</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -216,6 +218,9 @@ function Page() {
                           <Badge variant={BONUS_STATUS_VARIANT[r.status] ?? "outline"}>{bonusStatusLabel(r.status)}</Badge>
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground max-w-[240px] whitespace-normal">{calculationNote(r)}</TableCell>
+                        <TableCell>
+                          <BonusCalculationDetailDialog record={r} mode="daily" members={members} orders={orders} tiers={tiers} />
+                        </TableCell>
                       </TableRow>
                     );
                   })}

@@ -13,6 +13,7 @@ import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, MONTHLY_BONUS_T
 import { computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
 import { BonusFiltersCard } from "@/components/admin/BonusFiltersCard";
 import { MONTHLY_RULE_INTRO, bonusRuleMeta, vipStatusLabel, calculationNote } from "@/lib/bonus-rules";
+import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -252,6 +253,7 @@ function Page() {
                     <TableHead className="text-right">實發</TableHead>
                     <TableHead>狀態</TableHead>
                     <TableHead>計算說明</TableHead>
+                    <TableHead>詳情</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -293,6 +295,9 @@ function Page() {
                         <TableCell className="text-right tabular-nums text-primary">{fmt(released)}</TableCell>
                         <TableCell><Badge variant={BONUS_STATUS_VARIANT[r.status] ?? "outline"}>{bonusStatusLabel(r.status)}</Badge></TableCell>
                         <TableCell className="text-xs text-muted-foreground max-w-[240px] whitespace-normal">{calculationNote(r)}</TableCell>
+                        <TableCell>
+                          <BonusCalculationDetailDialog record={r} mode="monthly" members={members} tiers={tiers} />
+                        </TableCell>
                       </TableRow>
                     );
                   })}
