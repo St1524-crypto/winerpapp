@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Download, Loader2, RefreshCw, Search } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { listMonthlyBonusDetails } from "@/lib/bonus.functions";
 import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, MONTHLY_BONUS_TYPE_OPTIONS } from "@/lib/bonus-labels";
 import { computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
-import { BonusFiltersCard, type BonusFilters } from "@/components/admin/BonusFiltersCard";
+import { BonusFiltersCard } from "@/components/admin/BonusFiltersCard";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -20,15 +20,50 @@ export const Route = createFileRoute("/_authenticated/admin/bonuses/monthly-deta
 function Guard() {
   const { roles, loading } = useAuth();
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (!roles.some((r) => ALLOWED.includes(r))) return <ForbiddenScreen requiredRoles={ALLOWED} pageName="月獎金明細表" />;
+  if (!roles.some((r) => ALLOWED.includes(r))) return <ForbiddenScreen requiredRoles={ALLOWED} pageName="月獎金明細" />;
   return <Page />;
 }
 
 type Filters = {
-  dateFrom: string; dateTo: string; bonusType: string; status: string;
-  memberName: string; memberNo: string; settlementBatchId: string;
+  dateFrom: string;
+  dateTo: string;
+  bonusType: string;
+  status: string;
+  memberName: string;
+  memberNo: string;
+  settlementBatchId: string;
 };
-const EMPTY: Filters = { dateFrom: "", dateTo: "", bonusType: "", status: "", memberName: "", memberNo: "", settlementBatchId: "" };
+
+const EMPTY: Filters = {
+  dateFrom: "",
+  dateTo: "",
+  bonusType: "",
+  status: "",
+  memberName: "",
+  memberNo: "",
+  settlementBatchId: "",
+};
+
+function calcDetail(record: any) {
+  const detail = record?.calculation_detail && typeof record.calculation_detail === "object"
+    ? record.calculation_detail
+    : {};
+  const n = (value: unknown, fallback = 0) => {
+    const parsed = Number(value ?? fallback);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+  const selfPoints = n(detail.self_points ?? detail.source_self_points);
+  const firstGenerationPoints = n(detail.first_generation_points ?? detail.source_first_generation_points);
+  const requiredPoints = n(detail.required_points ?? detail.source_required_points);
+  const totalBasePoints = n(detail.total_base_points ?? detail.source_total_base_points ?? record?.base_amount);
+  const excessPoints = n(detail.excess_points ?? detail.source_excess_points, Math.max(selfPoints - requiredPoints, 0));
+  return { selfPoints, firstGenerationPoints, requiredPoints, totalBasePoints, excessPoints };
+}
+
+function fmt(value: unknown) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed.toLocaleString() : "0";
+}
 
 function Page() {
   const [filters, setFilters] = useState<Filters>(() => ({ ...EMPTY, ...computePreset("this_month")! }));
@@ -43,28 +78,55 @@ function Page() {
       Object.entries(filters).forEach(([k, v]) => { if (v) p[k] = v; });
       const res = await listMonthlyBonusDetails({ data: p });
       setPayload(res);
-    } catch (e: any) { toast.error(e?.message ?? "查詢失敗"); }
-    finally { setLoading(false); }
+    } catch (e: any) {
+      toast.error(e?.message ?? "查詢失敗");
+    } finally {
+      setLoading(false);
+    }
   }, [filters]);
 
   useEffect(() => { load(); }, []);
 
-  function applyPreset(v: BonusDatePreset) {
-    setPreset(v);
-    const p = computePreset(v);
-    if (p) setFilters((f) => ({ ...f, ...p }));
+  function applyPreset(value: BonusDatePreset) {
+    setPreset(value);
+    const next = computePreset(value);
+    if (next) setFilters((current) => ({ ...current, ...next }));
   }
 
   function exportCsv() {
     const rows = payload?.rows ?? [];
-    if (!rows.length) { toast.info("無資料可匯出"); return; }
+    if (!rows.length) {
+      toast.info("沒有資料可匯出");
+      return;
+    }
     const members = payload.members ?? {};
     const batches = payload.batches ?? {};
-    const header = ["結算月份","結算日期","發放日期","實際發放時間","會員名稱","會員編號","獎金類型","責任額","是否達成","比例%","應發獎勵點","實際發放獎勵點","狀態","失敗原因","批次ID"];
+    const header = [
+      "結算月份",
+      "結算日期",
+      "預計發放日",
+      "實際發放時間",
+      "會員名稱",
+      "會員編號",
+      "獎金類型",
+      "自我消費",
+      "第一代消費",
+      "月達成基礎點數",
+      "超額點數",
+      "責任額",
+      "是否達成",
+      "比例%",
+      "應發獎勵點",
+      "實發獎勵點",
+      "狀態",
+      "失敗原因",
+      "批次ID",
+    ];
     const csv = rows.map((r: any) => {
       const m = members[r.member_id] ?? {};
       const b = batches[r.settlement_batch_id];
       const released = r.status === "released" ? r.bonus_points : 0;
+      const detail = calcDetail(r);
       return [
         b?.period ?? (r.settlement_date ? String(r.settlement_date).slice(0, 7) : ""),
         r.settlement_date ?? "",
@@ -73,7 +135,11 @@ function Page() {
         m.name ?? "",
         m.member_no ?? "",
         bonusTypeLabel(r.bonus_type),
-        r.base_amount ?? "",
+        detail.selfPoints,
+        detail.firstGenerationPoints,
+        detail.totalBasePoints,
+        detail.excessPoints,
+        detail.requiredPoints,
         r.required_points_passed === true ? "是" : r.required_points_passed === false ? "否" : "",
         r.bonus_rate ?? "",
         r.bonus_points ?? 0,
@@ -85,7 +151,10 @@ function Page() {
     });
     const blob = new Blob(["\uFEFF" + [header.join(","), ...csv].join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `monthly-bonus-${filters.dateFrom}_${filters.dateTo}.csv`; a.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `monthly-bonus-${filters.dateFrom}_${filters.dateTo}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
   }
 
@@ -97,30 +166,39 @@ function Page() {
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">月獎金明細表</h1>
-          <p className="mt-1 text-sm text-muted-foreground">月 VIP 獎勵 / 階級回饋 / 階級差額回饋，依結算日期篩選。</p>
+          <h1 className="text-2xl font-bold tracking-tight">月獎金明細</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            顯示月達成、階級回饋與階級差額回饋，包含自我消費、第一代消費、月達成基礎點數與超額點數。
+          </p>
         </div>
         <Button asChild variant="outline">
-          <Link to="/admin/bonuses"><ArrowLeft className="mr-2 h-4 w-4" />返回獎金營運中心</Link>
+          <Link to="/admin/bonuses"><ArrowLeft className="mr-2 h-4 w-4" />回獎金營運中心</Link>
         </Button>
       </div>
 
       <BonusFiltersCard
-        filters={filters} setFilters={setFilters} preset={preset} setPreset={applyPreset}
-        onLoad={load} loading={loading} onExport={exportCsv}
+        filters={filters}
+        setFilters={setFilters}
+        preset={preset}
+        setPreset={applyPreset}
+        onLoad={load}
+        loading={loading}
+        onExport={exportCsv}
         typeOptions={MONTHLY_BONUS_TYPE_OPTIONS}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">明細（{rows.length} 筆）</CardTitle>
-          <CardDescription>自我消費 / 一代消費 / 超額點數目前由核心結算 job 寫入 base_amount；此頁面唯讀顯示。</CardDescription>
+          <CardTitle className="text-base">明細：{rows.length} 筆</CardTitle>
+          <CardDescription>
+            新月結算會寫入 calculation_detail 作為演算快照；舊資料若尚未具備快照，會以 base_amount 顯示月達成基礎點數。
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
           ) : rows.length === 0 ? (
-            <div className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">尚無符合條件的資料</div>
+            <div className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">沒有符合條件的資料</div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -128,14 +206,18 @@ function Page() {
                   <TableRow>
                     <TableHead>結算月份</TableHead>
                     <TableHead>結算日期</TableHead>
-                    <TableHead>發放日期</TableHead>
+                    <TableHead>預計發放日</TableHead>
                     <TableHead>會員</TableHead>
                     <TableHead>獎金類型</TableHead>
+                    <TableHead className="text-right">自我消費</TableHead>
+                    <TableHead className="text-right">第一代消費</TableHead>
+                    <TableHead className="text-right">月達成基礎點數</TableHead>
+                    <TableHead className="text-right">超額點數</TableHead>
                     <TableHead className="text-right">責任額</TableHead>
                     <TableHead>是否達成</TableHead>
                     <TableHead className="text-right">比例%</TableHead>
                     <TableHead className="text-right">應發獎勵點</TableHead>
-                    <TableHead className="text-right">實際發放</TableHead>
+                    <TableHead className="text-right">實發獎勵點</TableHead>
                     <TableHead>狀態</TableHead>
                     <TableHead>失敗原因</TableHead>
                     <TableHead>批次</TableHead>
@@ -146,6 +228,7 @@ function Page() {
                     const m = members[r.member_id] ?? {};
                     const b = batches[r.settlement_batch_id];
                     const released = r.status === "released" ? Number(r.bonus_points ?? 0) : 0;
+                    const detail = calcDetail(r);
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="whitespace-nowrap">{b?.period ?? (r.settlement_date ? String(r.settlement_date).slice(0, 7) : "—")}</TableCell>
@@ -156,17 +239,21 @@ function Page() {
                           <div className="text-xs text-muted-foreground">{m.member_no ?? "—"}</div>
                         </TableCell>
                         <TableCell>{bonusTypeLabel(r.bonus_type)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{r.base_amount ?? "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{fmt(detail.selfPoints)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{fmt(detail.firstGenerationPoints)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{fmt(detail.totalBasePoints)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{fmt(detail.excessPoints)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{fmt(detail.requiredPoints)}</TableCell>
                         <TableCell>
                           {r.required_points_passed === true ? <Badge>達成</Badge>
-                            : r.required_points_passed === false ? <Badge variant="destructive">未達</Badge>
+                            : r.required_points_passed === false ? <Badge variant="destructive">未達成</Badge>
                             : <span className="text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">{r.bonus_rate ?? "—"}</TableCell>
-                        <TableCell className="text-right tabular-nums font-semibold">{Number(r.bonus_points ?? 0).toLocaleString()}</TableCell>
-                        <TableCell className="text-right tabular-nums text-primary">{released.toLocaleString()}</TableCell>
+                        <TableCell className="text-right tabular-nums font-semibold">{fmt(r.bonus_points)}</TableCell>
+                        <TableCell className="text-right tabular-nums text-primary">{fmt(released)}</TableCell>
                         <TableCell><Badge variant={BONUS_STATUS_VARIANT[r.status] ?? "outline"}>{bonusStatusLabel(r.status)}</Badge></TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{r.fail_reason ?? "—"}</TableCell>
+                        <TableCell className="max-w-[220px] truncate text-xs text-muted-foreground">{r.fail_reason ?? "—"}</TableCell>
                         <TableCell className="font-mono text-xs">{r.settlement_batch_id ? r.settlement_batch_id.slice(0, 8) : "—"}</TableCell>
                       </TableRow>
                     );
