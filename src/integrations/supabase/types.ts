@@ -684,6 +684,7 @@ export type Database = {
           bonus_points: number
           bonus_rate: number
           bonus_type: string
+          calculation_detail: Json | null
           created_at: string
           fail_reason: string | null
           failed_at: string | null
@@ -712,6 +713,7 @@ export type Database = {
           bonus_points?: number
           bonus_rate?: number
           bonus_type: string
+          calculation_detail?: Json | null
           created_at?: string
           fail_reason?: string | null
           failed_at?: string | null
@@ -740,6 +742,7 @@ export type Database = {
           bonus_points?: number
           bonus_rate?: number
           bonus_type?: string
+          calculation_detail?: Json | null
           created_at?: string
           fail_reason?: string | null
           failed_at?: string | null
