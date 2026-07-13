@@ -13,6 +13,7 @@ import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, DAILY_BONUS_TYP
 import { computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
 import { BonusFiltersCard, type BonusFilters } from "@/components/admin/BonusFiltersCard";
 import { DAILY_RULE_INTRO, bonusRuleMeta, vipStatusLabel, calculationNote } from "@/lib/bonus-rules";
+import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
