@@ -418,10 +418,7 @@ function CreateDialog({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const listOrdersFn = useServerFn(adminListOrders);
-  const detailFn = useServerFn(adminGetSalesReturnDetail); // reused only for typing; not called here
   const createFn = useServerFn(adminCreateSalesReturn);
-  void detailFn;
 
   const [orderQuery, setOrderQuery] = useState("");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -432,27 +429,41 @@ function CreateDialog({
 
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
     queryKey: ["sales-returns-orders", orderQuery],
-    queryFn: () => listOrdersFn({ data: { query: orderQuery, limit: 30 } as any }),
+    queryFn: async () => {
+      let q = supabase
+        .from("sales_orders")
+        .select("id, order_no, customer_name, customer_phone, total_amount, created_at")
+        .order("created_at", { ascending: false })
+        .limit(30);
+      const kw = orderQuery.trim();
+      if (kw) {
+        const esc = kw.replace(/[%_]/g, "\\$&");
+        q = q.or(`order_no.ilike.%${esc}%,customer_name.ilike.%${esc}%,customer_phone.ilike.%${esc}%`);
+      }
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
   });
 
-  const orders = ((ordersData as any)?.orders ?? (ordersData as any) ?? []) as any[];
+  const orders = (ordersData ?? []) as any[];
 
-  const { data: orderDetail } = useQuery({
-    queryKey: ["sales-returns-order-detail", selectedOrderId],
-    queryFn: () => listOrdersFn({ data: { orderId: selectedOrderId, limit: 1 } as any }),
+  const { data: orderItemsData } = useQuery({
+    queryKey: ["sales-returns-order-items", selectedOrderId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sales_order_items")
+        .select("id, sales_order_id, product_id, product_name, sku, unit_price, quantity")
+        .eq("sales_order_id", selectedOrderId!)
+        .order("created_at");
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
     enabled: !!selectedOrderId,
   });
 
-  // Fallback: derive items from selected order in listing (many admin lists include items).
-  const selectedOrder = useMemo(() => {
-    if (!selectedOrderId) return null;
-    const fromDetail = ((orderDetail as any)?.orders ?? (orderDetail as any) ?? [])
-      .find?.((o: any) => o.id === selectedOrderId);
-    if (fromDetail) return fromDetail;
-    return orders.find((o) => o.id === selectedOrderId) ?? null;
-  }, [orderDetail, orders, selectedOrderId]);
+  const orderItems: any[] = (orderItemsData ?? []) as any[];
 
-  const orderItems: any[] = selectedOrder?.items ?? selectedOrder?.sales_order_items ?? [];
 
   useEffect(() => {
     setLines({});
