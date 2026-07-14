@@ -51,6 +51,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRlsTestRouteImport } from './routes/_authenticated/rls-test'
 import { Route as AuthenticatedReceivingRouteImport } from './routes/_authenticated/receiving'
 import { Route as AuthenticatedPurchasesRouteImport } from './routes/_authenticated/purchases'
+import { Route as AuthenticatedPurchaseReturnsRouteImport } from './routes/_authenticated/purchase-returns'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedPointsAdminRouteImport } from './routes/_authenticated/points-admin'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
@@ -360,6 +361,12 @@ const AuthenticatedPurchasesRoute = AuthenticatedPurchasesRouteImport.update({
   path: '/purchases',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPurchaseReturnsRoute =
+  AuthenticatedPurchaseReturnsRouteImport.update({
+    id: '/purchase-returns',
+    path: '/purchase-returns',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProductsRoute = AuthenticatedProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -937,6 +944,7 @@ export interface FileRoutesByFullPath {
   '/orders': typeof AuthenticatedOrdersRoute
   '/points-admin': typeof AuthenticatedPointsAdminRoute
   '/products': typeof AuthenticatedProductsRouteWithChildren
+  '/purchase-returns': typeof AuthenticatedPurchaseReturnsRoute
   '/purchases': typeof AuthenticatedPurchasesRoute
   '/receiving': typeof AuthenticatedReceivingRoute
   '/rls-test': typeof AuthenticatedRlsTestRoute
@@ -1075,6 +1083,7 @@ export interface FileRoutesByTo {
   '/orders': typeof AuthenticatedOrdersRoute
   '/points-admin': typeof AuthenticatedPointsAdminRoute
   '/products': typeof AuthenticatedProductsRouteWithChildren
+  '/purchase-returns': typeof AuthenticatedPurchaseReturnsRoute
   '/purchases': typeof AuthenticatedPurchasesRoute
   '/receiving': typeof AuthenticatedReceivingRoute
   '/rls-test': typeof AuthenticatedRlsTestRoute
@@ -1214,6 +1223,7 @@ export interface FileRoutesById {
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
   '/_authenticated/points-admin': typeof AuthenticatedPointsAdminRoute
   '/_authenticated/products': typeof AuthenticatedProductsRouteWithChildren
+  '/_authenticated/purchase-returns': typeof AuthenticatedPurchaseReturnsRoute
   '/_authenticated/purchases': typeof AuthenticatedPurchasesRoute
   '/_authenticated/receiving': typeof AuthenticatedReceivingRoute
   '/_authenticated/rls-test': typeof AuthenticatedRlsTestRoute
@@ -1356,6 +1366,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/points-admin'
     | '/products'
+    | '/purchase-returns'
     | '/purchases'
     | '/receiving'
     | '/rls-test'
@@ -1494,6 +1505,7 @@ export interface FileRouteTypes {
     | '/orders'
     | '/points-admin'
     | '/products'
+    | '/purchase-returns'
     | '/purchases'
     | '/receiving'
     | '/rls-test'
@@ -1632,6 +1644,7 @@ export interface FileRouteTypes {
     | '/_authenticated/orders'
     | '/_authenticated/points-admin'
     | '/_authenticated/products'
+    | '/_authenticated/purchase-returns'
     | '/_authenticated/purchases'
     | '/_authenticated/receiving'
     | '/_authenticated/rls-test'
@@ -2072,6 +2085,13 @@ declare module '@tanstack/react-router' {
       path: '/purchases'
       fullPath: '/purchases'
       preLoaderRoute: typeof AuthenticatedPurchasesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/purchase-returns': {
+      id: '/_authenticated/purchase-returns'
+      path: '/purchase-returns'
+      fullPath: '/purchase-returns'
+      preLoaderRoute: typeof AuthenticatedPurchaseReturnsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/products': {
@@ -2899,6 +2919,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
   AuthenticatedPointsAdminRoute: typeof AuthenticatedPointsAdminRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRouteWithChildren
+  AuthenticatedPurchaseReturnsRoute: typeof AuthenticatedPurchaseReturnsRoute
   AuthenticatedPurchasesRoute: typeof AuthenticatedPurchasesRoute
   AuthenticatedReceivingRoute: typeof AuthenticatedReceivingRoute
   AuthenticatedRlsTestRoute: typeof AuthenticatedRlsTestRoute
@@ -2961,6 +2982,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
   AuthenticatedPointsAdminRoute: AuthenticatedPointsAdminRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRouteWithChildren,
+  AuthenticatedPurchaseReturnsRoute: AuthenticatedPurchaseReturnsRoute,
   AuthenticatedPurchasesRoute: AuthenticatedPurchasesRoute,
   AuthenticatedReceivingRoute: AuthenticatedReceivingRoute,
   AuthenticatedRlsTestRoute: AuthenticatedRlsTestRoute,
@@ -3173,13 +3195,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
