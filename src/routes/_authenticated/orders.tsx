@@ -2517,16 +2517,12 @@ function OrderDetailDialog({
                       </TableRow>
                       {(itemsRewardTotal > 0 || rewardPointsIssued > 0) && (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-right text-xs text-muted-foreground">
-                            本單產生獎勵點
-                            {rewardPointsIssued !== itemsRewardTotal && (
-                              <span className="ml-1 text-[10px]">
-                                （實際發放 {rewardPointsIssued.toLocaleString()} 點）
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-bold text-amber-600 whitespace-nowrap">
-                            +{itemsRewardTotal.toLocaleString()} 點
+                          <TableCell colSpan={6} className="p-2">
+                            <OrderRewardSummary
+                              breakdown={rewardPreview.breakdown}
+                              issuedToBuyer={rewardIssuedBuyer}
+                              hasReferrerIssuance={hasReferrerIssuance}
+                            />
                           </TableCell>
                         </TableRow>
                       )}
