@@ -52,20 +52,21 @@ export const submitShopContentQuestion = createServerFn({ method: "POST" })
       throw new Error("找不到文章或尚未發布");
     }
 
-    // Get profile name fallback
+    // Get profile display name fallback — never expose email as public author name
     let authorName = data.author_name?.trim();
     if (!authorName) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("name, display_name, email")
+        .select("name, display_name")
         .eq("id", userId)
         .maybeSingle();
       authorName =
         (profile as any)?.display_name ||
         (profile as any)?.name ||
-        (profile as any)?.email ||
         "會員";
     }
+    if (!authorName || authorName.includes("@")) authorName = "會員";
+
 
     const { error: insErr } = await supabase.from("shop_content_questions").insert({
       page_id: data.page_id,
