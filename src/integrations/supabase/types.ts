@@ -5858,6 +5858,66 @@ export type Database = {
         }
         Relationships: []
       }
+      vip_daily_revenue_bonus_ledger: {
+        Row: {
+          allocated_amount: number
+          cap_amount: number
+          capped_amount: number
+          created_at: string
+          daily_total_reward_points: number
+          distribution_date: string
+          eligible_member_count: number
+          id: string
+          member_id: string
+          notes: string | null
+          payable_amount: number
+          pool_percentage: number
+          status: string
+          tier_code: string
+          total_after: number
+          total_before: number
+          updated_at: string
+        }
+        Insert: {
+          allocated_amount?: number
+          cap_amount?: number
+          capped_amount?: number
+          created_at?: string
+          daily_total_reward_points?: number
+          distribution_date: string
+          eligible_member_count?: number
+          id?: string
+          member_id: string
+          notes?: string | null
+          payable_amount?: number
+          pool_percentage?: number
+          status?: string
+          tier_code: string
+          total_after?: number
+          total_before?: number
+          updated_at?: string
+        }
+        Update: {
+          allocated_amount?: number
+          cap_amount?: number
+          capped_amount?: number
+          created_at?: string
+          daily_total_reward_points?: number
+          distribution_date?: string
+          eligible_member_count?: number
+          id?: string
+          member_id?: string
+          notes?: string | null
+          payable_amount?: number
+          pool_percentage?: number
+          status?: string
+          tier_code?: string
+          total_after?: number
+          total_before?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vip_memberships: {
         Row: {
           amount_paid: number
@@ -6942,6 +7002,18 @@ export type Database = {
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
+      }
+      distribute_daily_revenue_bonus: {
+        Args: { _date?: string }
+        Returns: {
+          capped_total: number
+          distributed_amount: number
+          distribution_date: string
+          eligible_count: number
+          per_head_amount: number
+          pool_amount: number
+          total_reward_points: number
+        }[]
       }
       email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
