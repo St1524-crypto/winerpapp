@@ -338,37 +338,53 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
               const upVipActive = !!(up as any)?.is_vip && !!upExp && new Date(upExp) > new Date();
               const basePoints = computeBasePoints(rewardEarn, rate);
               if (upId && upVipActive && basePoints > 0) {
-                // 消費回饋比例 cap（依上線 VIP 位階）
-                const { data: bizRow } = await (supabaseAdmin as any).rpc("record_business_bonus_release", {
-                  _member_id: upId,
-                  _bonus_amount: basePoints,
-                  _source_member_id: userId,
-                  _source_order_id: data.orderId,
-                  _tier_code: null,
-                  _dedupe_key: `order:${data.orderId}:biz:L${level}`,
-                  _bonus_record_id: null,
-                  _notes: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP`,
-                });
-                // VIP 營業分紅上限 cap
+                // 查詢上線目前 VIP 星級 — 一星以上（V1~V7、董事）完全停發消費回饋，
+                // 僅依 VIP 營業分紅上限發放。
+                const { data: upTierCodeRaw } = await (supabaseAdmin as any).rpc(
+                  "get_member_vip_tier_code",
+                  { _member_id: upId },
+                );
+                const upTierCode = (upTierCodeRaw as string | null) ?? null;
+                const isStarTierOrAbove = !!upTierCode
+                  && upTierCode !== "V0"
+                  && upTierCode.toUpperCase() !== "NONE";
+                let bizPayable = basePoints;
+                if (!isStarTierOrAbove) {
+                  // 未達一星：沿用消費回饋比例 cap
+                  const { data: bizRow } = await (supabaseAdmin as any).rpc("record_business_bonus_release", {
+                    _member_id: upId,
+                    _bonus_amount: basePoints,
+                    _source_member_id: userId,
+                    _source_order_id: data.orderId,
+                    _tier_code: upTierCode,
+                    _dedupe_key: `order:${data.orderId}:biz:L${level}`,
+                    _bonus_record_id: null,
+                    _notes: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP`,
+                  });
+                  bizPayable = Number((bizRow as any)?.payable_amount ?? 0);
+                }
+                // VIP 營業分紅上限 cap（所有位階皆適用）
                 const { data: upgRow } = await (supabaseAdmin as any).rpc("record_upgrade_bonus_release", {
                   _member_id: upId,
                   _bonus_amount: basePoints,
                   _source_member_id: userId,
                   _source_order_id: data.orderId,
-                  _tier_code: null,
+                  _tier_code: upTierCode,
                   _dedupe_key: `order:${data.orderId}:upg:L${level}`,
                   _bonus_record_id: null,
-                  _notes: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP`,
+                  _notes: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP`
+                    + (isStarTierOrAbove ? `（${upTierCode} 一星以上僅領營業分紅）` : ""),
                 });
                 const { payable, capReasons } = computeLevelPayable(
                   basePoints,
-                  Number((bizRow as any)?.payable_amount ?? 0),
+                  bizPayable,
                   Number((upgRow as any)?.payable_amount ?? 0),
                 );
                 if (payable > 0) {
                   await applyDelta(upId, "reward", payable, "order_earn_referrer", {
                     reference_id: data.orderId,
                     note: `第 ${level} 代復購獎勵（${rate}%）— 來源會員 ${userId}`
+                      + (isStarTierOrAbove ? `｜${upTierCode} 一星以上僅領營業分紅` : "")
                       + (capReasons.length ? `（${capReasons.join("、")}部分達上限）` : ""),
                     created_by: userId,
                   });
