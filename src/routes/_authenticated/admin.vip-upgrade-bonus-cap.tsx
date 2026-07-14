@@ -13,6 +13,10 @@ import {
   adminListUpgradeBonusLedger,
   previewUpgradeBonusRelease,
 } from "@/lib/vip-upgrade-bonus-cap.functions";
+import {
+  runDailyRevenueBonus,
+  listDailyRevenueBonusLedger,
+} from "@/lib/vip-daily-revenue-bonus.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-bonus-cap")({
   component: Page,
