@@ -172,7 +172,7 @@ function Page() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">月獎金明細</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            月達成 / 階級回饋 / 階級差額回饋，依 VIP制度設定 與 VIP階級管理 演算。
+            月達成 / 階級回饋 / 階級差額回饋，依 VIP制度設定 與 VIP獎金參數管理 演算。
           </p>
         </div>
         <Button asChild variant="outline">

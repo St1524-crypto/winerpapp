@@ -39,7 +39,7 @@ export const NAV_ITEMS: NavItem[] = [
   { title: "點數管理", url: "/points-admin", icon: Coins, roles: ["super_admin", "finance", "sales"] },
   { title: "現金錢包審核", url: "/cash-admin", icon: Wallet, roles: ["super_admin", "finance", "admin"] },
   { title: "VIP 方案管理", url: "/vip-plans", icon: Crown, roles: ["super_admin", "sales"] },
-  { title: "VIP 階級管理", url: "/dealer-tiers", icon: TrendingUp, roles: ["super_admin", "admin", "finance"] },
+  { title: "VIP獎金參數管理", url: "/dealer-tiers", icon: TrendingUp, roles: ["super_admin", "admin", "finance"] },
   { title: "VIP 制度設定", url: "/dealer-program", icon: Settings2, roles: ["super_admin", "admin", "finance"] },
   { title: "客服重要通知", url: "/support-announcements", icon: Megaphone, roles: ["super_admin", "admin", "sales"] },
   { title: "拼團管理", url: "/group-buy-admin", icon: Users, roles: ["super_admin", "admin", "sales"] },
