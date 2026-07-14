@@ -1,72 +1,60 @@
+# 訂單獎勵點重算 — 實作計畫
+
 ## 目標
-新增「廠商進貨退回」流程：後台管理員可依 PO 明細建立退回單，扣商品庫存（**允許負庫存**）並沖銷對應 `accounts_payable` 金額。不影響會員獎金，不進入 `sales_returns`。
+以「品項規則 × 數量」為基礎重算每筆訂單的獎勵點，並依 VIP 獎金參數（消費回饋上限、營業分紅上限、日月獎金規則、復購位階分潤）自動對齊「本單產生獎勵點」的前後台顯示。**不動任何 DB / 不改實際發放邏輯**，只做「計算 + 顯示」層。
 
-## 方案（最小侵入）
-新增獨立資料表 `purchase_returns` / `purchase_return_items`，與現有 `purchase_orders` / `goods_receiving` 並存；僅 super_admin / admin / finance 可用。
+## 範圍
 
-### 1. Migration（新表）
-**`purchase_returns`**
-- `return_no` text unique（`PR-YYYYMMDD-XXXX`）
-- `purchase_order_id` uuid（來源 PO）
-- `vendor_id` uuid, `vendor_name` text（快照）
-- `company_id` uuid
-- `status` text（draft / submitted / completed / cancelled）
-- `reason`, `notes` text
-- `subtotal` numeric（退回總金額）
-- `inventory_status` text（not_processed / processed / skipped）
-- `payable_status` text（not_processed / processed / skipped）
-- `payable_adjustment_id` uuid（對應調整的 `accounts_payable.id`）
-- `created_by/at`, `completed_by/at`, `cancelled_by/at`, `updated_at`
+### 新增：純函式計算模組
+`src/lib/order-reward-calc.ts`（含 vitest）
+- `computeItemUnitReward(item, productRewardsMap)` — tier_reward_points 優先，fallback products.reward_points
+- `computeItemsRewardSubtotal(items, map)` — Σ(unit × qty)
+- `computeOrderRewardBreakdown({ itemsSubtotal, buyerVipActive, referrerChain, capsByLevel, bonusRates })`
+  - 買家為有效 VIP：回傳 `{ kind: "buyer", points }`
+  - 買家非有效 VIP：套用 `computeBasePoints`（已存在於 `referrer-reward-distribution.ts`）產生每代分潤，套用 `computeLevelPayable` 得到 payable，並以 `formatBuyerMarkerNote`/`formatLevelNote` 產生說明字串
+  - 回傳格式：`{ kind: "referrer", totalDistributed, levels: LevelDistribution[], note }`
+- 100% 複用既有 `referrer-reward-distribution.ts`，不重寫 cap 演算法
 
-**`purchase_return_items`**
-- `purchase_return_id`, `purchase_order_item_id`
-- `product_id`, `product_name`, `sku`（快照）
-- `quantity` int（≤ PO item `received_quantity`）
-- `unit_price` numeric（取 PO 單價）
-- `subtotal` numeric
-- `inventory_action` text（`deduct_stock` / `no_stock_change`）
-- `reason`, `condition_note`
+### 新增：查詢 hook
+`src/hooks/use-order-reward-preview.ts`
+- 讀取：`repurchase_bonus_settings`（分潤比率）、買家 `vip_memberships` 是否有效、若非有效再讀 profiles.referrer chain 與各代 `vip_business_bonus_cap` / `vip_upgrade_bonus_cap` 剩餘額度（透過既有的 read query，不新增 RPC）
+- 只在 admin / 會員訂單詳情頁 enabled，避免 shop 首頁多打 API
+- 回傳 `RewardBreakdown` 給 UI 使用
 
-**RLS + GRANT（依專案規範）**
-- `GRANT SELECT, INSERT, UPDATE, DELETE ... TO authenticated`；`GRANT ALL ... TO service_role`
-- policy：同 company 的 admin / finance / super_admin 可讀寫（`private.has_role` + `company_members` join `private.current_company_id()`）
+### 修改：三個顯示點
+1. `src/routes/_authenticated/orders.tsx`（admin 訂單詳情）
+   - 沿用剛加入的「增加獎勵點」欄位，總結欄改用 hook 產生的 `RewardBreakdown`
+   - 顯示：「本單產生獎勵點 +N 點」+ 副字說明（買家/推薦人分潤、cap 觸發原因）
+   - `rewardPointsIssued` vs `computed` 差異：兩者都顯示，差異時附提示
 
-### 2. Server functions（新檔 `src/lib/purchase-returns.functions.ts`）
-- `adminListPurchaseReturns` — 列表 + 篩選（status / query / 日期）
-- `adminGetPurchaseReturnDetail` — 單筆 + 明細 + 來源 PO
-- `adminCreatePurchaseReturn` — 驗數量 ≤ PO item `received_quantity`，寫 draft
-- `adminUpdatePurchaseReturnStatus` — draft ↔ submitted / cancelled
-- `adminApplyPurchaseReturnEffects`（核心，冪等）：
-  - **庫存**：對每筆 `deduct_stock`：`products.stock -= qty`（**允許負值，不阻擋**）；寫 `inventory_logs`（`type='purchase_return_deduct'`, before/after/reason='PR-xxx'）
-  - **應付**：以 `accounts_payable.reference_po_id = purchase_order_id` 查最新一筆
-    - 存在且未全額付：`total_amount -= subtotal`（若 ≤ 0 → `status='cancelled'`），記回 `payable_adjustment_id`
-    - 不存在或已付清：新增負向 `accounts_payable`（`total_amount = -subtotal`, `status='adjustment'`, `notes='退回 PR-xxx'`, `reference_po_id` 帶入），記回 id
-  - 兩段各自寫 `inventory_status` / `payable_status = processed`；terminal 後把 `status='completed'`、`completed_by/at`
-  - 冪等：完成後再套 → `already_applied`
-  - 寫 `audit_logs`（`entity='purchase_returns'`）
-- 全部 `.middleware([requireSupabaseAuth])` + 角色檢查
+2. `src/routes/shop.account.orders.$id.tsx`（前台會員訂單詳情）
+   - 加入相同總結區塊（不改表格既有欄位）
+   - 若 breakdown 為 referrer，顯示「本次獎勵點依復購位階發放至推薦人（明細）」
 
-### 3. UI（僅後台 admin）
-新路由 `src/routes/_authenticated/purchase-returns.tsx`
-- 列表：狀態 / 關鍵字過濾；欄位：PR#、PO#、廠商、金額、庫存/應付狀態、時間
-- 建立對話框：選 PO → 帶未退明細 → 勾選數量 + `inventory_action` → 送出
-- 詳情抽屜：明細、來源 PO 連結、「送出」「套用效果」「取消」按鈕
-- `AdminSidebar.tsx` 新增入口「進貨退回」（採購/財務區塊下）
+3. `src/routes/shop.checkout.success.$id.tsx`（結帳成功頁）
+   - 現有 `resolveRewardNotice` 保留，只在有 `computed` 且與 issued 不同時多顯示「預估 vs 實發」提示行
 
-### 4. 明確不做
-- 不動 `sales_returns` / `adminApplySalesReturnEffects`
-- 不追回獎勵點
-- 不建會員自助入口
-- 不回寫 `purchase_orders.received_quantity`（PR 自身即事實來源）
-- 不阻擋負庫存（依你確認）
+### 差異處理策略
+- 主要數字 = 重算值（品項規則）
+- 若已有 `point_transactions` 實發紀錄，並排顯示「實發 N 點」+ 差異原因 tag（消費回饋上限 / 營業分紅上限 / 上線非有效 VIP）
+- 差異原因文字來自 `formatLevelNote`，不新造字串
 
-## 驗收
-1. 建 PR → `products.stock` 減少（可為負）；`inventory_logs` 有對應 row
-2. AP 對應金額減少或產生負向調整；`reference_po_id` 一致
-3. 非 admin/finance/super_admin 呼叫 → 403
-4. 同一 PR 重複套用 → 冪等
-5. 會員 `member_points_wallet` / `point_transactions` 無變動
+## 不做
+- 不新增 DB 欄位/migration
+- 不改 `points.functions.ts` 實際發放邏輯
+- 不改結帳 server function
+- 不動退貨/退款相關獎勵回收
+- 不 publish
 
-## 風險與備註
-- 若 PO 無對應 AP：以負向調整單記帳，不阻斷流程
-- 負庫存後續由正常進貨補回；建議在 UI 顯示警告但允許送出
+## 驗證
+1. `bunx vitest run src/lib/order-reward-calc.test.ts`
+2. tsgo 通過
+3. 抽查 3 筆訂單（買家 VIP / 買家非 VIP 有推薦人 / 買家非 VIP 無有效上線）在 admin + 會員頁顯示是否一致
+
+## 檔案清單
+- 新增 `src/lib/order-reward-calc.ts`
+- 新增 `src/lib/order-reward-calc.test.ts`
+- 新增 `src/hooks/use-order-reward-preview.ts`
+- 修改 `src/routes/_authenticated/orders.tsx`
+- 修改 `src/routes/shop.account.orders.$id.tsx`
+- 修改 `src/routes/shop.checkout.success.$id.tsx`

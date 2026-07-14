@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package, MapPin, Lock, ExternalLink, Gift } from "lucide-react";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, SHIPPING_STATUS_LABELS, type SalesOrder, type SalesOrderItem } from "@/types/shop";
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
+import { useOrderRewardPreview } from "@/hooks/use-order-reward-preview";
+import { OrderRewardSummary } from "@/components/OrderRewardSummary";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 import { applyOrderPoints } from "@/lib/points.functions";
@@ -21,6 +23,7 @@ function OrderDetail() {
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [rewardTx, setRewardTx] = useState<any[]>([]);
+  const [productRewardsMap, setProductRewardsMap] = useState<Record<string, number>>({});
   const [tierBreakdown, setTierBreakdown] = useState<Array<{
     product_id: string | null;
     product_name: string;
@@ -74,6 +77,7 @@ function OrderDetail() {
             .order("min_qty", { ascending: true }),
         ]);
         const baseMap = new Map<string, number>((prods ?? []).map((p: any) => [p.id, Number(p.reward_points ?? 0)]));
+        setProductRewardsMap(Object.fromEntries(baseMap));
         const tiersMap = new Map<string, Array<{ min_qty: number; max_qty: number | null; unit_reward_points: number }>>();
         for (const t of (tiersData ?? []) as any[]) {
           const arr = tiersMap.get(t.product_id) ?? [];
@@ -228,6 +232,20 @@ function OrderDetail() {
     })();
   }, [order, id, rewardTx.length]);
 
+  const rewardPreview = useOrderRewardPreview({
+    buyerId: (order as any)?.user_id ?? (order as any)?.customer_id ?? null,
+    items: (items as any[]).map((it) => ({
+      product_id: it.product_id,
+      quantity: Number(it.quantity ?? 0),
+      tier_reward_points: (it as any).tier_reward_points,
+    })),
+    productRewardsMap,
+    enabled: !!order,
+  });
+  const rewardIssuedBuyer = rewardTx
+    .filter((r: any) => r.source === "order_earn")
+    .reduce((s: number, r: any) => s + Number(r.amount ?? 0), 0);
+  const hasReferrerIssuance = rewardTx.some((r: any) => r.source === "order_earn_referrer");
 
 
   if (loading) return <Skeleton className="h-96" />;
@@ -322,24 +340,15 @@ function OrderDetail() {
                 )}
                 <Separator className="my-2" />
                 <div className="flex justify-between font-semibold text-base"><span>總計</span><span className="tabular-nums text-primary">NT$ {Number(order.total_amount).toLocaleString()}</span></div>
-                {(() => {
-                  const notice = resolveRewardNotice(rewardTx as RewardTxRow[]);
-                  if (!notice) return null;
-                  if (notice.kind === "earn") {
-                    return (
-                      <div className="mt-2 flex justify-between items-center rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-500">
-                        <span className="flex items-center gap-1.5"><Gift className="h-4 w-4" />本次發放獎勵點</span>
-                        <span className="tabular-nums font-semibold">+ {notice.points.toLocaleString()} 點</span>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="mt-2 rounded-md bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
-                      <div className="font-medium text-foreground/80 mb-0.5 flex items-center gap-1.5"><Gift className="h-3.5 w-3.5" />本次發放獎勵點</div>
-                      {notice.note}
-                    </div>
-                  );
-                })()}
+                {rewardPreview.breakdown && (
+                  <div className="mt-2">
+                    <OrderRewardSummary
+                      breakdown={rewardPreview.breakdown}
+                      issuedToBuyer={rewardIssuedBuyer}
+                      hasReferrerIssuance={hasReferrerIssuance}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

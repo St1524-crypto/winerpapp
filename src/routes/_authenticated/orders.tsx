@@ -20,6 +20,8 @@ import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 import { computeOrderPaymentTotals } from "@/lib/order-payment-totals";
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
+import { useOrderRewardPreview } from "@/hooks/use-order-reward-preview";
+import { OrderRewardSummary } from "@/components/OrderRewardSummary";
 import { logOrderRewardPointsAudit } from "@/lib/audit.functions";
 
 /** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/升級獎金（失敗不擋主流程） */
@@ -2248,6 +2250,22 @@ function OrderDetailDialog({
     getItemUnitReward(it) * Number(it.quantity ?? 0);
   const itemsRewardTotal = (items as any[]).reduce((s, it) => s + getItemLineReward(it), 0);
 
+  // 依 VIP 獎金參數（買家 VIP 狀態 / 復購位階分潤）重算「本單產生獎勵點」
+  const rewardPreview = useOrderRewardPreview({
+    buyerId: (order as any)?.user_id ?? (order as any)?.customer_id ?? null,
+    items: (items as any[]).map((it) => ({
+      product_id: it.product_id,
+      quantity: Number(it.quantity ?? 0),
+      tier_reward_points: it.tier_reward_points,
+    })),
+    productRewardsMap,
+    enabled: !!order && itemsRewardTotal > 0,
+  });
+  const rewardIssuedBuyer = rewardEarnRows
+    .filter((r: any) => r.source === "order_earn")
+    .reduce((s: number, r: any) => s + Number(r.amount ?? 0), 0);
+  const hasReferrerIssuance = rewardEarnRows.some((r: any) => r.source === "order_earn_referrer");
+
   const totalAmountNum = order ? Number(order.total_amount) : 0;
   const totals = computeOrderPaymentTotals({
     totalAmount: totalAmountNum,
@@ -2499,16 +2517,12 @@ function OrderDetailDialog({
                       </TableRow>
                       {(itemsRewardTotal > 0 || rewardPointsIssued > 0) && (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-right text-xs text-muted-foreground">
-                            本單產生獎勵點
-                            {rewardPointsIssued !== itemsRewardTotal && (
-                              <span className="ml-1 text-[10px]">
-                                （實際發放 {rewardPointsIssued.toLocaleString()} 點）
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-bold text-amber-600 whitespace-nowrap">
-                            +{itemsRewardTotal.toLocaleString()} 點
+                          <TableCell colSpan={6} className="p-2">
+                            <OrderRewardSummary
+                              breakdown={rewardPreview.breakdown}
+                              issuedToBuyer={rewardIssuedBuyer}
+                              hasReferrerIssuance={hasReferrerIssuance}
+                            />
                           </TableCell>
                         </TableRow>
                       )}
