@@ -496,13 +496,17 @@ export const adminApplySalesReturnEffects = createServerFn({ method: "POST" })
     }
 
 
+    // Only mark the return "completed" once both inventory and points are terminal.
+    const inventoryTerminal = inventoryStatus === "processed" || inventoryStatus === "skipped";
+    const pointsTerminal = pointsStatus === "processed" || pointsStatus === "skipped";
+    const nextStatus = inventoryTerminal && pointsTerminal ? "completed" : salesReturn.status;
     const completedAt = new Date().toISOString();
     const { data: updated, error: completeError } = await db
       .from("sales_returns")
       .update({
-        status: "completed",
-        completed_by: context.userId,
-        completed_at: completedAt,
+        status: nextStatus,
+        completed_by: nextStatus === "completed" ? context.userId : salesReturn.completed_by,
+        completed_at: nextStatus === "completed" ? completedAt : salesReturn.completed_at,
         inventory_status: inventoryStatus,
         points_reverse_status: pointsStatus,
         notes: data.note ? `${salesReturn.notes ? `${salesReturn.notes}\n` : ""}${data.note}` : salesReturn.notes,
@@ -511,6 +515,7 @@ export const adminApplySalesReturnEffects = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (completeError) throw new Error(completeError.message);
+
 
     await writeAudit(context.userId, "sales_return_effects_applied", data.id, {
       sales_order_id: salesReturn.sales_order_id,
