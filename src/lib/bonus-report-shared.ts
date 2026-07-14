@@ -46,7 +46,7 @@ export const MONTHLY_COLUMN_MAP: Record<string, string> = {
 export const DAILY_TEMPLATE_COLUMNS = [
   "推薦獎金",
   "組織對碰",
-  "升級分紅",
+  "營業分紅",
   "消費回饋",
   "報件獎金",
 ];

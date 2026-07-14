@@ -22,7 +22,7 @@ describe("computeBasePoints (repurchase_bonus_settings 多代換算)", () => {
   });
 });
 
-describe("computeLevelPayable (雙 cap: 消費回饋 / 升級分紅)", () => {
+describe("computeLevelPayable (雙 cap: 消費回饋 / 營業分紅)", () => {
   it("兩個 RPC 皆未 cap → 全額 payable，無 capReasons", () => {
     expect(computeLevelPayable(100, 100, 100)).toEqual({
       payable: 100,
@@ -37,17 +37,17 @@ describe("computeLevelPayable (雙 cap: 消費回饋 / 升級分紅)", () => {
     });
   });
 
-  it("僅升級分紅 cap 部分達上限", () => {
+  it("僅營業分紅 cap 部分達上限", () => {
     expect(computeLevelPayable(100, 100, 30)).toEqual({
       payable: 30,
-      capReasons: ["升級分紅上限"],
+      capReasons: ["營業分紅上限"],
     });
   });
 
   it("兩個 cap 同時觸發，取最小值並列出兩個原因", () => {
     expect(computeLevelPayable(100, 40, 30)).toEqual({
       payable: 30,
-      capReasons: ["消費回饋上限", "升級分紅上限"],
+      capReasons: ["消費回饋上限", "營業分紅上限"],
     });
   });
 
@@ -58,17 +58,17 @@ describe("computeLevelPayable (雙 cap: 消費回饋 / 升級分紅)", () => {
     });
   });
 
-  it("升級分紅 cap 已滿 → payable=0，capReasons 保留原因", () => {
+  it("營業分紅 cap 已滿 → payable=0，capReasons 保留原因", () => {
     expect(computeLevelPayable(100, 100, 0)).toEqual({
       payable: 0,
-      capReasons: ["升級分紅上限"],
+      capReasons: ["營業分紅上限"],
     });
   });
 
   it("兩個 cap 皆已滿 → payable=0，兩個原因都列出", () => {
     expect(computeLevelPayable(100, 0, 0)).toEqual({
       payable: 0,
-      capReasons: ["消費回饋上限", "升級分紅上限"],
+      capReasons: ["消費回饋上限", "營業分紅上限"],
     });
   });
 
@@ -83,7 +83,7 @@ describe("computeLevelPayable (雙 cap: 消費回饋 / 升級分紅)", () => {
   it("RPC 回傳小數 → 向下取整", () => {
     expect(computeLevelPayable(100, 40.9, 30.9)).toEqual({
       payable: 30,
-      capReasons: ["消費回饋上限", "升級分紅上限"],
+      capReasons: ["消費回饋上限", "營業分紅上限"],
     });
   });
 });
@@ -103,17 +103,17 @@ describe("formatLevelNote (每代 note 顯示)", () => {
 
   it("payable>0 且部分達上限 → 「部分達…」", () => {
     expect(formatLevelNote(40, ["消費回饋上限"], true, 100)).toBe("部分達消費回饋上限");
-    expect(formatLevelNote(30, ["消費回饋上限", "升級分紅上限"], true, 100)).toBe(
-      "部分達消費回饋上限、升級分紅上限",
+    expect(formatLevelNote(30, ["消費回饋上限", "營業分紅上限"], true, 100)).toBe(
+      "部分達消費回饋上限、營業分紅上限",
     );
   });
 
   it("payable=0 且達上限 → 「已達… 略過」", () => {
     expect(formatLevelNote(0, ["消費回饋上限"], true, 100)).toBe("已達消費回饋上限 略過");
-    expect(formatLevelNote(0, ["消費回饋上限", "升級分紅上限"], true, 100)).toBe(
-      "已達消費回饋上限、升級分紅上限 略過",
+    expect(formatLevelNote(0, ["消費回饋上限", "營業分紅上限"], true, 100)).toBe(
+      "已達消費回饋上限、營業分紅上限 略過",
     );
-    expect(formatLevelNote(0, ["升級分紅上限"], true, 100)).toBe("已達升級分紅上限 略過");
+    expect(formatLevelNote(0, ["營業分紅上限"], true, 100)).toBe("已達營業分紅上限 略過");
   });
 });
 
@@ -139,13 +139,13 @@ describe("formatBuyerMarkerNote (訂單詳情顯示的 note)", () => {
       { level: 1, amount: 50 },
       { level: 2, amount: 0, note: "已達消費回饋上限 略過" },
       { level: 3, amount: 0, note: "上線非有效 VIP 略過" },
-      { level: 4, amount: 10, note: "部分達升級分紅上限" },
+      { level: 4, amount: 10, note: "部分達營業分紅上限" },
     ];
     const out = formatBuyerMarkerNote(1000, 60, dist);
     expect(out).toContain("L1 +50 點");
     expect(out).toContain("L2 +0 點（已達消費回饋上限 略過）");
     expect(out).toContain("L3 +0 點（上線非有效 VIP 略過）");
-    expect(out).toContain("L4 +10 點（部分達升級分紅上限）");
+    expect(out).toContain("L4 +10 點（部分達營業分紅上限）");
     expect(out).toContain("1000 獎勵點依復購位階折算 60 點發放至推薦人獎勵點錢包");
   });
 });
@@ -208,7 +208,7 @@ describe("整合：多代折算 + cap 檢查（模擬 handler 迴圈）", () => 
     expect(r.distributedTo.every((d) => d.note === undefined)).toBe(true);
   });
 
-  it("L1 消費回饋已滿、L2 上線非 VIP、L3 升級分紅部分達上限 → note 皆正確顯示原因", () => {
+  it("L1 消費回饋已滿、L2 上線非 VIP、L3 營業分紅部分達上限 → note 皆正確顯示原因", () => {
     const r = simulate(
       1000,
       [{ level: 1, rate: 10 }, { level: 2, rate: 5 }, { level: 3, rate: 2 }],
@@ -221,12 +221,12 @@ describe("整合：多代折算 + cap 檢查（模擬 handler 迴圈）", () => 
     expect(r.distributedTo).toEqual([
       { level: 1, amount: 0, note: "已達消費回饋上限 略過" },
       { level: 2, amount: 0, note: "上線非有效 VIP 略過" },
-      { level: 3, amount: 5, note: "部分達升級分紅上限" },
+      { level: 3, amount: 5, note: "部分達營業分紅上限" },
     ]);
     expect(r.total).toBe(5);
     expect(r.note).toContain("L1 +0 點（已達消費回饋上限 略過）");
     expect(r.note).toContain("L2 +0 點（上線非有效 VIP 略過）");
-    expect(r.note).toContain("L3 +5 點（部分達升級分紅上限）");
+    expect(r.note).toContain("L3 +5 點（部分達營業分紅上限）");
   });
 
   it("所有代皆 payable=0 → total=0，但 note 逐級列出原因（不是「無有效上線」）", () => {
@@ -239,7 +239,7 @@ describe("整合：多代折算 + cap 檢查（模擬 handler 迴圈）", () => 
       ],
     );
     expect(r.total).toBe(0);
-    expect(r.note).toContain("L1 +0 點（已達消費回饋上限、升級分紅上限 略過）");
+    expect(r.note).toContain("L1 +0 點（已達消費回饋上限、營業分紅上限 略過）");
     expect(r.note).toContain("L2 +0 點（上線非有效 VIP 略過）");
     expect(r.note).not.toContain("無有效 VIP 上線可接收");
   });

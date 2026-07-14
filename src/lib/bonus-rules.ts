@@ -12,11 +12,11 @@ export const DAILY_RULE_INTRO = [
 
 export const MONTHLY_RULE_INTRO = [
   "1. 每月完成責任額 (monthly_responsibility_points ≥ vip_required_points) 的 VIP 才可領月獎金。",
-  "2. 未完成責任額時，升級分紅停止發放；當日完成後由隔天開始發放。",
+  "2. 未完成責任額時，營業分紅停止發放；當日完成後由隔天開始發放。",
   "3. 月達成基礎點數 = 自我消費（第一代累計採 monthly_responsibility_points 統計）。",
   "4. 累計訂單獎勵點超過責任額時，依 rank_rebate_settings 對應 VIP 位階給予超額回饋。",
   "5. 第一代累計達成時，顯示第一代達成分紅（monthly_tier_bonus_settings 階梯）。",
-  "6. 每筆記錄來源分類：自我消費 / 第一代消費 / 月達成基礎 / 超額回饋 / 升級分紅 / 消費回饋 / 推薦級差。",
+  "6. 每筆記錄來源分類：自我消費 / 第一代消費 / 月達成基礎 / 超額回饋 / 營業分紅 / 消費回饋 / 推薦級差。",
 ];
 
 // 各 bonus_type 的『適用制度』與『獎勵點來源』說明
