@@ -2222,6 +2222,32 @@ function OrderDetailDialog({
   });
   const vipPackages = (giftsQ.data ?? []) as any[];
 
+  // 載入品項對應的商品獎勵點（tier_reward_points 為空時 fallback 用）
+  const itemProductIdsForRewards = (items as any[]).map((i) => i.product_id).filter(Boolean);
+  const itemRewardsKey = itemProductIdsForRewards.slice().sort().join(",");
+  const productRewardsQ = useQuery({
+    queryKey: ["order-item-product-rewards", orderId, itemRewardsKey],
+    enabled: !!orderId && itemProductIdsForRewards.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, reward_points")
+        .in("id", itemProductIdsForRewards);
+      const map: Record<string, number> = {};
+      for (const p of (data ?? []) as any[]) map[p.id] = Number(p.reward_points ?? 0);
+      return map;
+    },
+  });
+  const productRewardsMap = productRewardsQ.data ?? {};
+  const getItemUnitReward = (it: any): number => {
+    const t = it.tier_reward_points;
+    if (t !== null && t !== undefined) return Number(t) || 0;
+    return Number(productRewardsMap[it.product_id] ?? 0);
+  };
+  const getItemLineReward = (it: any): number =>
+    getItemUnitReward(it) * Number(it.quantity ?? 0);
+  const itemsRewardTotal = (items as any[]).reduce((s, it) => s + getItemLineReward(it), 0);
+
   const totalAmountNum = order ? Number(order.total_amount) : 0;
   const totals = computeOrderPaymentTotals({
     totalAmount: totalAmountNum,
