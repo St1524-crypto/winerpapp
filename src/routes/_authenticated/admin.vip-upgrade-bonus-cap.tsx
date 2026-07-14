@@ -13,6 +13,10 @@ import {
   adminListUpgradeBonusLedger,
   previewUpgradeBonusRelease,
 } from "@/lib/vip-upgrade-bonus-cap.functions";
+import {
+  runDailyRevenueBonus,
+  listDailyRevenueBonusLedger,
+} from "@/lib/vip-daily-revenue-bonus.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-bonus-cap")({
   component: Page,
@@ -46,9 +50,12 @@ function Page() {
   const listSummary = useServerFn(adminListMembersUpgradeBonusSummary);
   const listLedger = useServerFn(adminListUpgradeBonusLedger);
   const preview = useServerFn(previewUpgradeBonusRelease);
+  const runDaily = useServerFn(runDailyRevenueBonus);
+  const listDaily = useServerFn(listDailyRevenueBonusLedger);
 
   const [summary, setSummary] = useState<any[]>([]);
   const [ledger, setLedger] = useState<any[]>([]);
+  const [daily, setDaily] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [memberId, setMemberId] = useState("");
@@ -56,19 +63,34 @@ function Page() {
   const [bonusAmount, setBonusAmount] = useState(5000);
   const [preview1, setPreview1] = useState<any>(null);
 
+  const [runDate, setRunDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [runResult, setRunResult] = useState<any>(null);
+  const [running, setRunning] = useState(false);
+
+  async function loadAll() {
+    setLoading(true);
+    try {
+      const [s, l, d] = await Promise.all([
+        listSummary(),
+        listLedger({ data: {} }),
+        listDaily(),
+      ]);
+      setSummary(s as any[]);
+      setLedger(l as any[]);
+      setDaily(d as any[]);
+    } catch (e: any) {
+      toast.error(e.message ?? "載入失敗");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const [s, l] = await Promise.all([listSummary(), listLedger({ data: {} })]);
-        setSummary(s as any[]);
-        setLedger(l as any[]);
-      } catch (e: any) {
-        toast.error(e.message ?? "載入失敗");
-      } finally {
-        setLoading(false);
-      }
-    })();
+    loadAll();
   }, []);
 
   async function runPreview() {
@@ -82,12 +104,107 @@ function Page() {
     }
   }
 
+  async function runDailyNow() {
+    setRunning(true);
+    try {
+      const r = await runDaily({ data: { date: runDate } });
+      setRunResult(r);
+      toast.success("已執行每日發放");
+      loadAll();
+    } catch (e: any) {
+      toast.error(e.message ?? "發放失敗");
+    } finally {
+      setRunning(false);
+    }
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">VIP 營業分紅上限管理</h1>
-        <Badge variant="secondary">第一階段：計算 / 查詢（未接核心發放）</Badge>
+        <Badge variant="secondary">每日按星級池 5% 平均分配</Badge>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>每日營業分紅發放（V1~V7 + 董事）</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="space-y-1">
+              <Label>發放日期（讀取當日訂單獎勵點 × 5%）</Label>
+              <Input type="date" value={runDate} onChange={(e) => setRunDate(e.target.value)} />
+            </div>
+            <Button onClick={runDailyNow} disabled={running}>
+              {running ? "執行中…" : "手動執行發放"}
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              系統排程每日 00:10 自動執行前一天；同日重複執行不會重複發放。
+            </span>
+          </div>
+          {runResult && (
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
+              <Field label="當日獎勵點總額" value={fmt(runResult.total_reward_points)} />
+              <Field label="池金額 (5%)" value={fmt(runResult.pool_amount)} />
+              <Field label="有效人數" value={String(runResult.eligible_count ?? 0)} />
+              <Field label="每人分配" value={fmt(runResult.per_head_amount)} />
+              <Field label="實發總額" value={fmt(runResult.distributed_amount)} />
+              <Field label="截斷總額" value={fmt(runResult.capped_total)} />
+            </div>
+          )}
+          <div>
+            <div className="text-sm font-medium mb-2">最近發放紀錄（500 筆）</div>
+            {daily.length === 0 ? (
+              <p className="text-muted-foreground text-sm">尚無紀錄</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>日期</TableHead>
+                    <TableHead>會員</TableHead>
+                    <TableHead>階級</TableHead>
+                    <TableHead>分配</TableHead>
+                    <TableHead>實發</TableHead>
+                    <TableHead>截斷</TableHead>
+                    <TableHead>累計/上限</TableHead>
+                    <TableHead>狀態</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {daily.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-xs">{r.distribution_date}</TableCell>
+                      <TableCell className="text-xs">{r.member_id?.slice(0, 8)}</TableCell>
+                      <TableCell>{r.tier_code}</TableCell>
+                      <TableCell>{fmt(r.allocated_amount)}</TableCell>
+                      <TableCell>{fmt(r.payable_amount)}</TableCell>
+                      <TableCell>{fmt(r.capped_amount)}</TableCell>
+                      <TableCell className="text-xs">
+                        {fmt(r.total_after)} / {fmt(r.cap_amount)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            r.status === "released"
+                              ? "default"
+                              : r.status === "partial_capped"
+                                ? "secondary"
+                                : "destructive"
+                          }
+                        >
+                          {r.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+
 
       <Card>
         <CardHeader>
