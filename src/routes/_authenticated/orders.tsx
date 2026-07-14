@@ -2222,6 +2222,32 @@ function OrderDetailDialog({
   });
   const vipPackages = (giftsQ.data ?? []) as any[];
 
+  // 載入品項對應的商品獎勵點（tier_reward_points 為空時 fallback 用）
+  const itemProductIdsForRewards = (items as any[]).map((i) => i.product_id).filter(Boolean);
+  const itemRewardsKey = itemProductIdsForRewards.slice().sort().join(",");
+  const productRewardsQ = useQuery({
+    queryKey: ["order-item-product-rewards", orderId, itemRewardsKey],
+    enabled: !!orderId && itemProductIdsForRewards.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, reward_points")
+        .in("id", itemProductIdsForRewards);
+      const map: Record<string, number> = {};
+      for (const p of (data ?? []) as any[]) map[p.id] = Number(p.reward_points ?? 0);
+      return map;
+    },
+  });
+  const productRewardsMap = productRewardsQ.data ?? {};
+  const getItemUnitReward = (it: any): number => {
+    const t = it.tier_reward_points;
+    if (t !== null && t !== undefined) return Number(t) || 0;
+    return Number(productRewardsMap[it.product_id] ?? 0);
+  };
+  const getItemLineReward = (it: any): number =>
+    getItemUnitReward(it) * Number(it.quantity ?? 0);
+  const itemsRewardTotal = (items as any[]).reduce((s, it) => s + getItemLineReward(it), 0);
+
   const totalAmountNum = order ? Number(order.total_amount) : 0;
   const totals = computeOrderPaymentTotals({
     totalAmount: totalAmountNum,
@@ -2430,18 +2456,31 @@ function OrderDetailDialog({
                         <TableHead className="text-right">單價</TableHead>
                         <TableHead className="text-right">數量</TableHead>
                         <TableHead className="text-right">小計</TableHead>
+                        <TableHead className="text-right whitespace-nowrap">增加獎勵點</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {items.map((it: any) => (
+                      {items.map((it: any) => {
+                        const unitR = getItemUnitReward(it);
+                        const lineR = getItemLineReward(it);
+                        return (
                         <TableRow key={it.id}>
                           <TableCell className="text-sm">{it.product_name}</TableCell>
                           <TableCell className="font-mono text-xs">{it.sku ?? "—"}</TableCell>
                           <TableCell className="text-right">{fmt(it.unit_price)}</TableCell>
                           <TableCell className="text-right">{it.quantity}</TableCell>
                           <TableCell className="text-right font-medium">{fmt(it.subtotal)}</TableCell>
+                          <TableCell className="text-right text-amber-600 whitespace-nowrap">
+                            {lineR > 0 ? `+${lineR.toLocaleString()}` : "—"}
+                            {unitR > 0 && Number(it.quantity ?? 0) > 1 && (
+                              <span className="block text-[10px] text-muted-foreground">
+                                {unitR.toLocaleString()} × {it.quantity}
+                              </span>
+                            )}
+                          </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                     </TableBody>
                     <TableFooter>
                       <TableRow>
@@ -2454,7 +2493,25 @@ function OrderDetailDialog({
                         <TableCell className="text-right font-semibold">
                           {fmt(items.reduce((s: number, it: any) => s + Number(it.subtotal ?? 0), 0))}
                         </TableCell>
+                        <TableCell className="text-right font-semibold text-amber-600 whitespace-nowrap">
+                          {itemsRewardTotal > 0 ? `+${itemsRewardTotal.toLocaleString()}` : "—"}
+                        </TableCell>
                       </TableRow>
+                      {(itemsRewardTotal > 0 || rewardPointsIssued > 0) && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-right text-xs text-muted-foreground">
+                            本單產生獎勵點
+                            {rewardPointsIssued !== itemsRewardTotal && (
+                              <span className="ml-1 text-[10px]">
+                                （實際發放 {rewardPointsIssued.toLocaleString()} 點）
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-bold text-amber-600 whitespace-nowrap">
+                            +{itemsRewardTotal.toLocaleString()} 點
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableFooter>
                   </Table>
                   </div>
