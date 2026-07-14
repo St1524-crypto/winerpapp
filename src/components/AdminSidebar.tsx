@@ -46,6 +46,7 @@ const GROUPS: AdminNavGroup[] = [
       { title: "庫存管理", url: "/inventory", icon: Boxes },
       { title: "訂單管理", url: "/orders", icon: ShoppingCart },
       { title: "採購管理", url: "/purchases", icon: Truck },
+      { title: "進貨退回", url: "/purchase-returns", icon: Truck, roles: ["super_admin", "admin", "finance"] },
       { title: "客戶管理", url: "/customers", icon: Users },
       { title: "財務管理", url: "/finance", icon: Wallet },
     ],
