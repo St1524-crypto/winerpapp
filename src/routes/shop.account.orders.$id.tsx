@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package, MapPin, Lock, ExternalLink, Gift } from "lucide-react";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, SHIPPING_STATUS_LABELS, type SalesOrder, type SalesOrderItem } from "@/types/shop";
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
+import { useOrderRewardPreview } from "@/hooks/use-order-reward-preview";
+import { OrderRewardSummary } from "@/components/OrderRewardSummary";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 import { applyOrderPoints } from "@/lib/points.functions";
