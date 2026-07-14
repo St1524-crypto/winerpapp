@@ -10,7 +10,7 @@ async function ensureAdminOrFinance(supabase: any, userId: string) {
   }
 }
 
-/** 試算（不寫入）：依會員總收益計算升級分紅實際可發 / 截斷 / 狀態 */
+/** 試算（不寫入）：依會員總收益計算營業分紅實際可發 / 截斷 / 狀態 */
 export const previewUpgradeBonusTotalEarningsRelease = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { memberId: string; tierCode: string; bonusAmount: number }) =>
@@ -106,7 +106,7 @@ export const updateUpgradeBonusTotalEarningsTypes = createServerFn({ method: "PO
     return { ok: true };
   });
 
-/** 後台：列出各 VIP 階級的升級分紅總收益上限設定 */
+/** 後台：列出各 VIP 階級的營業分紅總收益上限設定 */
 export const adminListTiersTotalEarningsCap = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -121,7 +121,7 @@ export const adminListTiersTotalEarningsCap = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
-/** 後台：更新某 VIP 階級的升級分紅總收益上限 / 判斷依據 */
+/** 後台：更新某 VIP 階級的營業分紅總收益上限 / 判斷依據 */
 export const updateTierTotalEarningsCap = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { tierId: string; capAmount: number; capBasis: "total_earnings" | "upgrade_only" }) =>

@@ -10,7 +10,7 @@ async function ensureAdminOrFinance(supabase: any, userId: string) {
   }
 }
 
-/** 計算（不寫入）某次升級分紅實際可發金額 / 截斷金額 / 狀態 */
+/** 計算（不寫入）某次營業分紅實際可發金額 / 截斷金額 / 狀態 */
 export const previewUpgradeBonusRelease = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { memberId: string; tierCode: string; bonusAmount: number }) =>
@@ -33,7 +33,7 @@ export const previewUpgradeBonusRelease = createServerFn({ method: "POST" })
     return Array.isArray(rows) ? rows[0] ?? null : rows;
   });
 
-/** 取得會員當前升級分紅累計 / 上限 / 剩餘可領 */
+/** 取得會員當前營業分紅累計 / 上限 / 剩餘可領 */
 export const getMemberUpgradeBonusSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { memberId: string }) =>
@@ -67,7 +67,7 @@ export const getMemberUpgradeBonusSummary = createServerFn({ method: "POST" })
     };
   });
 
-/** Admin：列出升級分紅 ledger（可選會員） */
+/** Admin：列出營業分紅 ledger（可選會員） */
 export const adminListUpgradeBonusLedger = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { memberId?: string; limit?: number }) =>
@@ -87,7 +87,7 @@ export const adminListUpgradeBonusLedger = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
-/** Admin：列出所有 VIP 會員的升級分紅累計與上限 */
+/** Admin：列出所有 VIP 會員的營業分紅累計與上限 */
 export const adminListMembersUpgradeBonusSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

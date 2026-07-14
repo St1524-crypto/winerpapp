@@ -118,7 +118,7 @@ function Page() {
                   <TableHead>名稱</TableHead>
                   <TableHead>判斷依據</TableHead>
                   <TableHead>總收益上限</TableHead>
-                  <TableHead>升級分紅累計上限（參考）</TableHead>
+                  <TableHead>營業分紅累計上限（參考）</TableHead>
                   <TableHead>操作</TableHead>
                 </TableRow>
               </TableHeader>
