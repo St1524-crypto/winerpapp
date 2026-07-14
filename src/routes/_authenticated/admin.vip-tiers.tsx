@@ -104,8 +104,8 @@ function VipTiersAdmin() {
               <div>獎勵點門檻：{r.required_reward_points.toLocaleString()}</div>
               <div>直推 VIP：{r.required_direct_vip}</div>
               {r.required_mentor_tier && <div>輔導：{r.required_mentor_count} × {r.required_mentor_tier}</div>}
-              <div>回饋率：{r.cashback_rate}%　消費回饋：{r.revenue_share_rate}%</div>
-              <div>消費回饋上限：{Number(r.upgrade_bonus_cap).toLocaleString()}</div>
+              <div>回饋率：{r.cashback_rate}%　營業分紅：{r.revenue_share_rate}%</div>
+              <div>營業分紅上限：{Number(r.upgrade_bonus_cap).toLocaleString()}</div>
               {r.renewal_window_days > 0 && <div>續領：每 {r.renewal_window_days} 天需新增 {r.renewal_required_new_vip} VIP</div>}
             </CardContent>
           </Card>
