@@ -5343,6 +5343,13 @@ export type Database = {
             referencedRelation: "shop_content_pages"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "shop_content_questions_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "shop_content_public_pages"
+            referencedColumns: ["id"]
+          },
         ]
       }
       support_announcements: {
@@ -6794,6 +6801,57 @@ export type Database = {
           profile_cover?: string | null
           referral_code?: string | null
           youtube_url?: string | null
+        }
+        Relationships: []
+      }
+      shop_content_public_pages: {
+        Row: {
+          content_html: string | null
+          content_json: Json | null
+          cover_image: string | null
+          external_url: string | null
+          id: string | null
+          images: Json | null
+          is_published: boolean | null
+          published_at: string | null
+          section_type: string | null
+          slug: string | null
+          sort_order: number | null
+          summary: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          content_html?: string | null
+          content_json?: Json | null
+          cover_image?: string | null
+          external_url?: string | null
+          id?: string | null
+          images?: Json | null
+          is_published?: boolean | null
+          published_at?: string | null
+          section_type?: string | null
+          slug?: string | null
+          sort_order?: number | null
+          summary?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          content_html?: string | null
+          content_json?: Json | null
+          cover_image?: string | null
+          external_url?: string | null
+          id?: string | null
+          images?: Json | null
+          is_published?: boolean | null
+          published_at?: string | null
+          section_type?: string | null
+          slug?: string | null
+          sort_order?: number | null
+          summary?: string | null
+          title?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
