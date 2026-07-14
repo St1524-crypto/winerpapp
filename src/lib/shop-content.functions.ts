@@ -102,9 +102,8 @@ export const listPublicShopContentPages = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => listPublicSchema.parse(input ?? {}))
   .handler(async ({ data }) => {
     let query = publicDb()
-      .from("shop_content_pages")
+      .from("shop_content_public_pages")
       .select(PUBLIC_COLUMNS)
-      .eq("is_published", true)
       .order("sort_order", { ascending: true })
       .order("published_at", { ascending: false })
       .limit(data.limit);
@@ -122,10 +121,9 @@ export const getPublicShopContentPage = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => getBySlugSchema.parse(input))
   .handler(async ({ data }) => {
     const { data: page, error } = await publicDb()
-      .from("shop_content_pages")
+      .from("shop_content_public_pages")
       .select(PUBLIC_COLUMNS)
       .eq("slug", data.slug)
-      .eq("is_published", true)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!page) throw notFound();
@@ -137,6 +135,7 @@ export const getPublicShopContentPage = createServerFn({ method: "POST" })
 
     return { page };
   });
+
 
 export const adminListShopContentPages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
