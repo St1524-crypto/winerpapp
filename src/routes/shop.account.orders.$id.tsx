@@ -23,6 +23,7 @@ function OrderDetail() {
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [rewardTx, setRewardTx] = useState<any[]>([]);
+  const [productRewardsMap, setProductRewardsMap] = useState<Record<string, number>>({});
   const [tierBreakdown, setTierBreakdown] = useState<Array<{
     product_id: string | null;
     product_name: string;
