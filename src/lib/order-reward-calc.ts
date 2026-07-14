@@ -146,6 +146,6 @@ export function computeOrderRewardBreakdown({
     buyerPoints: 0,
     levels,
     totalDistributed,
-    note: formatBuyerMarkerNote("" as unknown as number ? 0 : subtotal, totalDistributed, levels),
+    note: formatBuyerMarkerNote(subtotal, totalDistributed, levels),
   };
 }
