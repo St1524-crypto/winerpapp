@@ -4330,6 +4330,7 @@ export type Database = {
         Row: {
           base_amount: number
           buyer_id: string | null
+          company_id: string | null
           created_at: string
           id: string
           note: string | null
@@ -4342,6 +4343,7 @@ export type Database = {
         Insert: {
           base_amount?: number
           buyer_id?: string | null
+          company_id?: string | null
           created_at?: string
           id?: string
           note?: string | null
@@ -4354,6 +4356,7 @@ export type Database = {
         Update: {
           base_amount?: number
           buyer_id?: string | null
+          company_id?: string | null
           created_at?: string
           id?: string
           note?: string | null
@@ -4383,6 +4386,13 @@ export type Database = {
             columns: ["buyer_id"]
             isOneToOne: false
             referencedRelation: "public_member_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
