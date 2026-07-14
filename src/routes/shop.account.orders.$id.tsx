@@ -232,6 +232,20 @@ function OrderDetail() {
     })();
   }, [order, id, rewardTx.length]);
 
+  const rewardPreview = useOrderRewardPreview({
+    buyerId: (order as any)?.user_id ?? (order as any)?.customer_id ?? null,
+    items: (items as any[]).map((it) => ({
+      product_id: it.product_id,
+      quantity: Number(it.quantity ?? 0),
+      tier_reward_points: (it as any).tier_reward_points,
+    })),
+    productRewardsMap,
+    enabled: !!order,
+  });
+  const rewardIssuedBuyer = rewardTx
+    .filter((r: any) => r.source === "order_earn")
+    .reduce((s: number, r: any) => s + Number(r.amount ?? 0), 0);
+  const hasReferrerIssuance = rewardTx.some((r: any) => r.source === "order_earn_referrer");
 
 
   if (loading) return <Skeleton className="h-96" />;
