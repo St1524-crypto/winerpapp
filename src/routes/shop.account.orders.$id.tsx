@@ -340,24 +340,15 @@ function OrderDetail() {
                 )}
                 <Separator className="my-2" />
                 <div className="flex justify-between font-semibold text-base"><span>總計</span><span className="tabular-nums text-primary">NT$ {Number(order.total_amount).toLocaleString()}</span></div>
-                {(() => {
-                  const notice = resolveRewardNotice(rewardTx as RewardTxRow[]);
-                  if (!notice) return null;
-                  if (notice.kind === "earn") {
-                    return (
-                      <div className="mt-2 flex justify-between items-center rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-500">
-                        <span className="flex items-center gap-1.5"><Gift className="h-4 w-4" />本次發放獎勵點</span>
-                        <span className="tabular-nums font-semibold">+ {notice.points.toLocaleString()} 點</span>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="mt-2 rounded-md bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
-                      <div className="font-medium text-foreground/80 mb-0.5 flex items-center gap-1.5"><Gift className="h-3.5 w-3.5" />本次發放獎勵點</div>
-                      {notice.note}
-                    </div>
-                  );
-                })()}
+                {rewardPreview.breakdown && (
+                  <div className="mt-2">
+                    <OrderRewardSummary
+                      breakdown={rewardPreview.breakdown}
+                      issuedToBuyer={rewardIssuedBuyer}
+                      hasReferrerIssuance={hasReferrerIssuance}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
