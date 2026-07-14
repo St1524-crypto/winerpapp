@@ -76,7 +76,7 @@ function DealerProgramSettings() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Settings2 className="h-6 w-6 text-primary" />VIP制度設定
+            <Settings2 className="h-6 w-6 text-primary" />月達成獎金管理
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             管理全域變數（資格門檻、回饋比例、分紅上限等），所有數值可動態調整

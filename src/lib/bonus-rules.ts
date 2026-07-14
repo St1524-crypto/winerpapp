@@ -1,5 +1,5 @@
 // 獎金演算來源與規則說明（前端顯示用）。
-// 對應「VIP制度設定」與「VIP獎金參數管理」在 UI 上的可讀說明。
+// 對應「月達成獎金管理」與「VIP獎金參數管理」在 UI 上的可讀說明。
 
 export const DAILY_RULE_INTRO = [
   "1. 僅『合格 VIP』（is_vip = true 且 vip_expires_at 未過期）於每日結算時可領取。",
@@ -26,11 +26,11 @@ export const BONUS_RULE_META: Record<string, { rule: string; source: string }> =
     source: "升級訂單 sales_orders.subtotal → 依訂單獎勵點推算",
   },
   repurchase: {
-    rule: "VIP制度設定：repurchase_bonus_settings（各代 bonus_rate）",
+    rule: "月達成獎金管理：repurchase_bonus_settings（各代 bonus_rate）",
     source: "復購訂單 sales_order_items.tier_reward_points + 套組 bundle_reward_points",
   },
   monthly_vip: {
-    rule: "VIP制度設定：monthly_tier_bonus_settings（月達成階梯 bonus_rate）",
+    rule: "月達成獎金管理：monthly_tier_bonus_settings（月達成階梯 bonus_rate）",
     source: "當月 monthly_responsibility_points（自我 + 第一代累計）",
   },
   rank_rebate: {
@@ -42,11 +42,11 @@ export const BONUS_RULE_META: Record<string, { rule: string; source: string }> =
     source: "當月超過責任額之獎勵點 (excess_points)",
   },
   upgrade_bonus: {
-    rule: "VIP制度設定：vip_upgrade_bonus 分紅池",
+    rule: "月達成獎金管理：vip_upgrade_bonus 分紅池",
     source: "升級訂單 subtotal",
   },
   business_bonus: {
-    rule: "VIP制度設定：vip_business_bonus 分紅池",
+    rule: "月達成獎金管理：vip_business_bonus 分紅池",
     source: "當日營業獎勵點總量",
   },
 };
