@@ -4007,6 +4007,146 @@ export type Database = {
           },
         ]
       }
+      purchase_return_items: {
+        Row: {
+          condition_note: string | null
+          created_at: string
+          id: string
+          inventory_action: string
+          product_id: string | null
+          product_name: string
+          purchase_order_item_id: string | null
+          purchase_return_id: string
+          quantity: number
+          reason: string | null
+          sku: string | null
+          subtotal: number
+          unit_price: number
+        }
+        Insert: {
+          condition_note?: string | null
+          created_at?: string
+          id?: string
+          inventory_action?: string
+          product_id?: string | null
+          product_name: string
+          purchase_order_item_id?: string | null
+          purchase_return_id: string
+          quantity: number
+          reason?: string | null
+          sku?: string | null
+          subtotal?: number
+          unit_price?: number
+        }
+        Update: {
+          condition_note?: string | null
+          created_at?: string
+          id?: string
+          inventory_action?: string
+          product_id?: string | null
+          product_name?: string
+          purchase_order_item_id?: string | null
+          purchase_return_id?: string
+          quantity?: number
+          reason?: string | null
+          sku?: string | null
+          subtotal?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_return_items_purchase_order_item_id_fkey"
+            columns: ["purchase_order_item_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_return_items_purchase_return_id_fkey"
+            columns: ["purchase_return_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_returns: {
+        Row: {
+          cancelled_at: string | null
+          cancelled_by: string | null
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          inventory_status: string
+          notes: string | null
+          payable_adjustment_id: string | null
+          payable_status: string
+          purchase_order_id: string
+          reason: string | null
+          return_no: string
+          status: string
+          subtotal: number
+          updated_at: string
+          vendor_id: string | null
+          vendor_name: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          company_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_status?: string
+          notes?: string | null
+          payable_adjustment_id?: string | null
+          payable_status?: string
+          purchase_order_id: string
+          reason?: string | null
+          return_no: string
+          status?: string
+          subtotal?: number
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_name: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          company_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_status?: string
+          notes?: string | null
+          payable_adjustment_id?: string | null
+          payable_status?: string
+          purchase_order_id?: string
+          reason?: string | null
+          return_no?: string
+          status?: string
+          subtotal?: number
+          updated_at?: string
+          vendor_id?: string | null
+          vendor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_returns_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_bank_accounts: {
         Row: {
           account_name: string
