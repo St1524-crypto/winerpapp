@@ -77,6 +77,7 @@ function OrderDetail() {
             .order("min_qty", { ascending: true }),
         ]);
         const baseMap = new Map<string, number>((prods ?? []).map((p: any) => [p.id, Number(p.reward_points ?? 0)]));
+        setProductRewardsMap(Object.fromEntries(baseMap));
         const tiersMap = new Map<string, Array<{ min_qty: number; max_qty: number | null; unit_reward_points: number }>>();
         for (const t of (tiersData ?? []) as any[]) {
           const arr = tiersMap.get(t.product_id) ?? [];
