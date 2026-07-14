@@ -33,7 +33,7 @@ export const previewBusinessBonusRelease = createServerFn({ method: "POST" })
     return Array.isArray(rows) ? rows[0] ?? null : rows;
   });
 
-/** 取得會員營業分紅累計 / 比例 / 上限 / 剩餘可領 */
+/** 取得會員消費回饋累計 / 比例 / 上限 / 剩餘可領 */
 export const getMemberBusinessBonusSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { memberId: string }) =>
@@ -90,7 +90,7 @@ export const adminListBusinessBonusLedger = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
-/** Admin：所有會員的營業分紅累計與上限 */
+/** Admin：所有會員的消費回饋累計與上限 */
 export const adminListMembersBusinessBonusSummary = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

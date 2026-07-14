@@ -1,7 +1,7 @@
 // Pure helpers for guest / expired-VIP referral reward distribution.
 // Extracted from points.functions.ts so cap logic and note formatting can be unit-tested.
 
-export type CapReason = "營業分紅上限" | "升級分紅上限";
+export type CapReason = "消費回饋上限" | "升級分紅上限";
 
 export interface LevelDistribution {
   level: number;
@@ -27,7 +27,7 @@ export function computeLevelPayable(
   const upg = Math.max(0, Math.floor(upgPayable));
   const payable = Math.max(0, Math.min(base, biz, upg));
   const capReasons: CapReason[] = [];
-  if (biz < base) capReasons.push("營業分紅上限");
+  if (biz < base) capReasons.push("消費回饋上限");
   if (upg < base) capReasons.push("升級分紅上限");
   return { payable, capReasons };
 }

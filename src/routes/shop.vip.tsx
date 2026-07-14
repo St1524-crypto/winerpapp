@@ -86,7 +86,7 @@ function VipPage() {
             <div className="flex items-baseline gap-3 mb-3">
               <h2 className="text-xl font-bold">{g.tier.code} 級 — {g.tier.name}</h2>
               <Badge>回饋 {g.tier.cashback_rate}%</Badge>
-              {g.tier.revenue_share_rate > 0 && <Badge variant="secondary">營業分紅 {g.tier.revenue_share_rate}%</Badge>}
+              {g.tier.revenue_share_rate > 0 && <Badge variant="secondary">消費回饋 {g.tier.revenue_share_rate}%</Badge>}
             </div>
             {g.items.length === 0 ? (
               <p className="text-sm text-muted-foreground">此階級尚無上架套組</p>

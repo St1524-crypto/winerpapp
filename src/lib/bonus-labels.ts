@@ -6,7 +6,7 @@ export const BONUS_TYPE_LABEL: Record<string, string> = {
   monthly_vip: "月 VIP 獎勵",
   rank_rebate: "階級回饋",
   rank_diff_rebate: "階級差額回饋",
-  business_bonus: "營業分紅",
+  business_bonus: "消費回饋",
   upgrade_bonus: "升級分紅",
 };
 

@@ -16,7 +16,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/admin/vip-business-bonus-cap")({
   component: Page,
-  head: () => ({ meta: [{ title: "VIP 營業分紅上限 — winerp" }] }),
+  head: () => ({ meta: [{ title: "VIP 消費回饋上限 — winerp" }] }),
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     return (
@@ -80,7 +80,7 @@ function Page() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">VIP 營業分紅上限管理</h1>
+        <h1 className="text-2xl font-semibold">VIP 消費回饋上限管理</h1>
         <Badge variant="secondary">第一階段：計算 / 查詢（未接核心發放）</Badge>
       </div>
 
@@ -159,7 +159,7 @@ function Page() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>營業分紅發放紀錄 ledger</CardTitle></CardHeader>
+        <CardHeader><CardTitle>消費回饋發放紀錄 ledger</CardTitle></CardHeader>
         <CardContent>
           {loading ? <p className="text-muted-foreground">載入中…</p> :
             ledger.length === 0 ? <p className="text-muted-foreground">尚無紀錄</p> : (
