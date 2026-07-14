@@ -377,16 +377,19 @@ export const adminApplySalesReturnEffects = createServerFn({ method: "POST" })
     let pointsStatus = salesReturn.points_reverse_status;
     const pointResults: any[] = [];
     if (!alreadyPoints) {
+      // Fetch already-processed reversals to make the loop idempotent per user.
+      // Point_transactions row is used as the per-user "already reversed" marker.
       const { data: existingReversals, error: existingError } = await db
         .from("point_transactions")
-        .select("id")
+        .select("id, user_id, amount, balance_after")
         .eq("reference_id", data.id)
         .eq("source", "sales_return_reverse");
       if (existingError) throw new Error(existingError.message);
+      const processedUserIds = new Set<string>(
+        ((existingReversals ?? []) as any[]).map((r) => r.user_id).filter(Boolean),
+      );
 
-      if ((existingReversals ?? []).length > 0) {
-        pointsStatus = "processed";
-      } else if (!order.user_id) {
+      if (!order.user_id && processedUserIds.size === 0) {
         pointsStatus = "skipped";
       } else {
         const { data: earnRows, error: earnError } = await db
@@ -398,15 +401,28 @@ export const adminApplySalesReturnEffects = createServerFn({ method: "POST" })
           .in("source", ["order_earn", "order_earn_referrer"]);
         if (earnError) throw new Error(earnError.message);
 
-        if (!earnRows || earnRows.length === 0) {
+        if ((!earnRows || earnRows.length === 0) && processedUserIds.size === 0) {
           pointsStatus = "skipped";
         } else {
           const byUser = new Map<string, number>();
-          for (const tx of earnRows as any[]) {
+          for (const tx of (earnRows ?? []) as any[]) {
             byUser.set(tx.user_id, (byUser.get(tx.user_id) ?? 0) + asInt(tx.amount));
           }
 
+          // Record previously-processed users in the audit summary too.
+          for (const prior of (existingReversals ?? []) as any[]) {
+            pointResults.push({
+              user_id: prior.user_id,
+              reversed_points: -asInt(prior.amount),
+              after_reward_points: asInt(prior.balance_after),
+              already_processed: true,
+            });
+          }
+
           for (const [userId, points] of byUser.entries()) {
+            // Per-user idempotency: skip if this user already has a reversal marker.
+            if (processedUserIds.has(userId)) continue;
+
             const { data: wallet } = await db
               .from("member_points_wallet")
               .select("reward_points")
@@ -415,11 +431,9 @@ export const adminApplySalesReturnEffects = createServerFn({ method: "POST" })
             const before = asInt(wallet?.reward_points);
             const after = before - points;
 
-            const { error: walletError } = await db
-              .from("member_points_wallet")
-              .upsert({ user_id: userId, reward_points: after, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-            if (walletError) throw new Error(walletError.message);
-
+            // Insert the point_transactions marker FIRST. If this succeeds but a
+            // later step fails, retry sees the marker and skips this user —
+            // preventing a second wallet decrement.
             const note = `退貨單 ${salesReturn.return_no} 追回原訂單獎勵點`;
             const { error: pointError } = await db.from("point_transactions").insert({
               user_id: userId,
@@ -433,6 +447,14 @@ export const adminApplySalesReturnEffects = createServerFn({ method: "POST" })
             });
             if (pointError) throw new Error(pointError.message);
 
+            const { error: walletError } = await db
+              .from("member_points_wallet")
+              .upsert(
+                { user_id: userId, reward_points: after, updated_at: new Date().toISOString() },
+                { onConflict: "user_id" },
+              );
+            if (walletError) throw new Error(walletError.message);
+
             const { error: rewardLogError } = await db.from("reward_wallet_logs").insert({
               member_id: userId,
               points: -points,
@@ -442,9 +464,20 @@ export const adminApplySalesReturnEffects = createServerFn({ method: "POST" })
             });
             if (rewardLogError) throw new Error(rewardLogError.message);
 
-            pointResults.push({ user_id: userId, before_reward_points: before, reversed_points: points, after_reward_points: after });
+            pointResults.push({
+              user_id: userId,
+              before_reward_points: before,
+              reversed_points: points,
+              after_reward_points: after,
+            });
           }
-          pointsStatus = "processed";
+
+          // Only mark processed once every eligible user has a reversal marker.
+          const allUserIds = new Set<string>([...processedUserIds, ...byUser.keys()]);
+          const stillMissing = [...allUserIds].some(
+            (u) => !processedUserIds.has(u) && !byUser.has(u),
+          );
+          pointsStatus = stillMissing ? salesReturn.points_reverse_status : "processed";
         }
       }
 
@@ -462,13 +495,18 @@ export const adminApplySalesReturnEffects = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
+
+    // Only mark the return "completed" once both inventory and points are terminal.
+    const inventoryTerminal = inventoryStatus === "processed" || inventoryStatus === "skipped";
+    const pointsTerminal = pointsStatus === "processed" || pointsStatus === "skipped";
+    const nextStatus = inventoryTerminal && pointsTerminal ? "completed" : salesReturn.status;
     const completedAt = new Date().toISOString();
     const { data: updated, error: completeError } = await db
       .from("sales_returns")
       .update({
-        status: "completed",
-        completed_by: context.userId,
-        completed_at: completedAt,
+        status: nextStatus,
+        completed_by: nextStatus === "completed" ? context.userId : salesReturn.completed_by,
+        completed_at: nextStatus === "completed" ? completedAt : salesReturn.completed_at,
         inventory_status: inventoryStatus,
         points_reverse_status: pointsStatus,
         notes: data.note ? `${salesReturn.notes ? `${salesReturn.notes}\n` : ""}${data.note}` : salesReturn.notes,
@@ -477,6 +515,7 @@ export const adminApplySalesReturnEffects = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (completeError) throw new Error(completeError.message);
+
 
     await writeAudit(context.userId, "sales_return_effects_applied", data.id, {
       sales_order_id: salesReturn.sales_order_id,
