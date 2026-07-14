@@ -12,12 +12,12 @@
 export const BONUS_PAGE_LABELS = {
   /** 一星至七星至董事 共同分紅池 */
   sharedRankPool: "共同分紅池",
-  /** VIP V/S/T/E/A 星級升級分紅池（原「營業分紅池」） */
+  /** VIP V/S/T/E/A 星級升級分紅池（原「消費回饋池」） */
   vipUpgradePool: "VIP 星級升級分紅池",
   vipUpgradeBonusCap: "VIP 升級分紅上限",
-  vipBusinessBonusCap: "VIP 營業分紅上限",
-  /** V/S/T/E/A 只領營業分紅，故此上限對應「營業分紅總收益上限」 */
-  vipBusinessBonusTotalEarnings: "營業分紅總收益上限",
+  vipBusinessBonusCap: "VIP 消費回饋上限",
+  /** V/S/T/E/A 只領消費回饋，故此上限對應「消費回饋總收益上限」 */
+  vipBusinessBonusTotalEarnings: "消費回饋總收益上限",
 } as const;
 
 /** 產生一致的瀏覽器 tab 標題（`<meta title>`） */

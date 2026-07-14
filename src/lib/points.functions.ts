@@ -313,7 +313,7 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
           } else {
             // 訪客 / 到期 VIP：獎勵點歸屬推薦人，依 repurchase_bonus_settings 位階（第 1、2 代…）
             // 折算為獎勵點，發放到「有效 VIP」上線的獎勵點錢包，
-            // 並依營業分紅比例與 VIP 升級分紅上限進行 cap 檢查（任一上限已滿則不可領）。
+            // 並依消費回饋比例與 VIP 升級分紅上限進行 cap 檢查（任一上限已滿則不可領）。
             const { data: rates } = await supabaseAdmin
               .from("repurchase_bonus_settings")
               .select("generation_level, bonus_rate, enabled")
@@ -338,7 +338,7 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
               const upVipActive = !!(up as any)?.is_vip && !!upExp && new Date(upExp) > new Date();
               const basePoints = computeBasePoints(rewardEarn, rate);
               if (upId && upVipActive && basePoints > 0) {
-                // 營業分紅比例 cap（依上線 VIP 位階）
+                // 消費回饋比例 cap（依上線 VIP 位階）
                 const { data: bizRow } = await (supabaseAdmin as any).rpc("record_business_bonus_release", {
                   _member_id: upId,
                   _bonus_amount: basePoints,
