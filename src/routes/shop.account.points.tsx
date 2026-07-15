@@ -244,11 +244,11 @@ function PointsPage() {
         </CardContent>
       </Card>
 
-      {/* 獎勵點明細：日 / 月 / 全部 */}
+      {/* 貢獻點明細：日 / 月 / 全部 */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Gift className="h-4 w-4 text-warning" />獎勵點明細
+            <Gift className="h-4 w-4 text-warning" />貢獻點明細
           </CardTitle>
         </CardHeader>
         <CardContent>
