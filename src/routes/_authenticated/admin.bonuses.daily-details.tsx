@@ -214,16 +214,29 @@ function Page() {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">收款人明細匯出</CardTitle>
           <CardDescription className="text-xs">
-            依當前查詢期間，聚合每位「實際領取人」的已成功發放獎勵點（會員編號 / 姓名 / 收入 / 筆數）。可先於上方選擇單一日期（例如 7/14）再匯出。
+            依當前查詢期間，聚合每位「實際領取人」的已成功發放獎勵點（會員編號 / 姓名 / 收入 / 筆數）。點快速日期會自動套用起訖並重新查詢。
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={exportRecipientsCsv} disabled={loading}>
-            <FileDown className="mr-2 h-4 w-4" />匯出收款人 CSV
-          </Button>
-          <Button variant="outline" onClick={exportRecipientsPdf} disabled={loading}>
-            <FileText className="mr-2 h-4 w-4" />匯出收款人 PDF
-          </Button>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">快速日期：</span>
+            <Button size="sm" variant="secondary" onClick={() => applyQuickDate(todayStr(), todayStr())} disabled={loading}>今天</Button>
+            <Button size="sm" variant="secondary" onClick={() => applyQuickDate(yesterdayStr(), yesterdayStr())} disabled={loading}>昨天</Button>
+            <Button size="sm" variant="secondary" onClick={() => applyQuickDate("2026-07-14", "2026-07-14")} disabled={loading}>7/14</Button>
+            <Button size="sm" variant="secondary" onClick={() => applyQuickDate("2026-07-13", "2026-07-13")} disabled={loading}>7/13</Button>
+            <Button size="sm" variant="secondary" onClick={() => applyQuickDate("2026-07-12", "2026-07-12")} disabled={loading}>7/12</Button>
+            <div className="ml-auto text-xs text-muted-foreground">
+              當前期間：<span className="font-mono">{periodLabel()}</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={exportRecipientsCsv} disabled={loading}>
+              <FileDown className="mr-2 h-4 w-4" />匯出收款人 CSV
+            </Button>
+            <Button variant="outline" onClick={exportRecipientsPdf} disabled={loading}>
+              <FileText className="mr-2 h-4 w-4" />匯出收款人 PDF
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
