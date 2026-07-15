@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { cronAuthErrorResponse, requireCronSecret } from "@/lib/cron-auth.server";
+import { cronAuthErrorResponse, requireAnyCronSecret } from "@/lib/cron-auth.server";
 
 /**
  * 日結算 / 發放排程入口
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const auth = requireCronSecret(request);
+        const auth = requireAnyCronSecret(request, "BONUS_DAILY_TICK_CRON_TOKEN");
         if (!auth.ok) return cronAuthErrorResponse(auth);
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
