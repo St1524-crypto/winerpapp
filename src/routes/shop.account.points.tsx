@@ -343,7 +343,7 @@ function PointsPage() {
                       <div className="min-w-0">
                         <div className="font-medium text-xs">
                           {SOURCE_LABELS[t.source] ?? t.source} ·{" "}
-                          {t.point_type === "shopping" ? "購物點" : t.point_type === "reward" ? "獎勵點" : "折扣點"}
+                          {t.point_type === "shopping" ? "購物點" : t.point_type === "reward" ? "貢獻點" : "折扣點"}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           {new Date(t.created_at).toLocaleString()} {t.note ? `· ${t.note}` : ""}
