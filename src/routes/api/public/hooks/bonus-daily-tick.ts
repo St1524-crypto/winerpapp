@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { cronAuthErrorResponse, requireCronSecret } from "@/lib/cron-auth.server";
+import { cronAuthErrorResponse, requireAnyCronSecret } from "@/lib/cron-auth.server";
 
 /**
  * 日結算 / 發放排程入口
