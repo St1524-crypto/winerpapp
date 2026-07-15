@@ -280,19 +280,21 @@ function Page() {
                     <TableHead>發放日期</TableHead>
                     <TableHead>會員 / 編號</TableHead>
                     <TableHead>VIP階級</TableHead>
-                    <TableHead>是否有效VIP</TableHead>
+                    <TableHead>VIP有效 / 到期</TableHead>
                     <TableHead>獎金類型</TableHead>
+                    <TableHead>規則</TableHead>
                     <TableHead>適用制度</TableHead>
-                    <TableHead>獎勵點來源</TableHead>
                     <TableHead>來源會員 / 訂單</TableHead>
                     <TableHead className="text-right">代數</TableHead>
-                    <TableHead className="text-right">原始訂單獎勵點</TableHead>
+                    <TableHead className="text-right">原始獎勵點</TableHead>
                     <TableHead className="text-right">比例%</TableHead>
+                    <TableHead className="text-right">責任額</TableHead>
+                    <TableHead>已達成</TableHead>
                     <TableHead className="text-right">應發</TableHead>
                     <TableHead className="text-right">實發</TableHead>
                     <TableHead>實際領取人</TableHead>
+                    <TableHead>改發 / 停發原因</TableHead>
                     <TableHead>狀態</TableHead>
-                    <TableHead>計算說明</TableHead>
                     <TableHead>詳情</TableHead>
                   </TableRow>
                 </TableHeader>
