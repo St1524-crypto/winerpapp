@@ -5933,6 +5933,7 @@ export type Database = {
         Row: {
           bonus_amount: number
           bonus_rate: number
+          calculation_detail: Json
           cap_amount: number | null
           capped_amount: number
           created_at: string
@@ -5954,6 +5955,7 @@ export type Database = {
         Insert: {
           bonus_amount?: number
           bonus_rate?: number
+          calculation_detail?: Json
           cap_amount?: number | null
           capped_amount?: number
           created_at?: string
@@ -5975,6 +5977,7 @@ export type Database = {
         Update: {
           bonus_amount?: number
           bonus_rate?: number
+          calculation_detail?: Json
           cap_amount?: number | null
           capped_amount?: number
           created_at?: string
@@ -7329,6 +7332,22 @@ export type Database = {
           per_head_amount: number
           pool_amount: number
           total_reward_points: number
+        }[]
+      }
+      distribute_vip_bonus_pool_daily: {
+        Args: {
+          _daily_total_reward_points?: number
+          _pool_id: string
+          _settlement_date?: string
+        }
+        Returns: {
+          distributed_count: number
+          eligible_count: number
+          payout_date: string
+          per_head_amount: number
+          pool_amount: number
+          pool_id: string
+          skipped_count: number
         }[]
       }
       email_queue_dispatch: { Args: never; Returns: undefined }
