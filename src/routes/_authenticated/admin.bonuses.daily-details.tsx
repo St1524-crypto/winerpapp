@@ -194,6 +194,24 @@ function Page() {
         typeOptions={DAILY_BONUS_TYPE_OPTIONS}
       />
 
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">收款人明細匯出</CardTitle>
+          <CardDescription className="text-xs">
+            依當前查詢期間，聚合每位「實際領取人」的已成功發放獎勵點（會員編號 / 姓名 / 收入 / 筆數）。可先於上方選擇單一日期（例如 7/14）再匯出。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={exportRecipientsCsv} disabled={loading}>
+            <FileDown className="mr-2 h-4 w-4" />匯出收款人 CSV
+          </Button>
+          <Button variant="outline" onClick={exportRecipientsPdf} disabled={loading}>
+            <FileText className="mr-2 h-4 w-4" />匯出收款人 PDF
+          </Button>
+        </CardContent>
+      </Card>
+
+
       {missingDetail > 0 && (
         <Card className="border-amber-500/50 bg-amber-500/10">
           <CardContent className="py-3 flex items-start gap-2 text-sm">
