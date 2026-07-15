@@ -79,9 +79,9 @@ function Page() {
     const orders = payload.orders ?? {};
     const tiers = payload.tiers ?? {};
     const header = [
-      "結算日期","發放日期","實際發放時間","會員名稱","會員編號","VIP階級","是否有效VIP",
-      "來源會員","來源訂單","獎金類型","適用制度","獎勵點來源","原始訂單獎勵點","代數","適用比例%",
-      "應發獎勵點","實際發放獎勵點","實際領取人","改發原因","狀態","計算說明","批次ID",
+      "結算日期","發放日期","實際發放時間","會員名稱","會員編號","VIP階級","是否有效VIP","VIP到期日",
+      "來源會員","來源訂單","獎金類型","規則版本","適用制度","獎勵點來源","原始訂單獎勵點","代數","適用比例%",
+      "責任額","是否完成責任額","應發獎勵點","實際發放獎勵點","實際領取人","改發原因","停發原因","狀態","計算說明","批次ID",
     ];
     const csvRows = rows.map((r: any) => {
       const m = members[r.member_id] ?? {};
@@ -91,16 +91,19 @@ function Page() {
       const released = r.status === "released" ? r.bonus_points : 0;
       const vip = vipStatusLabel(m, r.settlement_date);
       const meta = bonusRuleMeta(r.bonus_type);
+      const d = r.calculation_detail ?? {};
+      const req = d.required_points ?? d.daily_settlement?.responsibility_required_points ?? "";
+      const passed = r.required_points_passed === true ? "是" : r.required_points_passed === false ? "否" : "";
       return [
         r.settlement_date ?? "", r.release_date ?? "", r.released_at ?? "",
-        m.name ?? "", m.member_no ?? "", tiers[r.member_id] ?? "—", vip.label,
+        m.name ?? "", m.member_no ?? "", tiers[r.member_id] ?? "—", vip.label, m.vip_expires_at ?? "",
         src.name ? `${src.name}(${src.member_no ?? ""})` : "",
         o.order_no ?? r.source_order_id ?? "",
-        bonusTypeLabel(r.bonus_type), meta.rule, meta.source,
+        bonusTypeLabel(r.bonus_type), d.rule_version ?? "", meta.rule, meta.source,
         r.base_amount ?? "", r.generation_level ?? r.layer_level ?? "",
-        r.bonus_rate ?? "", r.bonus_points ?? 0, released,
+        r.bonus_rate ?? "", req, passed, r.bonus_points ?? 0, released,
         rec.name ? `${rec.name}(${rec.member_no ?? ""})` : "",
-        r.release_redirect_reason ?? "",
+        r.release_redirect_reason ?? "", r.fail_reason ?? "",
         bonusStatusLabel(r.status), calculationNote(r),
         r.settlement_batch_id ?? "",
       ].map((x) => `"${String(x).replace(/"/g, '""')}"`).join(",");
@@ -277,19 +280,21 @@ function Page() {
                     <TableHead>發放日期</TableHead>
                     <TableHead>會員 / 編號</TableHead>
                     <TableHead>VIP階級</TableHead>
-                    <TableHead>是否有效VIP</TableHead>
+                    <TableHead>VIP有效 / 到期</TableHead>
                     <TableHead>獎金類型</TableHead>
+                    <TableHead>規則</TableHead>
                     <TableHead>適用制度</TableHead>
-                    <TableHead>獎勵點來源</TableHead>
                     <TableHead>來源會員 / 訂單</TableHead>
                     <TableHead className="text-right">代數</TableHead>
-                    <TableHead className="text-right">原始訂單獎勵點</TableHead>
+                    <TableHead className="text-right">原始獎勵點</TableHead>
                     <TableHead className="text-right">比例%</TableHead>
+                    <TableHead className="text-right">責任額</TableHead>
+                    <TableHead>已達成</TableHead>
                     <TableHead className="text-right">應發</TableHead>
                     <TableHead className="text-right">實發</TableHead>
                     <TableHead>實際領取人</TableHead>
+                    <TableHead>改發 / 停發原因</TableHead>
                     <TableHead>狀態</TableHead>
-                    <TableHead>計算說明</TableHead>
                     <TableHead>詳情</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -302,6 +307,10 @@ function Page() {
                     const released = r.status === "released" ? Number(r.bonus_points ?? 0) : 0;
                     const vip = vipStatusLabel(m, r.settlement_date);
                     const meta = bonusRuleMeta(r.bonus_type);
+                    const d = r.calculation_detail ?? {};
+                    const req = d.required_points ?? d.daily_settlement?.responsibility_required_points ?? null;
+                    const ruleV = d.rule_version ?? "—";
+                    const stopReason = r.release_redirect_reason || r.fail_reason || d.block_reason || "—";
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="whitespace-nowrap">{r.settlement_date ?? "—"}</TableCell>
@@ -311,12 +320,13 @@ function Page() {
                           <div className="text-xs text-muted-foreground">{m.member_no ?? "—"}</div>
                         </TableCell>
                         <TableCell className="text-xs">{tiers[r.member_id] ?? "—"}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-xs">
                           <Badge variant={vip.valid ? "default" : "destructive"} title={vip.reason}>{vip.label}</Badge>
+                          <div className="text-muted-foreground mt-0.5">{m.vip_expires_at ? String(m.vip_expires_at).slice(0, 10) : "—"}</div>
                         </TableCell>
                         <TableCell>{bonusTypeLabel(r.bonus_type)}</TableCell>
-                        <TableCell className="text-xs max-w-[180px]">{meta.rule}</TableCell>
-                        <TableCell className="text-xs max-w-[180px]">{meta.source}</TableCell>
+                        <TableCell className="text-xs"><Badge variant="outline">{ruleV}</Badge></TableCell>
+                        <TableCell className="text-xs max-w-[160px]">{meta.rule}</TableCell>
                         <TableCell className="text-xs">
                           {src ? <div className="font-medium">{src.name}<span className="text-muted-foreground"> ({src.member_no})</span></div> : "—"}
                           <div className="font-mono text-muted-foreground">{o?.order_no ?? (r.source_order_id ? r.source_order_id.slice(0, 8) : "—")}</div>
@@ -324,15 +334,21 @@ function Page() {
                         <TableCell className="text-right tabular-nums">{r.generation_level ?? r.layer_level ?? "—"}</TableCell>
                         <TableCell className="text-right tabular-nums">{fmtN(r.base_amount)}</TableCell>
                         <TableCell className="text-right tabular-nums">{r.bonus_rate ?? "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{req != null ? fmtN(req) : "—"}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.required_points_passed === true ? <Badge>是</Badge>
+                            : r.required_points_passed === false ? <Badge variant="destructive">否</Badge>
+                            : "—"}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums font-semibold">{fmtN(r.bonus_points)}</TableCell>
                         <TableCell className="text-right tabular-nums text-primary">{fmtN(released)}</TableCell>
                         <TableCell className="text-xs">
                           {rec ? <>{rec.name}<div className="text-muted-foreground">{rec.member_no}</div></> : "—"}
                         </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[200px] whitespace-normal">{stopReason}</TableCell>
                         <TableCell>
                           <Badge variant={BONUS_STATUS_VARIANT[r.status] ?? "outline"}>{bonusStatusLabel(r.status)}</Badge>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-[240px] whitespace-normal">{calculationNote(r)}</TableCell>
                         <TableCell>
                           <BonusCalculationDetailDialog record={r} mode="daily" members={members} orders={orders} tiers={tiers} />
                         </TableCell>
