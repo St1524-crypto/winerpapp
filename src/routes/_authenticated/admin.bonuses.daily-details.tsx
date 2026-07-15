@@ -14,6 +14,9 @@ import { computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
 import { BonusFiltersCard, type BonusFilters } from "@/components/admin/BonusFiltersCard";
 import { DAILY_RULE_INTRO, bonusRuleMeta, vipStatusLabel, calculationNote } from "@/lib/bonus-rules";
 import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
+import { exportPdfReport } from "@/lib/pdf-report";
+import logo from "@/assets/logo.jpg";
+import { FileDown, FileText } from "lucide-react";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -93,6 +96,71 @@ function Page() {
     URL.revokeObjectURL(url);
   }
 
+  // 依「實際領取人」聚合，只計入已成功發放（released）
+  function aggregateRecipients() {
+    const rows = payload?.rows ?? [];
+    const members = payload?.members ?? {};
+    const map = new Map<string, { member_no: string; name: string; income: number; count: number }>();
+    for (const r of rows) {
+      if (r.status !== "released") continue;
+      const recipientId = r.released_member_id ?? r.member_id;
+      const m = members[recipientId] ?? {};
+      const key = recipientId ?? "unknown";
+      const cur = map.get(key) ?? { member_no: m.member_no ?? "—", name: m.name ?? "—", income: 0, count: 0 };
+      cur.income += Number(r.bonus_points ?? 0);
+      cur.count += 1;
+      map.set(key, cur);
+    }
+    return Array.from(map.values())
+      .filter((x) => x.income > 0)
+      .sort((a, b) => b.income - a.income);
+  }
+
+  function periodLabel() {
+    if (filters.dateFrom && filters.dateTo && filters.dateFrom === filters.dateTo) return filters.dateFrom;
+    return `${filters.dateFrom || "—"} ~ ${filters.dateTo || "—"}`;
+  }
+
+  function exportRecipientsCsv() {
+    const data = aggregateRecipients();
+    if (!data.length) { toast.info("此期間無已發放的收款人資料"); return; }
+    const header = ["會員編號", "姓名", "收入獎勵點", "筆數"];
+    const csvRows = data.map((r) => [r.member_no, r.name, r.income, r.count]
+      .map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(","));
+    const total = data.reduce((s, r) => s + r.income, 0);
+    csvRows.push(["合計", "", total, data.reduce((s, r) => s + r.count, 0)]
+      .map((x) => `"${x}"`).join(","));
+    const blob = new Blob(["\uFEFF" + [header.join(","), ...csvRows].join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `收款人明細-${periodLabel()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function exportRecipientsPdf() {
+    const data = aggregateRecipients();
+    if (!data.length) { toast.info("此期間無已發放的收款人資料"); return; }
+    const total = data.reduce((s, r) => s + r.income, 0);
+    try {
+      await exportPdfReport({
+        title: "日結獎金收款人明細",
+        subtitle: `期間：${periodLabel()}`,
+        logoUrl: logo,
+        filename: `收款人明細-${periodLabel()}.pdf`,
+        meta: { 期間: periodLabel(), 收款人數: data.length, 合計獎勵點: total.toLocaleString() },
+        columns: [
+          { key: "member_no", label: "會員編號" },
+          { key: "name", label: "姓名" },
+          { key: "count", label: "筆數", align: "right" },
+          { key: "income", label: "收入獎勵點", align: "right", format: (r: any) => Number(r.income).toLocaleString() },
+        ],
+        rows: data,
+      });
+    } catch (e: any) {
+      toast.error(e?.message ?? "PDF 匯出失敗");
+    }
+  }
+
   const rows: any[] = payload?.rows ?? [];
   const members = payload?.members ?? {};
   const orders = payload?.orders ?? {};
@@ -125,6 +193,24 @@ function Page() {
         onLoad={load} loading={loading} onExport={exportCsv}
         typeOptions={DAILY_BONUS_TYPE_OPTIONS}
       />
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">收款人明細匯出</CardTitle>
+          <CardDescription className="text-xs">
+            依當前查詢期間，聚合每位「實際領取人」的已成功發放獎勵點（會員編號 / 姓名 / 收入 / 筆數）。可先於上方選擇單一日期（例如 7/14）再匯出。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={exportRecipientsCsv} disabled={loading}>
+            <FileDown className="mr-2 h-4 w-4" />匯出收款人 CSV
+          </Button>
+          <Button variant="outline" onClick={exportRecipientsPdf} disabled={loading}>
+            <FileText className="mr-2 h-4 w-4" />匯出收款人 PDF
+          </Button>
+        </CardContent>
+      </Card>
+
 
       {missingDetail > 0 && (
         <Card className="border-amber-500/50 bg-amber-500/10">
