@@ -236,7 +236,7 @@ function PointsPage() {
               <Copy className="h-3 w-3 mr-1" />複製分享連結
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">分享連結讓朋友註冊，雙方各獲得 100 獎勵點。</p>
+          <p className="text-xs text-muted-foreground">分享連結讓朋友註冊，雙方各獲得 100 貢獻點。</p>
           <div className="flex gap-6 text-sm pt-2 border-t border-border/40">
             <div><span className="text-muted-foreground">已推薦：</span><span className="font-medium">{ref.total} 人</span></div>
             <div><span className="text-muted-foreground">累計獲得：</span><span className="font-medium">{ref.total_points.toLocaleString()} 點</span></div>
