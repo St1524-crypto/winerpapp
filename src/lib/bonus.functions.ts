@@ -1617,7 +1617,7 @@ export const getMyBonusRecords = createServerFn({ method: "GET" })
   });
 
 /* ───────────── VIP 個人日 / 月獎金明細 ───────────── */
-const DAILY_BONUS_TYPES = ["referral", "repurchase", "business_bonus", "upgrade_bonus"];
+const DAILY_BONUS_TYPES = ["referral", "repurchase", "business_bonus", "upgrade_bonus", "national_share"];
 const MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate", "rank_diff_rebate"];
 
 export const searchBonusMembers = createServerFn({ method: "POST" })
