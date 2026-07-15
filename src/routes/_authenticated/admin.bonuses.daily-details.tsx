@@ -307,6 +307,10 @@ function Page() {
                     const released = r.status === "released" ? Number(r.bonus_points ?? 0) : 0;
                     const vip = vipStatusLabel(m, r.settlement_date);
                     const meta = bonusRuleMeta(r.bonus_type);
+                    const d = r.calculation_detail ?? {};
+                    const req = d.required_points ?? d.daily_settlement?.responsibility_required_points ?? null;
+                    const ruleV = d.rule_version ?? "—";
+                    const stopReason = r.release_redirect_reason || r.fail_reason || d.block_reason || "—";
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="whitespace-nowrap">{r.settlement_date ?? "—"}</TableCell>
@@ -316,12 +320,13 @@ function Page() {
                           <div className="text-xs text-muted-foreground">{m.member_no ?? "—"}</div>
                         </TableCell>
                         <TableCell className="text-xs">{tiers[r.member_id] ?? "—"}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-xs">
                           <Badge variant={vip.valid ? "default" : "destructive"} title={vip.reason}>{vip.label}</Badge>
+                          <div className="text-muted-foreground mt-0.5">{m.vip_expires_at ? String(m.vip_expires_at).slice(0, 10) : "—"}</div>
                         </TableCell>
                         <TableCell>{bonusTypeLabel(r.bonus_type)}</TableCell>
-                        <TableCell className="text-xs max-w-[180px]">{meta.rule}</TableCell>
-                        <TableCell className="text-xs max-w-[180px]">{meta.source}</TableCell>
+                        <TableCell className="text-xs"><Badge variant="outline">{ruleV}</Badge></TableCell>
+                        <TableCell className="text-xs max-w-[160px]">{meta.rule}</TableCell>
                         <TableCell className="text-xs">
                           {src ? <div className="font-medium">{src.name}<span className="text-muted-foreground"> ({src.member_no})</span></div> : "—"}
                           <div className="font-mono text-muted-foreground">{o?.order_no ?? (r.source_order_id ? r.source_order_id.slice(0, 8) : "—")}</div>
@@ -329,15 +334,21 @@ function Page() {
                         <TableCell className="text-right tabular-nums">{r.generation_level ?? r.layer_level ?? "—"}</TableCell>
                         <TableCell className="text-right tabular-nums">{fmtN(r.base_amount)}</TableCell>
                         <TableCell className="text-right tabular-nums">{r.bonus_rate ?? "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{req != null ? fmtN(req) : "—"}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.required_points_passed === true ? <Badge>是</Badge>
+                            : r.required_points_passed === false ? <Badge variant="destructive">否</Badge>
+                            : "—"}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums font-semibold">{fmtN(r.bonus_points)}</TableCell>
                         <TableCell className="text-right tabular-nums text-primary">{fmtN(released)}</TableCell>
                         <TableCell className="text-xs">
                           {rec ? <>{rec.name}<div className="text-muted-foreground">{rec.member_no}</div></> : "—"}
                         </TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[200px] whitespace-normal">{stopReason}</TableCell>
                         <TableCell>
                           <Badge variant={BONUS_STATUS_VARIANT[r.status] ?? "outline"}>{bonusStatusLabel(r.status)}</Badge>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-[240px] whitespace-normal">{calculationNote(r)}</TableCell>
                         <TableCell>
                           <BonusCalculationDetailDialog record={r} mode="daily" members={members} orders={orders} tiers={tiers} />
                         </TableCell>
