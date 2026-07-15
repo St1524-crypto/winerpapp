@@ -152,7 +152,7 @@ function PointsPage() {
               <div className="text-3xl font-bold tabular-nums text-primary">{totalEarnings.toLocaleString()}</div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              匯入累計獎金 {(legacy.legacy_bonus_total ?? 0).toLocaleString()} + 新增獎勵點 {rewardEarningsSum.toLocaleString()}
+              匯入累計獎金 {(legacy.legacy_bonus_total ?? 0).toLocaleString()} + 新增貢獻點 {rewardEarningsSum.toLocaleString()}
             </p>
           </CardContent>
         </Card>
