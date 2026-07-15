@@ -39,6 +39,8 @@ export const BONUS_STATUS_VARIANT: Record<string, "default" | "secondary" | "des
 export const DAILY_BONUS_TYPE_OPTIONS = [
   { value: "referral", label: BONUS_TYPE_LABEL.referral },
   { value: "repurchase", label: BONUS_TYPE_LABEL.repurchase },
+  { value: "business_bonus", label: BONUS_TYPE_LABEL.business_bonus },
+  { value: "upgrade_bonus", label: BONUS_TYPE_LABEL.upgrade_bonus },
 ];
 
 export const MONTHLY_BONUS_TYPE_OPTIONS = [
