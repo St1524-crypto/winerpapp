@@ -152,7 +152,7 @@ function PointsPage() {
               <div className="text-3xl font-bold tabular-nums text-primary">{totalEarnings.toLocaleString()}</div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              匯入累計獎金 {(legacy.legacy_bonus_total ?? 0).toLocaleString()} + 新增獎勵點 {rewardEarningsSum.toLocaleString()}
+              匯入累計獎金 {(legacy.legacy_bonus_total ?? 0).toLocaleString()} + 新增貢獻點 {rewardEarningsSum.toLocaleString()}
             </p>
           </CardContent>
         </Card>
@@ -194,10 +194,10 @@ function PointsPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2 text-muted-foreground"><Gift className="h-4 w-4 text-warning" />獎勵點</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2 text-muted-foreground"><Gift className="h-4 w-4 text-warning" />貢獻點</CardTitle></CardHeader>
           <CardContent>
             {loading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-bold tabular-nums">{wallet.reward_points.toLocaleString()}</div>}
-            <p className="text-xs text-muted-foreground mt-1">購物 / 推廣回饋</p>
+            <p className="text-xs text-muted-foreground mt-1">VIP 獎金 / 推薦 / 消費分紅 / 營業分紅</p>
           </CardContent>
         </Card>
         <Card>
@@ -236,7 +236,7 @@ function PointsPage() {
               <Copy className="h-3 w-3 mr-1" />複製分享連結
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">分享連結讓朋友註冊，雙方各獲得 100 獎勵點。</p>
+          <p className="text-xs text-muted-foreground">分享連結讓朋友註冊，雙方各獲得 100 貢獻點。</p>
           <div className="flex gap-6 text-sm pt-2 border-t border-border/40">
             <div><span className="text-muted-foreground">已推薦：</span><span className="font-medium">{ref.total} 人</span></div>
             <div><span className="text-muted-foreground">累計獲得：</span><span className="font-medium">{ref.total_points.toLocaleString()} 點</span></div>
@@ -244,11 +244,11 @@ function PointsPage() {
         </CardContent>
       </Card>
 
-      {/* 獎勵點明細：日 / 月 / 全部 */}
+      {/* 貢獻點明細：日 / 月 / 全部 */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Gift className="h-4 w-4 text-warning" />獎勵點明細
+            <Gift className="h-4 w-4 text-warning" />貢獻點明細
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -270,7 +270,7 @@ function PointsPage() {
                     <TableRow>
                       <TableHead>日期 / 來源</TableHead>
                       <TableHead className="text-right">筆數</TableHead>
-                      <TableHead className="text-right">獲得獎勵點</TableHead>
+                      <TableHead className="text-right">獲得貢獻點</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -315,7 +315,7 @@ function PointsPage() {
                     <TableRow>
                       <TableHead>月份</TableHead>
                       <TableHead className="text-right">筆數</TableHead>
-                      <TableHead className="text-right">獲得獎勵點</TableHead>
+                      <TableHead className="text-right">獲得貢獻點</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -343,7 +343,7 @@ function PointsPage() {
                       <div className="min-w-0">
                         <div className="font-medium text-xs">
                           {SOURCE_LABELS[t.source] ?? t.source} ·{" "}
-                          {t.point_type === "shopping" ? "購物點" : t.point_type === "reward" ? "獎勵點" : "折扣點"}
+                          {t.point_type === "shopping" ? "購物點" : t.point_type === "reward" ? "貢獻點" : "折扣點"}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           {new Date(t.created_at).toLocaleString()} {t.note ? `· ${t.note}` : ""}
