@@ -3031,6 +3031,81 @@ export type Database = {
           },
         ]
       }
+      national_bonus_pool_ledger: {
+        Row: {
+          calculation_detail: Json
+          cap_after: number | null
+          cap_before: number | null
+          created_at: string
+          distributed_points: number
+          id: string
+          member_id: string
+          pool_amount: number
+          settlement_date: string
+          source_total_points: number
+          tier_code: string
+        }
+        Insert: {
+          calculation_detail?: Json
+          cap_after?: number | null
+          cap_before?: number | null
+          created_at?: string
+          distributed_points?: number
+          id?: string
+          member_id: string
+          pool_amount?: number
+          settlement_date: string
+          source_total_points?: number
+          tier_code: string
+        }
+        Update: {
+          calculation_detail?: Json
+          cap_after?: number | null
+          cap_before?: number | null
+          created_at?: string
+          distributed_points?: number
+          id?: string
+          member_id?: string
+          pool_amount?: number
+          settlement_date?: string
+          source_total_points?: number
+          tier_code?: string
+        }
+        Relationships: []
+      }
+      national_bonus_pool_settings: {
+        Row: {
+          created_at: string
+          effective_from: string
+          id: string
+          income_cap_amount: number
+          is_active: boolean
+          pool_rate: number
+          tier_code: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string
+          id?: string
+          income_cap_amount: number
+          is_active?: boolean
+          pool_rate?: number
+          tier_code: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          id?: string
+          income_cap_amount?: number
+          is_active?: boolean
+          pool_rate?: number
+          tier_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_rules: {
         Row: {
           channels: string[]
@@ -5666,6 +5741,33 @@ export type Database = {
         }
         Relationships: []
       }
+      tier_code_mapping: {
+        Row: {
+          created_at: string
+          effective_from: string
+          is_active: boolean
+          legacy_code: string
+          pool_ordinal: string | null
+          vip_tier_code: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string
+          is_active?: boolean
+          legacy_code: string
+          pool_ordinal?: string | null
+          vip_tier_code: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          is_active?: boolean
+          legacy_code?: string
+          pool_ordinal?: string | null
+          vip_tier_code?: string
+        }
+        Relationships: []
+      }
       user_2fa: {
         Row: {
           backup_codes: string[]
@@ -6241,6 +6343,7 @@ export type Database = {
           renewal_required_new_vip: number
           renewal_window_days: number
           required_direct_vip: number
+          required_direct_vip_alt: number | null
           required_mentor_count: number
           required_mentor_tier: string | null
           required_reward_points: number
@@ -6266,6 +6369,7 @@ export type Database = {
           renewal_required_new_vip?: number
           renewal_window_days?: number
           required_direct_vip?: number
+          required_direct_vip_alt?: number | null
           required_mentor_count?: number
           required_mentor_tier?: string | null
           required_reward_points?: number
@@ -6291,6 +6395,7 @@ export type Database = {
           renewal_required_new_vip?: number
           renewal_window_days?: number
           required_direct_vip?: number
+          required_direct_vip_alt?: number | null
           required_mentor_count?: number
           required_mentor_tier?: string | null
           required_reward_points?: number
