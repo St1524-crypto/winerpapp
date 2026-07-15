@@ -270,7 +270,7 @@ function PointsPage() {
                     <TableRow>
                       <TableHead>日期 / 來源</TableHead>
                       <TableHead className="text-right">筆數</TableHead>
-                      <TableHead className="text-right">獲得獎勵點</TableHead>
+                      <TableHead className="text-right">獲得貢獻點</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
