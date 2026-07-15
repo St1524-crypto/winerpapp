@@ -49,6 +49,10 @@ export const BONUS_RULE_META: Record<string, { rule: string; source: string }> =
     rule: "月達成獎金管理：vip_business_bonus 分紅池",
     source: "當日營業獎勵點總量",
   },
+  national_share: {
+    rule: "全國分紅 STAR5~DIRECTOR：national_bonus_pool_settings（每級 2%，上限 20/30/40/50 萬）",
+    source: "當日營業總獎勵點 × 各級 pool_rate ÷ 該級有效人數",
+  },
 };
 
 export function bonusRuleMeta(code: string | null | undefined) {

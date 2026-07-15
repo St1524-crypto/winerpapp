@@ -8,6 +8,7 @@ export const BONUS_TYPE_LABEL: Record<string, string> = {
   rank_diff_rebate: "階級差額回饋",
   business_bonus: "消費回饋",
   upgrade_bonus: "營業分紅",
+  national_share: "全國分紅",
 };
 
 export function bonusTypeLabel(code: string | null | undefined) {
@@ -41,6 +42,7 @@ export const DAILY_BONUS_TYPE_OPTIONS = [
   { value: "repurchase", label: BONUS_TYPE_LABEL.repurchase },
   { value: "business_bonus", label: BONUS_TYPE_LABEL.business_bonus },
   { value: "upgrade_bonus", label: BONUS_TYPE_LABEL.upgrade_bonus },
+  { value: "national_share", label: BONUS_TYPE_LABEL.national_share },
 ];
 
 export const MONTHLY_BONUS_TYPE_OPTIONS = [
