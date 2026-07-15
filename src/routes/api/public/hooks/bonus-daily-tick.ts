@@ -4,7 +4,7 @@ import { cronAuthErrorResponse, requireCronSecret } from "@/lib/cron-auth.server
 /**
  * 日結算 / 發放排程入口
  * 由 pg_cron 每天呼叫，內部判斷：
- *  - 是否到下次日結算時間 → 跑 daily settlement
+ *  - 是否到下次日結算時間 → 跑 daily settlement + 營業分紅 + VIP 共享池 + 全國分紅
  *  - 是否為自動發放模式 → 跑到期發放
  *  - 是否為月結算日且 mode=auto → 跑當月月結算
  */
@@ -22,10 +22,13 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
         if (!s) return new Response(JSON.stringify({ ok: false, reason: "no_settings" }), { status: 500 });
 
         const now = new Date();
-        const today = now.toISOString().slice(0, 10);
-        const result: Record<string, any> = { ran_at: now.toISOString() };
+        // settle_daily_bonus 內部以 Asia/Taipei 的今天為 settlement_date
+        const twNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+        const settlementDate = twNow.toISOString().slice(0, 10);
+        const result: Record<string, any> = { ran_at: now.toISOString(), settlement_date: settlementDate };
 
         // ── 日結算 ──
+        let dailyOk = false;
         if ((s as any).daily_bonus_auto_enabled && new Date((s as any).daily_next_settlement_at) <= now) {
           try {
             const { data: daily, error: dailyError } = await (supabaseAdmin as any).rpc("settle_daily_bonus", {
@@ -34,8 +37,88 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
             });
             if (dailyError) throw new Error(dailyError.message);
             result.daily = daily;
+            dailyOk = true;
           } catch (e: any) {
             result.daily_error = e.message;
+          }
+        }
+
+        // ── 日結算成功後：計算 daily_total_reward_points 並執行 營業分紅 / VIP 共享池 / 全國分紅 ──
+        if (dailyOk) {
+          // daily_total_reward_points 定義：當日 referral + repurchase 之 bonus_points 合計
+          // 狀態限 waiting_release / released (剛完成日結後皆為 waiting_release)
+          let dailyTotalRewardPoints = 0;
+          try {
+            const { data: rows, error: sumError } = await (supabaseAdmin as any)
+              .from("bonus_records")
+              .select("bonus_points")
+              .eq("settlement_date", settlementDate)
+              .in("bonus_type", ["referral", "repurchase"])
+              .in("status", ["waiting_release", "released"]);
+            if (sumError) throw new Error(sumError.message);
+            dailyTotalRewardPoints = (rows ?? []).reduce(
+              (acc: number, r: any) => acc + Number(r.bonus_points ?? 0),
+              0,
+            );
+            result.daily_total_reward_points = dailyTotalRewardPoints;
+          } catch (e: any) {
+            result.daily_total_reward_points_error = e.message;
+          }
+
+          // (1) 營業分紅
+          try {
+            const { data: revenue, error: revErr } = await (supabaseAdmin as any).rpc(
+              "distribute_daily_revenue_bonus",
+              { _date: settlementDate },
+            );
+            if (revErr) throw new Error(revErr.message);
+            result.daily_revenue_bonus = Array.isArray(revenue) ? revenue[0] : revenue;
+          } catch (e: any) {
+            result.daily_revenue_bonus_error = e.message;
+          }
+
+          // (2) VIP 共享池：對每個 active pool 呼叫
+          try {
+            const { data: pools, error: poolErr } = await (supabaseAdmin as any)
+              .from("vip_bonus_pools")
+              .select("id, code, is_active")
+              .eq("is_active", true);
+            if (poolErr) throw new Error(poolErr.message);
+            const poolResults: any[] = [];
+            for (const pool of pools ?? []) {
+              try {
+                const { data: payout, error: payErr } = await (supabaseAdmin as any).rpc(
+                  "distribute_vip_bonus_pool_daily",
+                  {
+                    _pool_id: (pool as any).id,
+                    _settlement_date: settlementDate,
+                    _daily_total_reward_points: dailyTotalRewardPoints,
+                  },
+                );
+                if (payErr) throw new Error(payErr.message);
+                poolResults.push({ pool_id: (pool as any).id, code: (pool as any).code, result: Array.isArray(payout) ? payout[0] : payout });
+              } catch (e: any) {
+                poolResults.push({ pool_id: (pool as any).id, code: (pool as any).code, error: e.message });
+              }
+            }
+            result.vip_bonus_pools = poolResults;
+          } catch (e: any) {
+            result.vip_bonus_pools_error = e.message;
+          }
+
+          // (3) 全國分紅
+          try {
+            const { data: national, error: natErr } = await (supabaseAdmin as any).rpc(
+              "distribute_national_bonus_v2",
+              {
+                _settlement_date: settlementDate,
+                _daily_total_reward_points: dailyTotalRewardPoints,
+              },
+            );
+            if (natErr) throw new Error(natErr.message);
+            result.national_bonus = national;
+          } catch (e: any) {
+            result.national_bonus_error = e.message;
           }
         }
 
@@ -53,60 +136,8 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
           }
         }
 
-        if (false && (s as any).reward_release_mode === "auto") {
-          try {
-            const { data: due } = await supabaseAdmin
-              .from("bonus_records")
-              .select("id, member_id, bonus_points, bonus_type")
-              .eq("status", "waiting_release")
-              .lte("release_date", today).limit(2000);
-            let released = 0;
-            for (const r of (due ?? [])) {
-              const pts = Number((r as any).bonus_points ?? 0);
-              if (pts > 0) {
-                const { data: w0 } = await supabaseAdmin
-                  .from("member_points_wallet").select("reward_points")
-                  .eq("user_id", (r as any).member_id).maybeSingle();
-                if (!w0) {
-                  await supabaseAdmin.from("member_points_wallet").insert({ user_id: (r as any).member_id });
-                }
-                const cur = Number((w0 as any)?.reward_points ?? 0);
-                const after = cur + pts;
-                await supabaseAdmin.from("member_points_wallet")
-                  .update({ reward_points: after, updated_at: now.toISOString() })
-                  .eq("user_id", (r as any).member_id);
-                await supabaseAdmin.from("point_transactions").insert({
-                  user_id: (r as any).member_id,
-                  point_type: "reward",
-                  amount: pts,
-                  balance_after: after,
-                  source: `bonus_${(r as any).bonus_type}`,
-                  reference_id: (r as any).id,
-                  note: `獎金自動發放`,
-                });
-                await supabaseAdmin.from("reward_wallet_logs").insert({
-                  member_id: (r as any).member_id,
-                  bonus_record_id: (r as any).id,
-                  points: pts,
-                  type: "earn",
-                  status: "success",
-                  description: "auto release",
-                });
-              }
-              await supabaseAdmin.from("bonus_records")
-                .update({ status: "released", released_at: now.toISOString() })
-                .eq("id", (r as any).id);
-              released++;
-            }
-            result.release = { count: released };
-          } catch (e: any) {
-            result.release_error = e.message;
-          }
-        }
-
         // ── 月結算（auto 模式 + 結算日當天）──
         if ((s as any).monthly_bonus_mode === "auto" && now.getDate() === Number((s as any).monthly_bonus_settlement_day)) {
-          // 結算「上個月」
           const prev = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1));
           const yyyymm = `${prev.getUTCFullYear()}${String(prev.getUTCMonth() + 1).padStart(2, "0")}`;
           result.monthly_target = yyyymm;
@@ -116,7 +147,6 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
           } catch (e: any) {
             result.monthly_error = e.message;
           }
-          // 註：實際月結算邏輯較重，由管理員透過後台或下次擴充處理。
         }
 
         return new Response(JSON.stringify({ ok: true, ...result }), {
