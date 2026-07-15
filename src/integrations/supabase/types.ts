@@ -6120,6 +6120,7 @@ export type Database = {
       vip_daily_revenue_bonus_ledger: {
         Row: {
           allocated_amount: number
+          calculation_detail: Json
           cap_amount: number
           capped_amount: number
           created_at: string
@@ -6139,6 +6140,7 @@ export type Database = {
         }
         Insert: {
           allocated_amount?: number
+          calculation_detail?: Json
           cap_amount?: number
           capped_amount?: number
           created_at?: string
@@ -6158,6 +6160,7 @@ export type Database = {
         }
         Update: {
           allocated_amount?: number
+          calculation_detail?: Json
           cap_amount?: number
           capped_amount?: number
           created_at?: string
