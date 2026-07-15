@@ -15,7 +15,7 @@ import { BonusFiltersCard, type BonusFilters } from "@/components/admin/BonusFil
 import { DAILY_RULE_INTRO, bonusRuleMeta, vipStatusLabel, calculationNote } from "@/lib/bonus-rules";
 import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
 import { exportPdfReport } from "@/lib/pdf-report";
-import shopOgLogo from "@/assets/shop-share-logo-v2.jpg";
+import logo from "@/assets/logo.jpg";
 import { FileDown, FileText } from "lucide-react";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
