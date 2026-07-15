@@ -2112,3 +2112,79 @@ export const adminRunNationalBonusDistribution = createServerFn({ method: "POST"
 
     return summary;
   });
+
+/* ───────────── 全國分紅設定（STAR5~DIRECTOR）管理 ───────────── */
+const NATIONAL_TIER_ORDER = ["STAR5", "STAR6", "STAR7", "DIRECTOR"] as const;
+const WRITE_NATIONAL_ROLES = ["super_admin", "admin"];
+
+export const adminListNationalBonusPoolSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const { data, error } = await supabaseAdmin
+      .from("national_bonus_pool_settings")
+      .select("id, tier_code, pool_rate, income_cap_amount, is_active, effective_from, updated_at, created_at")
+      .in("tier_code", NATIONAL_TIER_ORDER as unknown as string[]);
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as any[];
+    rows.sort(
+      (a, b) =>
+        NATIONAL_TIER_ORDER.indexOf(a.tier_code) - NATIONAL_TIER_ORDER.indexOf(b.tier_code),
+    );
+    return rows;
+  });
+
+const updateNationalBonusSchema = z.object({
+  id: z.string().uuid("id 格式錯誤"),
+  pool_rate: z.number().finite().min(0, "分紅比例不可小於 0").max(1, "分紅比例不可大於 100%"),
+  income_cap_amount: z.number().finite().min(0, "累計收益上限不可小於 0"),
+  is_active: z.boolean(),
+  effective_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "生效日期格式錯誤"),
+});
+
+export const adminUpdateNationalBonusPoolSetting = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => updateNationalBonusSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, WRITE_NATIONAL_ROLES);
+
+    const { data: before, error: beforeErr } = await supabaseAdmin
+      .from("national_bonus_pool_settings")
+      .select("id, tier_code, pool_rate, income_cap_amount, is_active, effective_from")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (beforeErr) throw new Error(beforeErr.message);
+    if (!before) throw new Error("找不到該筆全國分紅設定");
+
+    const { data: updated, error } = await supabaseAdmin
+      .from("national_bonus_pool_settings")
+      .update({
+        pool_rate: data.pool_rate,
+        income_cap_amount: data.income_cap_amount,
+        is_active: data.is_active,
+        effective_from: data.effective_from,
+      })
+      .eq("id", data.id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin.from("audit_logs").insert({
+      user_id: context.userId,
+      action: "admin_update_national_bonus_pool_setting",
+      entity: "national_bonus_pool_settings",
+      entity_id: data.id,
+      metadata: {
+        tier_code: before.tier_code,
+        before,
+        after: {
+          pool_rate: data.pool_rate,
+          income_cap_amount: data.income_cap_amount,
+          is_active: data.is_active,
+          effective_from: data.effective_from,
+        },
+      },
+    });
+
+    return updated;
+  });
