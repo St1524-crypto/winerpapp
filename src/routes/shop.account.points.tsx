@@ -194,10 +194,10 @@ function PointsPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2 text-muted-foreground"><Gift className="h-4 w-4 text-warning" />獎勵點</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2 text-muted-foreground"><Gift className="h-4 w-4 text-warning" />貢獻點</CardTitle></CardHeader>
           <CardContent>
             {loading ? <Skeleton className="h-8 w-24" /> : <div className="text-3xl font-bold tabular-nums">{wallet.reward_points.toLocaleString()}</div>}
-            <p className="text-xs text-muted-foreground mt-1">購物 / 推廣回饋</p>
+            <p className="text-xs text-muted-foreground mt-1">VIP 獎金 / 推薦 / 消費分紅 / 營業分紅</p>
           </CardContent>
         </Card>
         <Card>
