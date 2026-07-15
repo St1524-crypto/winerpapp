@@ -42,6 +42,7 @@ export const DAILY_BONUS_TYPE_OPTIONS = [
   { value: "repurchase", label: BONUS_TYPE_LABEL.repurchase },
   { value: "business_bonus", label: BONUS_TYPE_LABEL.business_bonus },
   { value: "upgrade_bonus", label: BONUS_TYPE_LABEL.upgrade_bonus },
+  { value: "national_share", label: BONUS_TYPE_LABEL.national_share },
 ];
 
 export const MONTHLY_BONUS_TYPE_OPTIONS = [
