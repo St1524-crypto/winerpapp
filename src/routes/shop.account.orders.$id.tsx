@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package, MapPin, Lock, ExternalLink, Gift } from "lucide-react";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, SHIPPING_STATUS_LABELS, type SalesOrder, type SalesOrderItem } from "@/types/shop";
-import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
+import { resolveRewardNotice, REFERRER_FALLBACK_NOTE, type RewardTxRow } from "@/lib/checkout-reward-notice";
 import { useOrderRewardPreview } from "@/hooks/use-order-reward-preview";
 import { OrderRewardSummary } from "@/components/OrderRewardSummary";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
@@ -340,15 +340,41 @@ function OrderDetail() {
                 )}
                 <Separator className="my-2" />
                 <div className="flex justify-between font-semibold text-base"><span>總計</span><span className="tabular-nums text-primary">NT$ {Number(order.total_amount).toLocaleString()}</span></div>
-                {rewardPreview.breakdown && (
-                  <div className="mt-2">
-                    <OrderRewardSummary
-                      breakdown={rewardPreview.breakdown}
-                      issuedToBuyer={rewardIssuedBuyer}
-                      hasReferrerIssuance={hasReferrerIssuance}
-                    />
-                  </div>
-                )}
+                {(() => {
+                  const bd = rewardPreview.breakdown;
+                  const notice = resolveRewardNotice(rewardTx as RewardTxRow[]);
+                  // 若預覽計算不到推薦鏈（例如推薦人 profile 不在公開白名單），
+                  // 回退顯示既有的「發放至推薦人」說明文字，避免出現誤導性的「+ 0 點」。
+                  const referrerEmpty =
+                    bd?.kind === "referrer" && (bd.levels?.length ?? 0) === 0;
+                  if (!bd || referrerEmpty) {
+                    if (notice?.kind === "earn") {
+                      return (
+                        <div className="mt-2 rounded-md bg-amber-500/10 px-3 py-2 text-amber-500 text-sm flex justify-between">
+                          <span>本單發放獎勵點</span>
+                          <span className="tabular-nums font-semibold">+ {notice.points.toLocaleString()} 點</span>
+                        </div>
+                      );
+                    }
+                    if (notice?.kind === "referrer" || referrerEmpty) {
+                      return (
+                        <div className="mt-2 rounded-md bg-amber-500/10 px-3 py-2 text-amber-500 text-xs leading-relaxed">
+                          {notice?.note ?? REFERRER_FALLBACK_NOTE}
+                        </div>
+                      );
+                    }
+                    return null;
+                  }
+                  return (
+                    <div className="mt-2">
+                      <OrderRewardSummary
+                        breakdown={bd}
+                        issuedToBuyer={rewardIssuedBuyer}
+                        hasReferrerIssuance={hasReferrerIssuance}
+                      />
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
