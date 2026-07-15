@@ -302,6 +302,12 @@ function BonusOperationsPage() {
               月明細（分開/列印）
             </Link>
           </Button>
+          <Button asChild variant="outline">
+            <Link to="/admin/bonuses/national-share">
+              <Search className="mr-2 h-4 w-4" />
+              全國分紅 STAR5~DIRECTOR
+            </Link>
+          </Button>
           <Button variant="outline" onClick={loadData} disabled={loading || busy}>
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
             重新整理
