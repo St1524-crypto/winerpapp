@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const auth = requireCronSecret(request);
+        const auth = requireAnyCronSecret(request, "BONUS_DAILY_TICK_CRON_TOKEN");
         if (!auth.ok) return cronAuthErrorResponse(auth);
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
