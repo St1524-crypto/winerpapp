@@ -7334,6 +7334,20 @@ export type Database = {
           total_reward_points: number
         }[]
       }
+      distribute_national_bonus_v2: {
+        Args: { _daily_total_reward_points?: number; _settlement_date?: string }
+        Returns: {
+          blocked_count: number
+          distributed_count: number
+          distributed_points: number
+          eligible_count: number
+          pool_amount: number
+          pool_rate: number
+          settlement_date: string
+          skipped_count: number
+          tier_code: string
+        }[]
+      }
       distribute_vip_bonus_pool_daily: {
         Args: {
           _daily_total_reward_points?: number
