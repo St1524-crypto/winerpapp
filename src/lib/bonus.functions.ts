@@ -2054,3 +2054,61 @@ export const getBonusSummaryReport = createServerFn({ method: "POST" })
     };
   });
 
+
+/* ───────────── 全國分紅（STAR5~DIRECTOR）手動執行 ───────────── */
+const nationalBonusSchema = z.object({
+  settlementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "結算日期格式錯誤"),
+  dailyTotalRewardPoints: z.number().finite().positive("每日營業總獎勵點必須大於 0"),
+});
+
+export const adminRunNationalBonusDistribution = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => nationalBonusSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+
+    const { data: rpcRows, error } = await (supabaseAdmin as any).rpc("distribute_national_bonus_v2", {
+      _settlement_date: data.settlementDate,
+      _daily_total_reward_points: data.dailyTotalRewardPoints,
+    });
+    if (error) throw new Error(error.message);
+
+    const byTier = (rpcRows ?? []) as Array<{
+      settlement_date: string;
+      tier_code: string;
+      pool_rate: number;
+      pool_amount: number;
+      eligible_count: number;
+      distributed_count: number;
+      skipped_count: number;
+      blocked_count: number;
+      distributed_points: number;
+    }>;
+
+    const created_count = byTier.reduce((s, r) => s + Number(r.distributed_count ?? 0), 0);
+    const cancelled_count = byTier.reduce((s, r) => s + Number(r.blocked_count ?? 0), 0);
+    const skipped_count = byTier.reduce((s, r) => s + Number(r.skipped_count ?? 0), 0);
+    const total_distributed_points = byTier.reduce((s, r) => s + Number(r.distributed_points ?? 0), 0);
+
+    const summary = {
+      created_count,
+      cancelled_count,
+      skipped_count,
+      total_distributed_points,
+      by_tier: byTier,
+    };
+
+    await supabaseAdmin.from("audit_logs").insert({
+      user_id: context.userId,
+      action: "admin_run_national_bonus_distribution",
+      entity: "bonus_records",
+      entity_id: null,
+      metadata: {
+        settlement_date: data.settlementDate,
+        daily_total_reward_points: data.dailyTotalRewardPoints,
+        result: summary,
+      },
+    });
+
+    return summary;
+  });
