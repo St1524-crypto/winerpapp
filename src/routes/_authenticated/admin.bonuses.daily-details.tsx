@@ -37,16 +37,32 @@ function Page() {
   const [loading, setLoading] = useState(false);
   const [payload, setPayload] = useState<any>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (override?: Partial<BonusFilters>) => {
     setLoading(true);
     try {
+      const merged = { ...filters, ...(override ?? {}) };
       const p: any = { limit: 1000 };
-      Object.entries(filters).forEach(([k, v]) => { if (v) p[k] = v; });
+      Object.entries(merged).forEach(([k, v]) => { if (v) p[k] = v; });
       const res = await listDailyBonusDetails({ data: p });
       setPayload(res);
     } catch (e: any) { toast.error(e?.message ?? "查詢失敗"); }
     finally { setLoading(false); }
   }, [filters]);
+
+  function applyQuickDate(from: string, to: string) {
+    setFilters((f) => ({ ...f, dateFrom: from, dateTo: to }));
+    setPreset("custom");
+    load({ dateFrom: from, dateTo: to });
+  }
+
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  function yesterdayStr() {
+    const d = new Date(); d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
 
   useEffect(() => { load(); /* initial */ }, []);
 
