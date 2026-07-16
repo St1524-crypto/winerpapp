@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Building2, Users, Crown, CheckCircle2 } from "lucide-react";
+import { Building2, Users, Crown, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/cooperation/apply")({
   component: CooperationApplyPage,
