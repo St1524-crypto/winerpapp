@@ -26,6 +26,7 @@ export interface Product {
   image: string | null;
   reward_points: number;
   discount_points_max: number;
+  wholesale_only?: boolean;
   created_at: string;
   updated_at: string;
 }
