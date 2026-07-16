@@ -25,6 +25,9 @@ export function requireCronSecret(request: Request): CronAuthResult {
  * Accepts either CRON_SECRET or a caller-specific alternate token.
  * Used by bonus-daily-tick so pg_cron can carry a dedicated token
  * without sharing the general CRON_SECRET.
+ *
+ * pg_net / edge infrastructure can strip Authorization on public hooks, so
+ * callers may also provide the raw token through x-cron-secret.
  */
 export function requireAnyCronSecret(
   request: Request,
@@ -37,11 +40,16 @@ export function requireAnyCronSecret(
   }
 
   const authHeader = request.headers.get("authorization");
-  if (!authHeader?.toLowerCase().startsWith("bearer ")) {
+  const bearerToken = authHeader?.toLowerCase().startsWith("bearer ")
+    ? authHeader.slice("bearer ".length).trim()
+    : "";
+  const customHeaderToken = request.headers.get("x-cron-secret")?.trim() ?? "";
+  const token = bearerToken || customHeaderToken;
+
+  if (!token) {
     return { ok: false, status: 401, body: { ok: false, reason: "missing_bearer_token" } };
   }
 
-  const token = authHeader.slice("bearer ".length).trim();
   if ((primary && token === primary) || (alternate && token === alternate)) {
     return { ok: true };
   }
