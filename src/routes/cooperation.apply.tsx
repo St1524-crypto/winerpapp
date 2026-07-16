@@ -35,13 +35,13 @@ function CooperationApplyPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center px-4 py-16">
+      <div className="min-h-[70vh] flex items-center justify-center px-4 py-10 md:py-16">
         <Card className="max-w-lg w-full text-center">
           <CardContent className="pt-10 pb-8 space-y-4">
             <CheckCircle2 className="w-16 h-16 text-primary mx-auto" />
             <h1 className="text-2xl font-bold">申請已送出</h1>
             <p className="text-muted-foreground">源晶團隊將儘快與您聯繫。</p>
-            <Button asChild variant="outline" className="mt-4">
+            <Button asChild variant="outline" size="lg" className="mt-4 w-full sm:w-auto">
               <Link to="/shop">返回首頁</Link>
             </Button>
           </CardContent>
@@ -51,16 +51,16 @@ function CooperationApplyPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10 md:py-16">
-      <header className="text-center mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold mb-3">與源晶生技合作</h1>
-        <p className="text-muted-foreground text-base md:text-lg">
+    <div className="max-w-5xl mx-auto px-4 py-6 md:py-16 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <header className="text-center mb-6 md:mb-10">
+        <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3">與源晶生技合作</h1>
+        <p className="text-muted-foreground text-sm md:text-lg px-2">
           選擇適合您的合作方式，讓我們協助您建立健康事業。
         </p>
       </header>
 
       {!type && (
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           <TypeCard
             icon={Building2}
             title="經銷商合作"
@@ -107,11 +107,14 @@ function TypeCard({
   return (
     <button
       onClick={onClick}
-      className="text-left group border rounded-xl p-6 hover:border-primary hover:shadow-lg transition-all bg-card"
+      className="text-left group border rounded-2xl p-5 md:p-6 hover:border-primary hover:shadow-lg active:scale-[0.98] transition-all bg-card touch-manipulation flex md:block items-center gap-4"
     >
-      <Icon className="w-10 h-10 text-primary mb-4" />
-      <h3 className="text-xl font-semibold mb-2 group-hover:text-primary">{title}</h3>
-      <p className="text-sm text-muted-foreground">{desc}</p>
+      <Icon className="w-10 h-10 md:w-10 md:h-10 text-primary shrink-0 md:mb-4" />
+      <div className="flex-1 min-w-0">
+        <h3 className="text-lg md:text-xl font-semibold mb-1 md:mb-2 group-hover:text-primary">{title}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-none">{desc}</p>
+      </div>
+      <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 md:hidden" />
     </button>
   );
 }
