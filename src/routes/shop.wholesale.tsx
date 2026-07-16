@@ -32,21 +32,13 @@ function WholesaleArea() {
   const { user, loading: authLoading } = useAuth();
   const { is_vip, loading: vipLoading } = useVipStatus();
   const { isDealer, loaded: dealerLoaded } = useDealerStatus();
-  const navigate = useNavigate();
   const [list, setList] = useState<WholesaleProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const canAccess = is_vip || isDealer;
+  const canAccess = !!user && (is_vip || isDealer);
   const gatesReady = !authLoading && (!user || (!vipLoading && dealerLoaded));
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate({ to: "/login" });
-    }
-  }, [authLoading, user, navigate]);
-
-  // 非 VIP / 非經銷商不再自動跳轉，改為顯示藝術提示頁
-
+  // 未登入訪客 / 非 VIP / 非經銷商都顯示藝術提示頁，不再自動跳轉
 
   useEffect(() => {
     if (!user || !gatesReady || !canAccess) return;
@@ -83,7 +75,7 @@ function WholesaleArea() {
     })();
   }, [user, gatesReady, canAccess]);
 
-  if (authLoading || !user || !gatesReady) {
+  if (authLoading || (user && !gatesReady)) {
     return <div className="container mx-auto px-4 py-16 text-center text-muted-foreground">驗證會員身分…</div>;
   }
 
