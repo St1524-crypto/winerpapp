@@ -55,7 +55,8 @@ export const listHomepageFeatured = createServerFn({ method: "GET" }).handler(as
     .from("products")
     .select(PRODUCT_COLS)
     .in("id", ids)
-    .eq("status", "active");
+    .eq("status", "active")
+    .eq("wholesale_only", false);
   const map = new Map((prods ?? []).map((p: any) => [p.id, p]));
   const items = (feats ?? [])
     .map((f: any) => ({ ...f, product: map.get(f.product_id) }))

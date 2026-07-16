@@ -38,6 +38,7 @@ const empty = {
   reward_points: 0, discount_points_max: 0,
   display_priority: 0,
   status: "inactive", featured: false,
+  wholesale_only: false,
   specs: [] as SpecOption[],
   tiers: [] as WholesaleTier[],
 };
@@ -63,6 +64,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         discount_points_max: Number((product as any).discount_points_max ?? 0),
         display_priority: Number((product as any).display_priority ?? 0),
         status: product.status, featured: product.featured,
+        wholesale_only: Boolean((product as any).wholesale_only ?? false),
         specs: Array.isArray((product as any).specs) ? ((product as any).specs as SpecOption[]) : [],
         tiers: [],
       });
@@ -132,6 +134,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         discount_points_max: Math.max(0, Math.floor(Number(form.discount_points_max) || 0)),
         display_priority: Math.floor(Number(form.display_priority) || 0),
         status: effectiveStatus, featured: form.featured,
+        wholesale_only: !!form.wholesale_only,
         image: images[0]?.url ?? null,
         specs: form.specs
           .filter((s) => s.label.trim())
@@ -575,6 +578,14 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                   <div className="text-xs text-muted-foreground">將顯示於首頁推薦</div>
                 </div>
                 <Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} />
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-border p-3 sm:col-span-2">
+                <div>
+                  <div className="font-medium text-sm">只在批發專區顯示</div>
+                  <div className="text-xs text-muted-foreground">開啟後，此商品不會出現在首頁與全部商品，只會出現在批發專區。</div>
+                </div>
+                <Switch checked={form.wholesale_only} onCheckedChange={(v) => setForm({ ...form, wholesale_only: v })} />
               </div>
             </div>
           </TabsContent>

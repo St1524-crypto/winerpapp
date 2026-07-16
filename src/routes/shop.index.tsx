@@ -11,7 +11,7 @@ import { ArrowRight, Sparkles, Flame, Tag, Gift, Truck, Crown, Coins } from "luc
 import type { Product, Category } from "@/types/product";
 
 const SHOP_HOME_PRODUCT_COLUMNS =
-  "id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs";
+  "id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs, wholesale_only";
 
 const SECTION_META: Record<string, { title: string; desc: string; icon: any }> = {
   limited_offer: { title: "限時特惠區", desc: "期間限定優惠與多件活動", icon: Flame },
@@ -58,8 +58,8 @@ function ShopHome() {
   useEffect(() => {
     (async () => {
       const [f, l, c] = await Promise.all([
-        supabase.from("products").select(SHOP_HOME_PRODUCT_COLUMNS).eq("status", "active").eq("featured", true).limit(8),
-        supabase.from("products").select(SHOP_HOME_PRODUCT_COLUMNS).eq("status", "active").order("display_priority", { ascending: false }).order("created_at", { ascending: false }).limit(8),
+        supabase.from("products").select(SHOP_HOME_PRODUCT_COLUMNS).eq("status", "active").eq("wholesale_only", false).eq("featured", true).limit(8),
+        supabase.from("products").select(SHOP_HOME_PRODUCT_COLUMNS).eq("status", "active").eq("wholesale_only", false).order("display_priority", { ascending: false }).order("created_at", { ascending: false }).limit(8),
         supabase.from("categories").select("*").eq("status", "active").order("sort_order").limit(8),
       ]);
       setFeatured(toProducts(f.data ?? []));

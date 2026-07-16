@@ -12,7 +12,7 @@ import { Search } from "lucide-react";
 import type { Product, Category } from "@/types/product";
 
 const SHOP_PRODUCTS_COLUMNS =
-  "id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs";
+  "id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs, wholesale_only";
 
 const SECTION_LABELS: Record<string, string> = {
   limited_offer: "限時特惠區",
@@ -79,7 +79,7 @@ function ProductsList() {
         return;
       }
 
-      let qb = supabase.from("products").select(SHOP_PRODUCTS_COLUMNS).eq("status", "active");
+      let qb = supabase.from("products").select(SHOP_PRODUCTS_COLUMNS).eq("status", "active").eq("wholesale_only", false);
       if (sectionProductIds.length) qb = qb.in("id", sectionProductIds);
       if (search.q) qb = qb.or(`name.ilike.%${search.q}%,sku.ilike.%${search.q}%`);
       if (search.cat) qb = qb.eq("category_id", search.cat);
