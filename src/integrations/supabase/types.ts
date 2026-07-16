@@ -3710,6 +3710,7 @@ export type Database = {
           status: string
           stock: number
           updated_at: string
+          wholesale_only: boolean
           wholesale_price: number
         }
         Insert: {
@@ -3734,6 +3735,7 @@ export type Database = {
           status?: string
           stock?: number
           updated_at?: string
+          wholesale_only?: boolean
           wholesale_price?: number
         }
         Update: {
@@ -3758,6 +3760,7 @@ export type Database = {
           status?: string
           stock?: number
           updated_at?: string
+          wholesale_only?: boolean
           wholesale_price?: number
         }
         Relationships: [

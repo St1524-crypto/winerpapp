@@ -1,0 +1,2 @@
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS wholesale_only boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_products_status_wholesale_only ON public.products (status, wholesale_only);
