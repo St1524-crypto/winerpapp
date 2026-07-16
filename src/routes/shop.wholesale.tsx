@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Package, Sparkles, Lock } from "lucide-react";
-import { toast } from "sonner";
+
 import type { Product, WholesaleTier } from "@/types/product";
 
 export const Route = createFileRoute("/shop/wholesale")({
@@ -45,15 +45,8 @@ function WholesaleArea() {
     }
   }, [authLoading, user, navigate]);
 
-  useEffect(() => {
-    if (!gatesReady || !user) return;
-    if (!canAccess) {
-      toast.info("申請合作成功才能進入批發專區");
-      if (typeof window !== "undefined") {
-        window.location.href = "https://winerp.app/cooperation/apply";
-      }
-    }
-  }, [gatesReady, user, canAccess, navigate]);
+  // 非 VIP / 非經銷商不再自動跳轉，改為顯示藝術提示頁
+
 
   useEffect(() => {
     if (!user || !gatesReady || !canAccess) return;
@@ -96,24 +89,48 @@ function WholesaleArea() {
 
   if (!canAccess) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-xl">
-        <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-8 text-center space-y-4">
-          <div className="h-14 w-14 mx-auto rounded-xl bg-primary/15 grid place-items-center text-primary">
-            <Lock className="h-7 w-7" />
+      <div className="relative min-h-[80vh] overflow-hidden flex items-center justify-center px-4 py-16">
+        {/* 藝術背景 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-primary/10" />
+        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-primary/30 blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -right-32 h-[28rem] w-[28rem] rounded-full bg-amber-400/20 blur-3xl animate-pulse" />
+        <div className="absolute top-1/3 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-fuchsia-400/10 blur-3xl" />
+
+        <div className="relative z-10 max-w-3xl w-full text-center space-y-8">
+          <div className="mx-auto h-20 w-20 rounded-2xl bg-gradient-to-br from-primary to-amber-500 grid place-items-center text-primary-foreground shadow-2xl shadow-primary/40">
+            <Lock className="h-10 w-10" />
           </div>
-          <h1 className="text-xl md:text-2xl font-bold">VIP / 經銷商採購專區</h1>
-          <p className="text-sm text-muted-foreground">
-            本專區僅開放 <b>VIP 會員</b> 或 <b>經銷商</b> 進入，可查看批發階梯價並享有額外獎勵點。
+
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-tight bg-gradient-to-br from-primary via-foreground to-primary/70 bg-clip-text text-transparent">
+              批發專區
+              <br />
+              專屬合作夥伴
+            </h1>
+            <p className="text-lg md:text-2xl font-semibold text-foreground/80">
+              請先申請成為 <span className="text-primary">VIP 會員</span> 或 <span className="text-primary">經銷商</span>
+              <br className="hidden md:block" />
+              才可進入批發專區
+            </p>
+          </div>
+
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button asChild size="lg" className="text-base px-8 h-12 shadow-xl shadow-primary/30">
+              <a href="https://winerp.app/cooperation/apply">立即申請合作</a>
+            </Button>
+            <Button asChild size="lg" variant="ghost" className="text-base h-12">
+              <Link to="/shop">返回商城</Link>
+            </Button>
+          </div>
+
+          <p className="text-xs md:text-sm text-muted-foreground pt-6">
+            申請網址：<span className="font-mono text-foreground/70">https://winerp.app/cooperation/apply</span>
           </p>
-          <div className="flex flex-wrap gap-2 justify-center pt-2">
-            <Button asChild><Link to="/shop/vip">升級 VIP</Link></Button>
-            <Button asChild variant="outline"><Link to="/cooperation/apply">申請成為經銷商</Link></Button>
-            <Button asChild variant="ghost"><Link to="/shop">回到商城</Link></Button>
-          </div>
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-10 space-y-6">
