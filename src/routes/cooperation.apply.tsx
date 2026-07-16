@@ -264,7 +264,10 @@ function ApplicationForm({
               <Field label="銷售平台">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {SALES_PLATFORMS.map((p) => (
-                    <label key={p} className="flex items-center gap-2 text-sm">
+                    <label
+                      key={p}
+                      className="flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2.5 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 active:scale-[0.98] transition"
+                    >
                       <Checkbox
                         checked={form.sales_channels?.includes(p)}
                         onCheckedChange={() => toggleArr("sales_channels", p)}
