@@ -224,10 +224,10 @@ function ApplicationForm({
 
           <div className="grid md:grid-cols-2 gap-4">
             <Field label="聯絡電話" required>
-              <Input value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
+              <Input type="tel" inputMode="tel" autoComplete="tel" value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
             </Field>
             <Field label="Email" required>
-              <Input type="email" value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} />
+              <Input type="email" inputMode="email" autoComplete="email" value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} />
             </Field>
           </div>
 
