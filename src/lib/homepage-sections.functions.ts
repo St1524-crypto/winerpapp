@@ -6,7 +6,7 @@ const ADMIN_ROLES = ["super_admin", "admin"] as const;
 const SECTION_TYPES = ["limited_offer", "bundle", "featured", "best_seller", "new_arrival"] as const;
 
 const SAFE_PRODUCT_COLUMNS =
-  "id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs";
+  "id, sku, name, category, price, stock, image, created_at, short_description, description, category_id, safe_stock, status, featured, updated_at, company_id, reward_points, discount_points_max, specs, wholesale_only";
 
 const jsonRecord = z.record(z.unknown());
 const optionalTimestamp = z.string().trim().min(1).max(80).nullable().optional();
@@ -107,9 +107,10 @@ function pickProduct(row: SectionProductRow): ProductRow | null {
   return (source ?? null) as ProductRow | null;
 }
 
-function normalizeSectionProduct(row: SectionProductRow) {
+function normalizeSectionProduct(row: SectionProductRow, excludeWholesaleOnly = false) {
   const product = pickProduct(row);
   if (!product?.id || product.status !== "active") return null;
+  if (excludeWholesaleOnly && (product as any).wholesale_only === true) return null;
 
   return {
     id: row.id,
@@ -149,9 +150,12 @@ async function loadSectionProducts(sectionIds: string[], includeInactive = false
   const { data, error } = await query;
   if (error) throw new Error(error.message);
 
+  // Public callers (includeInactive=false) must not surface wholesale-only products
+  const excludeWholesaleOnly = !includeInactive;
+
   const grouped = new Map<string, ReturnType<typeof normalizeSectionProduct>[]>();
   for (const row of (data ?? []) as SectionProductRow[]) {
-    const normalized = normalizeSectionProduct(row);
+    const normalized = normalizeSectionProduct(row, excludeWholesaleOnly);
     if (!normalized) continue;
     const list = grouped.get(row.section_id) ?? [];
     list.push(normalized);
