@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Building2, Users, Crown, CheckCircle2 } from "lucide-react";
+import { Building2, Users, Crown, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/cooperation/apply")({
   component: CooperationApplyPage,
@@ -35,13 +35,13 @@ function CooperationApplyPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center px-4 py-16">
+      <div className="min-h-[70vh] flex items-center justify-center px-4 py-10 md:py-16">
         <Card className="max-w-lg w-full text-center">
           <CardContent className="pt-10 pb-8 space-y-4">
             <CheckCircle2 className="w-16 h-16 text-primary mx-auto" />
             <h1 className="text-2xl font-bold">申請已送出</h1>
             <p className="text-muted-foreground">源晶團隊將儘快與您聯繫。</p>
-            <Button asChild variant="outline" className="mt-4">
+            <Button asChild variant="outline" size="lg" className="mt-4 w-full sm:w-auto">
               <Link to="/shop">返回首頁</Link>
             </Button>
           </CardContent>
@@ -51,16 +51,16 @@ function CooperationApplyPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10 md:py-16">
-      <header className="text-center mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold mb-3">與源晶生技合作</h1>
-        <p className="text-muted-foreground text-base md:text-lg">
+    <div className="max-w-5xl mx-auto px-4 py-6 md:py-16 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <header className="text-center mb-6 md:mb-10">
+        <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3">與源晶生技合作</h1>
+        <p className="text-muted-foreground text-sm md:text-lg px-2">
           選擇適合您的合作方式，讓我們協助您建立健康事業。
         </p>
       </header>
 
       {!type && (
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           <TypeCard
             icon={Building2}
             title="經銷商合作"
@@ -107,11 +107,14 @@ function TypeCard({
   return (
     <button
       onClick={onClick}
-      className="text-left group border rounded-xl p-6 hover:border-primary hover:shadow-lg transition-all bg-card"
+      className="text-left group border rounded-2xl p-5 md:p-6 hover:border-primary hover:shadow-lg active:scale-[0.98] transition-all bg-card touch-manipulation flex md:block items-center gap-4"
     >
-      <Icon className="w-10 h-10 text-primary mb-4" />
-      <h3 className="text-xl font-semibold mb-2 group-hover:text-primary">{title}</h3>
-      <p className="text-sm text-muted-foreground">{desc}</p>
+      <Icon className="w-10 h-10 md:w-10 md:h-10 text-primary shrink-0 md:mb-4" />
+      <div className="flex-1 min-w-0">
+        <h3 className="text-lg md:text-xl font-semibold mb-1 md:mb-2 group-hover:text-primary">{title}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-none">{desc}</p>
+      </div>
+      <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0 md:hidden" />
     </button>
   );
 }
@@ -171,17 +174,19 @@ function ApplicationForm({
   };
 
   return (
-    <Card className="max-w-3xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>{titles[type]}</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onBack}>
+    <Card className="max-w-3xl mx-auto border-0 shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card">
+      <CardHeader className="px-0 sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2 h-9 px-2 gap-1 text-muted-foreground">
+            <ChevronLeft className="h-4 w-4" />
             重新選擇
           </Button>
+          <CardTitle className="text-lg md:text-xl">{titles[type]}</CardTitle>
+          <span className="w-16" aria-hidden />
         </div>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <CardContent className="px-0 sm:px-6">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-24 md:pb-4">
           {/* honeypot */}
           <input
             type="text"
@@ -219,10 +224,10 @@ function ApplicationForm({
 
           <div className="grid md:grid-cols-2 gap-4">
             <Field label="聯絡電話" required>
-              <Input value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
+              <Input type="tel" inputMode="tel" autoComplete="tel" value={form.phone ?? ""} onChange={(e) => set("phone", e.target.value)} />
             </Field>
             <Field label="Email" required>
-              <Input type="email" value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} />
+              <Input type="email" inputMode="email" autoComplete="email" value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} />
             </Field>
           </div>
 
@@ -259,7 +264,10 @@ function ApplicationForm({
               <Field label="銷售平台">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {SALES_PLATFORMS.map((p) => (
-                    <label key={p} className="flex items-center gap-2 text-sm">
+                    <label
+                      key={p}
+                      className="flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2.5 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 active:scale-[0.98] transition"
+                    >
                       <Checkbox
                         checked={form.sales_channels?.includes(p)}
                         onCheckedChange={() => toggleArr("sales_channels", p)}
@@ -287,12 +295,12 @@ function ApplicationForm({
                 <RadioGroup
                   value={form.has_referrer ? "yes" : "no"}
                   onValueChange={(v) => set("has_referrer", v === "yes")}
-                  className="flex gap-6"
+                  className="grid grid-cols-2 gap-2"
                 >
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center justify-center gap-2 rounded-lg border border-input bg-background px-3 py-2.5 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 active:scale-[0.98] transition text-sm">
                     <RadioGroupItem value="yes" /> 有
                   </label>
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center justify-center gap-2 rounded-lg border border-input bg-background px-3 py-2.5 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 active:scale-[0.98] transition text-sm">
                     <RadioGroupItem value="no" /> 無
                   </label>
                 </RadioGroup>
@@ -305,7 +313,10 @@ function ApplicationForm({
               <Field label="想了解項目">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {VIP_TOPICS.map((p) => (
-                    <label key={p} className="flex items-center gap-2 text-sm">
+                    <label
+                      key={p}
+                      className="flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2.5 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 active:scale-[0.98] transition"
+                    >
                       <Checkbox
                         checked={form.interested_topics?.includes(p)}
                         onCheckedChange={() => toggleArr("interested_topics", p)}
@@ -322,8 +333,16 @@ function ApplicationForm({
             <Textarea value={form.note ?? ""} onChange={(e) => set("note", e.target.value)} rows={4} />
           </Field>
 
-          <div className="flex justify-end pt-2">
+          {/* Desktop submit */}
+          <div className="hidden md:flex justify-end pt-2">
             <Button type="submit" disabled={loading} size="lg">
+              {loading ? "送出中…" : "送出申請"}
+            </Button>
+          </div>
+
+          {/* Mobile sticky submit bar */}
+          <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <Button type="submit" disabled={loading} size="lg" className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/20">
               {loading ? "送出中…" : "送出申請"}
             </Button>
           </div>
