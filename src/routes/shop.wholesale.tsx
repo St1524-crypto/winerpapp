@@ -45,15 +45,8 @@ function WholesaleArea() {
     }
   }, [authLoading, user, navigate]);
 
-  useEffect(() => {
-    if (!gatesReady || !user) return;
-    if (!canAccess) {
-      toast.info("申請合作成功才能進入批發專區");
-      if (typeof window !== "undefined") {
-        window.location.href = "https://winerp.app/cooperation/apply";
-      }
-    }
-  }, [gatesReady, user, canAccess, navigate]);
+  // 非 VIP / 非經銷商不再自動跳轉，改為顯示藝術提示頁
+
 
   useEffect(() => {
     if (!user || !gatesReady || !canAccess) return;
