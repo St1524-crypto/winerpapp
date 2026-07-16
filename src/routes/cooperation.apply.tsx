@@ -347,7 +347,6 @@ function ApplicationForm({
             </Button>
           </div>
         </form>
-        </form>
       </CardContent>
     </Card>
   );
