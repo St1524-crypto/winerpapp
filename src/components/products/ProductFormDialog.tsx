@@ -176,15 +176,25 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         await supabase.from("product_wholesale_tiers" as any).delete().eq("product_id", productId);
         const validTiers = form.tiers
           .filter((t) => Number(t.min_qty) >= 1 && Number(t.unit_price) >= 0)
-          .map((t, i) => ({
-            product_id: productId!,
-            min_qty: Math.max(1, Math.floor(Number(t.min_qty) || 1)),
-            max_qty: t.max_qty == null || t.max_qty === ("" as any) ? null : Math.max(1, Math.floor(Number(t.max_qty))),
-            unit_price: Number(t.unit_price) || 0,
-            unit_reward_points: Math.max(0, Math.floor(Number(t.unit_reward_points) || 0)),
-            sort_order: i,
-            visibility: (t.visibility ?? "all"),
-          }));
+          .map((t, i) => {
+            const min_qty = Math.max(1, Math.floor(Number(t.min_qty) || 1));
+            const max_qty = t.max_qty == null || t.max_qty === ("" as any) ? null : Math.max(1, Math.floor(Number(t.max_qty)));
+            return {
+              product_id: productId!,
+              min_qty,
+              max_qty,
+              unit_price: Number(t.unit_price) || 0,
+              unit_reward_points: Math.max(0, Math.floor(Number(t.unit_reward_points) || 0)),
+              sort_order: i,
+              visibility: (t.visibility ?? "all"),
+            };
+          });
+        const badTier = validTiers.find((t) => t.max_qty != null && t.max_qty < t.min_qty);
+        if (badTier) {
+          toast.error(`階梯價設定錯誤：最大數量 (${badTier.max_qty}) 不可小於最小數量 (${badTier.min_qty})，或將最大數量留空表示無上限`);
+          setSaving(false);
+          return;
+        }
         if (validTiers.length) {
           const { error: tErr } = await supabase.from("product_wholesale_tiers" as any).insert(validTiers);
           if (tErr) throw tErr;
