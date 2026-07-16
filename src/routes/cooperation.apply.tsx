@@ -174,17 +174,19 @@ function ApplicationForm({
   };
 
   return (
-    <Card className="max-w-3xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>{titles[type]}</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onBack}>
+    <Card className="max-w-3xl mx-auto border-0 shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card">
+      <CardHeader className="px-0 sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2 h-9 px-2 gap-1 text-muted-foreground">
+            <ChevronLeft className="h-4 w-4" />
             重新選擇
           </Button>
+          <CardTitle className="text-lg md:text-xl">{titles[type]}</CardTitle>
+          <span className="w-16" aria-hidden />
         </div>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <CardContent className="px-0 sm:px-6">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-24 md:pb-4">
           {/* honeypot */}
           <input
             type="text"
