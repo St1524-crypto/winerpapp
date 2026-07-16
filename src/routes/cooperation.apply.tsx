@@ -295,12 +295,12 @@ function ApplicationForm({
                 <RadioGroup
                   value={form.has_referrer ? "yes" : "no"}
                   onValueChange={(v) => set("has_referrer", v === "yes")}
-                  className="flex gap-6"
+                  className="grid grid-cols-2 gap-2"
                 >
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center justify-center gap-2 rounded-lg border border-input bg-background px-3 py-2.5 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 active:scale-[0.98] transition text-sm">
                     <RadioGroupItem value="yes" /> 有
                   </label>
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center justify-center gap-2 rounded-lg border border-input bg-background px-3 py-2.5 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 active:scale-[0.98] transition text-sm">
                     <RadioGroupItem value="no" /> 無
                   </label>
                 </RadioGroup>
@@ -313,7 +313,10 @@ function ApplicationForm({
               <Field label="想了解項目">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {VIP_TOPICS.map((p) => (
-                    <label key={p} className="flex items-center gap-2 text-sm">
+                    <label
+                      key={p}
+                      className="flex items-center gap-2 text-sm rounded-lg border border-input bg-background px-3 py-2.5 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5 active:scale-[0.98] transition"
+                    >
                       <Checkbox
                         checked={form.interested_topics?.includes(p)}
                         onCheckedChange={() => toggleArr("interested_topics", p)}
@@ -330,11 +333,20 @@ function ApplicationForm({
             <Textarea value={form.note ?? ""} onChange={(e) => set("note", e.target.value)} rows={4} />
           </Field>
 
-          <div className="flex justify-end pt-2">
+          {/* Desktop submit */}
+          <div className="hidden md:flex justify-end pt-2">
             <Button type="submit" disabled={loading} size="lg">
               {loading ? "送出中…" : "送出申請"}
             </Button>
           </div>
+
+          {/* Mobile sticky submit bar */}
+          <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <Button type="submit" disabled={loading} size="lg" className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/20">
+              {loading ? "送出中…" : "送出申請"}
+            </Button>
+          </div>
+        </form>
         </form>
       </CardContent>
     </Card>
