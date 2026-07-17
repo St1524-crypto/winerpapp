@@ -61,7 +61,7 @@ function Overview() {
         <CardContent>
           {recent.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm">
-              尚無訂單 — <Link to="/shop/products" className="text-primary hover:underline">前往購物</Link>
+              尚無訂單 — <Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="text-primary hover:underline">前往購物</Link>
             </div>
           ) : (
             <div className="space-y-2">
