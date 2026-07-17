@@ -85,6 +85,7 @@ function RootComponent() {
           <CompanyProvider>
             <BrandingProvider>
               <Outlet />
+              <LineContactButton />
               <Toaster richColors position="top-right" />
             </BrandingProvider>
           </CompanyProvider>
