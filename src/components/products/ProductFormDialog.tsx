@@ -171,9 +171,8 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
         }
       }
 
-      // Sync wholesale tiers: delete-then-insert
+      // Sync wholesale tiers: validate first, then delete-then-insert
       if (productId) {
-        await supabase.from("product_wholesale_tiers" as any).delete().eq("product_id", productId);
         const validTiers = form.tiers
           .filter((t) => Number(t.min_qty) >= 1 && Number(t.unit_price) >= 0)
           .map((t, i) => {
@@ -195,6 +194,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
           setSaving(false);
           return;
         }
+        await supabase.from("product_wholesale_tiers" as any).delete().eq("product_id", productId);
         if (validTiers.length) {
           const { error: tErr } = await supabase.from("product_wholesale_tiers" as any).insert(validTiers);
           if (tErr) throw tErr;
