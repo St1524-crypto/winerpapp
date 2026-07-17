@@ -4,8 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   listWebhookEndpoints, createWebhookEndpoint, updateWebhookEndpoint,
-  deleteWebhookEndpoint, rerollWebhookToken, listWebhookDeliveries,
+  deleteWebhookEndpoint, rerollWebhookToken, listWebhookDeliveries, revealWebhookToken,
 } from "@/lib/webhooks.functions";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,14 +27,18 @@ function WebhooksAdmin() {
   const upd = useServerFn(updateWebhookEndpoint);
   const del = useServerFn(deleteWebhookEndpoint);
   const reroll = useServerFn(rerollWebhookToken);
+  const reveal = useServerFn(revealWebhookToken);
   const listDel = useServerFn(listWebhookDeliveries);
+
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: ["webhooks"], queryFn: () => list() });
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [selectedEvents, setSelectedEvents] = useState<string[]>([...EVENTS]);
   const [showDeliveries, setShowDeliveries] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState<Record<string, string>>({});
   const { data: delData } = useQuery({
+
     queryKey: ["webhook-del", showDeliveries],
     queryFn: () => listDel({ data: { endpointId: showDeliveries! } }),
     enabled: !!showDeliveries,
@@ -41,12 +46,19 @@ function WebhooksAdmin() {
 
   async function handleCreate() {
     try {
-      await create({ data: { name, url, events: selectedEvents as any } });
-      toast.success("已建立");
+      const r: any = await create({ data: { name, url, events: selectedEvents as any } });
+      const tok = r?.endpoint?.bearer_token;
+      if (tok) {
+        setRevealed((s) => ({ ...s, [r.endpoint.id]: tok }));
+        toast.success("已建立，Token 僅此顯示一次，請立即複製");
+      } else {
+        toast.success("已建立");
+      }
       setName(""); setUrl("");
       qc.invalidateQueries({ queryKey: ["webhooks"] });
     } catch (e: any) { toast.error(e.message); }
   }
+
 
   return (
     <div className="space-y-4 max-w-5xl">
@@ -88,10 +100,12 @@ function WebhooksAdmin() {
                     qc.invalidateQueries({ queryKey: ["webhooks"] });
                   }}>{ep.active ? "停用" : "啟用"}</Button>
                   <Button size="sm" variant="outline" onClick={async () => {
-                    const r = await reroll({ data: { id: ep.id } });
-                    toast.success("已重新產生 Token");
+                    const r: any = await reroll({ data: { id: ep.id } });
+                    setRevealed((s) => ({ ...s, [ep.id]: r.token }));
+                    toast.success("已重新產生，Token 僅此顯示一次");
                     qc.invalidateQueries({ queryKey: ["webhooks"] });
                   }}><RefreshCw className="h-3 w-3" /></Button>
+
                   <Button size="sm" variant="outline" onClick={() => setShowDeliveries(showDeliveries === ep.id ? null : ep.id)}>紀錄</Button>
                   <Button size="sm" variant="destructive" onClick={async () => {
                     if (!confirm("確定刪除？")) return;
@@ -101,10 +115,30 @@ function WebhooksAdmin() {
                 </div>
               </div>
               <div className="text-xs">事件：{ep.events.join(", ")}</div>
-              <div className="text-xs">
+              <div className="text-xs flex items-center gap-2 flex-wrap">
                 <span className="text-muted-foreground">Bearer Token：</span>
-                <code className="bg-muted px-2 py-0.5 rounded">{ep.bearer_token}</code>
+                <code className="bg-muted px-2 py-0.5 rounded break-all">
+                  {revealed[ep.id] ?? ep.token_masked ?? ""}
+                </code>
+                {revealed[ep.id] ? (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      navigator.clipboard.writeText(revealed[ep.id]); toast.success("已複製");
+                    }}>複製</Button>
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      setRevealed((s) => { const n = { ...s }; delete n[ep.id]; return n; });
+                    }}>隱藏</Button>
+                  </>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={async () => {
+                    try {
+                      const r: any = await reveal({ data: { id: ep.id } });
+                      setRevealed((s) => ({ ...s, [ep.id]: r.token }));
+                    } catch (e: any) { toast.error(e.message); }
+                  }}>顯示</Button>
+                )}
               </div>
+
               {showDeliveries === ep.id && (
                 <div className="bg-muted/50 p-2 rounded text-xs space-y-1 max-h-64 overflow-y-auto">
                   {(delData?.deliveries ?? []).map((d: any) => (
