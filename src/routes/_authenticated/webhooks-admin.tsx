@@ -36,7 +36,9 @@ function WebhooksAdmin() {
   const [url, setUrl] = useState("");
   const [selectedEvents, setSelectedEvents] = useState<string[]>([...EVENTS]);
   const [showDeliveries, setShowDeliveries] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState<Record<string, string>>({});
   const { data: delData } = useQuery({
+
     queryKey: ["webhook-del", showDeliveries],
     queryFn: () => listDel({ data: { endpointId: showDeliveries! } }),
     enabled: !!showDeliveries,
