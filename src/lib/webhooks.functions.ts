@@ -54,10 +54,29 @@ export const listWebhookEndpoints = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await requireAdmin(context.supabase);
     const { data, error } = await context.supabase
-      .from("webhook_endpoints").select("*").order("created_at", { ascending: false });
+      .from("webhook_endpoints")
+      .select("id,name,url,events,active,company_id,created_at,bearer_token")
+      .order("created_at", { ascending: false });
     if (error) throw error;
-    return { endpoints: data ?? [] };
+    const endpoints = (data ?? []).map((ep: any) => {
+      const t: string = ep.bearer_token ?? "";
+      const { bearer_token, ...rest } = ep;
+      return { ...rest, token_last4: t.slice(-4), token_masked: t ? `••••${t.slice(-4)}` : "" };
+    });
+    return { endpoints };
   });
+
+export const revealWebhookToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context.supabase);
+    const { data: row, error } = await context.supabase
+      .from("webhook_endpoints").select("bearer_token").eq("id", data.id).single();
+    if (error) throw error;
+    return { token: row.bearer_token as string };
+  });
+
 
 export const createWebhookEndpoint = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
