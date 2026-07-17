@@ -1,25 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowLeft, Loader2, Info, PlayCircle, AlertTriangle, FileText } from "lucide-react";
-import { toast } from "sonner";
+import { useMemo, useState } from "react";
+import { ArrowLeft, Info, AlertTriangle, FileText, Settings2 } from "lucide-react";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { adminRunNationalBonusDistribution } from "@/lib/bonus.functions";
+import { Loader2 } from "lucide-react";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -36,73 +24,33 @@ function Guard() {
       </div>
     );
   if (!roles.some((r) => ALLOWED.includes(r)))
-    return <ForbiddenScreen requiredRoles={ALLOWED} pageName="全國分紅（STAR5~DIRECTOR）" />;
+    return <ForbiddenScreen requiredRoles={ALLOWED} pageName="全國分紅（月結）" />;
   return <Page />;
 }
 
-type TierRow = {
-  settlement_date: string;
-  tier_code: string;
-  pool_rate: number;
-  pool_amount: number;
-  eligible_count: number;
-  distributed_count: number;
-  skipped_count: number;
-  blocked_count: number;
-  distributed_points: number;
-};
-
-type Summary = {
-  created_count: number;
-  cancelled_count: number;
-  skipped_count: number;
-  total_distributed_points: number;
-  by_tier: TierRow[];
-};
-
-function yesterdayStr() {
+function currentYyyymm() {
   const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function Page() {
-  const [settlementDate, setSettlementDate] = useState<string>(yesterdayStr());
-  const [dailyTotal, setDailyTotal] = useState<string>("");
-  const [busy, setBusy] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [summary, setSummary] = useState<Summary | null>(null);
+  const [yyyymm, setYyyymm] = useState<string>(currentYyyymm());
 
-  const points = Number(dailyTotal);
-  const canSubmit =
-    !!settlementDate && Number.isFinite(points) && points > 0 && !busy;
-
-  async function runDistribution() {
-    setBusy(true);
-    setConfirmOpen(false);
-    try {
-      const res = (await adminRunNationalBonusDistribution({
-        data: { settlementDate, dailyTotalRewardPoints: points },
-      })) as Summary;
-      setSummary(res);
-      toast.success(
-        `已建立 ${res.created_count} 筆 waiting_release、cancelled ${res.cancelled_count} 筆、skipped ${res.skipped_count} 筆`,
-      );
-    } catch (e: any) {
-      toast.error(e?.message ?? "全國分紅執行失敗");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const period = useMemo(() => {
+    if (!/^\d{6}$/.test(yyyymm)) return null;
+    const y = yyyymm.slice(0, 4);
+    const m = yyyymm.slice(4, 6);
+    return { from: `${y}-${m}-01`, to: `${y}-${m}-31`, label: `${y}-${m}` };
+  }, [yyyymm]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">全國分紅（STAR5~DIRECTOR）</h1>
+          <h1 className="text-2xl font-bold tracking-tight">全國分紅（月結，STAR5~DIRECTOR）</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            手動指定結算日期與每日營業總獎勵點，執行 2C-2 全國分紅演算，僅建立 <code>waiting_release</code>{" "}
-            的 <code>bonus_records</code>，實際發放仍由既有 release 流程處理。
+            全國分紅已改為月結，由 <code>settle_monthly_bonus</code> 於月結批次中呼叫{" "}
+            <code>settle_monthly_national_share</code> 統一產生。本頁提供月份切換與月結明細跳轉，不再提供手動日結入口。
           </p>
         </div>
         <Button asChild variant="outline">
@@ -117,213 +65,85 @@ function Page() {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm">
             <Info className="h-4 w-4" />
-            全國分紅規則
+            全國分紅（月結）規則
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1 text-xs text-muted-foreground">
-          <div>1. 每級 pool = 當日營業總獎勵點 × 2%（讀取 <code>national_bonus_pool_settings.pool_rate</code>）</div>
-          <div>2. 對象：STAR5 / STAR6 / STAR7 / DIRECTOR</div>
-          <div>3. 各級累計上限：STAR5 20 萬 / STAR6 30 萬 / STAR7 40 萬 / DIRECTOR 50 萬</div>
-          <div>4. VIP 必須 is_vip=true、vip_expires_at 不為空、且不早於結算日</div>
-          <div>5. 達上限者停止發放；接近上限者只發到剩餘額度</div>
-          <div>6. 位階透過 <code>private.get_effective_vip_tier</code> 判斷，支援 STAR/DIRECTOR 與舊 V1~V8 映射</div>
+          <div>1. 每月 pool = 當月營業總獎勵點 × <code>national_bonus_pool_settings.pool_rate</code>（每級獨立）</div>
+          <div>2. 對象：STAR5 / STAR6 / STAR7 / DIRECTOR（有效 VIP）</div>
+          <div>3. 每月累計上限：STAR5 20 萬 / STAR6 30 萬 / STAR7 40 萬 / DIRECTOR 50 萬</div>
+          <div>4. VIP 必須 is_vip=true、vip_expires_at 不為空、且不早於結算月月底</div>
+          <div>5. 達每月上限者停止發放；接近上限者只發到剩餘額度</div>
+          <div>6. 產生的 <code>bonus_records.bonus_type = 'national_share'</code>、<code>status = 'waiting_release'</code>，實際發放仍由既有 release 流程處理</div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">手動執行</CardTitle>
+          <CardTitle className="text-base">月份選擇</CardTitle>
           <CardDescription className="text-xs">
-            冪等：同 <code>settlement_date + member_id + bonus_type=national_share</code>{" "}
-            不會重複建立；重跑會 skip 已存在資料。
+            選擇欲檢視的結算月份（YYYYMM）。月結全國分紅由 <code>settle_monthly_bonus(_yyyymm)</code>{" "}
+            統一觸發，本頁不再提供手動執行入口。
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-1">
-            <Label>結算日期</Label>
+          <div className="space-y-1 md:col-span-1">
+            <Label>結算月份（YYYYMM）</Label>
             <Input
-              type="date"
-              value={settlementDate}
-              onChange={(e) => setSettlementDate(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>每日營業總獎勵點</Label>
-            <Input
-              type="number"
               inputMode="numeric"
-              min={0}
-              step={1}
-              value={dailyTotal}
-              onChange={(e) => setDailyTotal(e.target.value)}
-              placeholder="例如：1000000"
+              pattern="\d{6}"
+              maxLength={6}
+              value={yyyymm}
+              onChange={(e) => setYyyymm(e.target.value.replace(/[^\d]/g, "").slice(0, 6))}
+              placeholder="例如：202607"
             />
+            <div className="text-xs text-muted-foreground">
+              {period ? `對應期間：${period.from} ~ ${period.to}` : "格式錯誤，請輸入 6 碼 YYYYMM"}
+            </div>
           </div>
-          <div className="flex items-end">
-            <Button
-              className="w-full"
-              disabled={!canSubmit}
-              onClick={() => setConfirmOpen(true)}
-            >
-              {busy ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <PlayCircle className="mr-2 h-4 w-4" />
-              )}
-              執行全國分紅
+          <div className="flex flex-wrap items-end gap-2 md:col-span-2">
+            <Button asChild variant="outline" disabled={!period}>
+              <Link
+                to="/admin/bonuses/monthly-details"
+                search={
+                  period
+                    ? ({
+                        dateFrom: period.from,
+                        dateTo: period.to,
+                        bonusType: "national_share",
+                      } as any)
+                    : undefined
+                }
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                前往月獎金明細（預帶 national_share）
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/admin/bonuses/national-share-settings">
+                <Settings2 className="mr-2 h-4 w-4" />
+                全國分紅設定（每月累計上限）
+              </Link>
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {summary && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">執行結果</CardTitle>
-            <CardDescription className="text-xs">
-              <code>bonus_type=national_share</code> 已建立於 <code>bonus_records</code> 與{" "}
-              <code>national_bonus_pool_ledger</code>；本流程不寫 wallet /
-              reward_wallet_logs / point_transactions。
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-4">
-              <StatBox label="建立筆數 (waiting_release)" value={summary.created_count} />
-              <StatBox label="停發 (cancelled)" value={summary.cancelled_count} tone="danger" />
-              <StatBox label="重跑略過 (skipped)" value={summary.skipped_count} tone="muted" />
-              <StatBox
-                label="總發放獎勵點"
-                value={summary.total_distributed_points.toLocaleString()}
-              />
-            </div>
-
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>星級</TableHead>
-                    <TableHead className="text-right">pool_rate</TableHead>
-                    <TableHead className="text-right">pool_amount</TableHead>
-                    <TableHead className="text-right">eligible</TableHead>
-                    <TableHead className="text-right">建立 (waiting_release)</TableHead>
-                    <TableHead className="text-right">cancelled (cap_reached)</TableHead>
-                    <TableHead className="text-right">skipped</TableHead>
-                    <TableHead className="text-right">實發點數</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {summary.by_tier.map((r) => (
-                    <TableRow key={r.tier_code}>
-                      <TableCell className="font-medium">{r.tier_code}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {(Number(r.pool_rate) * 100).toFixed(2)}%
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {Number(r.pool_amount).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{r.eligible_count}</TableCell>
-                      <TableCell className="text-right tabular-nums">{r.distributed_count}</TableCell>
-                      <TableCell className="text-right tabular-nums">{r.blocked_count}</TableCell>
-                      <TableCell className="text-right tabular-nums">{r.skipped_count}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {Number(r.distributed_points).toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {summary.by_tier.length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={8}
-                        className="py-6 text-center text-sm text-muted-foreground"
-                      >
-                        無任何啟用中的 national_bonus_pool_settings（STAR5~DIRECTOR）
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline">
-                <Link
-                  to="/admin/bonuses/daily-details"
-                  search={{
-                    dateFrom: settlementDate,
-                    dateTo: settlementDate,
-                    bonusType: "national_share",
-                  } as any}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  前往每日獎金明細（預帶 national_share）
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Card className="border-amber-500/50 bg-amber-500/10">
         <CardContent className="flex items-start gap-2 py-3 text-sm">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-          <div className="text-xs text-amber-800 dark:text-amber-300">
-            本頁僅產生 <code>bonus_records</code> 與 <code>national_bonus_pool_ledger</code>；wallet /
-            reward_wallet_logs / point_transactions 均不會被寫入，實際入帳需經既有 release_bonus_rewards 流程。
+          <div className="text-xs text-amber-800 dark:text-amber-300 space-y-1">
+            <div>
+              全國分紅已於 Batch 3 由日結改為月結；日結明細頁不再提供 <code>national_share</code>{" "}
+              分類。歷史日結資料（若存在）將顯示為「舊制全國分紅紀錄」，僅供追溯，不再重算。
+            </div>
+            <div>
+              本頁不會寫入 wallet / reward_wallet_logs / point_transactions；實際入帳仍需經既有
+              release_bonus_rewards 流程。
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>確認執行全國分紅？</AlertDialogTitle>
-            <AlertDialogDescription>
-              <div className="space-y-1 text-sm">
-                <div>
-                  結算日期：<span className="font-mono">{settlementDate}</span>
-                </div>
-                <div>
-                  每日營業總獎勵點：
-                  <span className="font-mono">
-                    {Number.isFinite(points) ? points.toLocaleString() : "—"}
-                  </span>
-                </div>
-                <div className="pt-2 text-xs text-muted-foreground">
-                  此操作會建立 <code>waiting_release</code> 的 <code>bonus_records</code>
-                  ，但<strong>不會直接發放到 wallet</strong>。若該日已執行過，會自動略過已存在資料。
-                </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={runDistribution}>確認執行</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
-
-function StatBox({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number | string;
-  tone?: "danger" | "muted";
-}) {
-  const cls =
-    tone === "danger"
-      ? "text-destructive"
-      : tone === "muted"
-        ? "text-muted-foreground"
-        : "text-foreground";
-  return (
-    <div className="rounded-md border p-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-xl font-semibold tabular-nums ${cls}`}>{value}</div>
     </div>
   );
 }
