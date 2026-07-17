@@ -13,6 +13,7 @@ import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/sec
 import { signInWithIdentifier, getUserCompany } from "@/lib/auth-lookup.functions";
 import { handleReferralSignup } from "@/lib/points.functions";
 import { bindSponsorByCode } from "@/lib/referral.functions";
+import { LineQuickButton } from "@/components/LineContactButton";
 import { getReferralCode, clearReferralCode } from "@/lib/referral-tracking";
 import { getPortalRouteForRoles } from "@/lib/roles";
 
