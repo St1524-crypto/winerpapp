@@ -133,7 +133,7 @@ function ShopHome() {
               className="rounded-full px-2 md:px-8 h-10 md:h-12 text-xs md:text-base bg-gradient-to-r from-[oklch(0.62_0.22_255)] to-[oklch(0.70_0.18_240)] hover:opacity-90 text-white shadow-lg shadow-[oklch(0.55_0.22_260_/_0.45)] border-0"
               asChild
             >
-              <Link to="/shop/products">立即購物 <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-0.5 md:ml-1" /></Link>
+              <Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }}>立即購物 <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-0.5 md:ml-1" /></Link>
             </Button>
             <Button
               size="lg"
