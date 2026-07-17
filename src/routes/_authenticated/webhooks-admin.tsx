@@ -46,12 +46,19 @@ function WebhooksAdmin() {
 
   async function handleCreate() {
     try {
-      await create({ data: { name, url, events: selectedEvents as any } });
-      toast.success("已建立");
+      const r: any = await create({ data: { name, url, events: selectedEvents as any } });
+      const tok = r?.endpoint?.bearer_token;
+      if (tok) {
+        setRevealed((s) => ({ ...s, [r.endpoint.id]: tok }));
+        toast.success("已建立，Token 僅此顯示一次，請立即複製");
+      } else {
+        toast.success("已建立");
+      }
       setName(""); setUrl("");
       qc.invalidateQueries({ queryKey: ["webhooks"] });
     } catch (e: any) { toast.error(e.message); }
   }
+
 
   return (
     <div className="space-y-4 max-w-5xl">
