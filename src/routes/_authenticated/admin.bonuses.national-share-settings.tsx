@@ -166,19 +166,21 @@ function Page() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Info className="h-5 w-5" /> 全國分紅設定（STAR5 ~ DIRECTOR）
+            <Info className="h-5 w-5" /> 全國分紅設定（月結，STAR5 ~ DIRECTOR）
           </CardTitle>
           <CardDescription>
-            依「新 VIP / 星級制度」設定四級全國分紅參數。本頁只修改設定，不會立即發放。
+            依「新 VIP / 星級制度」設定四級全國分紅參數。全國分紅為月結，由 settle_monthly_bonus 統一觸發，本頁只修改設定，不會立即發放。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <div>1. 全國分紅 = 當日營業總獎勵點 × 分紅比例，於四級 pool 分別計算。</div>
+          <div>1. 全國分紅 = 當月營業總獎勵點 × 分紅比例，於四級 pool 分別計算並於月結時發放。</div>
           <div>2. 僅有效 VIP（is_vip = true 且 vip_expires_at ≥ 結算日）可參與；vip_expires_at 為空視同過期。</div>
-          <div>3. 每會員每級累計收益達到「累計收益上限」後停止發放，接近上限時只發剩餘額。</div>
-          <div>4. 本頁不會執行 distribute_national_bonus_v2；發放請於「全國分紅（STAR5~DIRECTOR）」執行頁手動觸發。</div>
+          <div>3. 每會員每級「每月累計」達到「每月累計上限」後停止發放，接近上限時只發剩餘額。</div>
+          <div>4. 每月累計上限：STAR5 20 萬 / STAR6 30 萬 / STAR7 40 萬 / DIRECTOR 50 萬。</div>
+          <div>5. 本頁不會執行月結，發放請於月結流程（settle_monthly_bonus）統一觸發。</div>
         </CardContent>
       </Card>
+
 
       {!canWrite && (
         <Card className="border-amber-500/40 bg-amber-500/5">
