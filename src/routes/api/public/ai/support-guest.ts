@@ -95,7 +95,10 @@ export const Route = createFileRoute("/api/public/ai/support-guest")({
           .slice(-10)
           .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, 2000) }));
 
-        const productCtx = await fetchProductContext(message);
+        const [productCtx, newsCtx] = await Promise.all([
+          fetchProductContext(message),
+          fetchNewsContext(message),
+        ]);
         const productSection =
           productCtx && productCtx.length > 0
             ? `以下是相關商品資料（請只引用真實存在的商品）：\n${productCtx
@@ -108,11 +111,28 @@ export const Route = createFileRoute("/api/public/ai/support-guest")({
                 .join("\n")}`
             : "（目前查無相關商品資料）";
 
+        const newsSection =
+          newsCtx && newsCtx.length > 0
+            ? `以下是最新消息／促銷活動／公告（依發布時間新→舊，請以此為準回覆促銷、活動、優惠、新品、公告問題，切勿捏造）：\n${newsCtx
+                .map((n) => {
+                  const kind =
+                    n.section_type === "promotion" ? "促銷"
+                    : n.section_type === "announcement" ? "公告"
+                    : "消息";
+                  const date = n.published_at ? String(n.published_at).slice(0, 10) : "—";
+                  const body = n.summary || stripHtml(n.content_html);
+                  const link = n.external_url || `https://winerp.app/shop/content/${n.slug}`;
+                  return `- [${kind}｜${date}] ${n.title}\n  ${body}\n  連結：${link}`;
+                })
+                .join("\n")}`
+            : "（目前查無最新消息／促銷內容）";
+
         const messages = [
-          { role: "system", content: `${SYSTEM_PROMPT}\n\n${productSection}` },
+          { role: "system", content: `${SYSTEM_PROMPT}\n\n${newsSection}\n\n${productSection}` },
           ...history,
           { role: "user", content: message },
         ];
+
 
         const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
