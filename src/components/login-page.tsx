@@ -614,6 +614,13 @@ function CompanyCodeRequired({
               </div>
             </form>
 
+            <div className="mt-4">
+              <LineQuickButton />
+              <p className="mt-1 text-center text-[11px] text-foreground/60">未登入也可加 LINE 諮詢促銷、商品價格與福利</p>
+            </div>
+
+
+
             <div className="mt-5 flex items-center justify-between text-xs">
               <Link to="/admin/login" className="text-primary hover:underline">管理員登入</Link>
               <Link to="/shop" className="text-foreground/60 hover:text-primary">返回商城</Link>
