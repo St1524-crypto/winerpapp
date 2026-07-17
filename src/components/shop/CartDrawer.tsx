@@ -30,7 +30,7 @@ export function CartDrawer() {
               <ShoppingBag className="h-16 w-16 mb-3 opacity-30" />
               <p className="text-sm">購物車空空如也</p>
               <Button variant="link" onClick={() => setOpen(false)} asChild>
-                <Link to="/shop/products">去逛逛 →</Link>
+                <Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }}>去逛逛 →</Link>
               </Button>
             </div>
           ) : (
