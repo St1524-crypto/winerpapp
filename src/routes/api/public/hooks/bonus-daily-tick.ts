@@ -106,21 +106,10 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
             result.vip_bonus_pools_error = e.message;
           }
 
-          // (3) 全國分紅
-          try {
-            const { data: national, error: natErr } = await (supabaseAdmin as any).rpc(
-              "distribute_national_bonus_v2",
-              {
-                _settlement_date: settlementDate,
-                _daily_total_reward_points: dailyTotalRewardPoints,
-              },
-            );
-            if (natErr) throw new Error(natErr.message);
-            result.national_bonus = national;
-          } catch (e: any) {
-            result.national_bonus_error = e.message;
-          }
-        }
+          // (3) 全國分紅：依新獎金制度改為月結執行，日結不再呼叫 distribute_national_bonus_v2。
+          //     Batch 3 會於 settle_monthly_bonus 觸發全國分紅發放。
+          result.national_bonus_skipped = "moved_to_monthly_settlement";
+
 
         // ── 自動發放 ──
         if ((s as any).reward_release_mode === "auto") {
