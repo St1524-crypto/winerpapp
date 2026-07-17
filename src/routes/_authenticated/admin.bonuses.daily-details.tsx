@@ -204,8 +204,12 @@ function Page() {
         </CardHeader>
         <CardContent className="text-xs text-muted-foreground space-y-1">
           {DAILY_RULE_INTRO.map((line, i) => <div key={i}>{line}</div>)}
+          <div className="pt-1 text-amber-700 dark:text-amber-400">
+            ⚠ 全國分紅（national_share）已改為月結，日結明細不再提供該篩選；歷史日結資料顯示為「舊制全國分紅紀錄」，僅供追溯。月結結果請至「月獎金明細」查看。
+          </div>
         </CardContent>
       </Card>
+
 
       <BonusFiltersCard
         filters={filters} setFilters={setFilters} preset={preset} setPreset={applyPreset}
