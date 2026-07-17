@@ -210,7 +210,7 @@ function ShopHome() {
           <>
         {/* Featured */}
         <section>
-          <SectionHeader icon={Flame} title="熱銷商品" desc="人氣商品 · 限量供應" action={<Link to="/shop/products" className="text-sm text-primary hover:underline">查看全部 →</Link>} />
+          <SectionHeader icon={Flame} title="熱銷商品" desc="人氣商品 · 限量供應" action={<Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="text-sm text-primary hover:underline">查看全部 →</Link>} />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
             {loading ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[3/4]" />) :
               featured.length === 0 ? <p className="col-span-full text-sm text-muted-foreground py-8 text-center">尚未設定熱銷商品</p> :
