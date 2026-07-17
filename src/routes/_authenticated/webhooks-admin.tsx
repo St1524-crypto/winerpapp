@@ -4,8 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   listWebhookEndpoints, createWebhookEndpoint, updateWebhookEndpoint,
-  deleteWebhookEndpoint, rerollWebhookToken, listWebhookDeliveries,
+  deleteWebhookEndpoint, rerollWebhookToken, listWebhookDeliveries, revealWebhookToken,
 } from "@/lib/webhooks.functions";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
