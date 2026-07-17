@@ -34,6 +34,14 @@ const TIER_LABEL: Record<string, string> = {
   DIRECTOR: "DIRECTOR 董事",
 };
 
+const TIER_CAP_HINT: Record<string, string> = {
+  STAR5: "STAR5：每月累計上限 20 萬",
+  STAR6: "STAR6：每月累計上限 30 萬",
+  STAR7: "STAR7：每月累計上限 40 萬",
+  DIRECTOR: "DIRECTOR：每月累計上限 50 萬",
+};
+
+
 export const Route = createFileRoute("/_authenticated/admin/bonuses/national-share-settings")({
   component: Guard,
 });
