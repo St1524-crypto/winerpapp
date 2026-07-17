@@ -115,10 +115,30 @@ function WebhooksAdmin() {
                 </div>
               </div>
               <div className="text-xs">事件：{ep.events.join(", ")}</div>
-              <div className="text-xs">
+              <div className="text-xs flex items-center gap-2 flex-wrap">
                 <span className="text-muted-foreground">Bearer Token：</span>
-                <code className="bg-muted px-2 py-0.5 rounded">{ep.bearer_token}</code>
+                <code className="bg-muted px-2 py-0.5 rounded break-all">
+                  {revealed[ep.id] ?? ep.token_masked ?? ""}
+                </code>
+                {revealed[ep.id] ? (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      navigator.clipboard.writeText(revealed[ep.id]); toast.success("已複製");
+                    }}>複製</Button>
+                    <Button size="sm" variant="ghost" onClick={() => {
+                      setRevealed((s) => { const n = { ...s }; delete n[ep.id]; return n; });
+                    }}>隱藏</Button>
+                  </>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={async () => {
+                    try {
+                      const r: any = await reveal({ data: { id: ep.id } });
+                      setRevealed((s) => ({ ...s, [ep.id]: r.token }));
+                    } catch (e: any) { toast.error(e.message); }
+                  }}>顯示</Button>
+                )}
               </div>
+
               {showDeliveries === ep.id && (
                 <div className="bg-muted/50 p-2 rounded text-xs space-y-1 max-h-64 overflow-y-auto">
                   {(delData?.deliveries ?? []).map((d: any) => (
