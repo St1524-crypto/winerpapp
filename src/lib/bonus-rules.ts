@@ -41,10 +41,9 @@ export const BONUS_RULE_META: Record<string, { rule: string; source: string }> =
     rule: "VIP獎金參數管理：rank_rebate_settings 差額制",
     source: "當月超過責任額之獎勵點 (excess_points)",
   },
-  upgrade_bonus: {
-    rule: "月達成獎金管理：vip_upgrade_bonus 分紅池",
-    source: "升級訂單 subtotal",
-  },
+  // upgrade_bonus 為舊制歷史項目，新獎金制度不再視為獨立分類。歷史紀錄仍可顯示，
+  // 但不再產生新的規則說明。營業分紅一律歸類到 business_bonus。
+
   business_bonus: {
     rule: "月達成獎金管理：vip_business_bonus 分紅池",
     source: "當日營業獎勵點總量",
