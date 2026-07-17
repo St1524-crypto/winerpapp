@@ -130,6 +130,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksBonusDailyTickRouteImport } from './routes/api/public/hooks/bonus-daily-tick'
 import { Route as ApiPublicCronExpireGroupBuysRouteImport } from './routes/api/public/cron/expire-group-buys'
+import { Route as ApiPublicAiSupportGuestRouteImport } from './routes/api/public/ai/support-guest'
 import { Route as ApiPublicAiRecruitRouteImport } from './routes/api/public/ai/recruit'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 import { Route as AuthenticatedAdminQuotesNewRouteImport } from './routes/_authenticated/admin.quotes.new'
@@ -807,6 +808,11 @@ const ApiPublicCronExpireGroupBuysRoute =
     path: '/api/public/cron/expire-group-buys',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAiSupportGuestRoute = ApiPublicAiSupportGuestRouteImport.update({
+  id: '/api/public/ai/support-guest',
+  path: '/api/public/ai/support-guest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAiRecruitRoute = ApiPublicAiRecruitRouteImport.update({
   id: '/api/public/ai/recruit',
   path: '/api/public/ai/recruit',
@@ -1063,6 +1069,7 @@ export interface FileRoutesByFullPath {
   '/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
+  '/api/public/ai/support-guest': typeof ApiPublicAiSupportGuestRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1201,6 +1208,7 @@ export interface FileRoutesByTo {
   '/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
+  '/api/public/ai/support-guest': typeof ApiPublicAiSupportGuestRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1346,6 +1354,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
+  '/api/public/ai/support-guest': typeof ApiPublicAiSupportGuestRoute
   '/api/public/cron/expire-group-buys': typeof ApiPublicCronExpireGroupBuysRoute
   '/api/public/hooks/bonus-daily-tick': typeof ApiPublicHooksBonusDailyTickRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -1491,6 +1500,7 @@ export interface FileRouteTypes {
     | '/admin/quotes/new'
     | '/b2b/accounts/$id'
     | '/api/public/ai/recruit'
+    | '/api/public/ai/support-guest'
     | '/api/public/cron/expire-group-buys'
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
@@ -1629,6 +1639,7 @@ export interface FileRouteTypes {
     | '/admin/quotes/new'
     | '/b2b/accounts/$id'
     | '/api/public/ai/recruit'
+    | '/api/public/ai/support-guest'
     | '/api/public/cron/expire-group-buys'
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
@@ -1773,6 +1784,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/quotes/new'
     | '/_authenticated/b2b/accounts/$id'
     | '/api/public/ai/recruit'
+    | '/api/public/ai/support-guest'
     | '/api/public/cron/expire-group-buys'
     | '/api/public/hooks/bonus-daily-tick'
     | '/lovable/email/queue/process'
@@ -1810,6 +1822,7 @@ export interface RootRouteChildren {
   LoginIndexRoute: typeof LoginIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAiRecruitRoute: typeof ApiPublicAiRecruitRoute
+  ApiPublicAiSupportGuestRoute: typeof ApiPublicAiSupportGuestRoute
   ApiPublicCronExpireGroupBuysRoute: typeof ApiPublicCronExpireGroupBuysRoute
   ApiPublicHooksBonusDailyTickRoute: typeof ApiPublicHooksBonusDailyTickRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -2666,6 +2679,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronExpireGroupBuysRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ai/support-guest': {
+      id: '/api/public/ai/support-guest'
+      path: '/api/public/ai/support-guest'
+      fullPath: '/api/public/ai/support-guest'
+      preLoaderRoute: typeof ApiPublicAiSupportGuestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ai/recruit': {
       id: '/api/public/ai/recruit'
       path: '/api/public/ai/recruit'
@@ -3232,6 +3252,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginIndexRoute: LoginIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAiRecruitRoute: ApiPublicAiRecruitRoute,
+  ApiPublicAiSupportGuestRoute: ApiPublicAiSupportGuestRoute,
   ApiPublicCronExpireGroupBuysRoute: ApiPublicCronExpireGroupBuysRoute,
   ApiPublicHooksBonusDailyTickRoute: ApiPublicHooksBonusDailyTickRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,

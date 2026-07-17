@@ -180,15 +180,7 @@ export function SupportChatWidget() {
           )}
 
           {!user ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-              <Bot className="h-10 w-10 text-muted-foreground" />
-              <div className="text-sm text-muted-foreground">
-                請先登入會員，即可使用源晶小幫手、打卡與保存對話紀錄。
-              </div>
-              <Button asChild>
-                <Link to="/login">前往登入</Link>
-              </Button>
-            </div>
+            <GuestChatPanel />
           ) : (
             <div className="flex-1 grid grid-cols-1 md:grid-cols-[180px_1fr] min-h-0">
               {/* Thread list */}
