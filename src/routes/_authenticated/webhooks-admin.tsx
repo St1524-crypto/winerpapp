@@ -27,7 +27,9 @@ function WebhooksAdmin() {
   const upd = useServerFn(updateWebhookEndpoint);
   const del = useServerFn(deleteWebhookEndpoint);
   const reroll = useServerFn(rerollWebhookToken);
+  const reveal = useServerFn(revealWebhookToken);
   const listDel = useServerFn(listWebhookDeliveries);
+
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: ["webhooks"], queryFn: () => list() });
   const [name, setName] = useState("");
