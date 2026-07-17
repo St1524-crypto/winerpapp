@@ -124,9 +124,10 @@ function Page() {
       return;
     }
     if (!Number.isFinite(income_cap_amount) || income_cap_amount < 0) {
-      toast.error("累計收益上限格式錯誤");
+      toast.error("每月累計上限格式錯誤");
       return;
     }
+
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d.effective_from)) {
       toast.error("生效日期格式錯誤");
       return;
