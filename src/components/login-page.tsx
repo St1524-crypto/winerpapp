@@ -441,6 +441,11 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           </form>
         </div>
 
+        <div className="mt-4 space-y-2">
+          <div className="text-center text-[11px] text-foreground/60">還沒帳號？先加 LINE 免登入諮詢促銷、商品、福利</div>
+          <LineQuickButton />
+        </div>
+
         <div className="text-center mt-4">
           <Link to="/shop" className="text-sm text-primary hover:underline">回首頁</Link>
         </div>
