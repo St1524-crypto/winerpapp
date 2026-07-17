@@ -324,7 +324,12 @@ function Page() {
                           <Badge variant={vip.valid ? "default" : "destructive"} title={vip.reason}>{vip.label}</Badge>
                           <div className="text-muted-foreground mt-0.5">{m.vip_expires_at ? String(m.vip_expires_at).slice(0, 10) : "—"}</div>
                         </TableCell>
-                        <TableCell>{bonusTypeLabel(r.bonus_type)}</TableCell>
+                        <TableCell>
+                          {r.bonus_type === "national_share"
+                            ? <span title="全國分紅已改為月結，此為舊制日結歷史紀錄">舊制全國分紅紀錄</span>
+                            : bonusTypeLabel(r.bonus_type)}
+                        </TableCell>
+
                         <TableCell className="text-xs"><Badge variant="outline">{ruleV}</Badge></TableCell>
                         <TableCell className="text-xs max-w-[160px]">{meta.rule}</TableCell>
                         <TableCell className="text-xs">
