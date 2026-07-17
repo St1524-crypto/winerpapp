@@ -7635,6 +7635,16 @@ export type Database = {
         Args: { _created_by?: string; _source?: string; _yyyymm?: string }
         Returns: Json
       }
+      settle_monthly_national_share: {
+        Args: {
+          _batch_id?: string
+          _created_by?: string
+          _dry_run?: boolean
+          _source?: string
+          _yyyymm: string
+        }
+        Returns: Json
+      }
       slugify_company_name: { Args: { _name: string }; Returns: string }
       spend_cash_balance: {
         Args: { _amount: number; _user_id: string }
