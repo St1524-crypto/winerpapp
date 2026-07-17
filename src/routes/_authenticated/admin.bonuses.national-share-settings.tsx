@@ -240,7 +240,7 @@ function Page() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>累計收益上限（點）</Label>
+                    <Label>每月累計上限（點）</Label>
                     <Input
                       type="number"
                       step="1"
@@ -249,7 +249,11 @@ function Page() {
                       disabled={!canWrite || busyId === r.id}
                       onChange={(e) => updateDraft(r.id, { income_cap_amount: e.target.value })}
                     />
+                    <div className="text-xs text-muted-foreground">
+                      {TIER_CAP_HINT[r.tier_code] ?? "每月累計上限（本會員該級別每月最高可領獎勵點）"}
+                    </div>
                   </div>
+
 
                   <div className="grid gap-2">
                     <Label>生效日期</Label>
