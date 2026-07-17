@@ -100,10 +100,12 @@ function WebhooksAdmin() {
                     qc.invalidateQueries({ queryKey: ["webhooks"] });
                   }}>{ep.active ? "停用" : "啟用"}</Button>
                   <Button size="sm" variant="outline" onClick={async () => {
-                    const r = await reroll({ data: { id: ep.id } });
-                    toast.success("已重新產生 Token");
+                    const r: any = await reroll({ data: { id: ep.id } });
+                    setRevealed((s) => ({ ...s, [ep.id]: r.token }));
+                    toast.success("已重新產生，Token 僅此顯示一次");
                     qc.invalidateQueries({ queryKey: ["webhooks"] });
                   }}><RefreshCw className="h-3 w-3" /></Button>
+
                   <Button size="sm" variant="outline" onClick={() => setShowDeliveries(showDeliveries === ep.id ? null : ep.id)}>紀錄</Button>
                   <Button size="sm" variant="destructive" onClick={async () => {
                     if (!confirm("確定刪除？")) return;
