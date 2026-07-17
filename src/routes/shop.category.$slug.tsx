@@ -38,7 +38,7 @@ function CategoryPage() {
     <div className="container mx-auto px-4 py-6 md:py-10">
       <nav className="text-xs text-muted-foreground flex items-center gap-1 mb-4">
         <Link to="/shop">首頁</Link><ChevronRight className="h-3 w-3" />
-        <Link to="/shop/products">商品</Link><ChevronRight className="h-3 w-3" />
+        <Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }}>商品</Link><ChevronRight className="h-3 w-3" />
         <span className="text-foreground">{cat?.name ?? "分類"}</span>
       </nav>
       <h1 className="text-2xl md:text-3xl font-bold">{cat?.name ?? "分類商品"}</h1>

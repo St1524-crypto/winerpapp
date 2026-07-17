@@ -11,7 +11,7 @@ export function StorefrontFooter() {
         <div>
           <div className="font-semibold mb-3">購物指南</div>
           <ul className="space-y-2 text-muted-foreground">
-            <li><Link to="/shop/products">全部商品</Link></li>
+            <li><Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }}>全部商品</Link></li>
             <li><Link to="/shop">熱銷推薦</Link></li>
             <li><Link to="/shop">新品上市</Link></li>
           </ul>

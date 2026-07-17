@@ -54,7 +54,7 @@ export function StorefrontHeader() {
 
         <nav className="hidden lg:flex items-center gap-0.5 text-sm">
           <Link to="/shop" className="px-2.5 py-1.5 rounded-md hover:bg-accent">首頁</Link>
-          <Link to="/shop/products" className="px-2.5 py-1.5 rounded-md hover:bg-accent">全部商品</Link>
+          <Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="px-2.5 py-1.5 rounded-md hover:bg-accent">全部商品</Link>
           <Link to="/shop/wholesale" className="px-2.5 py-1.5 rounded-md hover:bg-accent text-primary font-medium">批發專區</Link>
           <Link to="/shop/patents" className="px-2.5 py-1.5 rounded-md hover:bg-accent">專利檢驗區</Link>
           <Link to="/shop/news" className="px-2.5 py-1.5 rounded-md hover:bg-accent">最新消息</Link>
@@ -91,7 +91,7 @@ export function StorefrontHeader() {
               </SheetHeader>
               <nav className="mt-6 flex flex-col gap-1.5 text-base">
                 <Link to="/shop" className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">首頁</Link>
-                <Link to="/shop/products" className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">全部商品</Link>
+                <Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">全部商品</Link>
                 <Link to="/shop/wholesale" className="px-4 py-3 rounded-lg font-bold text-primary hover:bg-primary/10 active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">批發專區</Link>
                 <Link to="/shop/patents" className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">專利檢驗區</Link>
                 <Link to="/shop/news" className="px-4 py-3 rounded-lg font-semibold text-foreground hover:bg-accent active:bg-primary active:text-primary-foreground active:scale-[0.98] transition-all tap-highlight-transparent touch-manipulation [&.active]:bg-primary [&.active]:text-primary-foreground">最新消息</Link>

@@ -83,7 +83,7 @@ function ProductDetail() {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <p className="text-muted-foreground">找不到商品</p>
-        <Button variant="link" asChild className="mt-2"><Link to="/shop/products">回到商品列表</Link></Button>
+        <Button variant="link" asChild className="mt-2"><Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }}>回到商品列表</Link></Button>
       </div>
     );
   }
@@ -110,7 +110,7 @@ function ProductDetail() {
       {/* breadcrumb */}
       <nav className="text-xs text-muted-foreground flex items-center gap-1 mb-3 md:mb-6 min-w-0 overflow-hidden">
         <Link to="/shop" className="shrink-0">首頁</Link><ChevronRight className="h-3 w-3 shrink-0" />
-        <Link to="/shop/products" className="shrink-0">商品</Link><ChevronRight className="h-3 w-3 shrink-0" />
+        <Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="shrink-0">商品</Link><ChevronRight className="h-3 w-3 shrink-0" />
         <span className="text-foreground truncate min-w-0">{product.name}</span>
       </nav>
 

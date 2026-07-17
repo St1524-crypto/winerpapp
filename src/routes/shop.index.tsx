@@ -133,7 +133,7 @@ function ShopHome() {
               className="rounded-full px-2 md:px-8 h-10 md:h-12 text-xs md:text-base bg-gradient-to-r from-[oklch(0.62_0.22_255)] to-[oklch(0.70_0.18_240)] hover:opacity-90 text-white shadow-lg shadow-[oklch(0.55_0.22_260_/_0.45)] border-0"
               asChild
             >
-              <Link to="/shop/products">立即購物 <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-0.5 md:ml-1" /></Link>
+              <Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }}>立即購物 <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-0.5 md:ml-1" /></Link>
             </Button>
             <Button
               size="lg"
@@ -210,7 +210,7 @@ function ShopHome() {
           <>
         {/* Featured */}
         <section>
-          <SectionHeader icon={Flame} title="熱銷商品" desc="人氣商品 · 限量供應" action={<Link to="/shop/products" className="text-sm text-primary hover:underline">查看全部 →</Link>} />
+          <SectionHeader icon={Flame} title="熱銷商品" desc="人氣商品 · 限量供應" action={<Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="text-sm text-primary hover:underline">查看全部 →</Link>} />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
             {loading ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[3/4]" />) :
               featured.length === 0 ? <p className="col-span-full text-sm text-muted-foreground py-8 text-center">尚未設定熱銷商品</p> :
@@ -220,7 +220,7 @@ function ShopHome() {
 
         {/* Latest */}
         <section>
-          <SectionHeader icon={Sparkles} title="最新上架" desc="搶先入手新鮮貨" action={<Link to="/shop/products" className="text-sm text-primary hover:underline">查看全部 →</Link>} />
+          <SectionHeader icon={Sparkles} title="最新上架" desc="搶先入手新鮮貨" action={<Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="text-sm text-primary hover:underline">查看全部 →</Link>} />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
             {loading ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[3/4]" />) :
               latest.map((p) => <ProductCard key={p.id} product={p} />)}
@@ -274,7 +274,7 @@ function HomepageProductSection({ section }: { section: HomepageSection }) {
         icon={meta.icon}
         title={section.title || meta.title}
         desc={section.subtitle || meta.desc}
-        action={<Link to="/shop/products" search={{}} className="text-sm text-primary hover:underline">查看全部</Link>}
+        action={<Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="text-sm text-primary hover:underline">查看全部</Link>}
       />
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
         {products.length === 0 ? (
