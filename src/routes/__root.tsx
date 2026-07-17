@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { BrandingProvider } from "@/hooks/use-branding";
 import { CompanyProvider } from "@/hooks/use-current-company";
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
+import { LineContactButton } from "@/components/LineContactButton";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
