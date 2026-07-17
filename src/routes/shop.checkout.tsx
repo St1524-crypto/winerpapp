@@ -385,7 +385,7 @@ function CheckoutPage() {
               </div>
               {rewardApplied > 0 && (
                 <div className="flex justify-between text-xs text-success">
-                  <span>已折抵獎勵點</span><span className="tabular-nums">- NT$ {rewardApplied.toLocaleString()}</span>
+                  <span>已折抵貢獻點</span><span className="tabular-nums">- NT$ {rewardApplied.toLocaleString()}</span>
                 </div>
               )}
             </div>

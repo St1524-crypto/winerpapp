@@ -31,7 +31,7 @@ interface PointPayment {
 const POINT_LABEL: Record<PointPayment["point_type"], { label: string; icon: any }> = {
   discount: { label: "折扣點折抵", icon: Percent },
   shopping: { label: "購物點折抵", icon: Wallet },
-  reward: { label: "獎勵點折抵", icon: Gift },
+  reward: { label: "貢獻點折抵", icon: Gift },
 };
 
 function CheckoutSuccessPage() {
