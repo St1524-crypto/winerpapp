@@ -274,7 +274,7 @@ function HomepageProductSection({ section }: { section: HomepageSection }) {
         icon={meta.icon}
         title={section.title || meta.title}
         desc={section.subtitle || meta.desc}
-        action={<Link to="/shop/products" search={{}} className="text-sm text-primary hover:underline">查看全部</Link>}
+        action={<Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="text-sm text-primary hover:underline">查看全部</Link>}
       />
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
         {products.length === 0 ? (
