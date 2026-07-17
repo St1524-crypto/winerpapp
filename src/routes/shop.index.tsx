@@ -220,7 +220,7 @@ function ShopHome() {
 
         {/* Latest */}
         <section>
-          <SectionHeader icon={Sparkles} title="最新上架" desc="搶先入手新鮮貨" action={<Link to="/shop/products" className="text-sm text-primary hover:underline">查看全部 →</Link>} />
+          <SectionHeader icon={Sparkles} title="最新上架" desc="搶先入手新鮮貨" action={<Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="text-sm text-primary hover:underline">查看全部 →</Link>} />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
             {loading ? Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[3/4]" />) :
               latest.map((p) => <ProductCard key={p.id} product={p} />)}
