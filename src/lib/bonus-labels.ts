@@ -6,8 +6,9 @@ export const BONUS_TYPE_LABEL: Record<string, string> = {
   monthly_vip: "月 VIP 獎勵",
   rank_rebate: "階級回饋",
   rank_diff_rebate: "階級差額回饋",
-  business_bonus: "消費回饋",
-  upgrade_bonus: "營業分紅",
+  business_bonus: "營業分紅",
+  // 舊制項目：新獎金制度已停用，僅供歷史紀錄顯示，不得作為新制度可選分類。
+  upgrade_bonus: "舊制營業分紅紀錄",
   national_share: "全國分紅",
 };
 
@@ -37,12 +38,12 @@ export const BONUS_STATUS_VARIANT: Record<string, "default" | "secondary" | "des
   cancelled: "outline",
 };
 
+// 日結白名單（新獎金制度）：只保留新制可用分類；upgrade_bonus / national_share 已移除。
+// national_share 於新制度移至月結，Batch 3 會建立月結全國分紅分類。
 export const DAILY_BONUS_TYPE_OPTIONS = [
   { value: "referral", label: BONUS_TYPE_LABEL.referral },
   { value: "repurchase", label: BONUS_TYPE_LABEL.repurchase },
   { value: "business_bonus", label: BONUS_TYPE_LABEL.business_bonus },
-  { value: "upgrade_bonus", label: BONUS_TYPE_LABEL.upgrade_bonus },
-  { value: "national_share", label: BONUS_TYPE_LABEL.national_share },
 ];
 
 export const MONTHLY_BONUS_TYPE_OPTIONS = [
