@@ -305,15 +305,16 @@ function BonusOperationsPage() {
           <Button asChild variant="outline">
             <Link to="/admin/bonuses/national-share">
               <Search className="mr-2 h-4 w-4" />
-              全國分紅 STAR5~DIRECTOR
+              全國分紅（月結）
             </Link>
           </Button>
           <Button asChild variant="outline">
             <Link to="/admin/bonuses/national-share-settings">
               <Search className="mr-2 h-4 w-4" />
-              全國分紅設定
+              全國分紅設定（每月累計上限）
             </Link>
           </Button>
+
           <Button variant="outline" onClick={loadData} disabled={loading || busy}>
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
             重新整理
