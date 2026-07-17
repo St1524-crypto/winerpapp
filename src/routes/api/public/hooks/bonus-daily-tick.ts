@@ -81,8 +81,8 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
           try {
             const { data: pools, error: poolErr } = await (supabaseAdmin as any)
               .from("vip_bonus_pools")
-              .select("id, code, is_active")
-              .eq("is_active", true);
+              .select("id, code, status")
+              .eq("status", "active");
             if (poolErr) throw new Error(poolErr.message);
             const poolResults: any[] = [];
             for (const pool of pools ?? []) {
