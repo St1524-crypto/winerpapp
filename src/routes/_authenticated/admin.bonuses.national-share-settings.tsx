@@ -34,6 +34,14 @@ const TIER_LABEL: Record<string, string> = {
   DIRECTOR: "DIRECTOR 董事",
 };
 
+const TIER_CAP_HINT: Record<string, string> = {
+  STAR5: "STAR5：每月累計上限 20 萬",
+  STAR6: "STAR6：每月累計上限 30 萬",
+  STAR7: "STAR7：每月累計上限 40 萬",
+  DIRECTOR: "DIRECTOR：每月累計上限 50 萬",
+};
+
+
 export const Route = createFileRoute("/_authenticated/admin/bonuses/national-share-settings")({
   component: Guard,
 });
@@ -116,9 +124,10 @@ function Page() {
       return;
     }
     if (!Number.isFinite(income_cap_amount) || income_cap_amount < 0) {
-      toast.error("累計收益上限格式錯誤");
+      toast.error("每月累計上限格式錯誤");
       return;
     }
+
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d.effective_from)) {
       toast.error("生效日期格式錯誤");
       return;
@@ -158,19 +167,21 @@ function Page() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Info className="h-5 w-5" /> 全國分紅設定（STAR5 ~ DIRECTOR）
+            <Info className="h-5 w-5" /> 全國分紅設定（月結，STAR5 ~ DIRECTOR）
           </CardTitle>
           <CardDescription>
-            依「新 VIP / 星級制度」設定四級全國分紅參數。本頁只修改設定，不會立即發放。
+            依「新 VIP / 星級制度」設定四級全國分紅參數。全國分紅為月結，由 settle_monthly_bonus 統一觸發，本頁只修改設定，不會立即發放。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <div>1. 全國分紅 = 當日營業總獎勵點 × 分紅比例，於四級 pool 分別計算。</div>
+          <div>1. 全國分紅 = 當月營業總獎勵點 × 分紅比例，於四級 pool 分別計算並於月結時發放。</div>
           <div>2. 僅有效 VIP（is_vip = true 且 vip_expires_at ≥ 結算日）可參與；vip_expires_at 為空視同過期。</div>
-          <div>3. 每會員每級累計收益達到「累計收益上限」後停止發放，接近上限時只發剩餘額。</div>
-          <div>4. 本頁不會執行 distribute_national_bonus_v2；發放請於「全國分紅（STAR5~DIRECTOR）」執行頁手動觸發。</div>
+          <div>3. 每會員每級「每月累計」達到「每月累計上限」後停止發放，接近上限時只發剩餘額。</div>
+          <div>4. 每月累計上限：STAR5 20 萬 / STAR6 30 萬 / STAR7 40 萬 / DIRECTOR 50 萬。</div>
+          <div>5. 本頁不會執行月結，發放請於月結流程（settle_monthly_bonus）統一觸發。</div>
         </CardContent>
       </Card>
+
 
       {!canWrite && (
         <Card className="border-amber-500/40 bg-amber-500/5">
@@ -229,7 +240,7 @@ function Page() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label>累計收益上限（點）</Label>
+                    <Label>每月累計上限（點）</Label>
                     <Input
                       type="number"
                       step="1"
@@ -238,7 +249,11 @@ function Page() {
                       disabled={!canWrite || busyId === r.id}
                       onChange={(e) => updateDraft(r.id, { income_cap_amount: e.target.value })}
                     />
+                    <div className="text-xs text-muted-foreground">
+                      {TIER_CAP_HINT[r.tier_code] ?? "每月累計上限（本會員該級別每月最高可領獎勵點）"}
+                    </div>
                   </div>
+
 
                   <div className="grid gap-2">
                     <Label>生效日期</Label>

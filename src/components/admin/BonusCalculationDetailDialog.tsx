@@ -88,7 +88,27 @@ export function BonusCalculationDetailDialog({
     { label: "實發點數", value: fmtN(releasedPts) },
   ];
 
-  const fields = mode === "daily" ? dailyFields : monthlyFields;
+  // 月結全國分紅（national_share）專屬欄位 — 由 settle_monthly_national_share 寫入 calculation_detail。
+  const nationalShareFields: Array<{ label: string; value: React.ReactNode }> = [
+    { label: "月營業總獎勵點", value: fmtN(detail?.source_total_reward_points) },
+    { label: "全國分紅池金額", value: fmtN(detail?.national_pool_amount) },
+    { label: "適用星級", value: detail?.tier_code ?? tierLabel },
+    { label: "該級有效人數", value: fmtN(detail?.eligible_member_count) },
+    { label: "原始分配點數", value: fmtN(detail?.raw_share_points) },
+    { label: "每月累計上限", value: fmtN(detail?.cap_amount) },
+    { label: "上限剩餘（發放前）", value: fmtN(detail?.cap_remaining_before) },
+    { label: "實際發放點數", value: fmtN(detail?.distributed_points ?? shouldPts) },
+    { label: "停發原因", value: detail?.blocked_reason ?? record?.fail_reason ?? "—" },
+    { label: "適用制度", value: meta.rule },
+  ];
+
+  const fields =
+    mode === "daily"
+      ? dailyFields
+      : record?.bonus_type === "national_share"
+        ? nationalShareFields
+        : monthlyFields;
+
 
   return (
     <Dialog>
