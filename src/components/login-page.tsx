@@ -13,6 +13,7 @@ import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/sec
 import { signInWithIdentifier, getUserCompany } from "@/lib/auth-lookup.functions";
 import { handleReferralSignup } from "@/lib/points.functions";
 import { bindSponsorByCode } from "@/lib/referral.functions";
+import { LineQuickButton } from "@/components/LineContactButton";
 import { getReferralCode, clearReferralCode } from "@/lib/referral-tracking";
 import { getPortalRouteForRoles } from "@/lib/roles";
 
@@ -440,6 +441,11 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           </form>
         </div>
 
+        <div className="mt-4 space-y-2">
+          <div className="text-center text-[11px] text-foreground/60">還沒帳號？先加 LINE 免登入諮詢促銷、商品、福利</div>
+          <LineQuickButton />
+        </div>
+
         <div className="text-center mt-4">
           <Link to="/shop" className="text-sm text-primary hover:underline">回首頁</Link>
         </div>
@@ -607,6 +613,13 @@ function CompanyCodeRequired({
                 </Button>
               </div>
             </form>
+
+            <div className="mt-4">
+              <LineQuickButton />
+              <p className="mt-1 text-center text-[11px] text-foreground/60">未登入也可加 LINE 諮詢促銷、商品價格與福利</p>
+            </div>
+
+
 
             <div className="mt-5 flex items-center justify-between text-xs">
               <Link to="/admin/login" className="text-primary hover:underline">管理員登入</Link>
