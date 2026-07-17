@@ -180,15 +180,7 @@ export function SupportChatWidget() {
           )}
 
           {!user ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-              <Bot className="h-10 w-10 text-muted-foreground" />
-              <div className="text-sm text-muted-foreground">
-                請先登入會員，即可使用源晶小幫手、打卡與保存對話紀錄。
-              </div>
-              <Button asChild>
-                <Link to="/login">前往登入</Link>
-              </Button>
-            </div>
+            <GuestChatPanel />
           ) : (
             <div className="flex-1 grid grid-cols-1 md:grid-cols-[180px_1fr] min-h-0">
               {/* Thread list */}
@@ -306,5 +298,120 @@ export function SupportChatWidget() {
         </SheetContent>
       </Sheet>
     </>
+  );
+}
+
+type GuestMsg = { id: string; role: "user" | "assistant"; content: string };
+
+function GuestChatPanel() {
+  const [messages, setMessages] = useState<GuestMsg[]>([]);
+  const [input, setInput] = useState("");
+  const [pending, setPending] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, pending]);
+
+  const handleSend = async () => {
+    const text = input.trim();
+    if (!text || pending) return;
+    const userMsg: GuestMsg = { id: `u-${Date.now()}`, role: "user", content: text };
+    const history = messages.map((m) => ({ role: m.role, content: m.content }));
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setPending(true);
+    try {
+      const res = await fetch("/api/public/ai/support-guest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history }),
+      });
+      if (res.status === 429) {
+        toast.error("詢問太頻繁，請稍後再試，或加 LINE 客服 @win8799999");
+        setPending(false);
+        return;
+      }
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        toast.error(j?.error ?? "AI 回應失敗，請稍後再試");
+        setPending(false);
+        return;
+      }
+      const j = (await res.json()) as { reply: string };
+      setMessages((prev) => [
+        ...prev,
+        { id: `a-${Date.now()}`, role: "assistant", content: j.reply },
+      ]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "網路錯誤，請稍後再試");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="mx-3 mt-3 rounded-lg border bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
+        訪客唯讀模式：可詢問促銷、商品、福利。對話不會保存，登入後可享打卡、下單與對話紀錄。
+        <div className="mt-1 flex gap-2">
+          <Button asChild size="sm" variant="outline" className="h-7 text-xs">
+            <Link to="/login">登入 / 註冊</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline" className="h-7 text-xs">
+            <a href="https://line.me/R/ti/p/%40win8799999" target="_blank" rel="noopener noreferrer">
+              加 LINE 客服
+            </a>
+          </Button>
+        </div>
+      </div>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+        {messages.length === 0 && (
+          <div className="text-center text-xs text-muted-foreground py-6">
+            您好！我是源晶小幫手 👋
+            <br />可詢問促銷活動、商品價格、會員福利等問題。
+          </div>
+        )}
+        {messages.map((m) => (
+          <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            {m.role === "user" ? (
+              <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-3 py-2 text-sm whitespace-pre-wrap">
+                {m.content}
+              </div>
+            ) : (
+              <div className="max-w-[90%] text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                {m.content}
+              </div>
+            )}
+          </div>
+        ))}
+        {pending && (
+          <div className="flex justify-start">
+            <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> 小幫手思考中…
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="border-t p-2 flex gap-2 shrink-0">
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder="輸入訊息…（訪客模式，對話不保存）"
+          disabled={pending}
+          maxLength={1000}
+          autoFocus
+        />
+        <Button onClick={handleSend} disabled={pending || !input.trim()} size="icon">
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </Button>
+      </div>
+    </div>
   );
 }
