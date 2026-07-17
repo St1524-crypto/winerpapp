@@ -40,6 +40,33 @@ async function fetchProductContext(query: string) {
   return featured ?? [];
 }
 
+const NEWS_KEYWORDS = [
+  "促銷", "特惠", "優惠", "活動", "折扣", "新品", "上架", "消息",
+  "公告", "news", "promo", "sale", "discount", "event",
+];
+
+async function fetchNewsContext(query: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const wantNews = NEWS_KEYWORDS.some((k) => query.toLowerCase().includes(k.toLowerCase()));
+  const limit = wantNews ? 8 : 4;
+  const { data } = await supabaseAdmin
+    .from("shop_content_pages")
+    .select("title, slug, summary, content_html, external_url, section_type, published_at")
+    .eq("is_published", true)
+    .in("section_type", ["news", "promotion", "announcement"])
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  return data ?? [];
+}
+
+function stripHtml(html: string | null | undefined, max = 400) {
+  if (!html) return "";
+  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+
 export const Route = createFileRoute("/api/public/ai/support-guest")({
   server: {
     handlers: {
