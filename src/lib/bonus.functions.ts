@@ -1620,7 +1620,7 @@ export const getMyBonusRecords = createServerFn({ method: "GET" })
 // 新獎金制度日結白名單：僅保留 referral / repurchase / business_bonus。
 // upgrade_bonus / national_share 已停用（national_share 於 Batch 3 移入月結）。
 const DAILY_BONUS_TYPES = ["referral", "repurchase", "business_bonus"];
-const MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate", "rank_diff_rebate"];
+const MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate", "rank_diff_rebate", "national_share"];
 // 日結明細查詢白名單：包含歷史舊制類型（national_share / upgrade_bonus），
 // 讓財務追溯與 CSV / PDF 匯出仍能撈到舊制日結資料（UI 已有「舊制」標籤分支）。
 const DAILY_BONUS_DETAIL_TYPES = [
