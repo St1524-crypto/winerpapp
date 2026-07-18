@@ -7631,6 +7631,14 @@ export type Database = {
         Args: { _advance_next?: boolean; _created_by?: string }
         Returns: Json
       }
+      settle_daily_bonus_for_date: {
+        Args: {
+          _created_by?: string
+          _dry_run?: boolean
+          _settlement_date: string
+        }
+        Returns: Json
+      }
       settle_monthly_bonus: {
         Args: { _created_by?: string; _source?: string; _yyyymm?: string }
         Returns: Json
