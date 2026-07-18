@@ -1989,7 +1989,7 @@ export const listDailyBonusDetails = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => detailFilterSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertRoles(context.userId, ADMIN_ROLES);
-    return await fetchDetailRows(DAILY_BONUS_TYPES, data);
+    return await fetchDetailRows(DAILY_BONUS_DETAIL_TYPES, data);
   });
 
 export const listMonthlyBonusDetails = createServerFn({ method: "POST" })
