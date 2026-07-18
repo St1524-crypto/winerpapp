@@ -546,64 +546,6 @@ export const runDailySettlement = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return data;
-
-    const s = await getSettings();
-
-    const today = new Date();
-    const todayStr = today.toISOString().slice(0, 10);
-    const releaseDate = new Date(today.getTime() + s.reward_release_days * 86400000)
-      .toISOString().slice(0, 10);
-
-    // 撈取 pending 的日獎金（推薦 / 復購 / 位階回饋）
-    const { data: pendingRaw } = await supabaseAdmin
-      .from("bonus_records")
-      .select("id, member_id, bonus_points")
-      .in("bonus_type", ["referral", "repurchase", "rank_rebate"])
-      .eq("status", "pending")
-      .limit(5000);
-    const pending = (pendingRaw ?? []) as Array<{ id: string; member_id: string; bonus_points: number }>;
-
-    if (!pending || pending.length === 0) {
-      return { ok: true, count: 0, batch_id: null };
-    }
-
-    const totalPoints = pending.reduce((s, r: any) => s + Number(r.bonus_points ?? 0), 0);
-    const members = new Set(pending.map((r: any) => r.member_id)).size;
-
-    const { data: batch, error: bErr } = await supabaseAdmin
-      .from("bonus_settlement_batches").insert({
-        settlement_type: "daily",
-        settlement_period_start: todayStr,
-        settlement_period_end: todayStr,
-        total_members: members,
-        total_bonus_points: totalPoints,
-        status: "processing",
-        created_by: context.userId,
-      }).select("id").single();
-    if (bErr) throw new Error((bErr as any).message);
-
-    const ids = pending.map((r: any) => r.id);
-    await supabaseAdmin
-      .from("bonus_records")
-      .update({
-        status: "waiting_release",
-        settlement_batch_id: (batch as any).id,
-        settlement_date: todayStr,
-        release_date: releaseDate,
-      })
-      .in("id", ids);
-
-    await supabaseAdmin.from("bonus_settlement_batches")
-      .update({ status: "completed", completed_at: new Date().toISOString() })
-      .eq("id", (batch as any).id);
-
-    // 推進下次結算日期
-    const next = new Date(today.getTime() + s.daily_bonus_cycle_days * 86400000);
-    await supabaseAdmin.from("bonus_settings")
-      .update({ daily_next_settlement_at: next.toISOString() })
-      .eq("id", s.id);
-
-    return { ok: true, count: pending.length, batch_id: (batch as any).id, points: totalPoints };
   });
 
 /* ───────────── 月結算（VIP 責任額 + 超額回饋） ───────────── */
