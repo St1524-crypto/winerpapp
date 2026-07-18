@@ -29,7 +29,10 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
 
         // ── 日結算 ──
         let dailyOk = false;
-        if ((s as any).daily_bonus_auto_enabled && new Date((s as any).daily_next_settlement_at) <= now) {
+        // 容忍 60 秒排程秒差：pg_cron 可能於 19:00:00 觸發，但 daily_next_settlement_at 為 19:00:05
+        const dailyDueAt = new Date((s as any).daily_next_settlement_at);
+        const dailyTolerance = new Date(now.getTime() + 60 * 1000);
+        if ((s as any).daily_bonus_auto_enabled && dailyDueAt <= dailyTolerance) {
           try {
             const { data: daily, error: dailyError } = await (supabaseAdmin as any).rpc("settle_daily_bonus", {
               _created_by: null,
