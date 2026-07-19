@@ -152,22 +152,38 @@ function Page() {
         </CardContent>
       </Card>
 
+      <div className="flex items-center justify-end">
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox checked={showAll} onCheckedChange={(v) => setShowAll(!!v)} />
+          顯示 0 點 / 已取消 / 失敗紀錄（稽核用，預設關閉）
+        </label>
+      </div>
+
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <Metric title="日獎金總點數" value={totals.daily} />
-        <Metric title="月獎金總點數" value={totals.monthly} />
-        <Metric title="總計點數" value={totals.total} />
-        <Metric title="會員數 / 批次數" value={`${counts.members ?? 0} / ${counts.batches ?? 0}`} />
-        <Metric title="待發放" value={(totals.waiting_release ?? 0) + (totals.pending ?? 0)} tone="secondary" />
+        <Metric title="收入獎金合計（已發放 + 待發放）" value={incomeTotal} tone="primary" />
         <Metric title="已發放" value={totals.released} tone="primary" />
-        <Metric title="已取消" value={totals.cancelled} />
-        <Metric title="發放失敗" value={totals.failed} tone="danger" />
+        <Metric title="待發放" value={totals.waiting_release} tone="secondary" />
+        <Metric title="會員數 / 批次數" value={`${counts.members ?? 0} / ${counts.batches ?? 0}`} />
+        {showAll && (
+          <>
+            <Metric title="日獎金總點數" value={totals.daily} />
+            <Metric title="月獎金總點數" value={totals.monthly} />
+            <Metric title="待結算 pending" value={totals.pending} tone="secondary" />
+            <Metric title="已取消" value={totals.cancelled} />
+            <Metric title="發放失敗" value={totals.failed} tone="danger" />
+          </>
+        )}
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">依獎金類型</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">依獎金類型{showAll ? "" : "（僅收入）"}</CardTitle>
+        </CardHeader>
         <CardContent>
           {byType.length === 0 ? (
-            <div className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">尚無資料</div>
+            <div className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">
+              {showAll ? "尚無資料" : "此期間無可收入獎金"}
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -175,23 +191,25 @@ function Page() {
                   <TableRow>
                     <TableHead>獎金類型</TableHead>
                     <TableHead className="text-right">筆數</TableHead>
-                    <TableHead className="text-right">總點數</TableHead>
+                    <TableHead className="text-right">{showAll ? "總點數" : "收入合計"}</TableHead>
                     <TableHead className="text-right">已發放</TableHead>
                     <TableHead className="text-right">待發放</TableHead>
-                    <TableHead className="text-right">失敗</TableHead>
-                    <TableHead className="text-right">取消</TableHead>
+                    {showAll && <TableHead className="text-right">失敗</TableHead>}
+                    {showAll && <TableHead className="text-right">取消</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {byType.map((r) => (
+                  {byType.map((r: any) => (
                     <TableRow key={r.bonus_type}>
                       <TableCell>{bonusTypeLabel(r.bonus_type)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{r.count.toLocaleString()}</TableCell>
-                      <TableCell className="text-right tabular-nums font-semibold">{r.points.toLocaleString()}</TableCell>
-                      <TableCell className="text-right tabular-nums text-primary">{r.released.toLocaleString()}</TableCell>
-                      <TableCell className="text-right tabular-nums">{(r.waiting + r.pending).toLocaleString()}</TableCell>
-                      <TableCell className="text-right tabular-nums text-destructive">{r.failed.toLocaleString()}</TableCell>
-                      <TableCell className="text-right tabular-nums">{r.cancelled.toLocaleString()}</TableCell>
+                      <TableCell className="text-right tabular-nums">{Number(r.count ?? 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right tabular-nums font-semibold">
+                        {(showAll ? Number(r.points ?? 0) : Number(r.incomePoints ?? 0)).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-primary">{Number(r.released ?? 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right tabular-nums">{(Number(r.waiting ?? 0) + (showAll ? Number(r.pending ?? 0) : 0)).toLocaleString()}</TableCell>
+                      {showAll && <TableCell className="text-right tabular-nums text-destructive">{Number(r.failed ?? 0).toLocaleString()}</TableCell>}
+                      {showAll && <TableCell className="text-right tabular-nums">{Number(r.cancelled ?? 0).toLocaleString()}</TableCell>}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -202,10 +220,12 @@ function Page() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">依狀態</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">依狀態{showAll ? "" : "（僅收入）"}</CardTitle></CardHeader>
         <CardContent>
           {byStatus.length === 0 ? (
-            <div className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">尚無資料</div>
+            <div className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">
+              {showAll ? "尚無資料" : "此期間無可收入獎金"}
+            </div>
           ) : (
             <div className="flex flex-wrap gap-3">
               {byStatus.map((s) => (
