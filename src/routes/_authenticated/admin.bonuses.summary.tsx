@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { getBonusSummaryReport } from "@/lib/bonus.functions";
 import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, BONUS_TYPE_LABEL } from "@/lib/bonus-labels";
 import { PRESET_OPTIONS, computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
@@ -45,6 +46,7 @@ function Page() {
   const [preset, setPreset] = useState<BonusDatePreset>("this_month");
   const [loading, setLoading] = useState(false);
   const [payload, setPayload] = useState<any>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,8 +69,22 @@ function Page() {
 
   const totals = payload?.totals ?? {};
   const counts = payload?.counts ?? {};
-  const byType: any[] = payload?.byType ?? [];
-  const byStatus: any[] = payload?.byStatus ?? [];
+  const byTypeAll: any[] = payload?.byType ?? [];
+  const byStatusAll: any[] = payload?.byStatus ?? [];
+
+  // 收入判斷：只計 released + waiting_release，排除 cancelled / failed / pending / 0 點。
+  const INCOME_STATUS = new Set(["released", "waiting_release"]);
+  const byStatus = showAll ? byStatusAll : byStatusAll.filter((s) => INCOME_STATUS.has(s.status) && (s.points ?? 0) > 0);
+  const byType = showAll
+    ? byTypeAll
+    : byTypeAll
+        .map((r: any) => ({
+          ...r,
+          incomePoints: Number(r.released ?? 0) + Number(r.waiting ?? 0),
+        }))
+        .filter((r: any) => r.incomePoints > 0);
+
+  const incomeTotal = (totals.released ?? 0) + (totals.waiting_release ?? 0);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
