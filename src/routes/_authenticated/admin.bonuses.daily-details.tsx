@@ -228,7 +228,7 @@ function Page() {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">收款人明細匯出</CardTitle>
           <CardDescription className="text-xs">
-            依當前查詢期間，聚合每位「實際領取人」的已成功發放獎勵點（會員編號 / 姓名 / 收入 / 筆數）。點快速日期會自動套用起訖並重新查詢。
+            依當前查詢期間，聚合每位「實際領取人」的已成功發放貢獻點（會員編號 / 姓名 / 收入 / 筆數）。點快速日期會自動套用起訖並重新查詢。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
