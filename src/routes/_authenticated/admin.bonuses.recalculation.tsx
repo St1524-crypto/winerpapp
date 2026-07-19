@@ -126,7 +126,7 @@ function BonusRecalculationPage() {
     setBusy(true);
     try {
       const result = await adminRunBonusRecalculation({
-        data: { scope, target, dryRun },
+        data: { scope, target, dryRun, mode },
       });
       setLastResult(result);
       await loadRuns();
