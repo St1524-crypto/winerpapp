@@ -685,6 +685,74 @@ export const runDailyBonusReconciliation = createServerFn({ method: "POST" })
   });
 
 /* ───────────── 月結算（VIP 責任額 + 超額回饋） ───────────── */
+const bonusRecalculationRunSchema = z.object({
+  scope: z.enum(["daily", "monthly"]),
+  target: z.string().min(1),
+  dryRun: z.boolean().default(true),
+});
+
+export const adminRunBonusRecalculation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => bonusRecalculationRunSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const allowedRoles = data.dryRun ? ADMIN_ROLES : ["super_admin", "admin"];
+    await assertRoles(context.userId, allowedRoles);
+
+    if (data.scope === "daily") {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.target)) {
+        throw new Error("日期格式錯誤，請使用 YYYY-MM-DD");
+      }
+      const { data: result, error } = await (supabaseAdmin as any).rpc(
+        "recalculate_daily_bonus_for_date",
+        {
+          _settlement_date: data.target,
+          _created_by: context.userId,
+          _dry_run: data.dryRun,
+        },
+      );
+      if (error) throw new Error(error.message);
+      return result;
+    }
+
+    if (!/^\d{6}$/.test(data.target)) {
+      throw new Error("月份格式錯誤，請使用 YYYYMM");
+    }
+    const { data: result, error } = await (supabaseAdmin as any).rpc(
+      "recalculate_monthly_bonus",
+      {
+        _yyyymm: data.target,
+        _created_by: context.userId,
+        _dry_run: data.dryRun,
+      },
+    );
+    if (error) throw new Error(error.message);
+    return result;
+  });
+
+export const adminListBonusRecalculationRuns = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      scope: z.enum(["daily", "monthly"]).optional(),
+      limit: z.number().int().min(1).max(100).default(30),
+    }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+
+    let q = (supabaseAdmin as any)
+      .from("bonus_recalculation_runs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+
+    if (data.scope) q = q.eq("scope", data.scope);
+
+    const { data: runs, error } = await q;
+    if (error) throw new Error(error.message);
+    return { runs: runs ?? [] };
+  });
+
 export const runMonthlySettlement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
