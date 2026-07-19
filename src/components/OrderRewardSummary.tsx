@@ -33,7 +33,7 @@ export function OrderRewardSummary({
 
   const title =
     breakdown.kind === "buyer"
-      ? "本單產生獎勵點（買家錢包）"
+      ? "本單產生獎勵點（發獎金用，非買家錢包）"
       : "本單產生獎勵點（依復購位階發放至推薦人）";
 
   return (
