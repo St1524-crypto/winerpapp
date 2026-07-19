@@ -224,18 +224,29 @@ function Page() {
         </Card>
       )}
 
+      <BonusIncomeSummary rows={allRows} title="月獎金收入總表" />
+
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">明細：{rows.length} 筆</CardTitle>
-          <CardDescription>
-            新月結算會寫入 calculation_detail 作為演算快照；舊資料以 base_amount 顯示月達成基礎點數。
-          </CardDescription>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-base">明細：{rows.length} 筆</CardTitle>
+              <CardDescription>
+                預設僅顯示「有收入」的獎金列（bonus_points &gt; 0 且狀態為已發放 / 待發放）。
+                {hiddenCount > 0 && !showAll ? `　已隱藏 ${hiddenCount} 筆 0 點 / 已取消 / 失敗 / 未達成紀錄。` : ""}
+              </CardDescription>
+            </div>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox checked={showAll} onCheckedChange={(v) => setShowAll(!!v)} />
+              顯示 0 點 / 已取消紀錄（稽核用）
+            </label>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
           ) : rows.length === 0 ? (
-            <div className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">沒有符合條件的資料</div>
+            <IncomeEmptyState />
           ) : (
             <div className="overflow-x-auto">
               <Table>
