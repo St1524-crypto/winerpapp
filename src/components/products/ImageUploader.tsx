@@ -16,6 +16,7 @@ interface Props {
 }
 
 export function ImageUploader({ images, onChange, max = 8 }: Props) {
+  const { currentCompanyId } = useCurrentCompany();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [drag, setDrag] = useState(false);
