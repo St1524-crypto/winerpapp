@@ -26,6 +26,19 @@ const VIEW_ROLES: AppRole[] = ["super_admin", "admin", "finance"];
 const APPLY_ROLES: AppRole[] = ["super_admin", "admin"];
 
 type Scope = "daily" | "monthly";
+type Mode = "preview" | "clawback" | "correction";
+
+const MODE_LABEL: Record<Mode, string> = {
+  preview: "預覽／重算",
+  clawback: "追回（負向沖銷）",
+  correction: "更正（覆蓋未發放）",
+};
+
+const MODE_DESC: Record<Mode, string> = {
+  preview: "已發放獎金會阻擋 apply；未發放時可正式覆蓋重算。",
+  clawback: "為期間內每筆已發放獎金建立負向沖銷 bonus_records（status='clawback'）。不動 wallet / point_transactions。",
+  correction: "當期間內無已發放獎金時，取消未發放紀錄並以最新規則重新結算。",
+};
 
 export const Route = createFileRoute("/_authenticated/admin/bonuses/recalculation")({
   component: Guard,
