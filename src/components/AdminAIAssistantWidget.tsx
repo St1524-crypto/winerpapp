@@ -61,18 +61,17 @@ export function AdminAIAssistantWidget() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-[60] print:hidden">
+    <div className="fixed bottom-2 right-12 md:bottom-3 md:right-14 z-[60] print:hidden">
       {!open && (
         <button
           type="button"
           aria-label="AI 行政助理"
+          title="AI 行政助理"
           onClick={() => setOpen(true)}
-          className="group flex items-center gap-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition px-4 py-3"
+          className="group flex items-center justify-center rounded-full bg-primary/85 hover:bg-primary text-primary-foreground shadow-md hover:opacity-100 transition h-8 w-8 md:h-9 md:w-9"
         >
-          <Bot className="h-5 w-5" />
-          <span className="text-sm font-medium hidden sm:inline">
-            AI 行政助理
-          </span>
+          <Bot className="h-4 w-4" />
+          <span className="sr-only">AI 行政助理</span>
         </button>
       )}
 
