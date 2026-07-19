@@ -320,6 +320,12 @@ function BonusOperationsPage() {
               補結驗證報告
             </Link>
           </Button>
+          <Button asChild variant="destructive">
+            <Link to="/admin/bonuses/recalculation">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              獎金重算管理
+            </Link>
+          </Button>
 
           <Button variant="outline" onClick={loadData} disabled={loading || busy}>
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}

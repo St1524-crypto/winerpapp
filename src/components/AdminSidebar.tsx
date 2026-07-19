@@ -68,6 +68,7 @@ const GROUPS: AdminNavGroup[] = [
       { title: "每日獎金明細表", url: "/admin/bonuses/daily-details", icon: Coins, roles: ["super_admin", "admin", "finance"] },
       { title: "月獎金明細表", url: "/admin/bonuses/monthly-details", icon: Coins, roles: ["super_admin", "admin", "finance"] },
       { title: "獎金總表", url: "/admin/bonuses/summary", icon: Coins, roles: ["super_admin", "admin", "finance"] },
+      { title: "獎金重算管理", url: "/admin/bonuses/recalculation", icon: Coins, roles: ["super_admin", "admin", "finance"] },
       { title: "我的推廣收益", url: "/my-referrals", icon: Share2 },
     ],
   },
