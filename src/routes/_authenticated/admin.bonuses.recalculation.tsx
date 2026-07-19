@@ -87,6 +87,7 @@ function BonusRecalculationPage() {
   const { roles } = useAuth();
   const canApply = roles.some((role) => APPLY_ROLES.includes(role));
   const [scope, setScope] = useState<Scope>("daily");
+  const [mode, setMode] = useState<Mode>("preview");
   const [dailyDate, setDailyDate] = useState(todayTw());
   const [monthlyYm, setMonthlyYm] = useState(currentYmTw());
   const [busy, setBusy] = useState(false);
