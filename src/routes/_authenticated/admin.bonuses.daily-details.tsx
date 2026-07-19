@@ -148,7 +148,7 @@ function Page() {
   function exportRecipientsCsv() {
     const data = aggregateRecipients();
     if (!data.length) { toast.info("此期間無已發放的收款人資料"); return; }
-    const header = ["會員編號", "姓名", "收入獎勵點", "筆數"];
+    const header = ["會員編號", "姓名", "收入貢獻點", "筆數"];
     const csvRows = data.map((r) => [r.member_no, r.name, r.income, r.count]
       .map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(","));
     const total = data.reduce((s, r) => s + r.income, 0);
