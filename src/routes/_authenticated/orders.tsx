@@ -22,6 +22,7 @@ import { computeOrderPaymentTotals } from "@/lib/order-payment-totals";
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
 import { useOrderRewardPreview } from "@/hooks/use-order-reward-preview";
 import { OrderRewardSummary } from "@/components/OrderRewardSummary";
+import { OrderRewardDetailCard } from "@/components/OrderRewardDetailCard";
 import { logOrderRewardPointsAudit } from "@/lib/audit.functions";
 
 /** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/升級獎金（失敗不擋主流程） */
@@ -2533,6 +2534,15 @@ function OrderDetailDialog({
                 )}
               </CardContent>
             </Card>
+
+            {/* 獎勵點明細（發獎金用；非買家貢獻點錢包） */}
+            <OrderRewardDetailCard
+              breakdown={rewardPreview.breakdown}
+              issuedToBuyer={rewardIssuedBuyer}
+              hasReferrerIssuance={hasReferrerIssuance}
+              rewardEarnRows={rewardEarnRows}
+            />
+
 
             {/* VIP 升級套組贈品 */}
             {vipPackages.length > 0 && (
