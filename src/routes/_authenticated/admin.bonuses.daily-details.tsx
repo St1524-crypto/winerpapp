@@ -39,6 +39,7 @@ function Page() {
   const [preset, setPreset] = useState<BonusDatePreset>("this_month");
   const [loading, setLoading] = useState(false);
   const [payload, setPayload] = useState<any>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const load = useCallback(async (override?: Partial<BonusFilters>) => {
     setLoading(true);
@@ -76,7 +77,8 @@ function Page() {
   }
 
   function exportCsv() {
-    const rows = payload?.rows ?? [];
+    const source = payload?.rows ?? [];
+    const rows = showAll ? source : filterIncome(source);
     if (!rows.length) { toast.info("無資料可匯出"); return; }
     const members = payload.members ?? {};
     const orders = payload.orders ?? {};
@@ -183,7 +185,9 @@ function Page() {
     }
   }
 
-  const rows: any[] = payload?.rows ?? [];
+  const allRows: any[] = payload?.rows ?? [];
+  const rows: any[] = showAll ? allRows : filterIncome(allRows);
+  const hiddenCount = allRows.length - rows.length;
   const members = payload?.members ?? {};
   const orders = payload?.orders ?? {};
   const tiers: Record<string, string> = payload?.tiers ?? {};
