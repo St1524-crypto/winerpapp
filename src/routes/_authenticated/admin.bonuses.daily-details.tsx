@@ -86,7 +86,7 @@ function Page() {
     const header = [
       "結算日期","發放日期","實際發放時間","會員名稱","會員編號","VIP階級","是否有效VIP","VIP到期日",
       "來源會員","來源訂單","獎金類型","規則版本","適用制度","獎勵點來源","原始訂單獎勵點","代數","適用比例%",
-      "責任額","是否完成責任額","應發獎勵點","實際發放獎勵點","實際領取人","改發原因","停發原因","狀態","計算說明","批次ID",
+      "責任額","是否完成責任額","應發貢獻點","實際發放貢獻點","實際領取人","改發原因","停發原因","狀態","計算說明","批次ID",
     ];
     const csvRows = rows.map((r: any) => {
       const m = members[r.member_id] ?? {};
@@ -148,7 +148,7 @@ function Page() {
   function exportRecipientsCsv() {
     const data = aggregateRecipients();
     if (!data.length) { toast.info("此期間無已發放的收款人資料"); return; }
-    const header = ["會員編號", "姓名", "收入獎勵點", "筆數"];
+    const header = ["會員編號", "姓名", "收入貢獻點", "筆數"];
     const csvRows = data.map((r) => [r.member_no, r.name, r.income, r.count]
       .map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(","));
     const total = data.reduce((s, r) => s + r.income, 0);
@@ -171,12 +171,12 @@ function Page() {
         subtitle: `期間：${periodLabel()}`,
         logoUrl: logo,
         filename: `收款人明細-${periodLabel()}.pdf`,
-        meta: { 期間: periodLabel(), 收款人數: data.length, 合計獎勵點: total.toLocaleString() },
+        meta: { 期間: periodLabel(), 收款人數: data.length, 合計貢獻點: total.toLocaleString() },
         columns: [
           { key: "member_no", label: "會員編號" },
           { key: "name", label: "姓名" },
           { key: "count", label: "筆數", align: "right" },
-          { key: "income", label: "收入獎勵點", align: "right", format: (r: any) => Number(r.income).toLocaleString() },
+          { key: "income", label: "收入貢獻點", align: "right", format: (r: any) => Number(r.income).toLocaleString() },
         ],
         rows: data,
       });
@@ -228,7 +228,7 @@ function Page() {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">收款人明細匯出</CardTitle>
           <CardDescription className="text-xs">
-            依當前查詢期間，聚合每位「實際領取人」的已成功發放獎勵點（會員編號 / 姓名 / 收入 / 筆數）。點快速日期會自動套用起訖並重新查詢。
+            依當前查詢期間，聚合每位「實際領取人」的已成功發放貢獻點（會員編號 / 姓名 / 收入 / 筆數）。點快速日期會自動套用起訖並重新查詢。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

@@ -206,7 +206,7 @@ function Page() {
             <CardHeader>
               <CardTitle className="text-base">月達成獎金階梯</CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                以「當月自我消費 + 第一代消費」總額為基數，達到門檻即加發對應比例的獎勵點（取符合條件的最高階）。
+                以「當月自我消費 + 第一代消費」總額為基數，達到門檻即加發對應比例的貢獻點（取符合條件的最高階）。
               </p>
             </CardHeader>
             <CardContent>
@@ -230,7 +230,7 @@ function Page() {
 
           <Card>
 
-            <CardHeader><CardTitle className="text-base">獎勵點發放</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">貢獻點發放</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3 max-w-md">
                 <div>
@@ -324,7 +324,7 @@ function Page() {
                     <div className="flex flex-col gap-1">
                       <Button disabled={busy} variant="secondary"
                         onClick={() => action(() => releaseDueRewards(), `到期發放（${dailyDate}）`)}>
-                        <Send className="h-4 w-4 mr-1" />發放到期獎勵點
+                        <Send className="h-4 w-4 mr-1" />發放到期貢獻點
                       </Button>
                       <span className="text-xs text-muted-foreground">發放日期：{dailyDate}（{monthLabel}）</span>
                     </div>
