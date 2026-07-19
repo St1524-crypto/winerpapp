@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { compressImageIfNeeded } from "@/lib/image-compress";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 export interface UploaderImage { id?: string; url: string; sort: number; }
 
