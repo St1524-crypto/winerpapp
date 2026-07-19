@@ -73,7 +73,7 @@ function PointsAdminPage() {
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           <Coins className="h-6 w-6 text-primary" />點數管理
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">為會員儲值購物點、發放獎勵點或調整折扣點。</p>
+        <p className="text-sm text-muted-foreground mt-1">為會員儲值購物點、發放貢獻點或調整折扣點。</p>
       </div>
 
       <SignupBonusCard />
@@ -102,7 +102,7 @@ function PointsAdminPage() {
                     <TableHead>會員</TableHead>
                     <TableHead>聯絡方式</TableHead>
                     <TableHead className="text-right">購物點</TableHead>
-                    <TableHead className="text-right">獎勵點</TableHead>
+                    <TableHead className="text-right">貢獻點</TableHead>
                     <TableHead className="text-right">折扣點</TableHead>
                     <TableHead>VIP</TableHead>
                     <TableHead className="text-right">操作</TableHead>
@@ -149,7 +149,7 @@ function PointsAdminPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="shopping">購物點（儲值）</SelectItem>
-                  <SelectItem value="reward">獎勵點</SelectItem>
+                  <SelectItem value="reward">貢獻點</SelectItem>
                   <SelectItem value="discount">折扣點</SelectItem>
                 </SelectContent>
               </Select>

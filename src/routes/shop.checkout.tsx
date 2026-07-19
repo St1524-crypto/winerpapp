@@ -310,7 +310,7 @@ function CheckoutPage() {
             {items.some((it) => (it as any).bundle_id) && (
               <div className="rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] leading-relaxed text-muted-foreground">
                 <div className="font-medium text-primary mb-0.5">🎁 套組結帳說明</div>
-                本次購物含復購優惠套組。套組一律以 <b>bundle_price</b> 計價（忽略單品階梯價），可與 <b>折扣點 / 購物點 / 獎勵點</b> 併用折抵應付金額；折抵<b>不影響</b>套組獎勵點（bundle_reward_points）發放，仍以「完整套組數 × 每組獎勵點」結算。
+                本次購物含復購優惠套組。套組一律以 <b>bundle_price</b> 計價（忽略單品階梯價），可與 <b>折扣點 / 購物點 / 貢獻點</b> 併用折抵應付金額；折抵<b>不影響</b>套組獎勵點（bundle_reward_points）發放，仍以「完整套組數 × 每組獎勵點」結算。
               </div>
             )}
             <Separator />
@@ -412,7 +412,7 @@ function formatCheckoutPointPaymentError(error: unknown) {
   const message = error instanceof Error ? error.message : String((error as any)?.message ?? error ?? "");
   if (message.includes("insufficient discount points")) return "折扣點餘額不足，請調整折抵點數後再送出。";
   if (message.includes("insufficient shopping points")) return "購物點餘額不足，請調整折抵點數後再送出。";
-  if (message.includes("insufficient reward points")) return "獎勵點餘額不足，請調整折抵點數後再送出。";
+  if (message.includes("insufficient reward points")) return "貢獻點餘額不足，請調整折抵點數後再送出。";
   if (message.includes("point offset total cannot exceed") || message.includes("Point offset total cannot exceed")) {
     return "點數折抵不可超過訂單金額，請重新確認。";
   }

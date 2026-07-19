@@ -1215,7 +1215,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         throw new Error("購物點餘額不足");
       }
       if (rewardPointNum > walletBalances.reward_points) {
-        throw new Error("獎勵點餘額不足");
+        throw new Error("貢獻點餘額不足");
       }
       if (pointOffsetTotal > total) {
         throw new Error("點數付款不可超過訂單總額");
@@ -1915,7 +1915,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           {/* ===== 訂金 / 尾款 ===== */}
           <div className="rounded-md border p-3 space-y-2 bg-muted/20">
             <div className="text-sm font-medium flex items-center gap-1.5">
-              <Wallet className="h-3.5 w-3.5" /> 點數付款（折扣點 / 購物點 / 獎勵點）
+              <Wallet className="h-3.5 w-3.5" /> 點數付款（折扣點 / 購物點 / 貢獻點）
             </div>
             {!customerStatus.user_id ? (
               <div className="text-xs text-muted-foreground">
@@ -1950,7 +1950,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs">獎勵點</Label>
+                  <Label className="text-xs">貢獻點</Label>
                   <Input
                     type="number"
                     min={0}
@@ -2685,7 +2685,7 @@ function OrderDetailDialog({
                   disabled={filteredPointPayments.length === 0}
                   onClick={() => {
                     const typeLabelOf = (t: string) =>
-                      t === "discount" ? "折扣點" : t === "shopping" ? "購物點" : t === "reward" ? "獎勵點" : t ?? "";
+                      t === "discount" ? "折扣點" : t === "shopping" ? "購物點" : t === "reward" ? "貢獻點" : t ?? "";
                     const esc = (v: any) => {
                       const s = v == null ? "" : String(v);
                       return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -2743,7 +2743,7 @@ function OrderDetailDialog({
                         <SelectItem value="all">全部</SelectItem>
                         <SelectItem value="discount">折扣點</SelectItem>
                         <SelectItem value="shopping">購物點</SelectItem>
-                        <SelectItem value="reward">獎勵點</SelectItem>
+                        <SelectItem value="reward">貢獻點</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -2814,7 +2814,7 @@ function OrderDetailDialog({
                               : pp.point_type === "shopping"
                               ? "購物點"
                               : pp.point_type === "reward"
-                              ? "獎勵點"
+                              ? "貢獻點"
                               : pp.point_type;
                           const typeClass =
                             pp.point_type === "discount"
