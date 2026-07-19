@@ -377,6 +377,7 @@ function BonusRecalculationPage() {
                 <TableHead>類型</TableHead>
                 <TableHead>目標</TableHead>
                 <TableHead>模式</TableHead>
+                <TableHead>dry-run</TableHead>
                 <TableHead>狀態</TableHead>
                 <TableHead>結果</TableHead>
               </TableRow>
@@ -384,7 +385,7 @@ function BonusRecalculationPage() {
             <TableBody>
               {runRows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                     尚無重算紀錄
                   </TableCell>
                 </TableRow>
@@ -394,7 +395,8 @@ function BonusRecalculationPage() {
                     <TableCell className="whitespace-nowrap">{new Date(run.created_at).toLocaleString("zh-TW")}</TableCell>
                     <TableCell>{run.scope === "daily" ? "日獎金" : "月獎金"}</TableCell>
                     <TableCell className="font-mono">{run.target_date ?? run.target_yyyymm}</TableCell>
-                    <TableCell>{run.dry_run ? "dry-run" : "apply"}</TableCell>
+                    <TableCell>{MODE_LABEL[(run.mode as Mode) ?? "preview"]}</TableCell>
+                    <TableCell>{run.dry_run ? "是" : "否"}</TableCell>
                     <TableCell>
                       <Badge variant={statusTone(run.status) as any}>{run.status}</Badge>
                     </TableCell>
