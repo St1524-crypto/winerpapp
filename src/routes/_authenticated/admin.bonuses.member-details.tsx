@@ -85,7 +85,7 @@ function MemberBonusDetailsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">會員獎金明細</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            按制度分組顯示日獎金 / 月獎金產生的獎勵點，並依會員、狀態、批次或日期區間篩選。
+            按制度分組顯示日獎金 / 月獎金產生的貢獻點，並依會員、狀態、批次或日期區間篩選。
           </p>
         </div>
         <Button asChild variant="outline">
@@ -241,7 +241,7 @@ function DetailSection({ category }: { category: Category }) {
           <CardTitle className="text-base">
             {isDaily ? "日獎金制度分組" : "月獎金制度分組"}
           </CardTitle>
-          <CardDescription>依 bonus_type 統計各制度產生的獎勵點與狀態分佈。</CardDescription>
+          <CardDescription>依 bonus_type 統計各制度產生的貢獻點與狀態分佈。</CardDescription>
         </CardHeader>
         <CardContent>
           {groupedByBonusType.length === 0 ? (
@@ -449,7 +449,7 @@ function SummaryCards({
   const waiting = (s.waiting_release_points ?? 0) + (s.pending_points ?? 0);
   const items = [
     { label: `${label}總筆數`, value: fmt(s.total_count) },
-    { label: `${label}總計應發獎勵點`, value: fmt(s.total_points), strong: true },
+    { label: `${label}總計應發貢獻點`, value: fmt(s.total_points), strong: true },
     { label: `${label}已成功發放`, value: fmt(s.released_points), color: "text-primary" },
     { label: `${label}待發放`, value: fmt(waiting) },
     { label: `${label}發放失敗`, value: fmt(s.failed_points), color: "text-destructive" },

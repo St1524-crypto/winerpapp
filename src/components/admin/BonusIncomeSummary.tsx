@@ -25,7 +25,7 @@ export function BonusIncomeSummary({
       <CardContent className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Metric label="收入總筆數" value={s.totalCount} />
-          <Metric label="應發獎勵點合計" value={s.totalPoints} strong />
+          <Metric label="應發貢獻點合計" value={s.totalPoints} strong />
           <Metric label="已發放" value={s.releasedPoints} tone="primary" />
           <Metric label="待發放" value={s.waitingPoints} />
         </div>
