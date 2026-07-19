@@ -680,11 +680,13 @@ export type Database = {
       }
       bonus_recalculation_runs: {
         Row: {
+          clawback_batch_id: string | null
           created_at: string
           dry_run: boolean
           error: string | null
           finished_at: string | null
           id: string
+          mode: string
           requested_by: string | null
           result: Json
           scope: string
@@ -694,11 +696,13 @@ export type Database = {
           target_yyyymm: string | null
         }
         Insert: {
+          clawback_batch_id?: string | null
           created_at?: string
           dry_run?: boolean
           error?: string | null
           finished_at?: string | null
           id?: string
+          mode?: string
           requested_by?: string | null
           result?: Json
           scope: string
@@ -708,11 +712,13 @@ export type Database = {
           target_yyyymm?: string | null
         }
         Update: {
+          clawback_batch_id?: string | null
           created_at?: string
           dry_run?: boolean
           error?: string | null
           finished_at?: string | null
           id?: string
+          mode?: string
           requested_by?: string | null
           result?: Json
           scope?: string
@@ -721,7 +727,15 @@ export type Database = {
           target_date?: string | null
           target_yyyymm?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bonus_recalculation_runs_clawback_batch_id_fkey"
+            columns: ["clawback_batch_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_settlement_batches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bonus_records: {
         Row: {
@@ -7595,8 +7609,26 @@ export type Database = {
         }
         Returns: Json
       }
+      recalculate_daily_bonus_with_mode: {
+        Args: {
+          _created_by?: string
+          _dry_run?: boolean
+          _mode?: string
+          _settlement_date: string
+        }
+        Returns: Json
+      }
       recalculate_monthly_bonus: {
         Args: { _created_by?: string; _dry_run?: boolean; _yyyymm: string }
+        Returns: Json
+      }
+      recalculate_monthly_bonus_with_mode: {
+        Args: {
+          _created_by?: string
+          _dry_run?: boolean
+          _mode?: string
+          _yyyymm: string
+        }
         Returns: Json
       }
       record_business_bonus_release: {
