@@ -19,11 +19,14 @@ import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { listMemberBonusDetails, getBonusRecordDetail } from "@/lib/bonus.functions";
 import {
   bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT,
   DAILY_BONUS_TYPE_OPTIONS, MONTHLY_BONUS_TYPE_OPTIONS,
 } from "@/lib/bonus-labels";
+import { BonusIncomeSummary, IncomeEmptyState } from "@/components/admin/BonusIncomeSummary";
+import { filterIncome } from "@/lib/bonus-income";
 
 const ALLOWED_ROLES: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -111,6 +114,7 @@ function DetailSection({ category }: { category: Category }) {
   const [loading, setLoading] = useState(false);
   const [payload, setPayload] = useState<any>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const typeOptions = category === "daily" ? DAILY_BONUS_TYPE_OPTIONS : MONTHLY_BONUS_TYPE_OPTIONS;
   const isDaily = category === "daily";
@@ -142,7 +146,9 @@ function DetailSection({ category }: { category: Category }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
-  const records: any[] = payload?.records ?? [];
+  const allRecords: any[] = payload?.records ?? [];
+  const records: any[] = showAll ? allRecords : filterIncome(allRecords);
+  const hiddenCount = allRecords.length - records.length;
   const members: Record<string, any> = payload?.members ?? {};
   const batches: Record<string, any> = payload?.batches ?? {};
   const summary = payload?.summary;
