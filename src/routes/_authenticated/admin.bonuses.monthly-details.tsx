@@ -8,12 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { listMonthlyBonusDetails } from "@/lib/bonus.functions";
 import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, MONTHLY_BONUS_TYPE_OPTIONS } from "@/lib/bonus-labels";
 import { computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
 import { BonusFiltersCard } from "@/components/admin/BonusFiltersCard";
 import { MONTHLY_RULE_INTRO, bonusRuleMeta, vipStatusLabel, calculationNote } from "@/lib/bonus-rules";
 import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
+import { BonusIncomeSummary, IncomeEmptyState } from "@/components/admin/BonusIncomeSummary";
+import { filterIncome } from "@/lib/bonus-income";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -72,6 +75,7 @@ function Page() {
   const [preset, setPreset] = useState<BonusDatePreset>("this_month");
   const [loading, setLoading] = useState(false);
   const [payload, setPayload] = useState<any>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,7 +100,8 @@ function Page() {
   }
 
   function exportCsv() {
-    const rows = payload?.rows ?? [];
+    const source = payload?.rows ?? [];
+    const rows = showAll ? source : filterIncome(source);
     if (!rows.length) {
       toast.info("沒有資料可匯出");
       return;
@@ -160,7 +165,9 @@ function Page() {
     URL.revokeObjectURL(url);
   }
 
-  const rows: any[] = payload?.rows ?? [];
+  const allRows: any[] = payload?.rows ?? [];
+  const rows: any[] = showAll ? allRows : filterIncome(allRows);
+  const hiddenCount = allRows.length - rows.length;
   const members = payload?.members ?? {};
   const batches = payload?.batches ?? {};
   const tiers: Record<string, string> = payload?.tiers ?? {};
