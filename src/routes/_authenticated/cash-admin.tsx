@@ -183,7 +183,7 @@ function Page() {
                 <TableHead>聯絡方式</TableHead>
                 <TableHead className="text-right">現金餘額</TableHead>
                 <TableHead className="text-right">購物點</TableHead>
-                <TableHead className="text-right">獎勵點</TableHead>
+                <TableHead className="text-right">貢獻點</TableHead>
                 <TableHead className="text-right">折扣點</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
