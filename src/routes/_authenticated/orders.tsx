@@ -2535,6 +2535,15 @@ function OrderDetailDialog({
               </CardContent>
             </Card>
 
+            {/* 獎勵點明細（發獎金用；非買家貢獻點錢包） */}
+            <OrderRewardDetailCard
+              breakdown={rewardPreview.breakdown}
+              issuedToBuyer={rewardIssuedBuyer}
+              hasReferrerIssuance={hasReferrerIssuance}
+              rewardEarnRows={rewardEarnRows}
+            />
+
+
             {/* VIP 升級套組贈品 */}
             {vipPackages.length > 0 && (
               <Card className="border-primary/40 bg-primary/[0.04]">
