@@ -689,6 +689,7 @@ const bonusRecalculationRunSchema = z.object({
   scope: z.enum(["daily", "monthly"]),
   target: z.string().min(1),
   dryRun: z.boolean().default(true),
+  mode: z.enum(["preview", "clawback", "correction"]).default("preview"),
 });
 
 export const adminRunBonusRecalculation = createServerFn({ method: "POST" })
@@ -703,9 +704,10 @@ export const adminRunBonusRecalculation = createServerFn({ method: "POST" })
         throw new Error("日期格式錯誤，請使用 YYYY-MM-DD");
       }
       const { data: result, error } = await (supabaseAdmin as any).rpc(
-        "recalculate_daily_bonus_for_date",
+        "recalculate_daily_bonus_with_mode",
         {
           _settlement_date: data.target,
+          _mode: data.mode,
           _created_by: context.userId,
           _dry_run: data.dryRun,
         },
@@ -718,9 +720,10 @@ export const adminRunBonusRecalculation = createServerFn({ method: "POST" })
       throw new Error("月份格式錯誤，請使用 YYYYMM");
     }
     const { data: result, error } = await (supabaseAdmin as any).rpc(
-      "recalculate_monthly_bonus",
+      "recalculate_monthly_bonus_with_mode",
       {
         _yyyymm: data.target,
+        _mode: data.mode,
         _created_by: context.userId,
         _dry_run: data.dryRun,
       },
@@ -728,6 +731,7 @@ export const adminRunBonusRecalculation = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return result;
   });
+
 
 export const adminListBonusRecalculationRuns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

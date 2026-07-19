@@ -26,6 +26,19 @@ const VIEW_ROLES: AppRole[] = ["super_admin", "admin", "finance"];
 const APPLY_ROLES: AppRole[] = ["super_admin", "admin"];
 
 type Scope = "daily" | "monthly";
+type Mode = "preview" | "clawback" | "correction";
+
+const MODE_LABEL: Record<Mode, string> = {
+  preview: "預覽／重算",
+  clawback: "追回（負向沖銷）",
+  correction: "更正（覆蓋未發放）",
+};
+
+const MODE_DESC: Record<Mode, string> = {
+  preview: "已發放獎金會阻擋 apply；未發放時可正式覆蓋重算。",
+  clawback: "為期間內每筆已發放獎金建立負向沖銷 bonus_records（status='clawback'）。不動 wallet / point_transactions。",
+  correction: "當期間內無已發放獎金時，取消未發放紀錄並以最新規則重新結算。",
+};
 
 export const Route = createFileRoute("/_authenticated/admin/bonuses/recalculation")({
   component: Guard,
@@ -74,6 +87,7 @@ function BonusRecalculationPage() {
   const { roles } = useAuth();
   const canApply = roles.some((role) => APPLY_ROLES.includes(role));
   const [scope, setScope] = useState<Scope>("daily");
+  const [mode, setMode] = useState<Mode>("preview");
   const [dailyDate, setDailyDate] = useState(todayTw());
   const [monthlyYm, setMonthlyYm] = useState(currentYmTw());
   const [busy, setBusy] = useState(false);
@@ -112,7 +126,7 @@ function BonusRecalculationPage() {
     setBusy(true);
     try {
       const result = await adminRunBonusRecalculation({
-        data: { scope, target, dryRun },
+        data: { scope, target, dryRun, mode },
       });
       setLastResult(result);
       await loadRuns();
@@ -208,29 +222,70 @@ function BonusRecalculationPage() {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>執行模式</Label>
+            <div className="grid gap-2 md:grid-cols-3">
+              {(Object.keys(MODE_LABEL) as Mode[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={`rounded-md border p-3 text-left text-sm transition ${
+                    mode === m ? "border-primary bg-primary/10" : "hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="font-semibold">{MODE_LABEL[m]}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">{MODE_DESC[m]}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => execute(true)} disabled={busy}>
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarDays className="mr-2 h-4 w-4" />}
-              Dry-run 預覽
+              Dry-run 預覽（{MODE_LABEL[mode]}）
             </Button>
-            <Button variant="destructive" onClick={() => setConfirmApply(true)} disabled={busy || !canApply}>
+            <Button
+              variant={mode === "clawback" ? "destructive" : "default"}
+              onClick={() => setConfirmApply(true)}
+              disabled={busy || !canApply}
+            >
               <ShieldAlert className="mr-2 h-4 w-4" />
-              正式重算
+              正式執行（{MODE_LABEL[mode]}）
             </Button>
             <Button variant="outline" onClick={loadRuns} disabled={runsLoading}>
               {runsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
               重整紀錄
             </Button>
+            {lastResult && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `recalculation_${lastResult.mode ?? mode}_${target}_${lastResult.run_id ?? "report"}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                下載報告 JSON
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
+
 
       {lastResult && (
         <Card>
           <CardHeader>
             <CardTitle>最近結果</CardTitle>
             <CardDescription>
-              run id：<span className="font-mono">{lastResult.run_id ?? "—"}</span>
+              模式：<span className="font-medium">{MODE_LABEL[(lastResult.mode as Mode) ?? "preview"]}</span>
+              　·　run id：<span className="font-mono">{lastResult.run_id ?? "—"}</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -239,12 +294,65 @@ function BonusRecalculationPage() {
                 {lastResult.reason}
               </div>
             )}
-            <div className="grid gap-3 md:grid-cols-4">
-              <ResultMetric label="總筆數" value={summary.total_records} />
-              <ResultMetric label="總點數" value={summary.total_points} />
-              <ResultMetric label="已發放筆數" value={summary.released_records} />
-              <ResultMetric label="RPC 影響點數" value={settlementRpc.points ?? settlementRpc.total_points ?? "—"} />
-            </div>
+            {lastResult.apply_allowed === false && lastResult.apply_block_reason && (
+              <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
+                <div className="font-medium text-amber-900 dark:text-amber-200">
+                  無法直接 apply：{lastResult.apply_block_reason}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="destructive" onClick={() => { setMode("clawback"); setConfirmApply(false); execute(true); }}>
+                    切換為「追回」dry-run
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setMode("correction"); execute(true); }}>
+                    切換為「更正」dry-run
+                  </Button>
+                </div>
+              </div>
+            )}
+            {lastResult.mode === "clawback" ? (
+              <div className="grid gap-3 md:grid-cols-4">
+                <ResultMetric label="沖銷筆數" value={lastResult.clawback_records ?? lastResult.would_clawback_records} />
+                <ResultMetric label="沖銷點數" value={lastResult.clawback_points ?? lastResult.would_clawback_points} />
+                <ResultMetric label="影響會員數" value={lastResult.distinct_members} />
+                <ResultMetric label="clawback batch" value={lastResult.clawback_batch_id ? String(lastResult.clawback_batch_id).slice(0, 8) : "—"} />
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-4">
+                <ResultMetric label="總筆數" value={summary.total_records} />
+                <ResultMetric label="總點數" value={summary.total_points} />
+                <ResultMetric label="已發放筆數" value={summary.released_records} />
+                <ResultMetric label="RPC 影響點數" value={settlementRpc.points ?? settlementRpc.total_points ?? "—"} />
+              </div>
+            )}
+            {Array.isArray(lastResult.records) && lastResult.records.length > 0 && (
+              <details className="rounded-md border p-3">
+                <summary className="cursor-pointer text-sm font-medium">
+                  受影響 bonus_records（前 200 筆，共 {lastResult.records.length}）
+                </summary>
+                <div className="mt-3 max-h-72 overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>member_id</TableHead>
+                        <TableHead>bonus_type</TableHead>
+                        <TableHead className="text-right">points</TableHead>
+                        <TableHead>batch</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {lastResult.records.slice(0, 200).map((r: any) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="font-mono text-xs">{String(r.member_id).slice(0, 8)}</TableCell>
+                          <TableCell>{r.bonus_type}</TableCell>
+                          <TableCell className="text-right">{n(r.bonus_points)}</TableCell>
+                          <TableCell className="font-mono text-xs">{r.settlement_batch_id ? String(r.settlement_batch_id).slice(0, 8) : "—"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </details>
+            )}
             <details className="rounded-md border p-3">
               <summary className="cursor-pointer text-sm font-medium">查看原始 JSON</summary>
               <pre className="mt-3 max-h-96 overflow-auto rounded bg-muted p-3 text-xs">
@@ -254,6 +362,7 @@ function BonusRecalculationPage() {
           </CardContent>
         </Card>
       )}
+
 
       <Card>
         <CardHeader>
@@ -268,6 +377,7 @@ function BonusRecalculationPage() {
                 <TableHead>類型</TableHead>
                 <TableHead>目標</TableHead>
                 <TableHead>模式</TableHead>
+                <TableHead>dry-run</TableHead>
                 <TableHead>狀態</TableHead>
                 <TableHead>結果</TableHead>
               </TableRow>
@@ -275,7 +385,7 @@ function BonusRecalculationPage() {
             <TableBody>
               {runRows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                     尚無重算紀錄
                   </TableCell>
                 </TableRow>
@@ -285,7 +395,8 @@ function BonusRecalculationPage() {
                     <TableCell className="whitespace-nowrap">{new Date(run.created_at).toLocaleString("zh-TW")}</TableCell>
                     <TableCell>{run.scope === "daily" ? "日獎金" : "月獎金"}</TableCell>
                     <TableCell className="font-mono">{run.target_date ?? run.target_yyyymm}</TableCell>
-                    <TableCell>{run.dry_run ? "dry-run" : "apply"}</TableCell>
+                    <TableCell>{MODE_LABEL[(run.mode as Mode) ?? "preview"]}</TableCell>
+                    <TableCell>{run.dry_run ? "是" : "否"}</TableCell>
                     <TableCell>
                       <Badge variant={statusTone(run.status) as any}>{run.status}</Badge>
                     </TableCell>
@@ -303,15 +414,18 @@ function BonusRecalculationPage() {
       <AlertDialog open={confirmApply} onOpenChange={setConfirmApply}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>確認正式重算？</AlertDialogTitle>
+            <AlertDialogTitle>確認正式執行「{MODE_LABEL[mode]}」？</AlertDialogTitle>
             <AlertDialogDescription>
-              本操作會寫入 bonus_recalculation_runs，並依類型更新未發放的 bonus_records。
-              已發放資料不會覆蓋；若偵測到已發放，系統會阻擋。此操作不會發放錢包、不會寫入 point_transactions。
+              {mode === "clawback"
+                ? "會為期間內每筆已發放獎金建立負向沖銷 bonus_records（status='clawback'），並開一個新的 settlement batch。不動 wallet / point_transactions / reward_wallet_logs。"
+                : mode === "correction"
+                ? "會取消期間內未發放的 bonus_records 並重新結算；若偵測到已發放，系統會阻擋。不動 wallet / point_transactions。"
+                : "會嘗試以最新規則重算未發放獎金；已發放則阻擋。不動 wallet / point_transactions。"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={() => execute(false)}>確認重算</AlertDialogAction>
+            <AlertDialogAction onClick={() => execute(false)}>確認執行</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
