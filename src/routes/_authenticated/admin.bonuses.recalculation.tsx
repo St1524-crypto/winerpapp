@@ -222,22 +222,62 @@ function BonusRecalculationPage() {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>執行模式</Label>
+            <div className="grid gap-2 md:grid-cols-3">
+              {(Object.keys(MODE_LABEL) as Mode[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={`rounded-md border p-3 text-left text-sm transition ${
+                    mode === m ? "border-primary bg-primary/10" : "hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="font-semibold">{MODE_LABEL[m]}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">{MODE_DESC[m]}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => execute(true)} disabled={busy}>
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarDays className="mr-2 h-4 w-4" />}
-              Dry-run 預覽
+              Dry-run 預覽（{MODE_LABEL[mode]}）
             </Button>
-            <Button variant="destructive" onClick={() => setConfirmApply(true)} disabled={busy || !canApply}>
+            <Button
+              variant={mode === "clawback" ? "destructive" : "default"}
+              onClick={() => setConfirmApply(true)}
+              disabled={busy || !canApply}
+            >
               <ShieldAlert className="mr-2 h-4 w-4" />
-              正式重算
+              正式執行（{MODE_LABEL[mode]}）
             </Button>
             <Button variant="outline" onClick={loadRuns} disabled={runsLoading}>
               {runsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
               重整紀錄
             </Button>
+            {lastResult && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `recalculation_${lastResult.mode ?? mode}_${target}_${lastResult.run_id ?? "report"}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                下載報告 JSON
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
+
 
       {lastResult && (
         <Card>
