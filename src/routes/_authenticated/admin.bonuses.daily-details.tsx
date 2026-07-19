@@ -171,12 +171,12 @@ function Page() {
         subtitle: `期間：${periodLabel()}`,
         logoUrl: logo,
         filename: `收款人明細-${periodLabel()}.pdf`,
-        meta: { 期間: periodLabel(), 收款人數: data.length, 合計獎勵點: total.toLocaleString() },
+        meta: { 期間: periodLabel(), 收款人數: data.length, 合計貢獻點: total.toLocaleString() },
         columns: [
           { key: "member_no", label: "會員編號" },
           { key: "name", label: "姓名" },
           { key: "count", label: "筆數", align: "right" },
-          { key: "income", label: "收入獎勵點", align: "right", format: (r: any) => Number(r.income).toLocaleString() },
+          { key: "income", label: "收入貢獻點", align: "right", format: (r: any) => Number(r.income).toLocaleString() },
         ],
         rows: data,
       });
