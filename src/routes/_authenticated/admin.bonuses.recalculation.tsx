@@ -284,7 +284,8 @@ function BonusRecalculationPage() {
           <CardHeader>
             <CardTitle>最近結果</CardTitle>
             <CardDescription>
-              run id：<span className="font-mono">{lastResult.run_id ?? "—"}</span>
+              模式：<span className="font-medium">{MODE_LABEL[(lastResult.mode as Mode) ?? "preview"]}</span>
+              　·　run id：<span className="font-mono">{lastResult.run_id ?? "—"}</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -293,12 +294,65 @@ function BonusRecalculationPage() {
                 {lastResult.reason}
               </div>
             )}
-            <div className="grid gap-3 md:grid-cols-4">
-              <ResultMetric label="總筆數" value={summary.total_records} />
-              <ResultMetric label="總點數" value={summary.total_points} />
-              <ResultMetric label="已發放筆數" value={summary.released_records} />
-              <ResultMetric label="RPC 影響點數" value={settlementRpc.points ?? settlementRpc.total_points ?? "—"} />
-            </div>
+            {lastResult.apply_allowed === false && lastResult.apply_block_reason && (
+              <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
+                <div className="font-medium text-amber-900 dark:text-amber-200">
+                  無法直接 apply：{lastResult.apply_block_reason}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="destructive" onClick={() => { setMode("clawback"); setConfirmApply(false); execute(true); }}>
+                    切換為「追回」dry-run
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setMode("correction"); execute(true); }}>
+                    切換為「更正」dry-run
+                  </Button>
+                </div>
+              </div>
+            )}
+            {lastResult.mode === "clawback" ? (
+              <div className="grid gap-3 md:grid-cols-4">
+                <ResultMetric label="沖銷筆數" value={lastResult.clawback_records ?? lastResult.would_clawback_records} />
+                <ResultMetric label="沖銷點數" value={lastResult.clawback_points ?? lastResult.would_clawback_points} />
+                <ResultMetric label="影響會員數" value={lastResult.distinct_members} />
+                <ResultMetric label="clawback batch" value={lastResult.clawback_batch_id ? String(lastResult.clawback_batch_id).slice(0, 8) : "—"} />
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-4">
+                <ResultMetric label="總筆數" value={summary.total_records} />
+                <ResultMetric label="總點數" value={summary.total_points} />
+                <ResultMetric label="已發放筆數" value={summary.released_records} />
+                <ResultMetric label="RPC 影響點數" value={settlementRpc.points ?? settlementRpc.total_points ?? "—"} />
+              </div>
+            )}
+            {Array.isArray(lastResult.records) && lastResult.records.length > 0 && (
+              <details className="rounded-md border p-3">
+                <summary className="cursor-pointer text-sm font-medium">
+                  受影響 bonus_records（前 200 筆，共 {lastResult.records.length}）
+                </summary>
+                <div className="mt-3 max-h-72 overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>member_id</TableHead>
+                        <TableHead>bonus_type</TableHead>
+                        <TableHead className="text-right">points</TableHead>
+                        <TableHead>batch</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {lastResult.records.slice(0, 200).map((r: any) => (
+                        <TableRow key={r.id}>
+                          <TableCell className="font-mono text-xs">{String(r.member_id).slice(0, 8)}</TableCell>
+                          <TableCell>{r.bonus_type}</TableCell>
+                          <TableCell className="text-right">{n(r.bonus_points)}</TableCell>
+                          <TableCell className="font-mono text-xs">{r.settlement_batch_id ? String(r.settlement_batch_id).slice(0, 8) : "—"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </details>
+            )}
             <details className="rounded-md border p-3">
               <summary className="cursor-pointer text-sm font-medium">查看原始 JSON</summary>
               <pre className="mt-3 max-h-96 overflow-auto rounded bg-muted p-3 text-xs">
@@ -308,6 +362,7 @@ function BonusRecalculationPage() {
           </CardContent>
         </Card>
       )}
+
 
       <Card>
         <CardHeader>
