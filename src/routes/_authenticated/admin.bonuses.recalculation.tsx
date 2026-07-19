@@ -414,15 +414,18 @@ function BonusRecalculationPage() {
       <AlertDialog open={confirmApply} onOpenChange={setConfirmApply}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>確認正式重算？</AlertDialogTitle>
+            <AlertDialogTitle>確認正式執行「{MODE_LABEL[mode]}」？</AlertDialogTitle>
             <AlertDialogDescription>
-              本操作會寫入 bonus_recalculation_runs，並依類型更新未發放的 bonus_records。
-              已發放資料不會覆蓋；若偵測到已發放，系統會阻擋。此操作不會發放錢包、不會寫入 point_transactions。
+              {mode === "clawback"
+                ? "會為期間內每筆已發放獎金建立負向沖銷 bonus_records（status='clawback'），並開一個新的 settlement batch。不動 wallet / point_transactions / reward_wallet_logs。"
+                : mode === "correction"
+                ? "會取消期間內未發放的 bonus_records 並重新結算；若偵測到已發放，系統會阻擋。不動 wallet / point_transactions。"
+                : "會嘗試以最新規則重算未發放獎金；已發放則阻擋。不動 wallet / point_transactions。"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={() => execute(false)}>確認重算</AlertDialogAction>
+            <AlertDialogAction onClick={() => execute(false)}>確認執行</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
