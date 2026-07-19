@@ -314,6 +314,12 @@ function BonusOperationsPage() {
               全國分紅設定（每月累計上限）
             </Link>
           </Button>
+          <Button asChild variant="default">
+            <Link to="/admin/bonuses/reconciliation">
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              補結驗證報告
+            </Link>
+          </Button>
 
           <Button variant="outline" onClick={loadData} disabled={loading || busy}>
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
