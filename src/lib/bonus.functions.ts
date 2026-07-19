@@ -548,6 +548,142 @@ export const runDailySettlement = createServerFn({ method: "POST" })
     return data;
   });
 
+/* ───────────── 補結驗證報告：dry-run 或 apply + 只讀彙整 ───────────── */
+export const runDailyBonusReconciliation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      settlementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      dryRun: z.boolean().default(true),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+
+    const started = new Date().toISOString();
+    let rpcResult: any = null;
+    let rpcError: string | null = null;
+    try {
+      const { data: rpc, error } = await (supabaseAdmin as any).rpc(
+        "settle_daily_bonus_for_date",
+        {
+          _settlement_date: data.settlementDate,
+          _created_by: context.userId,
+          _dry_run: data.dryRun,
+        },
+      );
+      if (error) rpcError = error.message;
+      else rpcResult = rpc;
+    } catch (e: any) {
+      rpcError = e?.message ?? String(e);
+    }
+
+    // 只讀彙整：bonus_records（該 settlement_date）
+    const { data: records, error: recErr } = await (supabaseAdmin as any)
+      .from("bonus_records")
+      .select(
+        "id, member_id, source_member_id, source_order_id, bonus_type, status, bonus_points, base_amount, bonus_rate, generation_level, settlement_date, release_date, settlement_batch_id, created_at",
+      )
+      .eq("settlement_date", data.settlementDate)
+      .order("created_at", { ascending: false })
+      .limit(2000);
+
+    const recs = (records ?? []) as any[];
+    const byType: Record<string, { count: number; points: number }> = {};
+    const byStatus: Record<string, { count: number; points: number }> = {};
+    let totalPoints = 0;
+    const memberSet = new Set<string>();
+    const batchSet = new Set<string>();
+    for (const r of recs) {
+      const t = r.bonus_type ?? "unknown";
+      const s = r.status ?? "unknown";
+      const pts = Number(r.bonus_points ?? 0);
+      byType[t] = byType[t] ?? { count: 0, points: 0 };
+      byType[t].count += 1;
+      byType[t].points += pts;
+      byStatus[s] = byStatus[s] ?? { count: 0, points: 0 };
+      byStatus[s].count += 1;
+      byStatus[s].points += pts;
+      totalPoints += pts;
+      if (r.member_id) memberSet.add(r.member_id);
+      if (r.settlement_batch_id) batchSet.add(r.settlement_batch_id);
+    }
+
+    // Ledger：VIP 日營業分紅
+    const { data: revLedger } = await (supabaseAdmin as any)
+      .from("vip_daily_revenue_bonus_ledger")
+      .select("id, member_id, tier_code, distribution_date, points, base_amount, created_at")
+      .eq("distribution_date", data.settlementDate)
+      .limit(1000);
+
+    // Ledger：VIP 分紅池
+    const { data: poolLedger } = await (supabaseAdmin as any)
+      .from("vip_bonus_pool_payouts")
+      .select("id, member_id, pool_type, payout_date, points, created_at")
+      .eq("payout_date", data.settlementDate)
+      .limit(1000);
+
+    // 錢包安全檢查：當日是否有 release / point_transactions 寫入
+    const dayStart = `${data.settlementDate}T00:00:00+08:00`;
+    const dayEndDate = new Date(new Date(dayStart).getTime() + 86400000).toISOString();
+    const { count: walletLogCount } = await (supabaseAdmin as any)
+      .from("reward_wallet_logs")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", dayStart)
+      .lt("created_at", dayEndDate);
+    const { count: pointTxCount } = await (supabaseAdmin as any)
+      .from("point_transactions")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", dayStart)
+      .lt("created_at", dayEndDate);
+
+    // 批次
+    const batches = batchSet.size > 0
+      ? (await (supabaseAdmin as any)
+          .from("bonus_settlement_batches")
+          .select("id, batch_type, period_start, period_end, total_points, status, created_at")
+          .in("id", Array.from(batchSet))).data ?? []
+      : [];
+
+    return {
+      ok: !rpcError,
+      startedAt: started,
+      finishedAt: new Date().toISOString(),
+      input: { settlementDate: data.settlementDate, dryRun: data.dryRun },
+      rpc: { result: rpcResult, error: rpcError },
+      summary: {
+        totalRecords: recs.length,
+        totalPoints,
+        uniqueMembers: memberSet.size,
+        byType,
+        byStatus,
+      },
+      ledger: {
+        vip_daily_revenue: {
+          count: (revLedger ?? []).length,
+          points: (revLedger ?? []).reduce((s: number, r: any) => s + Number(r.points ?? 0), 0),
+          rows: revLedger ?? [],
+        },
+        vip_bonus_pool: {
+          count: (poolLedger ?? []).length,
+          points: (poolLedger ?? []).reduce((s: number, r: any) => s + Number(r.points ?? 0), 0),
+          rows: poolLedger ?? [],
+        },
+      },
+      wallet_safety: {
+        reward_wallet_logs_count_on_date: walletLogCount ?? 0,
+        point_transactions_count_on_date: pointTxCount ?? 0,
+        warning:
+          data.dryRun && ((walletLogCount ?? 0) > 0 || (pointTxCount ?? 0) > 0)
+            ? "dry-run 期間偵測到當日錢包寫入，請檢查是否來自其他流程"
+            : null,
+      },
+      batches,
+      records: recs.slice(0, 200),
+      recordsError: recErr?.message ?? null,
+    };
+  });
+
 /* ───────────── 月結算（VIP 責任額 + 超額回饋） ───────────── */
 export const runMonthlySettlement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
