@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { compressImageIfNeeded } from "@/lib/image-compress";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 export interface UploaderImage { id?: string; url: string; sort: number; }
 
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function ImageUploader({ images, onChange, max = 8 }: Props) {
+  const { currentCompanyId } = useCurrentCompany();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [drag, setDrag] = useState(false);
@@ -34,7 +36,10 @@ export function ImageUploader({ images, onChange, max = 8 }: Props) {
         const f = await compressImageIfNeeded(raw);
         if (f.size > 5 * 1024 * 1024) { toast.error(`${raw.name} 超過 5MB`); continue; }
         const ext = (f.name.split(".").pop() ?? "jpg").toLowerCase();
-        const path = `${crypto.randomUUID()}.${ext}`;
+        // Prefix path with company_id so storage RLS can scope images per tenant.
+        const path = currentCompanyId
+          ? `${currentCompanyId}/${crypto.randomUUID()}.${ext}`
+          : `${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage.from("product-images").upload(path, f, { cacheControl: "3600", upsert: false, contentType: f.type });
         if (error) { toast.error(error.message); continue; }
         const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
