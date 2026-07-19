@@ -1,4 +1,5 @@
 import { MessageCircle } from "lucide-react";
+import { useRouterState } from "@tanstack/react-router";
 
 export const LINE_OA_ID = "@win8799999";
 export const LINE_OA_URL = "https://line.me/R/ti/p/%40win8799999";
@@ -6,9 +7,29 @@ export const LINE_OA_URL = "https://line.me/R/ti/p/%40win8799999";
 /**
  * Global sticky LINE OA / customer service button.
  * Visible to guests and members across the whole site (shop / cooperation / home).
- * Guests can consult about 促銷、特惠、商品價格、網站內容、福利 without logging in.
+ * 後台管理路徑（/admin*、/vendor*）自動縮小為 icon 模式，避免遮擋功能鍵。
  */
 export function LineContactButton() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const compact = /^\/(admin|vendor)(\/|$)/.test(pathname);
+
+  if (compact) {
+    return (
+      <a
+        href={LINE_OA_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`加入 LINE 官方帳號 ${LINE_OA_ID} 洽詢客服`}
+        title="LINE 客服"
+        className="fixed z-40 flex items-center justify-center rounded-full bg-[#06C755]/85 hover:bg-[#06C755] text-white shadow-md hover:scale-105 active:scale-95 transition
+                   h-8 w-8 bottom-2 right-2 md:h-9 md:w-9 md:bottom-3 md:right-3 print:hidden"
+      >
+        <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
+        <span className="sr-only">LINE 客服</span>
+      </a>
+    );
+  }
+
   return (
     <a
       href={LINE_OA_URL}
