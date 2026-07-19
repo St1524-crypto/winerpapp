@@ -4,6 +4,7 @@ import { Bot, X, Send, Minus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { askAdminAssistant } from "@/lib/admin-assistant.functions";
+import { useAdminFabsHidden } from "@/hooks/use-admin-fabs";
 import { cn } from "@/lib/utils";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -24,6 +25,7 @@ export function AdminAIAssistantWidget() {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const ask = useServerFn(askAdminAssistant);
+  const hidden = useAdminFabsHidden();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -32,6 +34,7 @@ export function AdminAIAssistantWidget() {
   }, [messages, open]);
 
   if (!isAdmin) return null;
+  if (hidden && !open) return null;
 
   async function handleSend() {
     const text = input.trim();

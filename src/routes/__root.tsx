@@ -9,6 +9,7 @@ import { BrandingProvider } from "@/hooks/use-branding";
 import { CompanyProvider } from "@/hooks/use-current-company";
 import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
 import { LineContactButton } from "@/components/LineContactButton";
+import { AdminFabToggle } from "@/components/AdminFabToggle";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -86,6 +87,7 @@ function RootComponent() {
             <BrandingProvider>
               <Outlet />
               <LineContactButton />
+              <AdminFabToggle />
               <Toaster richColors position="top-right" />
             </BrandingProvider>
           </CompanyProvider>
