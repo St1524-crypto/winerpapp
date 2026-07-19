@@ -678,6 +678,51 @@ export type Database = {
           },
         ]
       }
+      bonus_recalculation_runs: {
+        Row: {
+          created_at: string
+          dry_run: boolean
+          error: string | null
+          finished_at: string | null
+          id: string
+          requested_by: string | null
+          result: Json
+          scope: string
+          started_at: string
+          status: string
+          target_date: string | null
+          target_yyyymm: string | null
+        }
+        Insert: {
+          created_at?: string
+          dry_run?: boolean
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          requested_by?: string | null
+          result?: Json
+          scope: string
+          started_at?: string
+          status?: string
+          target_date?: string | null
+          target_yyyymm?: string | null
+        }
+        Update: {
+          created_at?: string
+          dry_run?: boolean
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          requested_by?: string | null
+          result?: Json
+          scope?: string
+          started_at?: string
+          status?: string
+          target_date?: string | null
+          target_yyyymm?: string | null
+        }
+        Relationships: []
+      }
       bonus_records: {
         Row: {
           base_amount: number
@@ -7541,6 +7586,18 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      recalculate_daily_bonus_for_date: {
+        Args: {
+          _created_by?: string
+          _dry_run?: boolean
+          _settlement_date: string
+        }
+        Returns: Json
+      }
+      recalculate_monthly_bonus: {
+        Args: { _created_by?: string; _dry_run?: boolean; _yyyymm: string }
+        Returns: Json
       }
       record_business_bonus_release: {
         Args: {
