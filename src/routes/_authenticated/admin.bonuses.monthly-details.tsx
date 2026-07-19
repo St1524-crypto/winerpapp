@@ -8,12 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { listMonthlyBonusDetails } from "@/lib/bonus.functions";
 import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, MONTHLY_BONUS_TYPE_OPTIONS } from "@/lib/bonus-labels";
 import { computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
 import { BonusFiltersCard } from "@/components/admin/BonusFiltersCard";
 import { MONTHLY_RULE_INTRO, bonusRuleMeta, vipStatusLabel, calculationNote } from "@/lib/bonus-rules";
 import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
+import { BonusIncomeSummary, IncomeEmptyState } from "@/components/admin/BonusIncomeSummary";
+import { filterIncome } from "@/lib/bonus-income";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -72,6 +75,7 @@ function Page() {
   const [preset, setPreset] = useState<BonusDatePreset>("this_month");
   const [loading, setLoading] = useState(false);
   const [payload, setPayload] = useState<any>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,7 +100,8 @@ function Page() {
   }
 
   function exportCsv() {
-    const rows = payload?.rows ?? [];
+    const source = payload?.rows ?? [];
+    const rows = showAll ? source : filterIncome(source);
     if (!rows.length) {
       toast.info("沒有資料可匯出");
       return;
@@ -160,7 +165,9 @@ function Page() {
     URL.revokeObjectURL(url);
   }
 
-  const rows: any[] = payload?.rows ?? [];
+  const allRows: any[] = payload?.rows ?? [];
+  const rows: any[] = showAll ? allRows : filterIncome(allRows);
+  const hiddenCount = allRows.length - rows.length;
   const members = payload?.members ?? {};
   const batches = payload?.batches ?? {};
   const tiers: Record<string, string> = payload?.tiers ?? {};
@@ -217,18 +224,29 @@ function Page() {
         </Card>
       )}
 
+      <BonusIncomeSummary rows={allRows} title="月獎金收入總表" />
+
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">明細：{rows.length} 筆</CardTitle>
-          <CardDescription>
-            新月結算會寫入 calculation_detail 作為演算快照；舊資料以 base_amount 顯示月達成基礎點數。
-          </CardDescription>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-base">明細：{rows.length} 筆</CardTitle>
+              <CardDescription>
+                預設僅顯示「有收入」的獎金列（bonus_points &gt; 0 且狀態為已發放 / 待發放）。
+                {hiddenCount > 0 && !showAll ? `　已隱藏 ${hiddenCount} 筆 0 點 / 已取消 / 失敗 / 未達成紀錄。` : ""}
+              </CardDescription>
+            </div>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox checked={showAll} onCheckedChange={(v) => setShowAll(!!v)} />
+              顯示 0 點 / 已取消紀錄（稽核用）
+            </label>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
           ) : rows.length === 0 ? (
-            <div className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">沒有符合條件的資料</div>
+            <IncomeEmptyState />
           ) : (
             <div className="overflow-x-auto">
               <Table>

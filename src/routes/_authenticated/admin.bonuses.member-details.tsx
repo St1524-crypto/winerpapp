@@ -19,11 +19,14 @@ import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { listMemberBonusDetails, getBonusRecordDetail } from "@/lib/bonus.functions";
 import {
   bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT,
   DAILY_BONUS_TYPE_OPTIONS, MONTHLY_BONUS_TYPE_OPTIONS,
 } from "@/lib/bonus-labels";
+import { BonusIncomeSummary, IncomeEmptyState } from "@/components/admin/BonusIncomeSummary";
+import { filterIncome } from "@/lib/bonus-income";
 
 const ALLOWED_ROLES: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -111,6 +114,7 @@ function DetailSection({ category }: { category: Category }) {
   const [loading, setLoading] = useState(false);
   const [payload, setPayload] = useState<any>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const typeOptions = category === "daily" ? DAILY_BONUS_TYPE_OPTIONS : MONTHLY_BONUS_TYPE_OPTIONS;
   const isDaily = category === "daily";
@@ -142,7 +146,9 @@ function DetailSection({ category }: { category: Category }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
-  const records: any[] = payload?.records ?? [];
+  const allRecords: any[] = payload?.records ?? [];
+  const records: any[] = showAll ? allRecords : filterIncome(allRecords);
+  const hiddenCount = allRecords.length - records.length;
   const members: Record<string, any> = payload?.members ?? {};
   const batches: Record<string, any> = payload?.batches ?? {};
   const summary = payload?.summary;
@@ -311,17 +317,27 @@ function DetailSection({ category }: { category: Category }) {
         </CardContent>
       </Card>
 
+      {/* ── 獎金收入總表（僅有收入的紀錄） ── */}
+      <BonusIncomeSummary rows={allRecords} title={isDaily ? "日獎金收入總表" : "月獎金收入總表"} />
+
       {/* ── 明細表格 ── */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
-            {isDaily ? "日獎金明細" : "月獎金明細"}
-          </CardTitle>
-          <CardDescription>
-            {isDaily
-              ? "顯示 bonus_records 中屬於日獎金類型之紀錄。"
-              : "顯示 bonus_records 中屬於月獎金類型之紀錄。"}
-          </CardDescription>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-base">
+                {isDaily ? "日獎金明細" : "月獎金明細"}（{records.length} 筆）
+              </CardTitle>
+              <CardDescription>
+                預設僅顯示「有收入」的獎金列（bonus_points &gt; 0 且狀態為已發放 / 待發放）。
+                {hiddenCount > 0 && !showAll ? `　已隱藏 ${hiddenCount} 筆 0 點 / 已取消 / 失敗 / 未達成紀錄。` : ""}
+              </CardDescription>
+            </div>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox checked={showAll} onCheckedChange={(v) => setShowAll(!!v)} />
+              顯示 0 點 / 已取消紀錄（稽核用）
+            </label>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -329,9 +345,7 @@ function DetailSection({ category }: { category: Category }) {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : records.length === 0 ? (
-            <div className="rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">
-              尚無符合條件的資料
-            </div>
+            <IncomeEmptyState />
           ) : (
             <div className="overflow-x-auto">
               <Table>
