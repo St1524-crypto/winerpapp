@@ -104,8 +104,8 @@ function VipTiersAdmin() {
               <div>獎勵點門檻：{r.required_reward_points.toLocaleString()}</div>
               <div>直推 VIP：{r.required_direct_vip}</div>
               {r.required_mentor_tier && <div>輔導：{r.required_mentor_count} × {r.required_mentor_tier}</div>}
-              <div>回饋率：{r.cashback_rate}%　{Number(r.revenue_share_rate) > 0 ? `營業分紅：${r.revenue_share_rate}%` : `消費回饋：${r.cashback_rate}%`}</div>
-              <div>{Number(r.revenue_share_rate) > 0 ? "營業分紅上限" : "消費回饋上限"}：{Number(r.upgrade_bonus_cap).toLocaleString()}</div>
+              <div>回饋率：{r.cashback_rate}%　消費回饋：{r.cashback_rate}%</div>
+              <div>消費回饋上限：{Number(r.upgrade_bonus_cap).toLocaleString()}</div>
               {r.renewal_window_days > 0 && <div>續領：每 {r.renewal_window_days} 天需新增 {r.renewal_required_new_vip} VIP</div>}
             </CardContent>
           </Card>
@@ -124,8 +124,8 @@ function VipTiersAdmin() {
             <div><Label>輔導下線階級</Label><Input value={form.required_mentor_tier} onChange={(e) => setForm({ ...form, required_mentor_tier: e.target.value })} /></div>
             <div><Label>輔導人數</Label><Input type="number" value={form.required_mentor_count} onChange={(e) => setForm({ ...form, required_mentor_count: e.target.value })} /></div>
             <div><Label>回饋率 %</Label><Input type="number" step="0.01" value={form.cashback_rate} onChange={(e) => setForm({ ...form, cashback_rate: e.target.value })} /></div>
-            <div><Label>營業分紅 %（僅星級/董事）</Label><Input type="number" step="0.01" value={form.revenue_share_rate} onChange={(e) => setForm({ ...form, revenue_share_rate: e.target.value })} /></div>
-            <div><Label>{Number(form.revenue_share_rate) > 0 ? "營業分紅上限" : "消費回饋上限"}</Label><Input type="number" value={form.upgrade_bonus_cap} onChange={(e) => setForm({ ...form, upgrade_bonus_cap: e.target.value })} /></div>
+            <div><Label>營業分紅 %（V/S/T/E/A 不適用，僅星級/董事使用）</Label><Input type="number" step="0.01" value={form.revenue_share_rate} onChange={(e) => setForm({ ...form, revenue_share_rate: e.target.value })} /></div>
+            <div><Label>消費回饋上限</Label><Input type="number" value={form.upgrade_bonus_cap} onChange={(e) => setForm({ ...form, upgrade_bonus_cap: e.target.value })} /></div>
             <div><Label>續領週期(天)</Label><Input type="number" value={form.renewal_window_days} onChange={(e) => setForm({ ...form, renewal_window_days: e.target.value })} /></div>
             <div><Label>續領需新增 VIP</Label><Input type="number" value={form.renewal_required_new_vip} onChange={(e) => setForm({ ...form, renewal_required_new_vip: e.target.value })} /></div>
             <div className="col-span-2"><Label>說明</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
