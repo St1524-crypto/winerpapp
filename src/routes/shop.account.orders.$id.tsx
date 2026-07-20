@@ -280,21 +280,69 @@ function OrderDetail() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <div className="text-sm font-medium mb-3">訂購商品</div>
-            <div className="space-y-2">
-              {items.map((it) => (
-                <div key={it.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                  <div className="h-14 w-14 rounded-md bg-muted overflow-hidden shrink-0">
-                    {it.image && <img src={it.image} alt={it.product_name} className="h-full w-full object-cover" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{it.product_name}</div>
-                    <div className="text-xs text-muted-foreground">{it.sku} · NT$ {Number(it.unit_price).toLocaleString()} × {it.quantity}</div>
-                  </div>
-                  <div className="font-semibold tabular-nums text-sm">NT$ {Number(it.subtotal).toLocaleString()}</div>
-                </div>
-              ))}
-              {items.length === 0 && <div className="text-sm text-muted-foreground text-center py-4">無訂購項目</div>}
+            <div className="text-sm font-medium mb-3">訂單品項 ({items.length})</div>
+            <div className="rounded-lg border border-border/60 overflow-x-auto">
+              <table className="w-full text-xs sm:text-sm min-w-[640px]">
+                <thead className="bg-muted/40 text-muted-foreground">
+                  <tr>
+                    <th className="text-left px-3 py-2 font-medium">商品</th>
+                    <th className="text-left px-3 py-2 font-medium">SKU</th>
+                    <th className="text-right px-3 py-2 font-medium">單價</th>
+                    <th className="text-right px-3 py-2 font-medium">數量</th>
+                    <th className="text-right px-3 py-2 font-medium">小計</th>
+                    <th className="text-right px-3 py-2 font-medium">增加獎勵點</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((it) => {
+                    const tb = tierBreakdown.find((b) => b.product_id === it.product_id);
+                    const unitReward = tb?.unit_reward_points ?? productRewardsMap[it.product_id ?? ""] ?? 0;
+                    const lineReward = unitReward * Number(it.quantity ?? 0);
+                    return (
+                      <tr key={it.id} className="border-t border-border/40 align-top">
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-2">
+                            {it.image && (
+                              <img src={it.image} alt={it.product_name} className="h-10 w-10 rounded object-cover shrink-0" />
+                            )}
+                            <span className="font-medium">{it.product_name}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-muted-foreground">{it.sku ?? "-"}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">NT$ {Number(it.unit_price).toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{it.quantity}</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-medium">NT$ {Number(it.subtotal).toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-amber-500">
+                          {lineReward > 0 ? `+${lineReward.toLocaleString()}` : "-"}
+                          {unitReward > 0 && Number(it.quantity ?? 0) > 0 && (
+                            <div className="text-[10px] text-muted-foreground">{unitReward} × {it.quantity}</div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {items.length === 0 && (
+                    <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">無訂購項目</td></tr>
+                  )}
+                </tbody>
+                {items.length > 0 && (
+                  <tfoot>
+                    <tr className="border-t border-border/60 bg-muted/30">
+                      <td colSpan={3} className="px-3 py-2 text-right text-muted-foreground">品項合計</td>
+                      <td className="px-3 py-2 text-right tabular-nums font-medium">
+                        {items.reduce((s, it) => s + Number(it.quantity ?? 0), 0)} 件
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums font-semibold">
+                        NT$ {items.reduce((s, it) => s + Number(it.subtotal ?? 0), 0).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-500">
+                        +{(tierBreakdown.reduce((s, b) => s + b.line_total, 0)
+                          + bundleBreakdown.reduce((s, b) => s + b.line_total, 0)).toLocaleString()}
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
             </div>
           </div>
 
