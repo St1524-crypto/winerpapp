@@ -113,7 +113,7 @@ function DealerTiersAdmin() {
                 <li>• 回饋率 {t.rebate_rate}%</li>
                 {t.daily_referral_rate > 0 && <li>• 日獎金推薦 {t.daily_referral_rate}%（差額制）</li>}
                 {t.operating_bonus_rate > 0 && <li>• 營業分紅 {t.operating_bonus_rate}%（每日訂單總獎勵點 5% 由合格星級平均分配）</li>}
-                {t.upgrade_bonus_cap > 0 && <li>• 營業分紅上限 NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
+                {t.upgrade_bonus_cap > 0 && <li>• {Number(t.operating_bonus_rate) > 0 ? "營業分紅上限" : "消費回饋上限"} NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
                 {t.special_bonus_rate > 0 && (
                   <li className="text-primary">★ 當月新增 {t.special_bonus_trigger_count} VIP → {t.special_bonus_label} {t.special_bonus_rate}%</li>
                 )}
