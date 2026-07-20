@@ -113,7 +113,7 @@ function DealerTiersAdmin() {
                 <li>• 回饋率 {t.rebate_rate}%</li>
                 {t.daily_referral_rate > 0 && <li>• 日獎金推薦 {t.daily_referral_rate}%（差額制）</li>}
                 {t.operating_bonus_rate > 0 && <li>• 營業分紅 {t.operating_bonus_rate}%（每日訂單總獎勵點 5% 由合格星級平均分配）</li>}
-                {t.upgrade_bonus_cap > 0 && <li>• 營業分紅上限 NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
+                {t.upgrade_bonus_cap > 0 && <li>• {Number(t.operating_bonus_rate) > 0 ? "營業分紅上限" : "消費回饋上限"} NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
                 {t.special_bonus_rate > 0 && (
                   <li className="text-primary">★ 當月新增 {t.special_bonus_trigger_count} VIP → {t.special_bonus_label} {t.special_bonus_rate}%</li>
                 )}
@@ -188,7 +188,7 @@ function DealerTiersAdmin() {
                 <Field label="回饋率 %"><Input type="number" step="0.01" value={editing.rebate_rate} onChange={(e) => setEditing({ ...editing, rebate_rate: +e.target.value })} /></Field>
                 <Field label="日獎金推薦 %（差額制）"><Input type="number" step="0.01" value={editing.daily_referral_rate} onChange={(e) => setEditing({ ...editing, daily_referral_rate: +e.target.value })} /></Field>
                 <Field label="營業分紅率 %"><Input type="number" step="0.01" value={editing.operating_bonus_rate} onChange={(e) => setEditing({ ...editing, operating_bonus_rate: +e.target.value })} /></Field>
-                <Field label="營業分紅上限"><Input type="number" value={editing.upgrade_bonus_cap} onChange={(e) => setEditing({ ...editing, upgrade_bonus_cap: +e.target.value })} /></Field>
+                <Field label={Number(editing.operating_bonus_rate) > 0 ? "營業分紅上限" : "消費回饋上限"}><Input type="number" value={editing.upgrade_bonus_cap} onChange={(e) => setEditing({ ...editing, upgrade_bonus_cap: +e.target.value })} /></Field>
                 <Field label="特別獎勵名稱"><Input value={editing.special_bonus_label ?? ""} onChange={(e) => setEditing({ ...editing, special_bonus_label: e.target.value || null })} /></Field>
                 <Field label="特別獎勵 %"><Input type="number" step="0.01" value={editing.special_bonus_rate} onChange={(e) => setEditing({ ...editing, special_bonus_rate: +e.target.value })} /></Field>
                 <Field label="特別獎勵觸發人數"><Input type="number" value={editing.special_bonus_trigger_count} onChange={(e) => setEditing({ ...editing, special_bonus_trigger_count: +e.target.value })} /></Field>
