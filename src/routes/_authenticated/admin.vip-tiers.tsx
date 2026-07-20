@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -47,11 +53,17 @@ const BUSINESS_DIVIDEND_CODES = new Set([
 ]);
 
 function isBusinessDividendTier(tier: { code?: string | null }) {
-  const code = String(tier.code ?? "").trim().toUpperCase();
+  const code = String(tier.code ?? "")
+    .trim()
+    .toUpperCase();
   return BUSINESS_DIVIDEND_CODES.has(code) || /^V[1-8]$/.test(code);
 }
 
-function dividendRate(tier: { cashback_rate?: number | string | null; revenue_share_rate?: number | string | null; code?: string | null }) {
+function dividendRate(tier: {
+  cashback_rate?: number | string | null;
+  revenue_share_rate?: number | string | null;
+  code?: string | null;
+}) {
   return Number(isBusinessDividendTier(tier) ? tier.revenue_share_rate : tier.cashback_rate) || 0;
 }
 
