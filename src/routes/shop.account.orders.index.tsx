@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, type SalesOrder } from "@/types/shop";
 import { ChevronRight, ShoppingBag } from "lucide-react";
 
-export const Route = createFileRoute("/shop/account/orders")({ component: OrdersPage });
+export const Route = createFileRoute("/shop/account/orders/")({ component: OrdersPage });
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-amber-500/15 text-amber-400 border-amber-500/30",

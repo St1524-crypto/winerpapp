@@ -84,7 +84,6 @@ import { Route as ShopAccountTasksRouteImport } from './routes/shop.account.task
 import { Route as ShopAccountStorefrontRouteImport } from './routes/shop.account.storefront'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
-import { Route as ShopAccountOrdersRouteImport } from './routes/shop.account.orders'
 import { Route as ShopAccountAttendanceRouteImport } from './routes/shop.account.attendance'
 import { Route as ShopAccountAddressesRouteImport } from './routes/shop.account.addresses'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -120,6 +119,7 @@ import { Route as AuthenticatedAdminBonusCenterRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated/admin.audit-logs'
 import { Route as AuthenticatedAdminAnnualFeeVipRouteImport } from './routes/_authenticated/admin.annual-fee-vip'
 import { Route as ShopAccountStorefrontIndexRouteImport } from './routes/shop.account.storefront.index'
+import { Route as ShopAccountOrdersIndexRouteImport } from './routes/shop.account.orders.index'
 import { Route as AuthenticatedAdminQuotesIndexRouteImport } from './routes/_authenticated/admin.quotes.index'
 import { Route as AuthenticatedAdminBonusesIndexRouteImport } from './routes/_authenticated/admin.bonuses.index'
 import { Route as ShopCheckoutSuccessIdRouteImport } from './routes/shop.checkout.success.$id'
@@ -540,11 +540,6 @@ const ShopAccountPointsRoute = ShopAccountPointsRouteImport.update({
   path: '/points',
   getParentRoute: () => ShopAccountRoute,
 } as any)
-const ShopAccountOrdersRoute = ShopAccountOrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => ShopAccountRoute,
-} as any)
 const ShopAccountAttendanceRoute = ShopAccountAttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
@@ -752,6 +747,11 @@ const ShopAccountStorefrontIndexRoute =
     path: '/',
     getParentRoute: () => ShopAccountStorefrontRoute,
   } as any)
+const ShopAccountOrdersIndexRoute = ShopAccountOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
 const AuthenticatedAdminQuotesIndexRoute =
   AuthenticatedAdminQuotesIndexRouteImport.update({
     id: '/admin/quotes/',
@@ -776,9 +776,9 @@ const ShopAccountStorefrontTemplatesRoute =
     getParentRoute: () => ShopAccountStorefrontRoute,
   } as any)
 const ShopAccountOrdersIdRoute = ShopAccountOrdersIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ShopAccountOrdersRoute,
+  id: '/orders/$id',
+  path: '/orders/$id',
+  getParentRoute: () => ShopAccountRoute,
 } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
@@ -1047,7 +1047,6 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
-  '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
@@ -1096,6 +1095,7 @@ export interface FileRoutesByFullPath {
   '/shop/checkout/success/$id': typeof ShopCheckoutSuccessIdRoute
   '/admin/bonuses/': typeof AuthenticatedAdminBonusesIndexRoute
   '/admin/quotes/': typeof AuthenticatedAdminQuotesIndexRoute
+  '/shop/account/orders/': typeof ShopAccountOrdersIndexRoute
   '/shop/account/storefront/': typeof ShopAccountStorefrontIndexRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
@@ -1189,7 +1189,6 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
-  '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/tasks': typeof ShopAccountTasksRoute
@@ -1237,6 +1236,7 @@ export interface FileRoutesByTo {
   '/shop/checkout/success/$id': typeof ShopCheckoutSuccessIdRoute
   '/admin/bonuses': typeof AuthenticatedAdminBonusesIndexRoute
   '/admin/quotes': typeof AuthenticatedAdminQuotesIndexRoute
+  '/shop/account/orders': typeof ShopAccountOrdersIndexRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontIndexRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
@@ -1336,7 +1336,6 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
-  '/shop/account/orders': typeof ShopAccountOrdersRouteWithChildren
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
@@ -1385,6 +1384,7 @@ export interface FileRoutesById {
   '/shop/checkout/success/$id': typeof ShopCheckoutSuccessIdRoute
   '/_authenticated/admin/bonuses/': typeof AuthenticatedAdminBonusesIndexRoute
   '/_authenticated/admin/quotes/': typeof AuthenticatedAdminQuotesIndexRoute
+  '/shop/account/orders/': typeof ShopAccountOrdersIndexRoute
   '/shop/account/storefront/': typeof ShopAccountStorefrontIndexRoute
   '/_authenticated/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
 }
@@ -1484,7 +1484,6 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
-    | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/storefront'
@@ -1533,6 +1532,7 @@ export interface FileRouteTypes {
     | '/shop/checkout/success/$id'
     | '/admin/bonuses/'
     | '/admin/quotes/'
+    | '/shop/account/orders/'
     | '/shop/account/storefront/'
     | '/admin/bonuses/batches/$batchId'
   fileRoutesByTo: FileRoutesByTo
@@ -1626,7 +1626,6 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
-    | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/tasks'
@@ -1674,6 +1673,7 @@ export interface FileRouteTypes {
     | '/shop/checkout/success/$id'
     | '/admin/bonuses'
     | '/admin/quotes'
+    | '/shop/account/orders'
     | '/shop/account/storefront'
     | '/admin/bonuses/batches/$batchId'
   id:
@@ -1772,7 +1772,6 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
-    | '/shop/account/orders'
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/storefront'
@@ -1821,6 +1820,7 @@ export interface FileRouteTypes {
     | '/shop/checkout/success/$id'
     | '/_authenticated/admin/bonuses/'
     | '/_authenticated/admin/quotes/'
+    | '/shop/account/orders/'
     | '/shop/account/storefront/'
     | '/_authenticated/admin/bonuses/batches/$batchId'
   fileRoutesById: FileRoutesById
@@ -2383,13 +2383,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopAccountPointsRouteImport
       parentRoute: typeof ShopAccountRoute
     }
-    '/shop/account/orders': {
-      id: '/shop/account/orders'
-      path: '/orders'
-      fullPath: '/shop/account/orders'
-      preLoaderRoute: typeof ShopAccountOrdersRouteImport
-      parentRoute: typeof ShopAccountRoute
-    }
     '/shop/account/attendance': {
       id: '/shop/account/attendance'
       path: '/attendance'
@@ -2635,6 +2628,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopAccountStorefrontIndexRouteImport
       parentRoute: typeof ShopAccountStorefrontRoute
     }
+    '/shop/account/orders/': {
+      id: '/shop/account/orders/'
+      path: '/orders'
+      fullPath: '/shop/account/orders/'
+      preLoaderRoute: typeof ShopAccountOrdersIndexRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
     '/_authenticated/admin/quotes/': {
       id: '/_authenticated/admin/quotes/'
       path: '/admin/quotes'
@@ -2665,10 +2665,10 @@ declare module '@tanstack/react-router' {
     }
     '/shop/account/orders/$id': {
       id: '/shop/account/orders/$id'
-      path: '/$id'
+      path: '/orders/$id'
       fullPath: '/shop/account/orders/$id'
       preLoaderRoute: typeof ShopAccountOrdersIdRouteImport
-      parentRoute: typeof ShopAccountOrdersRoute
+      parentRoute: typeof ShopAccountRoute
     }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
@@ -3156,17 +3156,6 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
-interface ShopAccountOrdersRouteChildren {
-  ShopAccountOrdersIdRoute: typeof ShopAccountOrdersIdRoute
-}
-
-const ShopAccountOrdersRouteChildren: ShopAccountOrdersRouteChildren = {
-  ShopAccountOrdersIdRoute: ShopAccountOrdersIdRoute,
-}
-
-const ShopAccountOrdersRouteWithChildren =
-  ShopAccountOrdersRoute._addFileChildren(ShopAccountOrdersRouteChildren)
-
 interface ShopAccountStorefrontRouteChildren {
   ShopAccountStorefrontTemplatesRoute: typeof ShopAccountStorefrontTemplatesRoute
   ShopAccountStorefrontIndexRoute: typeof ShopAccountStorefrontIndexRoute
@@ -3185,7 +3174,6 @@ const ShopAccountStorefrontRouteWithChildren =
 interface ShopAccountRouteChildren {
   ShopAccountAddressesRoute: typeof ShopAccountAddressesRoute
   ShopAccountAttendanceRoute: typeof ShopAccountAttendanceRoute
-  ShopAccountOrdersRoute: typeof ShopAccountOrdersRouteWithChildren
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
   ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRouteWithChildren
@@ -3194,12 +3182,13 @@ interface ShopAccountRouteChildren {
   ShopAccountWalletRoute: typeof ShopAccountWalletRoute
   ShopAccountWorkbenchRoute: typeof ShopAccountWorkbenchRoute
   ShopAccountIndexRoute: typeof ShopAccountIndexRoute
+  ShopAccountOrdersIdRoute: typeof ShopAccountOrdersIdRoute
+  ShopAccountOrdersIndexRoute: typeof ShopAccountOrdersIndexRoute
 }
 
 const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountAddressesRoute: ShopAccountAddressesRoute,
   ShopAccountAttendanceRoute: ShopAccountAttendanceRoute,
-  ShopAccountOrdersRoute: ShopAccountOrdersRouteWithChildren,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
   ShopAccountStorefrontRoute: ShopAccountStorefrontRouteWithChildren,
@@ -3208,6 +3197,8 @@ const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountWalletRoute: ShopAccountWalletRoute,
   ShopAccountWorkbenchRoute: ShopAccountWorkbenchRoute,
   ShopAccountIndexRoute: ShopAccountIndexRoute,
+  ShopAccountOrdersIdRoute: ShopAccountOrdersIdRoute,
+  ShopAccountOrdersIndexRoute: ShopAccountOrdersIndexRoute,
 }
 
 const ShopAccountRouteWithChildren = ShopAccountRoute._addFileChildren(
