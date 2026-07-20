@@ -312,8 +312,8 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
             await applyDelta(userId, "reward", rewardEarn, "order_earn", { reference_id: data.orderId });
           } else {
             // 訪客 / 到期 VIP：獎勵點歸屬推薦人，依 repurchase_bonus_settings 位階（第 1、2 代…）
-            // 折算為獎勵點，發放到「有效 VIP」上線的獎勵點錢包，
-            // 並依消費回饋比例與 VIP 營業分紅上限進行 cap 檢查（任一上限已滿則不可領）。
+            // 折算為獎勵點，發放到「有效 VIP」上線的獎勵點錢包。
+            // V/S/T/E/A 只領消費分紅；一星以上（V1~V8 / STAR1~DIRECTOR）只領營業分紅。
             const { data: rates } = await supabaseAdmin
               .from("repurchase_bonus_settings")
               .select("generation_level, bonus_rate, enabled")
@@ -338,8 +338,8 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
               const upVipActive = !!(up as any)?.is_vip && !!upExp && new Date(upExp) > new Date();
               const basePoints = computeBasePoints(rewardEarn, rate);
               if (upId && upVipActive && basePoints > 0) {
-                // 查詢上線目前 VIP 星級 — 一星以上（V1~V7、董事）完全停發消費回饋，
-                // 僅依 VIP 營業分紅上限發放。
+                // 查詢上線目前 VIP 星級：一星以上（V1~V8 / STAR1~DIRECTOR）走營業分紅，
+                // V/S/T/E/A 走消費分紅，兩種發放不可混淆。
                 const { data: upTierCodeRaw } = await (supabaseAdmin as any).rpc(
                   "get_member_vip_tier_code",
                   { _member_id: upId },
@@ -351,8 +351,9 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
                 const NON_STAR_CODES = new Set(["", "V0", "V", "S", "T", "E", "A", "NONE"]);
                 const isStarTierOrAbove = !!upTierCode && !NON_STAR_CODES.has(upTierUpper);
                 let bizPayable = basePoints;
+                let upgPayable = basePoints;
                 if (!isStarTierOrAbove) {
-                  // 未達一星：沿用消費回饋比例 cap
+                  // 未達一星：只寫消費分紅 cap / ledger，不寫營業分紅 ledger。
                   const { data: bizRow } = await (supabaseAdmin as any).rpc("record_business_bonus_release", {
                     _member_id: upId,
                     _bonus_amount: basePoints,
@@ -364,23 +365,24 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
                     _notes: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP`,
                   });
                   bizPayable = Number((bizRow as any)?.payable_amount ?? 0);
+                } else {
+                  // 一星以上：只寫營業分紅 cap / ledger，不寫消費分紅 ledger。
+                  const { data: upgRow } = await (supabaseAdmin as any).rpc("record_upgrade_bonus_release", {
+                    _member_id: upId,
+                    _bonus_amount: basePoints,
+                    _source_member_id: userId,
+                    _source_order_id: data.orderId,
+                    _tier_code: upTierCode,
+                    _dedupe_key: `order:${data.orderId}:upg:L${level}`,
+                    _bonus_record_id: null,
+                    _notes: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP（${upTierCode} 一星以上僅領營業分紅）`,
+                  });
+                  upgPayable = Number((upgRow as any)?.payable_amount ?? 0);
                 }
-                // VIP 營業分紅上限 cap（所有位階皆適用）
-                const { data: upgRow } = await (supabaseAdmin as any).rpc("record_upgrade_bonus_release", {
-                  _member_id: upId,
-                  _bonus_amount: basePoints,
-                  _source_member_id: userId,
-                  _source_order_id: data.orderId,
-                  _tier_code: upTierCode,
-                  _dedupe_key: `order:${data.orderId}:upg:L${level}`,
-                  _bonus_record_id: null,
-                  _notes: `訂單復購獎勵（第 ${level} 代，${rate}%）— 買家非有效 VIP`
-                    + (isStarTierOrAbove ? `（${upTierCode} 一星以上僅領營業分紅）` : ""),
-                });
                 const { payable, capReasons } = computeLevelPayable(
                   basePoints,
                   bizPayable,
-                  Number((upgRow as any)?.payable_amount ?? 0),
+                  upgPayable,
                 );
                 if (payable > 0) {
                   await applyDelta(upId, "reward", payable, "order_earn_referrer", {
