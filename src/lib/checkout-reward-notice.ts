@@ -13,7 +13,7 @@ export type RewardNotice =
   | null;
 
 export const REFERRER_FALLBACK_NOTE =
-  "本次獎勵點依復購位階制度發放至推薦人獎勵點錢包（依消費回饋比例與 VIP 營業分紅上限）。";
+  "本次獎勵點依復購位階制度發放至推薦人獎勵點錢包（V/S/T/E/A 依消費分紅，一星以上依營業分紅）。";
 
 /**
  * Decide what the checkout success page should render for reward points.

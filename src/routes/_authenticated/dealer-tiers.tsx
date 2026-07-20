@@ -43,6 +43,9 @@ type Tier = {
   daily_referral_rate: number;
 };
 
+function isBusinessDividendTier(tier: Pick<Tier, "tier_type">) {
+  return tier.tier_type === "star" || tier.tier_type === "director";
+}
 
 function DealerTiersAdmin() {
   const [tiers, setTiers] = useState<Tier[]>([]);
@@ -112,10 +115,10 @@ function DealerTiersAdmin() {
               <ul className="text-xs space-y-1 ml-1">
                 <li>• 回饋率 {t.rebate_rate}%</li>
                 {t.daily_referral_rate > 0 && <li>• 日獎金推薦 {t.daily_referral_rate}%（差額制）</li>}
-                {(t.tier_type === "star" || t.tier_type === "director")
+                {isBusinessDividendTier(t)
                   ? <li>• 營業分紅 {t.operating_bonus_rate}%（每日訂單總獎勵點由合格星級／董事平均分配）</li>
-                  : <li>• 消費回饋 {t.rebate_rate}%（消費回饋，非營業分紅）</li>}
-                {t.upgrade_bonus_cap > 0 && <li>• {(t.tier_type === "star" || t.tier_type === "director") ? "營業分紅上限" : "消費回饋上限"} NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
+                  : <li>• 消費分紅 {t.rebate_rate}%（V/S/T/E/A，非營業分紅）</li>}
+                {t.upgrade_bonus_cap > 0 && <li>• {isBusinessDividendTier(t) ? "營業分紅上限" : "消費回饋上限"} NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
                 {t.special_bonus_rate > 0 && (
                   <li className="text-primary">★ 當月新增 {t.special_bonus_trigger_count} VIP → {t.special_bonus_label} {t.special_bonus_rate}%</li>
                 )}
@@ -189,8 +192,22 @@ function DealerTiersAdmin() {
               <div className="grid grid-cols-2 gap-3">
                 <Field label="回饋率 %"><Input type="number" step="0.01" value={editing.rebate_rate} onChange={(e) => setEditing({ ...editing, rebate_rate: +e.target.value })} /></Field>
                 <Field label="日獎金推薦 %（差額制）"><Input type="number" step="0.01" value={editing.daily_referral_rate} onChange={(e) => setEditing({ ...editing, daily_referral_rate: +e.target.value })} /></Field>
-                <Field label="營業分紅率 %"><Input type="number" step="0.01" value={editing.operating_bonus_rate} onChange={(e) => setEditing({ ...editing, operating_bonus_rate: +e.target.value })} /></Field>
-                <Field label={(editing.tier_type === "star" || editing.tier_type === "director") ? "營業分紅上限" : "消費回饋上限"}><Input type="number" value={editing.upgrade_bonus_cap} onChange={(e) => setEditing({ ...editing, upgrade_bonus_cap: +e.target.value })} /></Field>
+                <Field label={isBusinessDividendTier(editing) ? "營業分紅率 %" : "營業分紅率 %（V/S/T/E/A 不適用）"}>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editing.operating_bonus_rate}
+                    disabled={!isBusinessDividendTier(editing)}
+                    onChange={(e) => setEditing({ ...editing, operating_bonus_rate: +e.target.value })}
+                  />
+                </Field>
+                <Field label={isBusinessDividendTier(editing) ? "營業分紅上限" : "消費回饋上限"}>
+                  <Input
+                    type="number"
+                    value={editing.upgrade_bonus_cap}
+                    onChange={(e) => setEditing({ ...editing, upgrade_bonus_cap: +e.target.value })}
+                  />
+                </Field>
                 <Field label="特別獎勵名稱"><Input value={editing.special_bonus_label ?? ""} onChange={(e) => setEditing({ ...editing, special_bonus_label: e.target.value || null })} /></Field>
                 <Field label="特別獎勵 %"><Input type="number" step="0.01" value={editing.special_bonus_rate} onChange={(e) => setEditing({ ...editing, special_bonus_rate: +e.target.value })} /></Field>
                 <Field label="特別獎勵觸發人數"><Input type="number" value={editing.special_bonus_trigger_count} onChange={(e) => setEditing({ ...editing, special_bonus_trigger_count: +e.target.value })} /></Field>
