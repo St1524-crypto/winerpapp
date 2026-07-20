@@ -14,7 +14,7 @@ export const BONUS_PAGE_LABELS = {
   sharedRankPool: "共同分紅池",
   /** 一星至七星與董事營業分紅池 */
   vipUpgradePool: "營業分紅池",
-  vipUpgradeBonusCap: "VIP 營業分紅上限",
+  vipUpgradeBonusCap: "星級營業分紅上限",
   vipBusinessBonusCap: "VIP 消費回饋上限",
   /** V/S/T/E/A 只領消費回饋，故此上限對應「消費回饋總收益上限」 */
   vipBusinessBonusTotalEarnings: "消費回饋總收益上限",

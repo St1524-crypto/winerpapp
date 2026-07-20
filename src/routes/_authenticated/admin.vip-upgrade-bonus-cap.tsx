@@ -17,10 +17,11 @@ import {
   runDailyRevenueBonus,
   listDailyRevenueBonusLedger,
 } from "@/lib/vip-daily-revenue-bonus.functions";
+import { BONUS_PAGE_LABELS, pageMetaTitle } from "@/lib/bonus-pool-labels";
 
 export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-bonus-cap")({
   component: Page,
-  head: () => ({ meta: [{ title: "VIP 營業分紅上限 — winerp" }] }),
+  head: () => ({ meta: [{ title: pageMetaTitle(BONUS_PAGE_LABELS.vipUpgradeBonusCap) }] }),
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     return (
@@ -121,7 +122,7 @@ function Page() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">VIP 營業分紅上限管理</h1>
+        <h1 className="text-2xl font-semibold">{BONUS_PAGE_LABELS.vipUpgradeBonusCap}管理</h1>
         <Badge variant="secondary">每日按星級池 5% 平均分配</Badge>
       </div>
 

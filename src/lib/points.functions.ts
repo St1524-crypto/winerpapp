@@ -345,7 +345,7 @@ export const applyOrderPoints = createServerFn({ method: "POST" })
                   { _member_id: upId },
                 );
                 const upTierCode = (upTierCodeRaw as string | null) ?? null;
-                // 一星以上（V1~V7、董事 = 目前以 V1~V8 表示）才完全停發消費回饋。
+                // 一星以上（V1~V8 / STAR1~DIRECTOR）才完全停發消費回饋。
                 // V0 / V / S / T / E / A / NONE / 空值皆屬「未達一星」，需照舊發放消費回饋。
                 const upTierUpper = upTierCode?.toUpperCase() ?? "";
                 const NON_STAR_CODES = new Set(["", "V0", "V", "S", "T", "E", "A", "NONE"]);
