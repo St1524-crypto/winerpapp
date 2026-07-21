@@ -85,11 +85,11 @@ export function BonusFiltersCard({
             <Input className="font-mono" value={filters.settlementBatchId} onChange={(e) => setFilters({ ...filters, settlementBatchId: e.target.value })} /></div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={onLoad} disabled={loading}>
+          <Button onClick={() => onLoad()} disabled={loading}>
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}查詢
           </Button>
-          <Button variant="outline" onClick={onLoad} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" />重新整理</Button>
-          {onExport && <Button variant="outline" onClick={onExport}><Download className="mr-2 h-4 w-4" />匯出 CSV</Button>}
+          <Button variant="outline" onClick={() => onLoad()} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" />重新整理</Button>
+          {onExport && <Button variant="outline" onClick={() => onExport()}><Download className="mr-2 h-4 w-4" />匯出 CSV</Button>}
         </div>
       </CardContent>
     </Card>
