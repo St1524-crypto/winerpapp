@@ -206,10 +206,6 @@ function renderStatement(g: Group, members: Members, orders: Orders, printedAt: 
           <div style="font-weight:700">+</div>
           ${cell("超額獎金", fmt(b.excess))}
           <div style="font-weight:700">+</div>
-          ${cell("超額對等", fmt(b.excess_equal))}
-          <div style="font-weight:700">+</div>
-          ${cell("推薦王獎金", fmt(b.referral_king))}
-          <div style="font-weight:700">+</div>
           ${cell("重消回饋", fmt(b.repurchase_rebate))}
           <div style="font-weight:700">+</div>
           ${cell("達成分紅", fmt(b.achievement))}
@@ -251,8 +247,6 @@ function renderStatement(g: Group, members: Members, orders: Orders, printedAt: 
 
       ${detailTable("重消獎金", g.bucketRows.repurchase, b.repurchase, members, orders)}
       ${detailTable("超額獎金", g.bucketRows.excess, b.excess, members, orders)}
-      ${detailTable("超額對等", g.bucketRows.excess_equal, b.excess_equal, members, orders)}
-      ${detailTable("推薦王獎金", g.bucketRows.referral_king, b.referral_king, members, orders)}
       ${detailTable("重消回饋", g.bucketRows.repurchase_rebate, b.repurchase_rebate, members, orders)}
       ${detailTable("達成分紅", g.bucketRows.achievement, b.achievement, members, orders)}
       ${detailTable("全國分紅", g.bucketRows.national, b.national, members, orders)}

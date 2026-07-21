@@ -77,12 +77,6 @@ function Page() {
         />
       </div>
 
-      <Card className="border-amber-500/50 bg-amber-500/10 print:hidden">
-        <CardContent className="py-3 flex items-start gap-2 text-xs">
-          <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
-          <div>本頁依 bonus_records 現有欄位重建明細；未於 DB 呈現的獎項（超額對等 / 推薦王 / 全國分紅 / 分球分紅 / 車馬津貼）顯示為 0。稅額為估算。</div>
-        </CardContent>
-      </Card>
 
       {loading ? <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         : summaries.length === 0 ? <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">無資料</CardContent></Card>

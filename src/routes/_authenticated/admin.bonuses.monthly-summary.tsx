@@ -81,12 +81,6 @@ function Page() {
         />
       </div>
 
-      <Card className="border-amber-500/50 bg-amber-500/10 print:hidden">
-        <CardContent className="py-3 flex items-start gap-2 text-xs">
-          <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
-          <div>「超額對等 / 推薦王獎金 / 全國分紅 / 分球分紅 / 車馬津貼 / 應付應扣」目前 DB 無對應 bonus_type，暫以 0 顯示；身份証號 / 地址 / 証號別亦未於 profiles 儲存。稅額為報表估算。</div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-base">獎金期間：{period}（共 {rows.length} 位會員）</CardTitle></CardHeader>
