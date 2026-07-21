@@ -264,6 +264,9 @@ function Page() {
             <Button variant="outline" onClick={exportRecipientsPdf} disabled={loading}>
               <FileText className="mr-2 h-4 w-4" />匯出收款人 PDF
             </Button>
+            <Button onClick={exportStatements} disabled={loading}>
+              <Printer className="mr-2 h-4 w-4" />列印日獎金明細表（依範本）
+            </Button>
           </div>
         </CardContent>
       </Card>
