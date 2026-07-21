@@ -166,6 +166,25 @@ function Page() {
     URL.revokeObjectURL(url);
   }
 
+  async function exportStatements() {
+    const source: any[] = payload?.rows ?? [];
+    const rows = filterIncome(source) as any[];
+    if (!rows.length) { toast.info("此期間無可產出的月獎金明細"); return; }
+    try {
+      const count = await exportMonthlyBonusStatements({
+        rows: rows as any,
+        members: payload.members ?? {},
+        orders: payload.orders ?? {},
+        tiers: payload.tiers ?? {},
+        batches: payload.batches ?? {},
+        periodTo: filters.dateTo ? String(filters.dateTo).slice(0, 7) : "",
+        filename: `月獎金明細表-${filters.dateFrom || ""}_${filters.dateTo || ""}.pdf`,
+      });
+      toast.success(`已產出 ${count} 張月獎金明細表`);
+    } catch (e: any) { toast.error(e?.message ?? "產出失敗"); }
+  }
+
+
   const allRows: any[] = payload?.rows ?? [];
   const rows: any[] = showAll ? allRows : filterIncome(allRows);
   const hiddenCount = allRows.length - rows.length;
