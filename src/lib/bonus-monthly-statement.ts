@@ -122,6 +122,7 @@ function groupRows(rows: MonthlyStatementRow[], members: Members, tiers: Tiers, 
   for (const g of map.values()) {
     g.buckets.global = g.buckets.national;
     g.bucketRows.global = g.bucketRows.national;
+  }
   return Array.from(map.values()).sort((a, b) =>
     a.period === b.period ? a.memberNo.localeCompare(b.memberNo) : a.period.localeCompare(b.period),
   );
