@@ -161,7 +161,7 @@ function VipTiersAdmin() {
               ) : (
                 <div>回饋率：{r.cashback_rate}%　消費分紅：{r.cashback_rate}%</div>
               )}
-              <div>{capLabel(r)}：{Number(r.upgrade_bonus_cap).toLocaleString()}</div>
+              <div>{capLabel(r)}：{capValue(r).toLocaleString()}</div>
               {r.renewal_window_days > 0 && <div>續領：每 {r.renewal_window_days} 天需新增 {r.renewal_required_new_vip} VIP</div>}
             </CardContent>
           </Card>
@@ -194,8 +194,8 @@ function VipTiersAdmin() {
               <Label>{capLabel(form)}</Label>
               <Input
                 type="number"
-                value={form.upgrade_bonus_cap}
-                onChange={(e) => setForm({ ...form, upgrade_bonus_cap: e.target.value })}
+                value={form[capFieldKey(form)] ?? 0}
+                onChange={(e) => setForm({ ...form, [capFieldKey(form)]: e.target.value })}
               />
             </div>
             <div><Label>續領週期(天)</Label><Input type="number" value={form.renewal_window_days} onChange={(e) => setForm({ ...form, renewal_window_days: e.target.value })} /></div>
