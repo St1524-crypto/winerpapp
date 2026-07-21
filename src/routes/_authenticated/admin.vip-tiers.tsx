@@ -35,6 +35,7 @@ const emptyTier = {
   cashback_rate: 0,
   revenue_share_rate: 0,
   upgrade_bonus_cap: 0,
+  business_bonus_cap_amount: 0,
   renewal_window_days: 0,
   renewal_required_new_vip: 0,
   description: "",
@@ -69,6 +70,18 @@ function dividendRate(tier: {
 
 function capLabel(tier: { code?: string | null }) {
   return isBusinessDividendTier(tier) ? "營業分紅上限" : "消費回饋上限";
+}
+
+/**
+ * V/S/T/E/A 的「消費回饋上限」實際儲存於 business_bonus_cap_amount（`record_business_bonus_release` 執行時採用此欄），
+ * STAR/DIRECTOR 的「營業分紅上限」則存於 upgrade_bonus_cap。
+ */
+function capFieldKey(tier: { code?: string | null }): "upgrade_bonus_cap" | "business_bonus_cap_amount" {
+  return isBusinessDividendTier(tier) ? "upgrade_bonus_cap" : "business_bonus_cap_amount";
+}
+
+function capValue(tier: any) {
+  return Number(tier?.[capFieldKey(tier)] ?? 0);
 }
 
 function VipTiersAdmin() {
