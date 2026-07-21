@@ -32,10 +32,10 @@ const BUCKET_MAP: Record<string, keyof BucketTotals> = {
   repurchase: "repurchase_rebate",  // 復購獎勵 → 重消回饋欄
   monthly_vip: "achievement",       // 月 VIP → 達成分紅
   rank_rebate: "specialist",        // 階級回饋 → 專員獎金
-  rank_diff_rebate: "team",         // 階級差額回饋 → 小組獎金
+  rank_diff_rebate: "excess",       // 階級差額回饋 → 超額獎金（超額回饋）
   business_bonus: "business",       // 營業分紅
-  national_share: "national",       // 全國分紅
-  upgrade_bonus: "business",        // 舊制營業分紅
+  national_share: "national",       // 全國分紅（同步鏡射至全球分紅欄）
+  upgrade_bonus: "business",        // 升級分紅 → 營業分紅欄
 };
 
 type BucketTotals = {
@@ -116,6 +116,12 @@ function groupRows(rows: MonthlyStatementRow[], members: Members, tiers: Tiers, 
     g.buckets[bucket] += pts;
     g.bucketRows[bucket].push(r);
     g.payable += pts;
+  }
+  // 全球分紅欄目前尚未有獨立資料源 — 依產品定義暫以「全國分紅」金額鏡射呈現，
+  // 明細列表共用同一批 rows，避免顯示 0 造成困惑。
+  for (const g of map.values()) {
+    g.buckets.global = g.buckets.national;
+    g.bucketRows.global = g.bucketRows.national;
   }
   return Array.from(map.values()).sort((a, b) =>
     a.period === b.period ? a.memberNo.localeCompare(b.memberNo) : a.period.localeCompare(b.period),
@@ -250,6 +256,7 @@ function renderStatement(g: Group, members: Members, orders: Orders, printedAt: 
       ${detailTable("重消回饋", g.bucketRows.repurchase_rebate, b.repurchase_rebate, members, orders)}
       ${detailTable("達成分紅", g.bucketRows.achievement, b.achievement, members, orders)}
       ${detailTable("全國分紅", g.bucketRows.national, b.national, members, orders)}
+      ${b.global && g.bucketRows.global !== g.bucketRows.national ? detailTable("全球分紅", g.bucketRows.global, b.global, members, orders) : ""}
       ${detailTable("車馬津貼", g.bucketRows.travel, b.travel, members, orders)}
       ${detailTable("專員獎金", g.bucketRows.specialist, b.specialist, members, orders)}
       ${detailTable("營業分紅", g.bucketRows.business, b.business, members, orders)}
