@@ -118,7 +118,8 @@ function DealerTiersAdmin() {
                 {isBusinessDividendTier(t)
                   ? <li>• 營業分紅 {t.operating_bonus_rate}%（每日訂單總獎勵點由合格星級／董事平均分配）</li>
                   : <li>• 消費分紅 {t.rebate_rate}%（V/S/T/E/A，非營業分紅）</li>}
-                {t.upgrade_bonus_cap > 0 && <li>• {isBusinessDividendTier(t) ? "營業分紅上限" : "消費回饋上限"} NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
+                {isBusinessDividendTier(t) && t.upgrade_bonus_cap > 0 && <li>• 營業分紅上限 NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
+                {!isBusinessDividendTier(t) && <li className="text-muted-foreground">• 消費回饋上限請於「VIP 階級設定」調整（business_bonus_cap_amount）</li>}
                 {t.special_bonus_rate > 0 && (
                   <li className="text-primary">★ 當月新增 {t.special_bonus_trigger_count} VIP → {t.special_bonus_label} {t.special_bonus_rate}%</li>
                 )}
@@ -201,10 +202,11 @@ function DealerTiersAdmin() {
                     onChange={(e) => setEditing({ ...editing, operating_bonus_rate: +e.target.value })}
                   />
                 </Field>
-                <Field label={isBusinessDividendTier(editing) ? "營業分紅上限" : "消費回饋上限"}>
+                <Field label={isBusinessDividendTier(editing) ? "營業分紅上限" : "營業分紅上限（V/S/T/E/A 不適用；消費回饋上限請至 VIP 階級設定）"}>
                   <Input
                     type="number"
                     value={editing.upgrade_bonus_cap}
+                    disabled={!isBusinessDividendTier(editing)}
                     onChange={(e) => setEditing({ ...editing, upgrade_bonus_cap: +e.target.value })}
                   />
                 </Field>
