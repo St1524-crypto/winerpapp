@@ -58,8 +58,6 @@ export const DAILY_TEMPLATE_COLUMNS = [
 export const MONTHLY_TEMPLATE_COLUMNS = [
   "重消獎金",
   "超額獎金",
-  "超額對等",
-  "推薦王獎金",
   "重消回饋",
   "達成分紅",
   "全國分紅",
