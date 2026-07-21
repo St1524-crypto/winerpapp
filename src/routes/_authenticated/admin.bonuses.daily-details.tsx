@@ -186,12 +186,12 @@ function Page() {
   }
 
   async function exportStatements() {
-    const source = payload?.rows ?? [];
-    const rows = filterIncome(source);
+    const source: any[] = payload?.rows ?? [];
+    const rows = filterIncome(source) as any[];
     if (!rows.length) { toast.info("此期間無可產出的獎金明細"); return; }
     try {
       const count = await exportDailyBonusStatements({
-        rows, members: payload.members ?? {}, orders: payload.orders ?? {}, tiers: payload.tiers ?? {},
+        rows: rows as any, members: payload.members ?? {}, orders: payload.orders ?? {}, tiers: payload.tiers ?? {},
         filename: `日獎金明細表-${periodLabel()}.pdf`,
       });
       toast.success(`已產出 ${count} 張日獎金明細表`);
