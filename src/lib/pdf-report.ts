@@ -1,5 +1,5 @@
-import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
+import { renderHtmlToCanvas } from "./pdf-iframe-render";
 
 export interface ReportColumn<T> {
   key: keyof T | string;
