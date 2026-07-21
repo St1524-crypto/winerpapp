@@ -18,8 +18,9 @@ import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculatio
 import { BonusIncomeSummary, IncomeEmptyState } from "@/components/admin/BonusIncomeSummary";
 import { filterIncome } from "@/lib/bonus-income";
 import { exportPdfReport } from "@/lib/pdf-report";
+import { exportDailyBonusStatements } from "@/lib/bonus-daily-statement";
 import logo from "@/assets/logo.jpg";
-import { FileDown, FileText } from "lucide-react";
+import { FileDown, FileText, Printer } from "lucide-react";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -185,6 +186,19 @@ function Page() {
     }
   }
 
+  async function exportStatements() {
+    const source: any[] = payload?.rows ?? [];
+    const rows = filterIncome(source) as any[];
+    if (!rows.length) { toast.info("此期間無可產出的獎金明細"); return; }
+    try {
+      const count = await exportDailyBonusStatements({
+        rows: rows as any, members: payload.members ?? {}, orders: payload.orders ?? {}, tiers: payload.tiers ?? {},
+        filename: `日獎金明細表-${periodLabel()}.pdf`,
+      });
+      toast.success(`已產出 ${count} 張日獎金明細表`);
+    } catch (e: any) { toast.error(e?.message ?? "產出失敗"); }
+  }
+
   const allRows: any[] = payload?.rows ?? [];
   const rows: any[] = showAll ? allRows : filterIncome(allRows);
   const hiddenCount = allRows.length - rows.length;
@@ -249,6 +263,9 @@ function Page() {
             </Button>
             <Button variant="outline" onClick={exportRecipientsPdf} disabled={loading}>
               <FileText className="mr-2 h-4 w-4" />匯出收款人 PDF
+            </Button>
+            <Button onClick={exportStatements} disabled={loading}>
+              <Printer className="mr-2 h-4 w-4" />列印日獎金明細表（依範本）
             </Button>
           </div>
         </CardContent>
