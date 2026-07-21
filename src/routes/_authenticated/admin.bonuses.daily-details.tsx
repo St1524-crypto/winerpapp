@@ -183,7 +183,20 @@ function Page() {
       });
     } catch (e: any) {
       toast.error(e?.message ?? "PDF 匯出失敗");
-    }
+  }
+
+  async function exportStatements() {
+    const source = payload?.rows ?? [];
+    const rows = filterIncome(source);
+    if (!rows.length) { toast.info("此期間無可產出的獎金明細"); return; }
+    try {
+      const count = await exportDailyBonusStatements({
+        rows, members: payload.members ?? {}, orders: payload.orders ?? {}, tiers: payload.tiers ?? {},
+        filename: `日獎金明細表-${periodLabel()}.pdf`,
+      });
+      toast.success(`已產出 ${count} 張日獎金明細表`);
+    } catch (e: any) { toast.error(e?.message ?? "產出失敗"); }
+  }
   }
 
   const allRows: any[] = payload?.rows ?? [];
