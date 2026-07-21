@@ -183,6 +183,7 @@ function Page() {
       });
     } catch (e: any) {
       toast.error(e?.message ?? "PDF 匯出失敗");
+    }
   }
 
   async function exportStatements() {
@@ -196,7 +197,6 @@ function Page() {
       });
       toast.success(`已產出 ${count} 張日獎金明細表`);
     } catch (e: any) { toast.error(e?.message ?? "產出失敗"); }
-  }
   }
 
   const allRows: any[] = payload?.rows ?? [];
