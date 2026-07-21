@@ -281,34 +281,26 @@ export async function exportMonthlyBonusStatements(opts: {
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
 
-  const host = document.createElement("div");
-  host.style.cssText = "position:fixed;left:-10000px;top:0;z-index:-1";
-  document.body.appendChild(host);
-
-  try {
-    for (let i = 0; i < groups.length; i++) {
-      host.innerHTML = renderStatement(groups[i], opts.members, opts.orders, printedAt, opts.periodTo ?? "");
-      const node = host.firstElementChild as HTMLElement;
-      const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff" });
-      const img = canvas.toDataURL("image/jpeg", 0.95);
-      const imgW = pageW;
-      const imgH = (canvas.height * imgW) / canvas.width;
-      if (i > 0) pdf.addPage();
-      if (imgH <= pageH) {
-        pdf.addImage(img, "JPEG", 0, 0, imgW, imgH);
-      } else {
-        let y = 0;
-        while (y < imgH) {
-          pdf.addImage(img, "JPEG", 0, -y, imgW, imgH);
-          y += pageH;
-          if (y < imgH) pdf.addPage();
-        }
+  for (let i = 0; i < groups.length; i++) {
+    const html = renderStatement(groups[i], opts.members, opts.orders, printedAt, opts.periodTo ?? "");
+    const canvas = await renderHtmlToCanvas(html, { width: 830, scale: 2 });
+    const img = canvas.toDataURL("image/jpeg", 0.95);
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    if (i > 0) pdf.addPage();
+    if (imgH <= pageH) {
+      pdf.addImage(img, "JPEG", 0, 0, imgW, imgH);
+    } else {
+      let y = 0;
+      while (y < imgH) {
+        pdf.addImage(img, "JPEG", 0, -y, imgW, imgH);
+        y += pageH;
+        if (y < imgH) pdf.addPage();
       }
     }
-    pdf.save(opts.filename ?? `月獎金明細表-${Date.now()}.pdf`);
-  } finally {
-    document.body.removeChild(host);
   }
+  pdf.save(opts.filename ?? `月獎金明細表-${Date.now()}.pdf`);
 
   return groups.length;
 }
+
