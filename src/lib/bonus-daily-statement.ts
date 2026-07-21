@@ -1,8 +1,8 @@
 // 日獎金明細表（依範本 PDF 版型）：每位會員 × 每個結算日期一張。
 // 以 UI 端 payload（listDailyBonusDetails 回傳的 rows/members/orders/tiers）為資料源，
 // 由 html2canvas + jsPDF 逐張匯出成一份 PDF。
-import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
+import { renderHtmlToCanvas } from "./pdf-iframe-render";
 
 export type StatementRow = {
   id: string;
