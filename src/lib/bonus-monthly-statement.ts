@@ -1,7 +1,7 @@
 // 月獎金明細表（依範本 PDF 版型）：每位會員 × 每個結算月份一張。
 // 資料源為 listMonthlyBonusDetails 回傳的 rows/members/orders/tiers/batches。
 // 由 html2canvas + jsPDF 逐張匯出成一份 PDF。
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 
 export type MonthlyStatementRow = {
