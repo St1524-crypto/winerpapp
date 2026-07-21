@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Loader2, Info, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, Info, AlertTriangle, Printer } from "lucide-react";
+import { exportMonthlyBonusStatements } from "@/lib/bonus-monthly-statement";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
@@ -165,6 +166,25 @@ function Page() {
     URL.revokeObjectURL(url);
   }
 
+  async function exportStatements() {
+    const source: any[] = payload?.rows ?? [];
+    const rows = filterIncome(source) as any[];
+    if (!rows.length) { toast.info("此期間無可產出的月獎金明細"); return; }
+    try {
+      const count = await exportMonthlyBonusStatements({
+        rows: rows as any,
+        members: payload.members ?? {},
+        orders: payload.orders ?? {},
+        tiers: payload.tiers ?? {},
+        batches: payload.batches ?? {},
+        periodTo: filters.dateTo ? String(filters.dateTo).slice(0, 7) : "",
+        filename: `月獎金明細表-${filters.dateFrom || ""}_${filters.dateTo || ""}.pdf`,
+      });
+      toast.success(`已產出 ${count} 張月獎金明細表`);
+    } catch (e: any) { toast.error(e?.message ?? "產出失敗"); }
+  }
+
+
   const allRows: any[] = payload?.rows ?? [];
   const rows: any[] = showAll ? allRows : filterIncome(allRows);
   const hiddenCount = allRows.length - rows.length;
@@ -206,6 +226,22 @@ function Page() {
         onExport={exportCsv}
         typeOptions={MONTHLY_BONUS_TYPE_OPTIONS}
       />
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">月獎金明細表匯出</CardTitle>
+          <CardDescription className="text-xs">
+            依當前查詢期間 × 會員，逐張輸出「月獎金明細表（依範本）」PDF，僅包含有收入（bonus_points &gt; 0，狀態為待發放 / 已發放）的獎金列。
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={exportStatements} disabled={loading}>
+            <Printer className="mr-2 h-4 w-4" />列印月獎金明細表（依範本）
+          </Button>
+        </CardContent>
+      </Card>
+
+
 
       {missingDetail > 0 && (
         <Card className="border-amber-500/50 bg-amber-500/10">
