@@ -35,6 +35,7 @@ const emptyTier = {
   cashback_rate: 0,
   revenue_share_rate: 0,
   upgrade_bonus_cap: 0,
+  business_bonus_cap_amount: 0,
   renewal_window_days: 0,
   renewal_required_new_vip: 0,
   description: "",
@@ -71,6 +72,18 @@ function capLabel(tier: { code?: string | null }) {
   return isBusinessDividendTier(tier) ? "營業分紅上限" : "消費回饋上限";
 }
 
+/**
+ * V/S/T/E/A 的「消費回饋上限」實際儲存於 business_bonus_cap_amount（`record_business_bonus_release` 執行時採用此欄），
+ * STAR/DIRECTOR 的「營業分紅上限」則存於 upgrade_bonus_cap。
+ */
+function capFieldKey(tier: { code?: string | null }): "upgrade_bonus_cap" | "business_bonus_cap_amount" {
+  return isBusinessDividendTier(tier) ? "upgrade_bonus_cap" : "business_bonus_cap_amount";
+}
+
+function capValue(tier: any) {
+  return Number(tier?.[capFieldKey(tier)] ?? 0);
+}
+
 function VipTiersAdmin() {
   const listFn = useServerFn(adminListVipTiers);
   const saveFn = useServerFn(upsertVipTier);
@@ -105,6 +118,7 @@ function VipTiersAdmin() {
         cashback_rate: Number(form.cashback_rate) || 0,
         revenue_share_rate: Number(form.revenue_share_rate) || 0,
         upgrade_bonus_cap: Number(form.upgrade_bonus_cap) || 0,
+        business_bonus_cap_amount: Number(form.business_bonus_cap_amount) || 0,
         renewal_window_days: Number(form.renewal_window_days) || 0,
         renewal_required_new_vip: Number(form.renewal_required_new_vip) || 0,
         required_mentor_tier: form.required_mentor_tier || null,
@@ -147,7 +161,7 @@ function VipTiersAdmin() {
               ) : (
                 <div>回饋率：{r.cashback_rate}%　消費分紅：{r.cashback_rate}%</div>
               )}
-              <div>{capLabel(r)}：{Number(r.upgrade_bonus_cap).toLocaleString()}</div>
+              <div>{capLabel(r)}：{capValue(r).toLocaleString()}</div>
               {r.renewal_window_days > 0 && <div>續領：每 {r.renewal_window_days} 天需新增 {r.renewal_required_new_vip} VIP</div>}
             </CardContent>
           </Card>
@@ -180,8 +194,8 @@ function VipTiersAdmin() {
               <Label>{capLabel(form)}</Label>
               <Input
                 type="number"
-                value={form.upgrade_bonus_cap}
-                onChange={(e) => setForm({ ...form, upgrade_bonus_cap: e.target.value })}
+                value={form[capFieldKey(form)] ?? 0}
+                onChange={(e) => setForm({ ...form, [capFieldKey(form)]: e.target.value })}
               />
             </div>
             <div><Label>續領週期(天)</Label><Input type="number" value={form.renewal_window_days} onChange={(e) => setForm({ ...form, renewal_window_days: e.target.value })} /></div>
