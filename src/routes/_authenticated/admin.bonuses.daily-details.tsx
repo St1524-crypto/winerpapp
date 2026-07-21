@@ -18,8 +18,9 @@ import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculatio
 import { BonusIncomeSummary, IncomeEmptyState } from "@/components/admin/BonusIncomeSummary";
 import { filterIncome } from "@/lib/bonus-income";
 import { exportPdfReport } from "@/lib/pdf-report";
+import { exportDailyBonusStatements } from "@/lib/bonus-daily-statement";
 import logo from "@/assets/logo.jpg";
-import { FileDown, FileText } from "lucide-react";
+import { FileDown, FileText, Printer } from "lucide-react";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
