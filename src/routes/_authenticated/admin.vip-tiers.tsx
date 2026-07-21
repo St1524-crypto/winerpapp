@@ -118,6 +118,7 @@ function VipTiersAdmin() {
         cashback_rate: Number(form.cashback_rate) || 0,
         revenue_share_rate: Number(form.revenue_share_rate) || 0,
         upgrade_bonus_cap: Number(form.upgrade_bonus_cap) || 0,
+        business_bonus_cap_amount: Number(form.business_bonus_cap_amount) || 0,
         renewal_window_days: Number(form.renewal_window_days) || 0,
         renewal_required_new_vip: Number(form.renewal_required_new_vip) || 0,
         required_mentor_tier: form.required_mentor_tier || null,
