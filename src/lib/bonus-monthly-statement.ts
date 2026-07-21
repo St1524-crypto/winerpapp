@@ -256,6 +256,7 @@ function renderStatement(g: Group, members: Members, orders: Orders, printedAt: 
       ${detailTable("重消回饋", g.bucketRows.repurchase_rebate, b.repurchase_rebate, members, orders)}
       ${detailTable("達成分紅", g.bucketRows.achievement, b.achievement, members, orders)}
       ${detailTable("全國分紅", g.bucketRows.national, b.national, members, orders)}
+      ${b.global && g.bucketRows.global !== g.bucketRows.national ? detailTable("全球分紅", g.bucketRows.global, b.global, members, orders) : ""}
       ${detailTable("車馬津貼", g.bucketRows.travel, b.travel, members, orders)}
       ${detailTable("專員獎金", g.bucketRows.specialist, b.specialist, members, orders)}
       ${detailTable("營業分紅", g.bucketRows.business, b.business, members, orders)}
