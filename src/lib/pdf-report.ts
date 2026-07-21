@@ -96,34 +96,24 @@ export async function exportPdfReport<T>(opts: ReportOptions<T>) {
       </div>
     </div>`;
 
-  const host = document.createElement("div");
-  host.style.cssText = "position:fixed;left:-10000px;top:0;z-index:-1";
-  host.innerHTML = html;
-  document.body.appendChild(host);
+  const canvas = await renderHtmlToCanvas(html, { width: 830, scale: 2 });
+  const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const imgW = pageW;
+  const imgH = (canvas.height * imgW) / canvas.width;
+  const img = canvas.toDataURL("image/jpeg", 0.95);
 
-  try {
-    const node = host.firstElementChild as HTMLElement;
-    const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-    const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgW = pageW;
-    const imgH = (canvas.height * imgW) / canvas.width;
-    const img = canvas.toDataURL("image/jpeg", 0.95);
-
-    if (imgH <= pageH) {
-      pdf.addImage(img, "JPEG", 0, 0, imgW, imgH);
-    } else {
-      // multi-page
-      let y = 0;
-      while (y < imgH) {
-        pdf.addImage(img, "JPEG", 0, -y, imgW, imgH);
-        y += pageH;
-        if (y < imgH) pdf.addPage();
-      }
+  if (imgH <= pageH) {
+    pdf.addImage(img, "JPEG", 0, 0, imgW, imgH);
+  } else {
+    let y = 0;
+    while (y < imgH) {
+      pdf.addImage(img, "JPEG", 0, -y, imgW, imgH);
+      y += pageH;
+      if (y < imgH) pdf.addPage();
     }
-    pdf.save(opts.filename ?? `${opts.title}-${Date.now()}.pdf`);
-  } finally {
-    document.body.removeChild(host);
   }
+  pdf.save(opts.filename ?? `${opts.title}-${Date.now()}.pdf`);
 }
+
