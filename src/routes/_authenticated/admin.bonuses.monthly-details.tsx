@@ -227,6 +227,22 @@ function Page() {
         typeOptions={MONTHLY_BONUS_TYPE_OPTIONS}
       />
 
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">月獎金明細表匯出</CardTitle>
+          <CardDescription className="text-xs">
+            依當前查詢期間 × 會員，逐張輸出「月獎金明細表（依範本）」PDF，僅包含有收入（bonus_points &gt; 0，狀態為待發放 / 已發放）的獎金列。
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={exportStatements} disabled={loading}>
+            <Printer className="mr-2 h-4 w-4" />列印月獎金明細表（依範本）
+          </Button>
+        </CardContent>
+      </Card>
+
+
+
       {missingDetail > 0 && (
         <Card className="border-amber-500/50 bg-amber-500/10">
           <CardContent className="py-3 flex items-start gap-2 text-sm">
