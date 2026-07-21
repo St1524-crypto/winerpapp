@@ -41,6 +41,10 @@ export const MONTHLY_COLUMN_MAP: Record<string, string> = {
   monthly_vip: "重消獎金",
   rank_rebate: "達成分紅",
   rank_diff_rebate: "超額獎金",
+  national_share: "全國分紅",
+  business_bonus: "營業分紅",
+  upgrade_bonus: "營業分紅",
+  repurchase: "重消回饋",
 };
 
 export const DAILY_TEMPLATE_COLUMNS = [
