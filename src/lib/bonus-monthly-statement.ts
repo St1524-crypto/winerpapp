@@ -117,6 +117,11 @@ function groupRows(rows: MonthlyStatementRow[], members: Members, tiers: Tiers, 
     g.bucketRows[bucket].push(r);
     g.payable += pts;
   }
+  // 全球分紅欄目前尚未有獨立資料源 — 依產品定義暫以「全國分紅」金額鏡射呈現，
+  // 明細列表共用同一批 rows，避免顯示 0 造成困惑。
+  for (const g of map.values()) {
+    g.buckets.global = g.buckets.national;
+    g.bucketRows.global = g.bucketRows.national;
   return Array.from(map.values()).sort((a, b) =>
     a.period === b.period ? a.memberNo.localeCompare(b.memberNo) : a.period.localeCompare(b.period),
   );
