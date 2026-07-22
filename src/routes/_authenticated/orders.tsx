@@ -393,9 +393,21 @@ function OrdersPage() {
     },
   });
 
-  const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month">("month");
+  const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month" | "custom">("month");
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
+  const [customFrom, setCustomFrom] = useState<string>(todayStr);
+  const [customTo, setCustomTo] = useState<string>(todayStr);
 
-  const periodFrom = useMemo(() => {
+  const { periodFrom, periodTo } = useMemo(() => {
+    if (revenuePeriod === "custom") {
+      const from = new Date(`${customFrom}T00:00:00`);
+      const to = new Date(`${customTo}T00:00:00`);
+      to.setDate(to.getDate() + 1);
+      return { periodFrom: from.toISOString(), periodTo: to.toISOString() as string | null };
+    }
     const start = new Date();
     if (revenuePeriod === "today") {
       start.setHours(0, 0, 0, 0);
@@ -407,18 +419,22 @@ function OrdersPage() {
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
     }
-    return start.toISOString();
-  }, [revenuePeriod]);
+    return { periodFrom: start.toISOString(), periodTo: null as string | null };
+  }, [revenuePeriod, customFrom, customTo]);
+
+  const customRangeValid = revenuePeriod !== "custom" || (!!customFrom && !!customTo && customFrom <= customTo);
 
   const revenueQ = useQuery({
-    enabled: !!activeCompanyId,
-    queryKey: ["sales-orders-revenue", activeCompanyId, revenuePeriod, periodFrom],
+    enabled: !!activeCompanyId && customRangeValid,
+    queryKey: ["sales-orders-revenue", activeCompanyId, revenuePeriod, periodFrom, periodTo],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("sales_orders")
         .select("total_amount, order_status, payment_status, created_at")
         .eq("company_id", activeCompanyId!)
         .gte("created_at", periodFrom);
+      if (periodTo) q = q.lt("created_at", periodTo);
+      const { data, error } = await q;
       if (error) throw new Error(error.message);
       return (data ?? [])
         .filter((o: any) => o.order_status !== "cancelled" && o.payment_status !== "refunded")
