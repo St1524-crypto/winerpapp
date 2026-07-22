@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ShoppingCart, DollarSign, Boxes, Users, FileDown, Package, AlertTriangle, Flame, Sparkles, Truck, PackageCheck, Factory, TrendingUp } from "lucide-react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer,
@@ -58,7 +59,8 @@ function Dashboard() {
   const [stats, setStats] = useState({ total: 0, low: 0, featured: 0, today: 0 });
   const [proc, setProc] = useState({ todayInAmount: 0, pendingPO: 0, vendorCount: 0, lowCount: 0 });
   const [purchaseTrend, setPurchaseTrend] = useState<{ day: string; amount: number }[]>([]);
-  const [revenue, setRevenue] = useState<{ today: number; delta: number | undefined }>({ today: 0, delta: undefined });
+  const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month">("today");
+  const [revenue, setRevenue] = useState<{ current: number; delta: number | undefined }>({ current: 0, delta: undefined });
 
   useEffect(() => {
     (async () => {
@@ -104,29 +106,47 @@ function Dashboard() {
       });
       setPurchaseTrend(Object.entries(buckets).map(([k, v]) => ({ day: k.slice(5), amount: v })));
 
-      // 今日營收：以 sales_orders 建立於今日、且未取消的訂單合計 total_amount
-      const startToday = new Date(); startToday.setHours(0, 0, 0, 0);
-      const startYesterday = new Date(startToday); startYesterday.setDate(startYesterday.getDate() - 1);
+      // 期間營收：以 sales_orders 建立於當期、且未取消的訂單合計 total_amount
+      const now = new Date();
+      const startCurrent = new Date(now);
+      const startPrevious = new Date(now);
+      if (revenuePeriod === "today") {
+        startCurrent.setHours(0, 0, 0, 0);
+        startPrevious.setTime(startCurrent.getTime());
+        startPrevious.setDate(startPrevious.getDate() - 1);
+      } else if (revenuePeriod === "week") {
+        // 以週一為起始
+        startCurrent.setHours(0, 0, 0, 0);
+        const dow = (startCurrent.getDay() + 6) % 7; // 週一=0
+        startCurrent.setDate(startCurrent.getDate() - dow);
+        startPrevious.setTime(startCurrent.getTime());
+        startPrevious.setDate(startPrevious.getDate() - 7);
+      } else {
+        startCurrent.setDate(1);
+        startCurrent.setHours(0, 0, 0, 0);
+        startPrevious.setTime(startCurrent.getTime());
+        startPrevious.setMonth(startPrevious.getMonth() - 1);
+      }
       const soQuery = (from: string, to?: string) => {
         let q = sb.from("sales_orders").select("total_amount, order_status, payment_status, created_at").gte("created_at", from);
         if (to) q = q.lt("created_at", to);
         if (currentCompanyId) q = q.eq("company_id", currentCompanyId);
         return q;
       };
-      const [{ data: soToday }, { data: soYest }] = await Promise.all([
-        soQuery(startToday.toISOString()),
-        soQuery(startYesterday.toISOString(), startToday.toISOString()),
+      const [{ data: soCurrent }, { data: soPrev }] = await Promise.all([
+        soQuery(startCurrent.toISOString()),
+        soQuery(startPrevious.toISOString(), startCurrent.toISOString()),
       ]);
       const sumRev = (rows: any[] | null | undefined) =>
         (rows ?? [])
           .filter((o) => o.order_status !== "cancelled" && o.payment_status !== "refunded")
           .reduce((s, o) => s + (Number(o.total_amount) || 0), 0);
-      const todayRev = sumRev(soToday);
-      const yestRev = sumRev(soYest);
-      const delta = yestRev > 0 ? Number((((todayRev - yestRev) / yestRev) * 100).toFixed(1)) : undefined;
-      setRevenue({ today: todayRev, delta });
+      const currentRev = sumRev(soCurrent);
+      const prevRev = sumRev(soPrev);
+      const delta = prevRev > 0 ? Number((((currentRev - prevRev) / prevRev) * 100).toFixed(1)) : undefined;
+      setRevenue({ current: currentRev, delta });
     })();
-  }, [currentCompanyId]);
+  }, [currentCompanyId, revenuePeriod]);
 
 
   async function exportRecentOrders() {
@@ -163,9 +183,29 @@ function Dashboard() {
         </Button>
       </div>
 
+      <div className="flex items-center justify-end">
+        <ToggleGroup
+          type="single"
+          value={revenuePeriod}
+          onValueChange={(v) => v && setRevenuePeriod(v as "today" | "week" | "month")}
+          variant="outline"
+          size="sm"
+        >
+          <ToggleGroupItem value="today">今日</ToggleGroupItem>
+          <ToggleGroupItem value="week">本週</ToggleGroupItem>
+          <ToggleGroupItem value="month">本月</ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="今日訂單" value="287" delta={12.5} icon={ShoppingCart} accent="primary" />
-        <StatCard title="今日營收" value={`NT$ ${revenue.today.toLocaleString()}`} delta={revenue.delta} icon={DollarSign} accent="success" />
+        <StatCard
+          title={revenuePeriod === "today" ? "今日營收" : revenuePeriod === "week" ? "本週營收" : "本月營收"}
+          value={`NT$ ${revenue.current.toLocaleString()}`}
+          delta={revenue.delta}
+          icon={DollarSign}
+          accent="success"
+        />
         <StatCard title="庫存總量" value="14,392" delta={-2.1} icon={Boxes} accent="warning" />
         <StatCard title="會員總數" value="3,247" delta={5.4} icon={Users} accent="chart-2" />
       </div>
