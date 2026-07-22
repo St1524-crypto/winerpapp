@@ -392,16 +392,49 @@ function OrdersPage() {
     },
   });
 
+  const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month">("month");
+
+  const periodFrom = useMemo(() => {
+    const start = new Date();
+    if (revenuePeriod === "today") {
+      start.setHours(0, 0, 0, 0);
+    } else if (revenuePeriod === "week") {
+      start.setHours(0, 0, 0, 0);
+      const dow = (start.getDay() + 6) % 7;
+      start.setDate(start.getDate() - dow);
+    } else {
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+    }
+    return start.toISOString();
+  }, [revenuePeriod]);
+
+  const revenueQ = useQuery({
+    enabled: !!activeCompanyId,
+    queryKey: ["sales-orders-revenue", activeCompanyId, revenuePeriod, periodFrom],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sales_orders")
+        .select("total_amount, order_status, payment_status, created_at")
+        .eq("company_id", activeCompanyId!)
+        .gte("created_at", periodFrom);
+      if (error) throw new Error(error.message);
+      return (data ?? [])
+        .filter((o: any) => o.order_status !== "cancelled" && o.payment_status !== "refunded")
+        .reduce((s: number, o: any) => s + (Number(o.total_amount) || 0), 0);
+    },
+  });
+
   const kpis = useMemo(() => {
     const list = ordersQ.data ?? [];
     return {
       total: list.length,
-      revenue: list.reduce((s, r) => s + Number(r.total_amount), 0),
+      revenue: revenueQ.data ?? 0,
       pending: list.filter((r) => r.order_status === "pending").length,
       toShip: list.filter((r) => r.shipping_status === "pending" && r.order_status !== "cancelled").length,
       unpaid: list.filter((r) => r.payment_status !== "paid" && r.order_status !== "cancelled").length,
     };
-  }, [ordersQ.data]);
+  }, [ordersQ.data, revenueQ.data]);
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ["sales-orders"] });
