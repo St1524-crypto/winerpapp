@@ -58,6 +58,7 @@ function Dashboard() {
   const [stats, setStats] = useState({ total: 0, low: 0, featured: 0, today: 0 });
   const [proc, setProc] = useState({ todayInAmount: 0, pendingPO: 0, vendorCount: 0, lowCount: 0 });
   const [purchaseTrend, setPurchaseTrend] = useState<{ day: string; amount: number }[]>([]);
+  const [revenue, setRevenue] = useState<{ today: number; delta: number | undefined }>({ today: 0, delta: undefined });
 
   useEffect(() => {
     (async () => {
@@ -102,6 +103,28 @@ function Dashboard() {
         if (k in buckets) buckets[k] += Number(p.total_amount) || 0;
       });
       setPurchaseTrend(Object.entries(buckets).map(([k, v]) => ({ day: k.slice(5), amount: v })));
+
+      // 今日營收：以 sales_orders 建立於今日、且未取消的訂單合計 total_amount
+      const startToday = new Date(); startToday.setHours(0, 0, 0, 0);
+      const startYesterday = new Date(startToday); startYesterday.setDate(startYesterday.getDate() - 1);
+      const soQuery = (from: string, to?: string) => {
+        let q = sb.from("sales_orders").select("total_amount, order_status, payment_status, created_at").gte("created_at", from);
+        if (to) q = q.lt("created_at", to);
+        if (currentCompanyId) q = q.eq("company_id", currentCompanyId);
+        return q;
+      };
+      const [{ data: soToday }, { data: soYest }] = await Promise.all([
+        soQuery(startToday.toISOString()),
+        soQuery(startYesterday.toISOString(), startToday.toISOString()),
+      ]);
+      const sumRev = (rows: any[] | null | undefined) =>
+        (rows ?? [])
+          .filter((o) => o.order_status !== "cancelled" && o.payment_status !== "refunded")
+          .reduce((s, o) => s + (Number(o.total_amount) || 0), 0);
+      const todayRev = sumRev(soToday);
+      const yestRev = sumRev(soYest);
+      const delta = yestRev > 0 ? Number((((todayRev - yestRev) / yestRev) * 100).toFixed(1)) : undefined;
+      setRevenue({ today: todayRev, delta });
     })();
   }, [currentCompanyId]);
 
@@ -142,7 +165,7 @@ function Dashboard() {
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="今日訂單" value="287" delta={12.5} icon={ShoppingCart} accent="primary" />
-        <StatCard title="今日營收" value="NT$ 482K" delta={8.2} icon={DollarSign} accent="success" />
+        <StatCard title="今日營收" value={`NT$ ${revenue.today.toLocaleString()}`} delta={revenue.delta} icon={DollarSign} accent="success" />
         <StatCard title="庫存總量" value="14,392" delta={-2.1} icon={Boxes} accent="warning" />
         <StatCard title="會員總數" value="3,247" delta={5.4} icon={Users} accent="chart-2" />
       </div>
