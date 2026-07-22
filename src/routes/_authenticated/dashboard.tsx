@@ -165,7 +165,7 @@ function Dashboard() {
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="今日訂單" value="287" delta={12.5} icon={ShoppingCart} accent="primary" />
-        <StatCard title="今日營收" value="NT$ 482K" delta={8.2} icon={DollarSign} accent="success" />
+        <StatCard title="今日營收" value={`NT$ ${revenue.today.toLocaleString()}`} delta={revenue.delta} icon={DollarSign} accent="success" />
         <StatCard title="庫存總量" value="14,392" delta={-2.1} icon={Boxes} accent="warning" />
         <StatCard title="會員總數" value="3,247" delta={5.4} icon={Users} accent="chart-2" />
       </div>
