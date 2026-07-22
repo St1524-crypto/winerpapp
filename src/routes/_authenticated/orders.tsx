@@ -496,12 +496,57 @@ function OrdersPage() {
         </ToggleGroup>
       </div>
 
+      {/* Revenue period toggle */}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <ToggleGroup
+          type="single"
+          value={revenuePeriod}
+          onValueChange={(v) => v && setRevenuePeriod(v as "today" | "week" | "month" | "custom")}
+          variant="outline"
+          size="sm"
+        >
+          <ToggleGroupItem value="today">今日</ToggleGroupItem>
+          <ToggleGroupItem value="week">本週</ToggleGroupItem>
+          <ToggleGroupItem value="month">本月</ToggleGroupItem>
+          <ToggleGroupItem value="custom">自訂</ToggleGroupItem>
+        </ToggleGroup>
+        {revenuePeriod === "custom" && (
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={customFrom}
+              max={customTo || undefined}
+              onChange={(e) => setCustomFrom(e.target.value)}
+              className="h-9 w-[150px]"
+            />
+            <span className="text-muted-foreground text-sm">至</span>
+            <Input
+              type="date"
+              value={customTo}
+              min={customFrom || undefined}
+              onChange={(e) => setCustomTo(e.target.value)}
+              className="h-9 w-[150px]"
+            />
+          </div>
+        )}
+      </div>
+
       {/* KPIs */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
         <KpiCard label="訂單總數" value={String(kpis.total)} />
         <KpiCard
-          label={revenuePeriod === "today" ? "今日營收" : revenuePeriod === "week" ? "本週營收" : "本月營收"}
-          value={fmt(kpis.revenue)}
+          label={
+            revenuePeriod === "today"
+              ? "今日營收"
+              : revenuePeriod === "week"
+              ? "本週營收"
+              : revenuePeriod === "month"
+              ? "本月營收"
+              : customRangeValid
+              ? `${customFrom} ~ ${customTo} 營收`
+              : "自訂區間營收"
+          }
+          value={customRangeValid ? fmt(kpis.revenue) : "—"}
           accent="text-success"
         />
         <KpiCard label="待處理" value={String(kpis.pending)} accent="text-warning" />
