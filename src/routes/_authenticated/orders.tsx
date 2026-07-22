@@ -393,9 +393,21 @@ function OrdersPage() {
     },
   });
 
-  const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month">("month");
+  const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month" | "custom">("month");
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
+  const [customFrom, setCustomFrom] = useState<string>(todayStr);
+  const [customTo, setCustomTo] = useState<string>(todayStr);
 
-  const periodFrom = useMemo(() => {
+  const { periodFrom, periodTo } = useMemo(() => {
+    if (revenuePeriod === "custom") {
+      const from = new Date(`${customFrom}T00:00:00`);
+      const to = new Date(`${customTo}T00:00:00`);
+      to.setDate(to.getDate() + 1);
+      return { periodFrom: from.toISOString(), periodTo: to.toISOString() as string | null };
+    }
     const start = new Date();
     if (revenuePeriod === "today") {
       start.setHours(0, 0, 0, 0);
@@ -407,18 +419,22 @@ function OrdersPage() {
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
     }
-    return start.toISOString();
-  }, [revenuePeriod]);
+    return { periodFrom: start.toISOString(), periodTo: null as string | null };
+  }, [revenuePeriod, customFrom, customTo]);
+
+  const customRangeValid = revenuePeriod !== "custom" || (!!customFrom && !!customTo && customFrom <= customTo);
 
   const revenueQ = useQuery({
-    enabled: !!activeCompanyId,
-    queryKey: ["sales-orders-revenue", activeCompanyId, revenuePeriod, periodFrom],
+    enabled: !!activeCompanyId && customRangeValid,
+    queryKey: ["sales-orders-revenue", activeCompanyId, revenuePeriod, periodFrom, periodTo],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("sales_orders")
         .select("total_amount, order_status, payment_status, created_at")
         .eq("company_id", activeCompanyId!)
         .gte("created_at", periodFrom);
+      if (periodTo) q = q.lt("created_at", periodTo);
+      const { data, error } = await q;
       if (error) throw new Error(error.message);
       return (data ?? [])
         .filter((o: any) => o.order_status !== "cancelled" && o.payment_status !== "refunded")
@@ -465,27 +481,58 @@ function OrdersPage() {
         </div>
       </div>
 
+
       {/* Revenue period toggle */}
-      <div className="flex items-center justify-end">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <ToggleGroup
           type="single"
           value={revenuePeriod}
-          onValueChange={(v) => v && setRevenuePeriod(v as "today" | "week" | "month")}
+          onValueChange={(v) => v && setRevenuePeriod(v as "today" | "week" | "month" | "custom")}
           variant="outline"
           size="sm"
         >
           <ToggleGroupItem value="today">今日</ToggleGroupItem>
           <ToggleGroupItem value="week">本週</ToggleGroupItem>
           <ToggleGroupItem value="month">本月</ToggleGroupItem>
+          <ToggleGroupItem value="custom">自訂</ToggleGroupItem>
         </ToggleGroup>
+        {revenuePeriod === "custom" && (
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={customFrom}
+              max={customTo || undefined}
+              onChange={(e) => setCustomFrom(e.target.value)}
+              className="h-9 w-[150px]"
+            />
+            <span className="text-muted-foreground text-sm">至</span>
+            <Input
+              type="date"
+              value={customTo}
+              min={customFrom || undefined}
+              onChange={(e) => setCustomTo(e.target.value)}
+              className="h-9 w-[150px]"
+            />
+          </div>
+        )}
       </div>
 
       {/* KPIs */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
         <KpiCard label="訂單總數" value={String(kpis.total)} />
         <KpiCard
-          label={revenuePeriod === "today" ? "今日營收" : revenuePeriod === "week" ? "本週營收" : "本月營收"}
-          value={fmt(kpis.revenue)}
+          label={
+            revenuePeriod === "today"
+              ? "今日營收"
+              : revenuePeriod === "week"
+              ? "本週營收"
+              : revenuePeriod === "month"
+              ? "本月營收"
+              : customRangeValid
+              ? `${customFrom} ~ ${customTo} 營收`
+              : "自訂區間營收"
+          }
+          value={customRangeValid ? fmt(kpis.revenue) : "—"}
           accent="text-success"
         />
         <KpiCard label="待處理" value={String(kpis.pending)} accent="text-warning" />
