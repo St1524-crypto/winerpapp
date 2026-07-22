@@ -18,40 +18,27 @@ import { useCurrentCompany } from "@/hooks/use-current-company";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
-const salesTrend = [
-  { day: "週一", sales: 42000, orders: 38 },
-  { day: "週二", sales: 51000, orders: 45 },
-  { day: "週三", sales: 48000, orders: 41 },
-  { day: "週四", sales: 65000, orders: 56 },
-  { day: "週五", sales: 72000, orders: 64 },
-  { day: "週六", sales: 89000, orders: 78 },
-  { day: "週日", sales: 76000, orders: 67 },
-];
-
-const categoryData = [
-  { name: "電子產品", value: 142 },
-  { name: "服飾配件", value: 98 },
-  { name: "居家用品", value: 76 },
-  { name: "美妝保養", value: 64 },
-  { name: "食品飲料", value: 52 },
-];
-
-const recentOrders = [
-  { no: "ORD-2024-1042", customer: "陳大文", amount: "NT$ 12,800", status: "已完成" },
-  { no: "ORD-2024-1041", customer: "林美玲", amount: "NT$ 5,420", status: "處理中" },
-  { no: "ORD-2024-1040", customer: "王志強", amount: "NT$ 23,100", status: "已出貨" },
-  { no: "ORD-2024-1039", customer: "黃淑芬", amount: "NT$ 880", status: "待付款" },
-  { no: "ORD-2024-1038", customer: "張俊傑", amount: "NT$ 9,650", status: "已完成" },
-  { no: "ORD-2024-1037", customer: "李雅婷", amount: "NT$ 3,200", status: "已取消" },
-];
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  pending: "待付款",
+  paid: "已付款",
+  picking: "處理中",
+  shipped: "已出貨",
+  completed: "已完成",
+  cancelled: "已取消",
+  refunded: "已退款",
+};
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   "已完成": "default",
   "處理中": "secondary",
+  "已付款": "secondary",
   "已出貨": "outline",
   "待付款": "secondary",
   "已取消": "destructive",
+  "已退款": "destructive",
 };
+
+interface RecentOrder { no: string; customer: string; amount: string; status: string; }
 
 function Dashboard() {
   const { logoUrl } = useBranding();
@@ -61,11 +48,22 @@ function Dashboard() {
   const [purchaseTrend, setPurchaseTrend] = useState<{ day: string; amount: number }[]>([]);
   const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month">("today");
   const [revenue, setRevenue] = useState<{ current: number; delta: number | undefined }>({ current: 0, delta: undefined });
+  const [topStats, setTopStats] = useState<{ ordersToday: number; ordersDelta: number | undefined; stockTotal: number; memberTotal: number; memberDelta: number | undefined }>({
+    ordersToday: 0, ordersDelta: undefined, stockTotal: 0, memberTotal: 0, memberDelta: undefined,
+  });
+  const [salesTrend, setSalesTrend] = useState<{ day: string; sales: number; orders: number }[]>([]);
+  const [categoryData, setCategoryData] = useState<{ name: string; value: number }[]>([]);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
 
   useEffect(() => {
     (async () => {
       const sb: any = supabase;
       const since = new Date(); since.setHours(0, 0, 0, 0);
+      const yesterday = new Date(since); yesterday.setDate(yesterday.getDate() - 1);
+      const since7 = new Date(since); since7.setDate(since7.getDate() - 6);
+      const since30 = new Date(since); since30.setDate(since30.getDate() - 29);
+      const prev30 = new Date(since30); prev30.setDate(prev30.getDate() - 30);
+
       const [{ count: total }, { data: all }, { count: featured }, { count: today }] = await Promise.all([
         sb.from("products").select("id", { count: "exact", head: true }),
         sb.from("products").select("stock,safe_stock"),
@@ -73,15 +71,15 @@ function Dashboard() {
         sb.from("products").select("id", { count: "exact", head: true }).gte("created_at", since.toISOString()),
       ]);
       const low = (all ?? []).filter((p: any) => p.stock <= p.safe_stock).length;
+      const stockTotal = (all ?? []).reduce((s: number, p: any) => s + (Number(p.stock) || 0), 0);
       setStats({ total: total ?? 0, low, featured: featured ?? 0, today: today ?? 0 });
 
-      // 採購相關
-      const [{ data: todayGr }, { count: pendingPO }, { count: vendorCount }] = await Promise.all([
+      // 採購
+      const [, { count: pendingPO }, { count: vendorCount }] = await Promise.all([
         sb.from("goods_receiving").select("purchase_order_id, received_date").gte("received_date", since.toISOString()),
         sb.from("purchase_orders").select("id", { count: "exact", head: true }).in("status", ["submitted", "confirmed", "partial"]),
         sb.from("vendors").select("id", { count: "exact", head: true }).eq("status", "active"),
       ]);
-      // 計算今日進貨金額（從 inventory_transactions 計算 purchase_in）
       const txQuery = sb.from("inventory_transactions").select("quantity, product_id").eq("type", "purchase_in").gte("created_at", since.toISOString());
       if (currentCompanyId) txQuery.eq("company_id", currentCompanyId);
       const { data: txToday } = await txQuery;
@@ -95,8 +93,7 @@ function Dashboard() {
       }
       setProc({ todayInAmount: todayAmt, pendingPO: pendingPO ?? 0, vendorCount: vendorCount ?? 0, lowCount: low });
 
-      // 採購趨勢（過去 7 天 PO 金額）
-      const since7 = new Date(); since7.setDate(since7.getDate() - 6); since7.setHours(0, 0, 0, 0);
+      // 採購趨勢
       const { data: pos } = await sb.from("purchase_orders").select("total_amount, created_at").gte("created_at", since7.toISOString());
       const buckets: Record<string, number> = {};
       for (let i = 0; i < 7; i++) { const d = new Date(since7); d.setDate(d.getDate() + i); buckets[d.toISOString().slice(0, 10)] = 0; }
@@ -106,7 +103,96 @@ function Dashboard() {
       });
       setPurchaseTrend(Object.entries(buckets).map(([k, v]) => ({ day: k.slice(5), amount: v })));
 
-      // 期間營收：以 sales_orders 建立於當期、且未取消的訂單合計 total_amount
+      // 頂部統計：今日訂單、會員總數
+      const orderCountQ = (from: string, to?: string) => {
+        let q = sb.from("sales_orders").select("id", { count: "exact", head: true })
+          .gte("created_at", from).neq("order_status", "cancelled");
+        if (to) q = q.lt("created_at", to);
+        if (currentCompanyId) q = q.eq("company_id", currentCompanyId);
+        return q;
+      };
+      const [{ count: ordersTodayC }, { count: ordersYestC }, { count: memberTotal }, { count: memberPrev }] = await Promise.all([
+        orderCountQ(since.toISOString()),
+        orderCountQ(yesterday.toISOString(), since.toISOString()),
+        sb.from("profiles").select("id", { count: "exact", head: true }),
+        sb.from("profiles").select("id", { count: "exact", head: true }).lt("created_at", since30.toISOString()),
+      ]);
+      const ordersToday = ordersTodayC ?? 0;
+      const ordersYest = ordersYestC ?? 0;
+      const ordersDelta = ordersYest > 0 ? Number((((ordersToday - ordersYest) / ordersYest) * 100).toFixed(1)) : undefined;
+      const memNow = memberTotal ?? 0;
+      const memPrev = memberPrev ?? 0;
+      const memberDelta = memPrev > 0 ? Number((((memNow - memPrev) / memPrev) * 100).toFixed(1)) : undefined;
+      setTopStats({ ordersToday, ordersDelta, stockTotal, memberTotal: memNow, memberDelta });
+
+      // 銷售趨勢（近 7 日）
+      const trendQ = sb.from("sales_orders").select("total_amount, created_at, order_status, payment_status").gte("created_at", since7.toISOString());
+      if (currentCompanyId) trendQ.eq("company_id", currentCompanyId);
+      const { data: trendRows } = await trendQ;
+      const trendBuckets: Record<string, { sales: number; orders: number }> = {};
+      const dayLabels = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+      const trendKeys: string[] = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(since7); d.setDate(d.getDate() + i);
+        const k = d.toISOString().slice(0, 10);
+        trendKeys.push(k);
+        trendBuckets[k] = { sales: 0, orders: 0 };
+      }
+      (trendRows ?? []).forEach((o: any) => {
+        if (o.order_status === "cancelled" || o.payment_status === "refunded") return;
+        const k = new Date(o.created_at).toISOString().slice(0, 10);
+        if (k in trendBuckets) {
+          trendBuckets[k].sales += Number(o.total_amount) || 0;
+          trendBuckets[k].orders += 1;
+        }
+      });
+      setSalesTrend(trendKeys.map((k) => ({
+        day: dayLabels[new Date(k).getDay()],
+        sales: trendBuckets[k].sales,
+        orders: trendBuckets[k].orders,
+      })));
+
+      // 分類訂單分析（近 30 日 order items）
+      const itemsQ = sb.from("sales_order_items").select("quantity, product_id, created_at").gte("created_at", since30.toISOString());
+      if (currentCompanyId) itemsQ.eq("company_id", currentCompanyId);
+      const { data: items } = await itemsQ;
+      if (items && items.length) {
+        const pids = Array.from(new Set(items.map((i: any) => i.product_id).filter(Boolean))) as string[];
+        const { data: prods } = await sb.from("products").select("id, category_id, category").in("id", pids);
+        const catIds = Array.from(new Set((prods ?? []).map((p: any) => p.category_id).filter(Boolean))) as string[];
+        const { data: cats } = catIds.length
+          ? await sb.from("categories").select("id, name").in("id", catIds)
+          : { data: [] as any[] };
+        const catName: Record<string, string> = {};
+        (cats ?? []).forEach((c: any) => catName[c.id] = c.name);
+        const prodCat: Record<string, string> = {};
+        (prods ?? []).forEach((p: any) => {
+          prodCat[p.id] = (p.category_id && catName[p.category_id]) || p.category || "未分類";
+        });
+        const counts: Record<string, number> = {};
+        items.forEach((it: any) => {
+          const name = prodCat[it.product_id] || "未分類";
+          counts[name] = (counts[name] || 0) + (Number(it.quantity) || 0);
+        });
+        setCategoryData(
+          Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, value]) => ({ name, value }))
+        );
+      } else {
+        setCategoryData([]);
+      }
+
+      // 最近訂單
+      const recentQ = sb.from("sales_orders").select("order_no, customer_name, total_amount, order_status").order("created_at", { ascending: false }).limit(6);
+      if (currentCompanyId) recentQ.eq("company_id", currentCompanyId);
+      const { data: recentData } = await recentQ;
+      setRecentOrders((recentData ?? []).map((o: any) => ({
+        no: o.order_no,
+        customer: o.customer_name ?? "—",
+        amount: `NT$ ${Number(o.total_amount).toLocaleString()}`,
+        status: ORDER_STATUS_LABEL[o.order_status] ?? o.order_status,
+      })));
+
+      // 期間營收
       const now = new Date();
       const startCurrent = new Date(now);
       const startPrevious = new Date(now);
@@ -115,9 +201,8 @@ function Dashboard() {
         startPrevious.setTime(startCurrent.getTime());
         startPrevious.setDate(startPrevious.getDate() - 1);
       } else if (revenuePeriod === "week") {
-        // 以週一為起始
         startCurrent.setHours(0, 0, 0, 0);
-        const dow = (startCurrent.getDay() + 6) % 7; // 週一=0
+        const dow = (startCurrent.getDay() + 6) % 7;
         startCurrent.setDate(startCurrent.getDate() - dow);
         startPrevious.setTime(startCurrent.getTime());
         startPrevious.setDate(startPrevious.getDate() - 7);
@@ -145,6 +230,8 @@ function Dashboard() {
       const prevRev = sumRev(soPrev);
       const delta = prevRev > 0 ? Number((((currentRev - prevRev) / prevRev) * 100).toFixed(1)) : undefined;
       setRevenue({ current: currentRev, delta });
+
+      void prev30;
     })();
   }, [currentCompanyId, revenuePeriod]);
 
@@ -198,7 +285,7 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <StatCard title="今日訂單" value="287" delta={12.5} icon={ShoppingCart} accent="primary" />
+        <StatCard title="今日訂單" value={String(topStats.ordersToday)} delta={topStats.ordersDelta} icon={ShoppingCart} accent="primary" />
         <StatCard
           title={revenuePeriod === "today" ? "今日營收" : revenuePeriod === "week" ? "本週營收" : "本月營收"}
           value={`NT$ ${revenue.current.toLocaleString()}`}
@@ -206,8 +293,8 @@ function Dashboard() {
           icon={DollarSign}
           accent="success"
         />
-        <StatCard title="庫存總量" value="14,392" delta={-2.1} icon={Boxes} accent="warning" />
-        <StatCard title="會員總數" value="3,247" delta={5.4} icon={Users} accent="chart-2" />
+        <StatCard title="庫存總量" value={topStats.stockTotal.toLocaleString()} icon={Boxes} accent="warning" />
+        <StatCard title="會員總數" value={topStats.memberTotal.toLocaleString()} delta={topStats.memberDelta} icon={Users} accent="chart-2" />
       </div>
 
       <div>
@@ -260,7 +347,7 @@ function Dashboard() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">銷售趨勢（本週）</CardTitle>
+            <CardTitle className="text-base">銷售趨勢（近 7 日）</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
@@ -274,7 +361,7 @@ function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.5} />
                 <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={12} />
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
-                <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
+                <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} formatter={(v: any, k: any) => k === "sales" ? `NT$ ${Number(v).toLocaleString()}` : v} />
                 <Area type="monotone" dataKey="sales" stroke="oklch(0.72 0.18 200)" strokeWidth={2} fill="url(#g1)" />
               </AreaChart>
             </ResponsiveContainer>
@@ -283,7 +370,7 @@ function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">分類訂單分析</CardTitle>
+            <CardTitle className="text-base">分類訂單分析（近 30 日）</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
@@ -302,7 +389,7 @@ function Dashboard() {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-base">最近訂單</CardTitle>
-          <span className="text-xs text-muted-foreground">最新 6 筆</span>
+          <span className="text-xs text-muted-foreground">最新 {recentOrders.length} 筆</span>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -316,13 +403,16 @@ function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
+                {recentOrders.length === 0 && (
+                  <tr><td colSpan={4} className="py-8 text-center text-muted-foreground text-sm">尚無訂單</td></tr>
+                )}
                 {recentOrders.map((o) => (
                   <tr key={o.no} className="hover:bg-muted/30 transition-colors">
                     <td className="py-3 font-mono text-xs">{o.no}</td>
                     <td className="py-3">{o.customer}</td>
                     <td className="py-3 text-right font-medium">{o.amount}</td>
                     <td className="py-3 text-right">
-                      <Badge variant={statusVariant[o.status]}>{o.status}</Badge>
+                      <Badge variant={statusVariant[o.status] ?? "outline"}>{o.status}</Badge>
                     </td>
                   </tr>
                 ))}
