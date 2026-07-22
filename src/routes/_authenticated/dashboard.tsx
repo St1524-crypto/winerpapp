@@ -103,6 +103,28 @@ function Dashboard() {
         if (k in buckets) buckets[k] += Number(p.total_amount) || 0;
       });
       setPurchaseTrend(Object.entries(buckets).map(([k, v]) => ({ day: k.slice(5), amount: v })));
+
+      // 今日營收：以 sales_orders 建立於今日、且未取消的訂單合計 total_amount
+      const startToday = new Date(); startToday.setHours(0, 0, 0, 0);
+      const startYesterday = new Date(startToday); startYesterday.setDate(startYesterday.getDate() - 1);
+      const soQuery = (from: string, to?: string) => {
+        let q = sb.from("sales_orders").select("total_amount, order_status, payment_status, created_at").gte("created_at", from);
+        if (to) q = q.lt("created_at", to);
+        if (currentCompanyId) q = q.eq("company_id", currentCompanyId);
+        return q;
+      };
+      const [{ data: soToday }, { data: soYest }] = await Promise.all([
+        soQuery(startToday.toISOString()),
+        soQuery(startYesterday.toISOString(), startToday.toISOString()),
+      ]);
+      const sumRev = (rows: any[] | null | undefined) =>
+        (rows ?? [])
+          .filter((o) => o.order_status !== "cancelled" && o.payment_status !== "refunded")
+          .reduce((s, o) => s + (Number(o.total_amount) || 0), 0);
+      const todayRev = sumRev(soToday);
+      const yestRev = sumRev(soYest);
+      const delta = yestRev > 0 ? Number((((todayRev - yestRev) / yestRev) * 100).toFixed(1)) : undefined;
+      setRevenue({ today: todayRev, delta });
     })();
   }, [currentCompanyId]);
 
