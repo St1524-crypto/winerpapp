@@ -79,10 +79,19 @@ function groupRows(rows: StatementRow[], members: Members, tiers: Tiers): Group[
     } else if (r.bonus_type && BUSINESS_TYPES.has(r.bonus_type)) {
       g.business.push(r); g.businessTotal += pts;
     } else if (r.bonus_type && CONSUMPTION_TYPES.has(r.bonus_type)) {
-      g.consumption.push(r); g.consumptionTotal += pts;
+      // 位階 V1~V8：消費型獎金改列營業分紅
+      if (isStarOrDirector(g.tier)) {
+        g.business.push(r); g.businessTotal += pts;
+      } else {
+        g.consumption.push(r); g.consumptionTotal += pts;
+      }
     } else {
-      // 未歸類的視為消費回饋，避免遺漏
-      g.consumption.push(r); g.consumptionTotal += pts;
+      // 未歸類：依位階決定歸屬，避免遺漏
+      if (isStarOrDirector(g.tier)) {
+        g.business.push(r); g.businessTotal += pts;
+      } else {
+        g.consumption.push(r); g.consumptionTotal += pts;
+      }
     }
     g.payable += pts;
   }
