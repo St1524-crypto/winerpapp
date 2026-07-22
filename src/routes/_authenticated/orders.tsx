@@ -481,20 +481,6 @@ function OrdersPage() {
         </div>
       </div>
 
-      {/* Revenue period toggle */}
-      <div className="flex items-center justify-end">
-        <ToggleGroup
-          type="single"
-          value={revenuePeriod}
-          onValueChange={(v) => v && setRevenuePeriod(v as "today" | "week" | "month")}
-          variant="outline"
-          size="sm"
-        >
-          <ToggleGroupItem value="today">今日</ToggleGroupItem>
-          <ToggleGroupItem value="week">本週</ToggleGroupItem>
-          <ToggleGroupItem value="month">本月</ToggleGroupItem>
-        </ToggleGroup>
-      </div>
 
       {/* Revenue period toggle */}
       <div className="flex flex-wrap items-center justify-end gap-2">
