@@ -183,9 +183,29 @@ function Dashboard() {
         </Button>
       </div>
 
+      <div className="flex items-center justify-end">
+        <ToggleGroup
+          type="single"
+          value={revenuePeriod}
+          onValueChange={(v) => v && setRevenuePeriod(v as "today" | "week" | "month")}
+          variant="outline"
+          size="sm"
+        >
+          <ToggleGroupItem value="today">今日</ToggleGroupItem>
+          <ToggleGroupItem value="week">本週</ToggleGroupItem>
+          <ToggleGroupItem value="month">本月</ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="今日訂單" value="287" delta={12.5} icon={ShoppingCart} accent="primary" />
-        <StatCard title="今日營收" value={`NT$ ${revenue.today.toLocaleString()}`} delta={revenue.delta} icon={DollarSign} accent="success" />
+        <StatCard
+          title={revenuePeriod === "today" ? "今日營收" : revenuePeriod === "week" ? "本週營收" : "本月營收"}
+          value={`NT$ ${revenue.current.toLocaleString()}`}
+          delta={revenue.delta}
+          icon={DollarSign}
+          accent="success"
+        />
         <StatCard title="庫存總量" value="14,392" delta={-2.1} icon={Boxes} accent="warning" />
         <StatCard title="會員總數" value="3,247" delta={5.4} icon={Users} accent="chart-2" />
       </div>
