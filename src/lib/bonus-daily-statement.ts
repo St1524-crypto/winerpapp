@@ -26,11 +26,16 @@ function fmt(v: any) { return n(v).toLocaleString(); }
 function fmtDate(s: string | null | undefined) { return (s ?? "").slice(0, 10).replace(/-/g, "/"); }
 
 // 分類：消費分紅 vs 營業分紅
+// 業務規則：V/S/T/E/A 領「消費分紅」；V1~V8（一星～董事）領「營業分紅」。
+// 因此 repurchase / monthly_vip 這類「按消費產生」的獎金，會依會員位階自動改列到營業分紅。
 const CONSUMPTION_TYPES = new Set(["repurchase", "monthly_vip"]);
 const BUSINESS_TYPES = new Set([
   "rank_rebate", "rank_diff_rebate", "national_share",
   "business_bonus", "upgrade_bonus",
 ]);
+function isStarOrDirector(tier: string | null | undefined): boolean {
+  return !!tier && /^V[1-8]$/.test(String(tier).trim().toUpperCase());
+}
 
 type Group = {
   key: string;
@@ -74,10 +79,19 @@ function groupRows(rows: StatementRow[], members: Members, tiers: Tiers): Group[
     } else if (r.bonus_type && BUSINESS_TYPES.has(r.bonus_type)) {
       g.business.push(r); g.businessTotal += pts;
     } else if (r.bonus_type && CONSUMPTION_TYPES.has(r.bonus_type)) {
-      g.consumption.push(r); g.consumptionTotal += pts;
+      // 位階 V1~V8：消費型獎金改列營業分紅
+      if (isStarOrDirector(g.tier)) {
+        g.business.push(r); g.businessTotal += pts;
+      } else {
+        g.consumption.push(r); g.consumptionTotal += pts;
+      }
     } else {
-      // 未歸類的視為消費回饋，避免遺漏
-      g.consumption.push(r); g.consumptionTotal += pts;
+      // 未歸類：依位階決定歸屬，避免遺漏
+      if (isStarOrDirector(g.tier)) {
+        g.business.push(r); g.businessTotal += pts;
+      } else {
+        g.consumption.push(r); g.consumptionTotal += pts;
+      }
     }
     g.payable += pts;
   }
