@@ -59,7 +59,8 @@ function Dashboard() {
   const [stats, setStats] = useState({ total: 0, low: 0, featured: 0, today: 0 });
   const [proc, setProc] = useState({ todayInAmount: 0, pendingPO: 0, vendorCount: 0, lowCount: 0 });
   const [purchaseTrend, setPurchaseTrend] = useState<{ day: string; amount: number }[]>([]);
-  const [revenue, setRevenue] = useState<{ today: number; delta: number | undefined }>({ today: 0, delta: undefined });
+  const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month">("today");
+  const [revenue, setRevenue] = useState<{ current: number; delta: number | undefined }>({ current: 0, delta: undefined });
 
   useEffect(() => {
     (async () => {
