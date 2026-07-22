@@ -85,6 +85,7 @@ async function autoSettleCommission(orderId: string, nextStatus: string) {
   }
 }
 import { supabase } from "@/integrations/supabase/client";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -392,16 +393,49 @@ function OrdersPage() {
     },
   });
 
+  const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month">("month");
+
+  const periodFrom = useMemo(() => {
+    const start = new Date();
+    if (revenuePeriod === "today") {
+      start.setHours(0, 0, 0, 0);
+    } else if (revenuePeriod === "week") {
+      start.setHours(0, 0, 0, 0);
+      const dow = (start.getDay() + 6) % 7;
+      start.setDate(start.getDate() - dow);
+    } else {
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+    }
+    return start.toISOString();
+  }, [revenuePeriod]);
+
+  const revenueQ = useQuery({
+    enabled: !!activeCompanyId,
+    queryKey: ["sales-orders-revenue", activeCompanyId, revenuePeriod, periodFrom],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sales_orders")
+        .select("total_amount, order_status, payment_status, created_at")
+        .eq("company_id", activeCompanyId!)
+        .gte("created_at", periodFrom);
+      if (error) throw new Error(error.message);
+      return (data ?? [])
+        .filter((o: any) => o.order_status !== "cancelled" && o.payment_status !== "refunded")
+        .reduce((s: number, o: any) => s + (Number(o.total_amount) || 0), 0);
+    },
+  });
+
   const kpis = useMemo(() => {
     const list = ordersQ.data ?? [];
     return {
       total: list.length,
-      revenue: list.reduce((s, r) => s + Number(r.total_amount), 0),
+      revenue: revenueQ.data ?? 0,
       pending: list.filter((r) => r.order_status === "pending").length,
       toShip: list.filter((r) => r.shipping_status === "pending" && r.order_status !== "cancelled").length,
       unpaid: list.filter((r) => r.payment_status !== "paid" && r.order_status !== "cancelled").length,
     };
-  }, [ordersQ.data]);
+  }, [ordersQ.data, revenueQ.data]);
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ["sales-orders"] });
@@ -431,10 +465,29 @@ function OrdersPage() {
         </div>
       </div>
 
+      {/* Revenue period toggle */}
+      <div className="flex items-center justify-end">
+        <ToggleGroup
+          type="single"
+          value={revenuePeriod}
+          onValueChange={(v) => v && setRevenuePeriod(v as "today" | "week" | "month")}
+          variant="outline"
+          size="sm"
+        >
+          <ToggleGroupItem value="today">今日</ToggleGroupItem>
+          <ToggleGroupItem value="week">本週</ToggleGroupItem>
+          <ToggleGroupItem value="month">本月</ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
       {/* KPIs */}
       <div className="grid gap-3 grid-cols-2 md:grid-cols-5">
         <KpiCard label="訂單總數" value={String(kpis.total)} />
-        <KpiCard label="營收合計" value={fmt(kpis.revenue)} accent="text-success" />
+        <KpiCard
+          label={revenuePeriod === "today" ? "今日營收" : revenuePeriod === "week" ? "本週營收" : "本月營收"}
+          value={fmt(kpis.revenue)}
+          accent="text-success"
+        />
         <KpiCard label="待處理" value={String(kpis.pending)} accent="text-warning" />
         <KpiCard label="待出貨" value={String(kpis.toShip)} accent="text-sky-400" />
         <KpiCard label="未收齊" value={String(kpis.unpaid)} accent="text-rose-400" />
