@@ -1,6 +1,6 @@
 // 日獎金明細表（依範本 PDF 版型）：每位會員 × 每個結算日期一張。
-// 以 UI 端 payload（listDailyBonusDetails 回傳的 rows/members/orders/tiers）為資料源，
-// 由 html2canvas + jsPDF 逐張匯出成一份 PDF。
+// 版型欄位：應發獎金 = 推薦獎金 + 消費分紅 + 營業分紅；下方顯示貢獻點錢包。
+// 明細分兩塊：推薦獎金明細（referral）、消費回饋獎金明細（repurchase 等）。
 import jsPDF from "jspdf";
 import { renderHtmlToCanvas } from "./pdf-iframe-render";
 
@@ -25,12 +25,12 @@ function n(v: any) { return Number(v ?? 0); }
 function fmt(v: any) { return n(v).toLocaleString(); }
 function fmtDate(s: string | null | undefined) { return (s ?? "").slice(0, 10).replace(/-/g, "/"); }
 
-// 稅務估算（本國個人）：≥1,000 → 5% 所得稅；≥20,000 → 2.11% 健保費。
-function estimateTax(total: number) {
-  const tax = total >= 1000 ? Math.round(total * 0.05) : 0;
-  const health = total >= 20000 ? Math.round(total * 0.0211) : 0;
-  return { tax, health, net: total - tax - health };
-}
+// 分類：消費分紅 vs 營業分紅
+const CONSUMPTION_TYPES = new Set(["repurchase", "monthly_vip"]);
+const BUSINESS_TYPES = new Set([
+  "rank_rebate", "rank_diff_rebate", "national_share",
+  "business_bonus", "upgrade_bonus",
+]);
 
 type Group = {
   key: string;
@@ -39,9 +39,11 @@ type Group = {
   memberName: string;
   tier: string;
   date: string;
-  referral: StatementRow[];   // 推薦獎金明細
-  business: StatementRow[];   // 達成分紅獎金明細（repurchase / business_bonus / 其他）
+  referral: StatementRow[];
+  consumption: StatementRow[];
+  business: StatementRow[];
   referralTotal: number;
+  consumptionTotal: number;
   businessTotal: number;
   payable: number;
 };
@@ -61,18 +63,21 @@ function groupRows(rows: StatementRow[], members: Members, tiers: Tiers): Group[
         memberName: m.name ?? "—",
         tier: tiers[r.member_id] ?? "—",
         date: r.settlement_date,
-        referral: [], business: [],
-        referralTotal: 0, businessTotal: 0, payable: 0,
+        referral: [], consumption: [], business: [],
+        referralTotal: 0, consumptionTotal: 0, businessTotal: 0, payable: 0,
       };
       map.set(key, g);
     }
     const pts = n(r.bonus_points);
     if (r.bonus_type === "referral") {
-      g.referral.push(r);
-      g.referralTotal += pts;
+      g.referral.push(r); g.referralTotal += pts;
+    } else if (r.bonus_type && BUSINESS_TYPES.has(r.bonus_type)) {
+      g.business.push(r); g.businessTotal += pts;
+    } else if (r.bonus_type && CONSUMPTION_TYPES.has(r.bonus_type)) {
+      g.consumption.push(r); g.consumptionTotal += pts;
     } else {
-      g.business.push(r);
-      g.businessTotal += pts;
+      // 未歸類的視為消費回饋，避免遺漏
+      g.consumption.push(r); g.consumptionTotal += pts;
     }
     g.payable += pts;
   }
@@ -88,7 +93,6 @@ function esc(s: unknown) {
 }
 
 function renderStatement(g: Group, members: Members, orders: Orders, printedAt: string) {
-  const { tax, health, net } = estimateTax(g.payable);
   const referralRows = g.referral.map((r) => {
     const src = members[r.source_member_id ?? ""] ?? {};
     const ord = orders[r.source_order_id ?? ""] ?? {};
@@ -103,6 +107,13 @@ function renderStatement(g: Group, members: Members, orders: Orders, printedAt: 
       </tr>`;
   }).join("");
 
+  const consumptionRows = g.consumption.map((r) => `
+      <tr>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb">${esc(g.memberNo)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb">${esc(g.memberName)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right">${fmt(r.bonus_points)}</td>
+      </tr>`).join("");
+
   const businessRows = g.business.map((r) => `
       <tr>
         <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb">${esc(g.memberNo)}</td>
@@ -113,8 +124,8 @@ function renderStatement(g: Group, members: Members, orders: Orders, printedAt: 
   const box = (label: string, val: string | number, op = "") => `
     <div style="text-align:center;min-width:78px">
       ${op ? `<div style="font-weight:700;font-size:14px;color:#111">${op}</div>` : ""}
-      <div style="font-size:11px;color:#475569">${label}</div>
-      <div style="font-size:16px;font-weight:700;color:#0f172a">${val}</div>
+      <div style="font-size:11px;color:#475569;border:1px solid #94a3b8;padding:2px 6px;border-radius:3px;display:inline-block">${label}</div>
+      <div style="font-size:16px;font-weight:700;color:#0f172a;border-bottom:1px solid #94a3b8;margin-top:4px;padding:2px 6px">${val}</div>
     </div>`;
 
   return `
@@ -133,74 +144,80 @@ function renderStatement(g: Group, members: Members, orders: Orders, printedAt: 
         <div>算後位階：${esc(g.tier)}</div>
       </div>
 
-      <div style="margin-top:14px;border:1px solid #cbd5e1;border-radius:6px;padding:10px 14px">
-        <div style="display:flex;align-items:center;justify-content:space-around">
+      <div style="margin-top:14px;padding:10px 4px">
+        <div style="display:flex;align-items:center;gap:10px">
           ${box("應發獎金", fmt(g.payable))}
           <div style="font-size:14px;font-weight:700">=</div>
           ${box("推薦獎金", fmt(g.referralTotal))}
           <div style="font-size:14px;font-weight:700">+</div>
-          ${box("輔導獎金", 0)}
+          ${box("消費分紅", fmt(g.consumptionTotal))}
           <div style="font-size:14px;font-weight:700">+</div>
-          ${box("報件獎金", 0)}
+          ${box("營業分紅", fmt(g.businessTotal))}
         </div>
       </div>
 
-      <div style="margin-top:10px;border:1px solid #cbd5e1;border-radius:6px;padding:10px 14px">
-        <div style="display:flex;align-items:center;justify-content:space-around">
-          ${box("實領獎金", fmt(net))}
-          <div style="font-size:14px;font-weight:700">=</div>
-          ${box("應發獎金", fmt(g.payable))}
-          <div style="font-size:14px;font-weight:700">−</div>
-          ${box("購物錢包", 0)}
-          <div style="font-size:14px;font-weight:700">−</div>
-          ${box("健保費", fmt(health))}
-          <div style="font-size:14px;font-weight:700">−</div>
-          ${box("所得稅", fmt(tax))}
+      <div style="margin-top:6px;padding:6px 4px">
+        <div style="display:flex;align-items:center;gap:10px">
+          ${box("貢獻點錢包", fmt(g.payable))}
         </div>
       </div>
 
       ${g.referral.length ? `
       <div style="margin-top:16px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:4px">推薦獎金明細</div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid #e5e7eb">
-          <thead style="background:#f1f5f9">
-            <tr>
-              <th style="padding:6px 8px;text-align:left">會員編號</th>
-              <th style="padding:6px 8px;text-align:left">會員名稱</th>
-              <th style="padding:6px 8px;text-align:left">訂單編號</th>
-              <th style="padding:6px 8px;text-align:right">PV</th>
-              <th style="padding:6px 8px;text-align:right">%</th>
-              <th style="padding:6px 8px;text-align:right">獎金</th>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;border-left:3px solid #0f172a;padding-left:6px">推薦獎金明細</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="color:#475569">
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #cbd5e1">會員編號</th>
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #cbd5e1">會員名稱</th>
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #cbd5e1">訂單編號</th>
+              <th style="padding:6px 8px;text-align:right;border-bottom:1px solid #cbd5e1">PV(獎勵點)</th>
+              <th style="padding:6px 8px;text-align:right;border-bottom:1px solid #cbd5e1">%</th>
+              <th style="padding:6px 8px;text-align:right;border-bottom:1px solid #cbd5e1">獎金</th>
             </tr>
           </thead>
           <tbody>${referralRows}
-            <tr><td colspan="5" style="padding:6px 8px;text-align:right;font-weight:700">合計</td>
-              <td style="padding:6px 8px;text-align:right;font-weight:700">${fmt(g.referralTotal)}</td></tr>
+            <tr><td colspan="5" style="padding:6px 8px;text-align:right;font-weight:700;border-top:1px solid #0f172a"></td>
+              <td style="padding:6px 8px;text-align:right;font-weight:700;border-top:1px solid #0f172a">${fmt(g.referralTotal)}</td></tr>
+          </tbody>
+        </table>
+      </div>` : ""}
+
+      ${g.consumption.length ? `
+      <div style="margin-top:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;border-left:3px solid #0f172a;padding-left:6px">消費回饋獎金明細</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="color:#475569">
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #cbd5e1">會員編號</th>
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #cbd5e1">名稱</th>
+              <th style="padding:6px 8px;text-align:right;border-bottom:1px solid #cbd5e1">獎金</th>
+            </tr>
+          </thead>
+          <tbody>${consumptionRows}
+            <tr><td colspan="2" style="padding:6px 8px;text-align:right;font-weight:700;border-top:1px solid #0f172a"></td>
+              <td style="padding:6px 8px;text-align:right;font-weight:700;border-top:1px solid #0f172a">${fmt(g.consumptionTotal)}</td></tr>
           </tbody>
         </table>
       </div>` : ""}
 
       ${g.business.length ? `
       <div style="margin-top:16px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:4px">達成分紅獎金明細</div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid #e5e7eb">
-          <thead style="background:#f1f5f9">
-            <tr>
-              <th style="padding:6px 8px;text-align:left">會員編號</th>
-              <th style="padding:6px 8px;text-align:left">會員名稱</th>
-              <th style="padding:6px 8px;text-align:right">獎金</th>
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;border-left:3px solid #0f172a;padding-left:6px">營業分紅獎金明細</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="color:#475569">
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #cbd5e1">會員編號</th>
+              <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #cbd5e1">名稱</th>
+              <th style="padding:6px 8px;text-align:right;border-bottom:1px solid #cbd5e1">獎金</th>
             </tr>
           </thead>
           <tbody>${businessRows}
-            <tr><td colspan="2" style="padding:6px 8px;text-align:right;font-weight:700">合計</td>
-              <td style="padding:6px 8px;text-align:right;font-weight:700">${fmt(g.businessTotal)}</td></tr>
+            <tr><td colspan="2" style="padding:6px 8px;text-align:right;font-weight:700;border-top:1px solid #0f172a"></td>
+              <td style="padding:6px 8px;text-align:right;font-weight:700;border-top:1px solid #0f172a">${fmt(g.businessTotal)}</td></tr>
           </tbody>
         </table>
       </div>` : ""}
-
-      <div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">
-        稅額為報表估算（本國個人：≥1,000 加 5% 所得稅，≥20,000 加 2.11% 健保費），不影響實際發放。
-      </div>
     </div>`;
 }
 
@@ -241,4 +258,3 @@ export async function exportDailyBonusStatements(opts: {
 
   return groups.length;
 }
-
