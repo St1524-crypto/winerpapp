@@ -187,8 +187,8 @@ function Page() {
                 </TableRow>
               ) : (
                 visible.map((r) => (
-                  <>
-                    <TableRow key={r.date}>
+                  <FragmentRows key={r.date}>
+                    <TableRow>
                       <TableCell className="font-mono">{r.date}</TableCell>
                       <TableCell className="text-right">{fmt(r.orderCount)}</TableCell>
                       <TableCell className="text-right">{fmt(r.expectedPoints)}</TableCell>
