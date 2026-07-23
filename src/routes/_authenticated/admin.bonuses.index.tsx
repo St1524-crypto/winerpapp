@@ -315,6 +315,12 @@ function BonusOperationsPage() {
             </Link>
           </Button>
           <Button asChild variant="default">
+            <Link to="/admin/bonuses/daily-settlement">
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              每日獎金結算監控
+            </Link>
+          </Button>
+          <Button asChild variant="default">
             <Link to="/admin/bonuses/reconciliation">
               <CheckCircle2 className="mr-2 h-4 w-4" />
               補結驗證報告
