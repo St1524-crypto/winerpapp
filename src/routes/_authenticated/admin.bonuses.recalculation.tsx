@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CalendarDays, Loader2, RefreshCw, RotateCcw, ShieldAlert } from "lucide-react";
+import { ArrowLeft, CalendarDays, Download, Loader2, RefreshCw, RotateCcw, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import {
@@ -29,15 +29,15 @@ type Scope = "daily" | "monthly";
 type Mode = "preview" | "clawback" | "correction";
 
 const MODE_LABEL: Record<Mode, string> = {
-  preview: "預覽／重算",
-  clawback: "追回（負向沖銷）",
-  correction: "更正（覆蓋未發放）",
+  preview: "預覽重算",
+  clawback: "追回已發放",
+  correction: "更正重算",
 };
 
 const MODE_DESC: Record<Mode, string> = {
-  preview: "已發放獎金會阻擋 apply；未發放時可正式覆蓋重算。",
-  clawback: "為期間內每筆已發放獎金建立負向沖銷 bonus_records（status='clawback'）。不動 wallet / point_transactions。",
-  correction: "當期間內無已發放獎金時，取消未發放紀錄並以最新規則重新結算。",
+  preview: "只計算差異並寫入稽核紀錄，不修改獎金、錢包或點數。",
+  clawback: "針對已發放紀錄建立負向 clawback bonus_records，不直接異動 wallet 或 point_transactions。",
+  correction: "重新計算尚未發放的獎金；若已有 released 紀錄，系統會阻擋並要求先走追回流程。",
 };
 
 export const Route = createFileRoute("/_authenticated/admin/bonuses/recalculation")({
@@ -99,7 +99,6 @@ function BonusRecalculationPage() {
   const target = scope === "daily" ? dailyDate : monthlyYm;
   const summary = lastResult?.after ?? lastResult?.before ?? {};
   const settlementRpc = lastResult?.settlement_rpc ?? {};
-
   const runRows = useMemo(() => runs.slice(0, 20), [runs]);
 
   async function loadRuns() {
@@ -120,9 +119,10 @@ function BonusRecalculationPage() {
 
   async function execute(dryRun: boolean) {
     if (!dryRun && !canApply) {
-      toast.error("只有 super_admin / admin 可以正式重算");
+      toast.error("只有 super_admin / admin 可以正式執行重算");
       return;
     }
+
     setBusy(true);
     try {
       const result = await adminRunBonusRecalculation({
@@ -130,10 +130,11 @@ function BonusRecalculationPage() {
       });
       setLastResult(result);
       await loadRuns();
-      if (result?.blocked) {
-        toast.warning(result.reason ?? "重算已被安全規則阻擋");
+
+      if (result?.blocked || result?.apply_allowed === false) {
+        toast.warning(result.reason ?? result.apply_block_reason ?? "重算已被安全規則阻擋");
       } else {
-        toast.success(dryRun ? "重算預覽完成" : "正式重算完成");
+        toast.success(dryRun ? "Dry-run 預覽完成" : "正式重算完成");
       }
     } catch (error: any) {
       toast.error(error?.message ?? "獎金重算失敗");
@@ -141,6 +142,17 @@ function BonusRecalculationPage() {
       setBusy(false);
       setConfirmApply(false);
     }
+  }
+
+  function downloadJson() {
+    if (!lastResult) return;
+    const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bonus_recalculation_${lastResult.mode ?? mode}_${target}_${lastResult.run_id ?? "report"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -152,13 +164,13 @@ function BonusRecalculationPage() {
             獎金重算管理
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            先預覽再執行；已發放獎金不覆蓋，需走追回或更正流程。
+            每日或每月獎金先 Dry-run 預覽，再由 super_admin / admin 二次確認正式執行。
           </p>
         </div>
         <Button asChild variant="outline">
           <Link to="/admin/bonuses">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            返回獎金營運中心
+            回獎金營運中心
           </Link>
         </Button>
       </div>
@@ -167,13 +179,13 @@ function BonusRecalculationPage() {
         <CardHeader>
           <CardTitle>重算條件</CardTitle>
           <CardDescription>
-            日獎金支援指定日期；月獎金支援指定月份。正式執行前會保留 audit run 紀錄。
+            Dry-run 只產生稽核結果；正式執行仍不直接寫 wallet、reward_wallet_logs 或 point_transactions。
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label>重算類型</Label>
+              <Label>重算範圍</Label>
               <div className="flex rounded-md border p-1">
                 <Button
                   type="button"
@@ -213,11 +225,11 @@ function BonusRecalculationPage() {
             )}
 
             <div className="space-y-2">
-              <Label>安全狀態</Label>
-              <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm">
-                <div>發放錢包：不觸碰</div>
-                <div>點數交易：不觸碰</div>
-                <div>正式重算：{canApply ? "允許" : "僅 super_admin / admin"}</div>
+              <Label>安全限制</Label>
+              <div className="space-y-1 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                <div>Dry-run：super_admin / admin / finance</div>
+                <div>正式執行：super_admin / admin</div>
+                <div>發放錢包：不在此頁執行</div>
               </div>
             </div>
           </div>
@@ -256,36 +268,26 @@ function BonusRecalculationPage() {
             </Button>
             <Button variant="outline" onClick={loadRuns} disabled={runsLoading}>
               {runsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-              重整紀錄
+              重新整理紀錄
             </Button>
             {lastResult && (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  const blob = new Blob([JSON.stringify(lastResult, null, 2)], { type: "application/json" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `recalculation_${lastResult.mode ?? mode}_${target}_${lastResult.run_id ?? "report"}.json`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-              >
-                下載報告 JSON
+              <Button variant="ghost" onClick={downloadJson}>
+                <Download className="mr-2 h-4 w-4" />
+                下載 JSON
               </Button>
             )}
           </div>
         </CardContent>
       </Card>
 
-
       {lastResult && (
         <Card>
           <CardHeader>
-            <CardTitle>最近結果</CardTitle>
+            <CardTitle>重算結果</CardTitle>
             <CardDescription>
-              模式：<span className="font-medium">{MODE_LABEL[(lastResult.mode as Mode) ?? "preview"]}</span>
-              　·　run id：<span className="font-mono">{lastResult.run_id ?? "—"}</span>
+              模式：<span className="font-medium">{MODE_LABEL[(lastResult.mode as Mode) ?? mode]}</span>
+              <span className="mx-2">/</span>
+              run id：<span className="font-mono">{lastResult.run_id ?? "-"}</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -294,49 +296,70 @@ function BonusRecalculationPage() {
                 {lastResult.reason}
               </div>
             )}
+
             {lastResult.apply_allowed === false && lastResult.apply_block_reason && (
               <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:bg-amber-950/30">
                 <div className="font-medium text-amber-900 dark:text-amber-200">
-                  無法直接 apply：{lastResult.apply_block_reason}
+                  不允許直接 apply：{lastResult.apply_block_reason}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="destructive" onClick={() => { setMode("clawback"); setConfirmApply(false); execute(true); }}>
-                    切換為「追回」dry-run
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      setMode("clawback");
+                      setConfirmApply(false);
+                      execute(true);
+                    }}
+                  >
+                    改用追回 Dry-run
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => { setMode("correction"); execute(true); }}>
-                    切換為「更正」dry-run
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setMode("correction");
+                      execute(true);
+                    }}
+                  >
+                    改用更正 Dry-run
                   </Button>
                 </div>
               </div>
             )}
+
             {lastResult.mode === "clawback" ? (
               <div className="grid gap-3 md:grid-cols-4">
-                <ResultMetric label="沖銷筆數" value={lastResult.clawback_records ?? lastResult.would_clawback_records} />
-                <ResultMetric label="沖銷點數" value={lastResult.clawback_points ?? lastResult.would_clawback_points} />
-                <ResultMetric label="影響會員數" value={lastResult.distinct_members} />
-                <ResultMetric label="clawback batch" value={lastResult.clawback_batch_id ? String(lastResult.clawback_batch_id).slice(0, 8) : "—"} />
+                <ResultMetric label="追回筆數" value={lastResult.clawback_records ?? lastResult.would_clawback_records} />
+                <ResultMetric label="追回點數" value={lastResult.clawback_points ?? lastResult.would_clawback_points} />
+                <ResultMetric label="影響會員" value={lastResult.distinct_members} />
+                <ResultMetric
+                  label="clawback batch"
+                  value={lastResult.clawback_batch_id ? String(lastResult.clawback_batch_id).slice(0, 8) : "-"}
+                />
               </div>
             ) : (
               <div className="grid gap-3 md:grid-cols-4">
-                <ResultMetric label="總筆數" value={summary.total_records} />
-                <ResultMetric label="總點數" value={summary.total_points} />
+                <ResultMetric label="既有筆數" value={summary.total_records} />
+                <ResultMetric label="既有點數" value={summary.total_points} />
                 <ResultMetric label="已發放筆數" value={summary.released_records} />
-                <ResultMetric label="RPC 影響點數" value={settlementRpc.points ?? settlementRpc.total_points ?? "—"} />
+                <ResultMetric label="本次應結點數" value={settlementRpc.points ?? settlementRpc.total_points ?? 0} />
               </div>
             )}
+
             {Array.isArray(lastResult.records) && lastResult.records.length > 0 && (
               <details className="rounded-md border p-3">
                 <summary className="cursor-pointer text-sm font-medium">
-                  受影響 bonus_records（前 200 筆，共 {lastResult.records.length}）
+                  bonus_records 明細（最多 200 筆，本次顯示 {lastResult.records.length} 筆）
                 </summary>
                 <div className="mt-3 max-h-72 overflow-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>member_id</TableHead>
-                        <TableHead>bonus_type</TableHead>
-                        <TableHead className="text-right">points</TableHead>
-                        <TableHead>batch</TableHead>
+                        <TableHead>會員</TableHead>
+                        <TableHead>獎金類型</TableHead>
+                        <TableHead className="text-right">點數</TableHead>
+                        <TableHead>批次</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -345,7 +368,9 @@ function BonusRecalculationPage() {
                           <TableCell className="font-mono text-xs">{String(r.member_id).slice(0, 8)}</TableCell>
                           <TableCell>{r.bonus_type}</TableCell>
                           <TableCell className="text-right">{n(r.bonus_points)}</TableCell>
-                          <TableCell className="font-mono text-xs">{r.settlement_batch_id ? String(r.settlement_batch_id).slice(0, 8) : "—"}</TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {r.settlement_batch_id ? String(r.settlement_batch_id).slice(0, 8) : "-"}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -353,8 +378,9 @@ function BonusRecalculationPage() {
                 </div>
               </details>
             )}
+
             <details className="rounded-md border p-3">
-              <summary className="cursor-pointer text-sm font-medium">查看原始 JSON</summary>
+              <summary className="cursor-pointer text-sm font-medium">原始 JSON</summary>
               <pre className="mt-3 max-h-96 overflow-auto rounded bg-muted p-3 text-xs">
                 {JSON.stringify(lastResult, null, 2)}
               </pre>
@@ -362,7 +388,6 @@ function BonusRecalculationPage() {
           </CardContent>
         </Card>
       )}
-
 
       <Card>
         <CardHeader>
@@ -374,10 +399,10 @@ function BonusRecalculationPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>時間</TableHead>
-                <TableHead>類型</TableHead>
+                <TableHead>範圍</TableHead>
                 <TableHead>目標</TableHead>
                 <TableHead>模式</TableHead>
-                <TableHead>dry-run</TableHead>
+                <TableHead>Dry-run</TableHead>
                 <TableHead>狀態</TableHead>
                 <TableHead>結果</TableHead>
               </TableRow>
@@ -417,10 +442,10 @@ function BonusRecalculationPage() {
             <AlertDialogTitle>確認正式執行「{MODE_LABEL[mode]}」？</AlertDialogTitle>
             <AlertDialogDescription>
               {mode === "clawback"
-                ? "會為期間內每筆已發放獎金建立負向沖銷 bonus_records（status='clawback'），並開一個新的 settlement batch。不動 wallet / point_transactions / reward_wallet_logs。"
+                ? "系統會針對已發放獎金建立負向 clawback bonus_records，並建立獨立批次。此動作不直接寫入 wallet、reward_wallet_logs 或 point_transactions。"
                 : mode === "correction"
-                ? "會取消期間內未發放的 bonus_records 並重新結算；若偵測到已發放，系統會阻擋。不動 wallet / point_transactions。"
-                : "會嘗試以最新規則重算未發放獎金；已發放則阻擋。不動 wallet / point_transactions。"}
+                ? "系統會重新計算尚未發放的獎金；若目標期間已有 released 紀錄，後端會阻擋並要求先追回。此動作不直接寫入 wallet 或 point_transactions。"
+                : "系統會正式套用重算結果，可能新增 waiting_release 或 cancelled bonus_records。此動作不直接發放至錢包。"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -437,7 +462,7 @@ function ResultMetric({ label, value }: { label: string; value: unknown }) {
   return (
     <div className="rounded-md border bg-muted/20 p-3">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 text-xl font-semibold">{typeof value === "number" ? n(value) : String(value ?? "—")}</div>
+      <div className="mt-1 text-xl font-semibold">{typeof value === "number" ? n(value) : String(value ?? "-")}</div>
     </div>
   );
 }
