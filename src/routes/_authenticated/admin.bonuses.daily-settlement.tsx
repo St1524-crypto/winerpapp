@@ -240,7 +240,7 @@ function Page() {
                         </TableCell>
                       </TableRow>
                     ) : null}
-                  </>
+                  </FragmentRows>
                 ))
               )}
             </TableBody>
