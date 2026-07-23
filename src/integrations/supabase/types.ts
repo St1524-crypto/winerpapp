@@ -744,6 +744,7 @@ export type Database = {
           bonus_rate: number
           bonus_type: string
           calculation_detail: Json | null
+          company_id: string | null
           created_at: string
           fail_reason: string | null
           failed_at: string | null
@@ -773,6 +774,7 @@ export type Database = {
           bonus_rate?: number
           bonus_type: string
           calculation_detail?: Json | null
+          company_id?: string | null
           created_at?: string
           fail_reason?: string | null
           failed_at?: string | null
@@ -802,6 +804,7 @@ export type Database = {
           bonus_rate?: number
           bonus_type?: string
           calculation_detail?: Json | null
+          company_id?: string | null
           created_at?: string
           fail_reason?: string | null
           failed_at?: string | null
@@ -6125,6 +6128,7 @@ export type Database = {
           bonus_record_id: string | null
           cap_amount: number
           capped_amount: number
+          company_id: string | null
           created_at: string
           created_by: string | null
           dedupe_key: string | null
@@ -6145,6 +6149,7 @@ export type Database = {
           bonus_record_id?: string | null
           cap_amount?: number
           capped_amount?: number
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           dedupe_key?: string | null
@@ -6165,6 +6170,7 @@ export type Database = {
           bonus_record_id?: string | null
           cap_amount?: number
           capped_amount?: number
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           dedupe_key?: string | null
@@ -6609,6 +6615,7 @@ export type Database = {
           amount: number
           applied_at: string | null
           bonus_points: number
+          company_id: string | null
           created_at: string
           id: string
           new_tier: string | null
@@ -6627,6 +6634,7 @@ export type Database = {
           amount?: number
           applied_at?: string | null
           bonus_points?: number
+          company_id?: string | null
           created_at?: string
           id?: string
           new_tier?: string | null
@@ -6645,6 +6653,7 @@ export type Database = {
           amount?: number
           applied_at?: string | null
           bonus_points?: number
+          company_id?: string | null
           created_at?: string
           id?: string
           new_tier?: string | null
@@ -7647,6 +7656,7 @@ export type Database = {
           bonus_record_id: string | null
           cap_amount: number
           capped_amount: number
+          company_id: string | null
           created_at: string
           created_by: string | null
           dedupe_key: string | null
