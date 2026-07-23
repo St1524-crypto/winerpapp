@@ -684,6 +684,94 @@ export const runDailyBonusReconciliation = createServerFn({ method: "POST" })
     };
   });
 
+/* ───────────── 掃描：未結算日期清單（有訂單獎勵點但缺 bonus_records） ───────────── */
+export const scanUnsettledDailyBonusDates = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+
+    const dayStart = `${data.fromDate}T00:00:00+00:00`;
+    const dayEndExclusive = new Date(
+      new Date(`${data.toDate}T00:00:00+00:00`).getTime() + 86400000,
+    ).toISOString();
+
+    const { data: orders, error: ordErr } = await (supabaseAdmin as any)
+      .from("sales_orders")
+      .select("id, order_no, created_at, order_earn, order_earn_referrer")
+      .gte("created_at", dayStart)
+      .lt("created_at", dayEndExclusive)
+      .limit(20000);
+    if (ordErr) throw new Error(ordErr.message);
+
+    const byDate = new Map<
+      string,
+      { orderCount: number; expectedPoints: number }
+    >();
+    for (const o of orders ?? []) {
+      const d = String(o.created_at).slice(0, 10);
+      const pts = Number(o.order_earn ?? 0) + Number(o.order_earn_referrer ?? 0);
+      if (pts <= 0) continue;
+      const cur = byDate.get(d) ?? { orderCount: 0, expectedPoints: 0 };
+      cur.orderCount += 1;
+      cur.expectedPoints += pts;
+      byDate.set(d, cur);
+    }
+
+    if (byDate.size === 0) {
+      return { dates: [] as any[], scannedFrom: data.fromDate, scannedTo: data.toDate };
+    }
+
+    const dateList = Array.from(byDate.keys()).sort();
+    const { data: recs } = await (supabaseAdmin as any)
+      .from("bonus_records")
+      .select("settlement_date, status, bonus_points")
+      .in("settlement_date", dateList)
+      .limit(50000);
+
+    const recStats = new Map<
+      string,
+      { total: number; totalPoints: number; active: number; activePoints: number; cancelled: number }
+    >();
+    for (const r of recs ?? []) {
+      const d = r.settlement_date;
+      const cur = recStats.get(d) ?? { total: 0, totalPoints: 0, active: 0, activePoints: 0, cancelled: 0 };
+      cur.total += 1;
+      cur.totalPoints += Number(r.bonus_points ?? 0);
+      if (r.status === "cancelled") cur.cancelled += 1;
+      else if (r.status === "waiting_release" || r.status === "released") {
+        cur.active += 1;
+        cur.activePoints += Number(r.bonus_points ?? 0);
+      }
+      recStats.set(d, cur);
+    }
+
+    const rows = dateList
+      .map((d) => {
+        const src = byDate.get(d)!;
+        const rec = recStats.get(d) ?? { total: 0, totalPoints: 0, active: 0, activePoints: 0, cancelled: 0 };
+        const unsettled = src.expectedPoints > 0 && rec.active === 0;
+        return {
+          date: d,
+          orderCount: src.orderCount,
+          expectedPoints: src.expectedPoints,
+          bonusRecordsTotal: rec.total,
+          bonusRecordsActive: rec.active,
+          bonusRecordsActivePoints: rec.activePoints,
+          bonusRecordsCancelled: rec.cancelled,
+          unsettled,
+        };
+      })
+      .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+    return { scannedFrom: data.fromDate, scannedTo: data.toDate, dates: rows };
+  });
+
 /* ───────────── 月結算（VIP 責任額 + 超額回饋） ───────────── */
 const bonusRecalculationRunSchema = z.object({
   scope: z.enum(["daily", "monthly"]),
