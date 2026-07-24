@@ -518,6 +518,8 @@ function Page() {
                 <div className="grid grid-cols-2 gap-3">
                   <div><div className="text-muted-foreground text-xs">供應商</div><div className="font-medium">{viewing.vendor_name}</div></div>
                   <div><div className="text-muted-foreground text-xs">預計到貨</div><div>{viewing.expected_at ?? "—"}</div></div>
+                  <div><div className="text-muted-foreground text-xs">採購人員</div><div>{viewing.buyer_name ?? "—"}</div></div>
+                  <div><div className="text-muted-foreground text-xs">主管</div><div>{viewing.supervisor_name ?? "—"}</div></div>
                   <div><div className="text-muted-foreground text-xs">未稅</div><div className="font-mono">NT$ {viewing.subtotal?.toLocaleString()}</div></div>
                   <div><div className="text-muted-foreground text-xs">稅額</div><div className="font-mono">NT$ {viewing.tax_amount?.toLocaleString()}</div></div>
                   <div className="col-span-2"><div className="text-muted-foreground text-xs">總金額</div><div className="text-xl font-bold text-primary">NT$ {viewing.total_amount?.toLocaleString()}</div></div>
