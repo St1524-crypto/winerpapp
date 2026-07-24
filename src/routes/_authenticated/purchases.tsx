@@ -461,12 +461,18 @@ function Page() {
                     ) : items.map((it, i) => (
                       <TableRow key={i}>
                         <TableCell>
-                          <Select value={it.product_id ?? ""} onValueChange={(v) => updateItem(i, { product_id: v })}>
-                            <SelectTrigger><SelectValue placeholder="選擇商品" /></SelectTrigger>
-                            <SelectContent>
-                              {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.sku} · {p.name}{p.status && p.status !== "active" ? "（已下架）" : ""}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
+                          <SearchSelect
+                            value={it.product_id ?? ""}
+                            onChange={(v) => updateItem(i, { product_id: v })}
+                            options={products.map((p) => ({
+                              value: p.id,
+                              label: `${p.sku} · ${p.name}${p.status && p.status !== "active" ? "（已下架）" : ""}`,
+                              keywords: `${p.sku} ${p.name}`,
+                            }))}
+                            placeholder="選擇商品"
+                            searchPlaceholder="搜尋 SKU 或商品名稱..."
+                            emptyText="找不到商品"
+                          />
                         </TableCell>
                         <TableCell><Input value={it.unit} onChange={(e) => updateItem(i, { unit: e.target.value })} className="w-16" /></TableCell>
                         <TableCell><Input type="number" value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) || 0 })} /></TableCell>
