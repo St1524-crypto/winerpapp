@@ -40,8 +40,9 @@ function NewQuotePage() {
   const [items, setItems] = useState<Item[]>([{ item_name: "", quantity: 1, unit_price: 0, discount: 0 }]);
   const [saving, setSaving] = useState(false);
 
-  const subtotal = items.reduce((s, it) => s + (Number(it.quantity) * Number(it.unit_price) - Number(it.discount || 0)), 0);
-  const total = subtotal - Number(form.discount_amount || 0) + Number(form.tax_amount || 0);
+  const lineTotal = (it: Item) => (Number(it.quantity) || 0) * (Number(it.unit_price) || 0) - (Number(it.discount) || 0);
+  const subtotal = items.reduce((s, it) => s + lineTotal(it), 0);
+  const total = subtotal - (Number(form.discount_amount) || 0) + (Number(form.tax_amount) || 0);
 
   function addItem() { setItems([...items, { item_name: "", quantity: 1, unit_price: 0, discount: 0 }]); }
   function rmItem(i: number) { setItems(items.filter((_, idx) => idx !== i)); }
