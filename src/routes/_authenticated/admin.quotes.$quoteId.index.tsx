@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 
 
-export const Route = createFileRoute("/_authenticated/admin/quotes/$quoteId")({
+export const Route = createFileRoute("/_authenticated/admin/quotes/$quoteId/")({
   component: QuoteDetailPage,
 });
 
