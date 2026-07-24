@@ -3273,6 +3273,95 @@ function EditOrderDialog({
   });
 
 
+  // 讀取此訂單客戶的 VIP / 經銷身分，用於自動套用批發階梯價
+  const orderCustomerQ = useQuery({
+    queryKey: ["order-edit-customer-status", order.id],
+    enabled: open && !!order.id,
+    queryFn: async () => {
+      const { data: so } = await supabase
+        .from("sales_orders")
+        .select("user_id")
+        .eq("id", order.id)
+        .maybeSingle();
+      const uid = (so as any)?.user_id as string | null;
+      if (!uid) return { is_vip: false, is_dealer: false };
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("is_vip,is_dealer,vip_expires_at")
+        .eq("id", uid)
+        .maybeSingle();
+      const p = (prof ?? {}) as any;
+      const vipActive = !!p.is_vip && (!p.vip_expires_at || new Date(p.vip_expires_at) > new Date());
+      return { is_vip: vipActive, is_dealer: !!p.is_dealer };
+    },
+  });
+  const custStatus = orderCustomerQ.data ?? { is_vip: false, is_dealer: false };
+
+  // 讀取品項對應的批發階梯
+  const editItemIds = editItems.map((it) => it.product_id).filter(Boolean) as string[];
+  const editItemIdsKey = editItemIds.slice().sort().join(",");
+  const editTiersQ = useQuery({
+    queryKey: ["order-edit-item-tiers", editItemIdsKey],
+    enabled: open && editItemIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_wholesale_tiers")
+        .select("product_id,min_qty,max_qty,unit_price,unit_reward_points,visibility")
+        .in("product_id", editItemIds)
+        .order("min_qty", { ascending: true });
+      if (error) throw new Error(error.message);
+      const map: Record<string, any[]> = {};
+      for (const t of (data ?? []) as any[]) {
+        (map[t.product_id] = map[t.product_id] ?? []).push(t);
+      }
+      return map;
+    },
+  });
+
+  function getEditBestTier(productId: string, quantity: number): any | null {
+    const tiers = (editTiersQ.data?.[productId] ?? []).filter((t: any) => {
+      const v = t.visibility ?? "all";
+      if (v === "all") return true;
+      if (v === "vip") return custStatus.is_vip;
+      if (v === "dealer") return custStatus.is_dealer;
+      return false;
+    });
+    if (tiers.length === 0) return null;
+    const matches = tiers.filter((t: any) => quantity >= Number(t.min_qty) && (t.max_qty == null || quantity <= Number(t.max_qty)));
+    if (matches.length > 0) {
+      return matches.reduce((b: any, c: any) => (Number(c.unit_price) < Number(b.unit_price) ? c : b));
+    }
+    if (custStatus.is_vip || custStatus.is_dealer) {
+      const memberTiers = tiers.filter((t: any) => (t.visibility ?? "all") !== "all");
+      const pool = memberTiers.length > 0 ? memberTiers : tiers;
+      const minMin = Math.min(...pool.map((t: any) => Number(t.min_qty)));
+      const entry = pool.filter((t: any) => Number(t.min_qty) === minMin);
+      return entry.reduce((b: any, c: any) => (Number(c.unit_price) < Number(b.unit_price) ? c : b));
+    }
+    return null;
+  }
+
+  // 自動依會員身分 / 數量套用階梯單價（僅 VIP / 經銷客戶）
+  useEffect(() => {
+    if (!custStatus.is_vip && !custStatus.is_dealer) return;
+    setEditItems((prev) => {
+      let changed = false;
+      const next = prev.map((it) => {
+        if (!it.product_id) return it;
+        const best = getEditBestTier(it.product_id, it.quantity);
+        if (!best) return it;
+        const tierPrice = Number(best.unit_price);
+        if (Number.isFinite(tierPrice) && tierPrice !== Number(it.unit_price)) {
+          changed = true;
+          return { ...it, unit_price: tierPrice };
+        }
+        return it;
+      });
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editTiersQ.data, custStatus.is_vip, custStatus.is_dealer, editItems.map((i) => `${i.product_id}:${i.quantity}`).join("|")]);
+
   const subtotalNum = useMemo(
     () => editItems.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
     [editItems],
