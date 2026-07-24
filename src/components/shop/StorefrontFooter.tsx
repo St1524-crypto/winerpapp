@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { MessageCircle } from "lucide-react";
+import { LINE_OA_ID, LINE_OA_URL } from "@/components/LineContactButton";
 
 export function StorefrontFooter() {
   return (
@@ -32,8 +34,20 @@ export function StorefrontFooter() {
             <li>企業合作</li>
             <li>聯絡我們</li>
           </ul>
+          <a
+            href={LINE_OA_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`加入 LINE 官方帳號 ${LINE_OA_ID}`}
+            title={`LINE 客服 ${LINE_OA_ID}`}
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#06C755] px-3 py-2 text-xs font-semibold text-white hover:opacity-90 transition"
+          >
+            <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
+            LINE 客服 {LINE_OA_ID}
+          </a>
         </div>
       </div>
+
       <div className="border-t border-border/60 py-4 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} 源晶 ERP 管理系統 · All rights reserved.
       </div>
