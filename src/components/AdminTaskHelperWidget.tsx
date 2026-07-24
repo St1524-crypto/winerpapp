@@ -234,7 +234,7 @@ export function AdminTaskHelperWidget() {
   if (!isStaff) return null;
   if (hidden && !open) return null;
 
-  const unreadCount = todayTasks.length;
+  const unreadCount = counts.today + counts.overdue;
 
   return (
     <div className="fixed bottom-2 right-2 md:bottom-3 md:right-3 z-40 print:hidden">
@@ -257,14 +257,14 @@ export function AdminTaskHelperWidget() {
       )}
 
       {open && (
-        <div className="w-[min(400px,calc(100vw-1rem))] h-[560px] max-h-[calc(100vh-2rem)] flex flex-col rounded-xl border bg-card text-card-foreground shadow-2xl overflow-hidden">
+        <div className="w-[min(400px,calc(100vw-1rem))] h-[600px] max-h-[calc(100vh-2rem)] flex flex-col rounded-xl border bg-card text-card-foreground shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/40">
             <div className="flex items-center gap-2 text-sm font-semibold">
               <ClipboardList className="h-4 w-4 text-emerald-600" />
               任務小幫手
-              {todayTasks.length > 0 && (
-                <Badge variant="secondary" className="text-[10px]">
-                  今日 {todayTasks.length}
+              {counts.overdue > 0 && (
+                <Badge variant="destructive" className="text-[10px]">
+                  逾期 {counts.overdue}
                 </Badge>
               )}
             </div>
@@ -302,40 +302,88 @@ export function AdminTaskHelperWidget() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-4 text-sm">
+          <div className="px-3 py-2 border-b bg-background/40 space-y-2">
+            <div className="flex flex-wrap gap-1">
+              {FILTERS.map((f) => {
+                const n =
+                  f.key === "today"
+                    ? counts.today
+                    : f.key === "overdue"
+                    ? counts.overdue
+                    : f.key === "pending"
+                    ? counts.pending
+                    : f.key === "completed"
+                    ? counts.completed
+                    : counts.all;
+                const active = filter === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setFilter(f.key)}
+                    className={cn(
+                      "px-2 py-0.5 rounded-full border text-[11px] transition",
+                      active
+                        ? "bg-emerald-500 border-emerald-500 text-white"
+                        : "bg-background hover:bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {f.label}
+                    <span className="ml-1 opacity-70">{n}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  placeholder="搜尋任務標題／說明／部門"
+                  className="w-full h-7 pl-7 pr-2 rounded-md border bg-background text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <div className="relative">
+                <ArrowUpDown className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as SortKey)}
+                  className="h-7 pl-7 pr-2 rounded-md border bg-background text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  aria-label="排序方式"
+                >
+                  {SORTS.map((s) => (
+                    <option key={s.key} value={s.key}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3 text-sm">
             {loading && tasks.length === 0 ? (
               <div className="flex items-center justify-center py-10 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" /> 載入中…
               </div>
             ) : (
-              <>
-                <Section
-                  title="今日／逾期任務"
-                  items={todayTasks}
-                  emptyText="太棒了，目前沒有待處理任務。"
-                  busyId={busyId}
-                  reportingId={reportingId}
-                  reportText={reportText}
-                  setReportText={setReportText}
-                  setReportingId={setReportingId}
-                  onStatus={handleQuickStatus}
-                  onSubmitReport={handleSubmitReport}
-                />
-                {otherTasks.length > 0 && (
-                  <Section
-                    title="其他任務"
-                    items={otherTasks}
-                    busyId={busyId}
-                    reportingId={reportingId}
-                    reportText={reportText}
-                    setReportText={setReportText}
-                    setReportingId={setReportingId}
-                    onStatus={handleQuickStatus}
-                    onSubmitReport={handleSubmitReport}
-                    muted
-                  />
-                )}
-              </>
+              <Section
+                title={`${FILTERS.find((f) => f.key === filter)?.label ?? ""}任務`}
+                items={filteredTasks}
+                emptyText={
+                  keyword
+                    ? "查無符合關鍵字的任務。"
+                    : "此分類目前沒有任務。"
+                }
+                busyId={busyId}
+                reportingId={reportingId}
+                reportText={reportText}
+                setReportText={setReportText}
+                setReportingId={setReportingId}
+                onStatus={handleQuickStatus}
+                onSubmitReport={handleSubmitReport}
+              />
             )}
           </div>
 
