@@ -81,6 +81,33 @@ function NewQuotePage() {
 
       <Card className="p-4 space-y-3">
         <h2 className="font-semibold">客戶資訊</h2>
+        <div>
+          <Label>搜尋既有客戶</Label>
+          <SearchSelect
+            options={(customers ?? []).map((c) => ({
+              value: c.id,
+              label: `${c.name}${c.company ? ` (${c.company})` : ""}`,
+              keywords: `${c.name} ${c.customer_no ?? ""} ${c.phone ?? ""} ${c.email ?? ""} ${c.company ?? ""}`,
+              hint: [c.customer_no, c.phone, c.email].filter(Boolean).join(" · "),
+            }))}
+            value={null}
+            onChange={(id) => {
+              const c = (customers ?? []).find((x) => x.id === id);
+              if (!c) return;
+              setForm((f) => ({
+                ...f,
+                customer_name: c.name ?? "",
+                customer_phone: c.phone ?? "",
+                customer_email: c.email ?? "",
+                customer_address: c.shipping_address ?? "",
+              }));
+              toast.success(`已帶入客戶：${c.name}`);
+            }}
+            placeholder="搜尋姓名 / 編號 / 電話 / Email / 公司"
+            searchPlaceholder="輸入關鍵字..."
+            emptyText="查無客戶"
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div><Label>客戶名稱 *</Label><Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} /></div>
           <div><Label>電話</Label><Input value={form.customer_phone} onChange={(e) => setForm({ ...form, customer_phone: e.target.value })} /></div>
