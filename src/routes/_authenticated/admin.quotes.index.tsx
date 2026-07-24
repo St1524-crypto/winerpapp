@@ -54,11 +54,15 @@ function QuotesListPage() {
                 <td className="p-3">{q.valid_until ?? "—"}</td>
                 <td className="p-3 text-right">${Number(q.total_amount ?? 0).toLocaleString()}</td>
                 <td className="p-3"><Badge variant="outline">{q.status}</Badge></td>
-                <td className="p-3 text-right">
+                <td className="p-3 text-right space-x-1">
                   <Button asChild size="sm" variant="ghost">
                     <Link to="/admin/quotes/$quoteId" params={{ quoteId: q.id }}>檢視</Link>
                   </Button>
+                  <Button asChild size="sm" variant="ghost">
+                    <Link to="/admin/quotes/$quoteId/edit" params={{ quoteId: q.id }}>編輯</Link>
+                  </Button>
                 </td>
+
               </tr>
             ))}
           </tbody>

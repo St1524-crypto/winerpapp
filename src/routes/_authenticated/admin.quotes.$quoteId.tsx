@@ -1,12 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getQuote } from "@/lib/quotes.functions";
+import { getQuote, deleteQuote } from "@/lib/quotes.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Printer, FileDown, Share2, ArrowRightLeft } from "lucide-react";
+import { Printer, FileDown, Share2, ArrowRightLeft, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/admin/quotes/$quoteId")({
   component: QuoteDetailPage,
@@ -21,7 +22,10 @@ type BankSnap = { bank_name?: string; branch_name?: string; bank_code?: string; 
 
 function QuoteDetailPage() {
   const { quoteId } = Route.useParams();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
   const fn = useServerFn(getQuote);
+  const delFn = useServerFn(deleteQuote);
   const { data, isLoading } = useQuery({ queryKey: ["quote", quoteId], queryFn: () => fn({ data: { id: quoteId } }) });
 
   if (isLoading) return <div className="p-6">載入中…</div>;
@@ -31,11 +35,24 @@ function QuoteDetailPage() {
   const items = data.items as Array<Record<string, unknown> & { item_name: string; quantity: number; unit_price: number; discount: number; subtotal: number; spec?: string }>;
   const comp = (q.company_snapshot ?? {}) as CompanySnap;
   const bank = (q.bank_snapshot ?? {}) as BankSnap;
+  const canEdit = q.status !== "converted";
 
   function copyShare() {
     const url = `${window.location.origin}/quote/${q.public_token}`;
     navigator.clipboard.writeText(url);
     toast.success("已複製公開分享連結");
+  }
+
+  async function onDelete() {
+    if (!confirm(`確定刪除報價單 ${q.quote_no}？此動作無法復原。`)) return;
+    try {
+      await delFn({ data: { id: quoteId } });
+      toast.success("已刪除");
+      qc.invalidateQueries({ queryKey: ["quotes"] });
+      navigate({ to: "/admin/quotes" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "刪除失敗");
+    }
   }
 
   return (
@@ -45,14 +62,23 @@ function QuoteDetailPage() {
           <h1 className="text-2xl font-bold">報價單 {q.quote_no}</h1>
           <Badge variant="outline" className="mt-1">{q.status}</Badge>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button asChild variant="outline"><Link to="/admin/quotes">返回</Link></Button>
+          {canEdit && (
+            <Button asChild variant="outline">
+              <Link to="/admin/quotes/$quoteId/edit" params={{ quoteId }}><Pencil className="h-4 w-4 mr-1" />編輯</Link>
+            </Button>
+          )}
           <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" />列印</Button>
           <Button variant="outline" disabled title="即將推出"><FileDown className="h-4 w-4 mr-1" />PDF</Button>
           <Button variant="outline" onClick={copyShare}><Share2 className="h-4 w-4 mr-1" />分享連結</Button>
           <Button variant="outline" disabled title="即將推出"><ArrowRightLeft className="h-4 w-4 mr-1" />轉訂單</Button>
+          {canEdit && (
+            <Button variant="destructive" onClick={onDelete}><Trash2 className="h-4 w-4 mr-1" />刪除</Button>
+          )}
         </div>
       </div>
+
 
       <Card className="p-8 space-y-6 bg-white text-black print:shadow-none print:border-0">
         <div className="flex justify-between items-start border-b pb-4">
