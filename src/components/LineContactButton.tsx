@@ -1,5 +1,4 @@
 import { MessageCircle } from "lucide-react";
-export const _iconRef = MessageCircle; // keep re-export chain; LineQuickButton below uses it
 
 export const LINE_OA_ID = "@win8799999";
 export const LINE_OA_URL = "https://line.me/R/ti/p/%40win8799999";
