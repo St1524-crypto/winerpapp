@@ -40,8 +40,9 @@ function NewQuotePage() {
   const [items, setItems] = useState<Item[]>([{ item_name: "", quantity: 1, unit_price: 0, discount: 0 }]);
   const [saving, setSaving] = useState(false);
 
-  const subtotal = items.reduce((s, it) => s + (Number(it.quantity) * Number(it.unit_price) - Number(it.discount || 0)), 0);
-  const total = subtotal - Number(form.discount_amount || 0) + Number(form.tax_amount || 0);
+  const lineTotal = (it: Item) => (Number(it.quantity) || 0) * (Number(it.unit_price) || 0) - (Number(it.discount) || 0);
+  const subtotal = items.reduce((s, it) => s + lineTotal(it), 0);
+  const total = subtotal - (Number(form.discount_amount) || 0) + (Number(form.tax_amount) || 0);
 
   function addItem() { setItems([...items, { item_name: "", quantity: 1, unit_price: 0, discount: 0 }]); }
   function rmItem(i: number) { setItems(items.filter((_, idx) => idx !== i)); }
@@ -147,7 +148,7 @@ function NewQuotePage() {
               <div className="col-span-1"><Label className="text-xs">數量</Label><Input type="number" value={it.quantity} onChange={(e) => updItem(i, { quantity: Number(e.target.value) })} /></div>
               <div className="col-span-2"><Label className="text-xs">單價</Label><Input type="number" value={it.unit_price} onChange={(e) => updItem(i, { unit_price: Number(e.target.value) })} /></div>
               <div className="col-span-2"><Label className="text-xs">折扣</Label><Input type="number" value={it.discount} onChange={(e) => updItem(i, { discount: Number(e.target.value) })} /></div>
-              <div className="col-span-1 text-right text-sm">${(it.quantity * it.unit_price - (it.discount || 0)).toLocaleString()}</div>
+              <div className="col-span-1 text-right text-sm">${lineTotal(it).toLocaleString()}</div>
               <div className="col-span-1"><Button size="icon" variant="ghost" onClick={() => rmItem(i)}><Trash2 className="h-4 w-4" /></Button></div>
             </div>
           ))}
