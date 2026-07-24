@@ -76,14 +76,6 @@ const PRIORITY_LABEL: Record<Task["priority"], string> = {
   urgent: "緊急",
 };
 
-function isTodayOrOverdue(due: string | null) {
-  if (!due) return true;
-  const d = new Date(due);
-  const now = new Date();
-  return (
-    d.toDateString() === now.toDateString() || d.getTime() <= now.getTime()
-  );
-}
 
 export function AdminTaskHelperWidget() {
   const { user, roles } = useAuth();
