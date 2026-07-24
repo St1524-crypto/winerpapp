@@ -233,6 +233,7 @@ function ProductsPage() {
 
       <ProductFormDialog open={open} onOpenChange={setOpen} product={editing} categories={categories} onSaved={refresh} />
       <InventoryDialog open={!!invProduct} onOpenChange={(v) => !v && setInvProduct(null)} product={invProduct} onDone={refresh} />
+      <ProductBulkImportDialog open={importOpen} onOpenChange={setImportOpen} categories={categories} onDone={refresh} />
 
       <AlertDialog open={!!delProduct} onOpenChange={(v) => !v && setDelProduct(null)}>
         <AlertDialogContent>
