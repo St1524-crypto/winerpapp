@@ -32,7 +32,7 @@ const FREE_SHIPPING = 2000;
 
 function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, clear, getItemUnitPrice } = useCart();
+  const { items, clear, getItemUnitPrice, getItemUnitReward } = useCart();
   const isDealer = useIsDealer();
   const subtotal = useMemo(
     () => items.reduce((s, it) => s + getItemUnitPrice(it) * it.quantity, 0),
