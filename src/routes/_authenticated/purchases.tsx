@@ -150,6 +150,8 @@ function Page() {
     if (poNoErr) return toast.error(poNoErr.message);
 
     const vendor = vendors.find((v) => v.id === form.vendor_id);
+    const buyer = staff.find((s) => s.user_id === form.buyer_id);
+    const supervisor = staff.find((s) => s.user_id === form.supervisor_id);
     const { data: po, error } = await sb.from("purchase_orders").insert({
       po_no: poNoData,
       vendor_id: form.vendor_id,
@@ -159,6 +161,10 @@ function Page() {
       expected_at: form.expected_at || null,
       notes: form.notes || null,
       created_by: user?.id ?? null,
+      buyer_id: form.buyer_id || null,
+      buyer_name: buyer?.label ?? null,
+      supervisor_id: form.supervisor_id || null,
+      supervisor_name: supervisor?.label ?? null,
     }).select().single();
     if (error) return toast.error(error.message);
 
