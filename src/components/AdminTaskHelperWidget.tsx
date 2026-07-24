@@ -297,6 +297,23 @@ export function AdminTaskHelperWidget() {
           </div>
 
           <div className="px-3 py-2 border-b bg-background/40 space-y-2">
+            <div className="flex items-center gap-1">
+              {(["mine", "all"] as ScopeKey[]).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setScope(s)}
+                  className={cn(
+                    "px-2 py-0.5 rounded-md border text-[11px] transition",
+                    scope === s
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "bg-background hover:bg-muted text-muted-foreground",
+                  )}
+                >
+                  {s === "mine" ? "我的任務" : "全部任務"}
+                </button>
+              ))}
+            </div>
             <div className="flex flex-wrap gap-1">
               {FILTERS.map((f) => {
                 const n =
