@@ -399,7 +399,7 @@ export function AdminTaskHelperWidget() {
           </div>
 
           <div className="border-t px-3 py-2 text-[10px] text-muted-foreground">
-            只顯示指派給您的任務；可直接更新狀態或回報進度。
+            {scope === "mine" ? "只顯示指派給您的任務" : "顯示全部任務清單"}；可直接更新狀態或回報進度。
           </div>
         </div>
       )}
