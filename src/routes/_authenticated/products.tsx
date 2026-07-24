@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   Plus, Search, Pencil, Trash2, Eye, Boxes, Package,
-  ArrowUpDown, ChevronLeft, ChevronRight, Image as ImageIcon, Flame, FileDown,
+  ArrowUpDown, ChevronLeft, ChevronRight, Image as ImageIcon, Flame, FileDown, Upload,
 } from "lucide-react";
+import { ProductBulkImportDialog } from "@/components/products/ProductBulkImportDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ function ProductsPage() {
   const [open, setOpen] = useState(false);
   const [invProduct, setInvProduct] = useState<Product | null>(null);
   const [delProduct, setDelProduct] = useState<Product | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filters = useMemo(() => ({
     search: search.trim() || undefined,
@@ -103,6 +105,7 @@ function ProductsPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={exportPdf}><FileDown className="h-4 w-4 mr-2" />匯出 PDF</Button>
+          <Button variant="secondary" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4 mr-2" />批次匯入</Button>
           <Button asChild variant="secondary"><Link to="/categories"><Boxes className="h-4 w-4 mr-2" />分類管理</Link></Button>
           <Button className="bg-gradient-primary" onClick={() => { setEditing(null); setOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" />新增商品
@@ -230,6 +233,7 @@ function ProductsPage() {
 
       <ProductFormDialog open={open} onOpenChange={setOpen} product={editing} categories={categories} onSaved={refresh} />
       <InventoryDialog open={!!invProduct} onOpenChange={(v) => !v && setInvProduct(null)} product={invProduct} onDone={refresh} />
+      <ProductBulkImportDialog open={importOpen} onOpenChange={setImportOpen} categories={categories} onDone={refresh} />
 
       <AlertDialog open={!!delProduct} onOpenChange={(v) => !v && setDelProduct(null)}>
         <AlertDialogContent>
