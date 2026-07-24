@@ -1,37 +1,14 @@
 import { MessageCircle } from "lucide-react";
-import { useIsAdminRoute, useAdminFabsHidden } from "@/hooks/use-admin-fabs";
 
 export const LINE_OA_ID = "@win8799999";
 export const LINE_OA_URL = "https://line.me/R/ti/p/%40win8799999";
 
 /**
- * Global sticky LINE OA / customer service button.
- * Visible to guests and members across the whole site (shop / cooperation / home).
- * 後台管理路徑（/admin*、/vendor*）自動縮小為 icon 模式，並可透過右下角的箭頭 tab 收合。
+ * 全站 LINE 客服入口：
+ * - 後台不再顯示浮動 LINE 按鈕（改為任務小幫手）。
+ * - 前台不顯示浮動按鈕，改由 footer「聯絡我們」下方入口取代。
  */
 export function LineContactButton() {
-  const compact = useIsAdminRoute();
-  const hidden = useAdminFabsHidden();
-
-  if (compact) {
-    if (hidden) return null;
-    return (
-      <a
-        href={LINE_OA_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`加入 LINE 官方帳號 ${LINE_OA_ID} 洽詢客服`}
-        title="LINE 客服"
-        className="fixed z-40 flex items-center justify-center rounded-full bg-[#06C755]/85 hover:bg-[#06C755] text-white shadow-md hover:scale-105 active:scale-95 transition
-                   h-8 w-8 bottom-2 right-2 md:h-9 md:w-9 md:bottom-3 md:right-3 print:hidden"
-      >
-        <MessageCircle className="h-4 w-4" strokeWidth={2.5} />
-        <span className="sr-only">LINE 客服</span>
-      </a>
-    );
-  }
-
-  // 非後台（shop/首頁等）不再顯示浮動按鈕，改由 footer「聯絡我們」下方入口取代。
   return null;
 }
 
