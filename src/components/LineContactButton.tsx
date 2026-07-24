@@ -31,22 +31,9 @@ export function LineContactButton() {
     );
   }
 
-  return (
-    <a
-      href={LINE_OA_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`加入 LINE 官方帳號 ${LINE_OA_ID} 洽詢客服`}
-      title="加入 LINE 客服 — 促銷、商品、福利即時諮詢"
-      className="fixed z-50 flex items-center gap-2 rounded-full bg-[#06C755] px-4 py-3 text-white shadow-xl shadow-[#06C755]/40 hover:scale-105 active:scale-95 transition
-                 bottom-44 right-4 md:bottom-24 md:right-6"
-    >
-      <MessageCircle className="h-5 w-5" strokeWidth={2.5} />
-      <span className="text-sm font-semibold whitespace-nowrap">LINE 客服</span>
-      <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-white ring-2 ring-[#06C755]" />
-    </a>
-  );
-}
+  // 非後台（shop/首頁等）不再顯示浮動按鈕，改由 footer「聯絡我們」下方入口取代。
+  return null;
+
 
 /** Inline LINE quick-action button, e.g. for the login page. */
 export function LineQuickButton({ className = "" }: { className?: string }) {
