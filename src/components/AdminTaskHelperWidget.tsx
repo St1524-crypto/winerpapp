@@ -26,6 +26,7 @@ import { toast } from "sonner";
 
 type FilterKey = "today" | "overdue" | "pending" | "completed" | "all";
 type SortKey = "due_asc" | "due_desc" | "priority" | "created_desc";
+type ScopeKey = "mine" | "all";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "today", label: "今日" },
