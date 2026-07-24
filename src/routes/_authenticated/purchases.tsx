@@ -67,14 +67,20 @@ function Page() {
 
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [staff, setStaff] = useState<Array<{ user_id: string; label: string; department?: string | null; op_role?: string | null }>>([]);
 
   const [open, setOpen] = useState(false);
   const [taxRate, setTaxRate] = useState(5);
-  const [form, setForm] = useState({ vendor_id: "", vendor_name: "", expected_at: "", notes: "" });
+  const [form, setForm] = useState({
+    vendor_id: "", vendor_name: "", expected_at: "", notes: "",
+    buyer_id: "", supervisor_id: "",
+  });
   const [items, setItems] = useState<POItem[]>([]);
 
   const [viewing, setViewing] = useState<PO | null>(null);
   const [viewItems, setViewItems] = useState<POItem[]>([]);
+
+  const listAssignableFn = useServerFn(listAssignableUsers);
 
   async function load() {
     setLoading(true);
@@ -97,6 +103,12 @@ function Page() {
       merged = productRows.map((r) => ({ ...r, cost_price: cm.get(r.id) ?? 0, status: r.status }));
     }
     setVendors(v ?? []); setProducts(merged);
+    try {
+      const users = await listAssignableFn();
+      setStaff(users ?? []);
+    } catch (e: any) {
+      // 靜默：非必填
+    }
   }
   useEffect(() => { load(); loadRefs(); }, []);
 
