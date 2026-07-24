@@ -128,7 +128,7 @@ function NewQuotePage() {
           {items.map((it, i) => (
             <div key={i} className="grid grid-cols-12 gap-2 items-end border-b pb-2">
               <div className="col-span-3">
-                <Label className="text-xs">商品 / 自訂</Label>
+                <Label className="text-xs">搜尋商品（品名 / SKU）</Label>
                 <SearchSelect
                   options={(products ?? []).map((p) => ({
                     value: p.id,
@@ -138,11 +138,11 @@ function NewQuotePage() {
                   }))}
                   value={it.product_id ?? null}
                   onChange={(id) => id && pickProduct(i, id)}
-                  placeholder="搜尋商品或自訂"
-                  searchPlaceholder="輸入品名 / SKU..."
+                  placeholder="🔍 點此搜尋商品"
+                  searchPlaceholder="輸入品名或 SKU 關鍵字..."
                   emptyText="查無商品"
                 />
-                <Input className="mt-1" placeholder="品名" value={it.item_name} onChange={(e) => updItem(i, { item_name: e.target.value })} />
+                <Input className="mt-1" placeholder="或手動輸入品名" value={it.item_name} onChange={(e) => updItem(i, { item_name: e.target.value })} />
               </div>
               <div className="col-span-2"><Label className="text-xs">規格</Label><Input value={it.spec ?? ""} onChange={(e) => updItem(i, { spec: e.target.value })} /></div>
               <div className="col-span-1"><Label className="text-xs">數量</Label><Input type="number" value={it.quantity} onChange={(e) => updItem(i, { quantity: Number(e.target.value) })} /></div>
