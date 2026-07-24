@@ -60,6 +60,44 @@ function QuoteDetailPage() {
     }
   }
 
+  async function onExportPdf() {
+    if (!printRef.current) return;
+    setExporting(true);
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas-pro"),
+        import("jspdf"),
+      ]);
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+      });
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      let heightLeft = imgH;
+      let position = 0;
+      pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
+      heightLeft -= pageH;
+      while (heightLeft > 0) {
+        position -= pageH;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
+        heightLeft -= pageH;
+      }
+      pdf.save(`${q.quote_no}.pdf`);
+      toast.success("PDF 已下載");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "PDF 匯出失敗");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-4 max-w-4xl">
       <div className="flex items-center justify-between print:hidden">
@@ -75,7 +113,9 @@ function QuoteDetailPage() {
             </Button>
           )}
           <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" />列印</Button>
-          <Button variant="outline" disabled title="即將推出"><FileDown className="h-4 w-4 mr-1" />PDF</Button>
+          <Button variant="outline" onClick={onExportPdf} disabled={exporting}>
+            <FileDown className="h-4 w-4 mr-1" />{exporting ? "匯出中…" : "PDF"}
+          </Button>
           <Button variant="outline" onClick={copyShare}><Share2 className="h-4 w-4 mr-1" />分享連結</Button>
           <Button variant="outline" disabled title="即將推出"><ArrowRightLeft className="h-4 w-4 mr-1" />轉訂單</Button>
           {canEdit && (
@@ -84,8 +124,8 @@ function QuoteDetailPage() {
         </div>
       </div>
 
+      <Card ref={printRef} className="p-8 space-y-6 bg-white text-black print:shadow-none print:border-0">
 
-      <Card className="p-8 space-y-6 bg-white text-black print:shadow-none print:border-0">
         <div className="flex justify-between items-start border-b pb-4">
           <div className="flex items-center gap-4">
             {comp.logo_url && <img src={comp.logo_url} alt="logo" className="h-16" />}
