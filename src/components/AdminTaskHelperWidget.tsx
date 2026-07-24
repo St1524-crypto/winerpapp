@@ -9,6 +9,8 @@ import {
   Send,
   CheckCircle2,
   PlayCircle,
+  Search,
+  ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +23,31 @@ import {
 } from "@/lib/operations.functions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+type FilterKey = "today" | "overdue" | "pending" | "completed" | "all";
+type SortKey = "due_asc" | "due_desc" | "priority" | "created_desc";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "today", label: "今日" },
+  { key: "overdue", label: "逾期" },
+  { key: "pending", label: "待處理" },
+  { key: "completed", label: "已完成" },
+  { key: "all", label: "全部" },
+];
+
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: "due_asc", label: "到期最近" },
+  { key: "due_desc", label: "到期最遠" },
+  { key: "priority", label: "優先度" },
+  { key: "created_desc", label: "最新建立" },
+];
+
+const PRIORITY_WEIGHT: Record<Task["priority"], number> = {
+  urgent: 4,
+  high: 3,
+  normal: 2,
+  low: 1,
+};
 
 type Task = {
   id: string;
