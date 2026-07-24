@@ -89,6 +89,7 @@ export function AdminTaskHelperWidget() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>("today");
   const [sort, setSort] = useState<SortKey>("due_asc");
+  const [scope, setScope] = useState<ScopeKey>("mine");
   const [keyword, setKeyword] = useState("");
   const hidden = useAdminFabsHidden();
 
