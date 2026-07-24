@@ -101,7 +101,7 @@ export function AdminTaskHelperWidget() {
     if (!user) return;
     setLoading(true);
     try {
-      const rows = (await list({ data: { scope: "mine" } })) as Task[];
+      const rows = (await list({ data: { scope } })) as Task[];
       setTasks(rows);
     } catch {
       toast.error("無法載入任務清單");
@@ -113,7 +113,7 @@ export function AdminTaskHelperWidget() {
   useEffect(() => {
     if (open) refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, scope]);
 
   const counts = useMemo(() => {
     const now = Date.now();
