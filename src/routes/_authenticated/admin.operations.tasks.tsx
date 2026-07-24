@@ -11,7 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { assignTask, createTask, listTasks, updateTaskStatus } from "@/lib/operations.functions";
+import { assignTask, createTask, listAssignableUsers, listTasks, updateTaskStatus } from "@/lib/operations.functions";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UNASSIGNED = "__unassigned__";
 
 export const Route = createFileRoute("/_authenticated/admin/operations/tasks")({
   component: TasksAdminPage,
@@ -23,8 +26,10 @@ function TasksAdminPage() {
   const createFn = useServerFn(createTask);
   const assignFn = useServerFn(assignTask);
   const statusFn = useServerFn(updateTaskStatus);
+  const usersFn = useServerFn(listAssignableUsers);
 
   const { data = [] } = useQuery({ queryKey: ["ops-tasks-admin"], queryFn: () => listFn({ data: {} }) });
+  const { data: users = [] } = useQuery({ queryKey: ["ops-assignable-users"], queryFn: () => usersFn() });
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -33,14 +38,22 @@ function TasksAdminPage() {
   const [dueAt, setDueAt] = useState("");
 
   const create = useMutation({
-    mutationFn: () => createFn({ data: { title, description, assigneeId: assigneeId || null, priority, dueAt: dueAt || null } }),
+    mutationFn: () => {
+      const id = assigneeId && assigneeId !== UNASSIGNED ? assigneeId : null;
+      if (id && !UUID_RE.test(id)) throw new Error("指派對象格式錯誤，請從清單中選擇");
+      return createFn({ data: { title, description, assigneeId: id, priority, dueAt: dueAt || null } });
+    },
     onSuccess: () => { toast.success("任務已建立"); setTitle(""); setDescription(""); setAssigneeId(""); setDueAt(""); qc.invalidateQueries({ queryKey: ["ops-tasks-admin"] }); },
     onError: (e: any) => toast.error(e?.message ?? "建立失敗"),
   });
 
   const assign = useMutation({
-    mutationFn: (v: { id: string; assigneeId: string }) => assignFn({ data: { id: v.id, assigneeId: v.assigneeId || null } }),
+    mutationFn: (v: { id: string; assigneeId: string | null }) => {
+      if (v.assigneeId && !UUID_RE.test(v.assigneeId)) throw new Error("指派對象格式錯誤");
+      return assignFn({ data: { id: v.id, assigneeId: v.assigneeId || null } });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ops-tasks-admin"] }),
+    onError: (e: any) => toast.error(e?.message ?? "指派失敗"),
   });
 
   const setStatus = useMutation({
@@ -55,7 +68,21 @@ function TasksAdminPage() {
         <CardContent className="grid gap-3 md:grid-cols-2">
           <div className="md:col-span-2"><Label>標題</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
           <div className="md:col-span-2"><Label>說明</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-          <div><Label>指派對象 User ID</Label><Input value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} placeholder="UUID" /></div>
+          <div>
+            <Label>指派對象</Label>
+            <Select value={assigneeId || UNASSIGNED} onValueChange={(v) => setAssigneeId(v === UNASSIGNED ? "" : v)}>
+              <SelectTrigger><SelectValue placeholder="不指派" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UNASSIGNED}>不指派</SelectItem>
+                {users.map((u: any) => (
+                  <SelectItem key={u.user_id} value={u.user_id}>
+                    {u.label}{u.department ? `（${u.department}）` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {users.length === 0 && <p className="text-xs text-muted-foreground mt-1">尚無協作成員，請先於「協作成員」頁新增</p>}
+          </div>
           <div>
             <Label>優先級</Label>
             <Select value={priority} onValueChange={(v) => setPriority(v as any)}>
@@ -89,13 +116,26 @@ function TasksAdminPage() {
                   <TableCell className="max-w-xs"><div className="font-medium">{t.title}</div><div className="text-xs text-muted-foreground line-clamp-2">{t.description}</div></TableCell>
                   <TableCell><Badge variant={t.status === "completed" ? "default" : "secondary"}>{t.status}</Badge></TableCell>
                   <TableCell>{t.priority}</TableCell>
-                  <TableCell className="font-mono text-xs">{t.assignee_id ?? "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {(() => {
+                      const u = users.find((x: any) => x.user_id === t.assignee_id);
+                      return u ? u.label : (t.assignee_id ? <span className="font-mono">{t.assignee_id.slice(0, 8)}…</span> : "—");
+                    })()}
+                  </TableCell>
                   <TableCell className="text-xs">{t.due_at ? new Date(t.due_at).toLocaleString() : "—"}</TableCell>
                   <TableCell className="space-x-1">
-                    <Button size="sm" variant="outline" onClick={() => {
-                      const v = prompt("指派 User ID（留空取消指派）", t.assignee_id ?? "");
-                      if (v !== null) assign.mutate({ id: t.id, assigneeId: v });
-                    }}>指派</Button>
+                    <Select
+                      value={t.assignee_id ?? UNASSIGNED}
+                      onValueChange={(v) => assign.mutate({ id: t.id, assigneeId: v === UNASSIGNED ? null : v })}
+                    >
+                      <SelectTrigger className="inline-flex w-32"><SelectValue placeholder="指派" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={UNASSIGNED}>不指派</SelectItem>
+                        {users.map((u: any) => (
+                          <SelectItem key={u.user_id} value={u.user_id}>{u.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Select value={t.status} onValueChange={(v) => setStatus.mutate({ id: t.id, status: v })}>
                       <SelectTrigger className="inline-flex w-32"><SelectValue /></SelectTrigger>
                       <SelectContent>

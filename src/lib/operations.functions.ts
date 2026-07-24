@@ -13,6 +13,28 @@ export const listParticipants = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const listAssignableUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: parts, error } = await context.supabase
+      .from("operation_participants")
+      .select("user_id, department, op_role, is_active")
+      .eq("is_active", true);
+    if (error) throw error;
+    const ids = Array.from(new Set((parts ?? []).map((p: any) => p.user_id)));
+    if (ids.length === 0) return [];
+    const { data: profs } = await context.supabase
+      .from("profiles")
+      .select("id, name, display_name, email, member_no")
+      .in("id", ids);
+    const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
+    return (parts ?? []).map((p: any) => {
+      const pr: any = map.get(p.user_id) ?? {};
+      const label = pr.display_name || pr.name || pr.email || pr.member_no || p.user_id;
+      return { user_id: p.user_id, department: p.department, op_role: p.op_role, label };
+    });
+  });
+
 export const grantParticipant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { userId: string; opRole?: "manager" | "staff" | "assistant" | "collaborator"; department?: string | null; notes?: string | null }) => d)
