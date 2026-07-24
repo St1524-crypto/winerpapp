@@ -1593,6 +1593,7 @@ export type Database = {
       dealer_tier_history: {
         Row: {
           change_type: string
+          company_id: string | null
           created_at: string
           from_tier: string | null
           id: string
@@ -1604,6 +1605,7 @@ export type Database = {
         }
         Insert: {
           change_type?: string
+          company_id?: string | null
           created_at?: string
           from_tier?: string | null
           id?: string
@@ -1615,6 +1617,7 @@ export type Database = {
         }
         Update: {
           change_type?: string
+          company_id?: string | null
           created_at?: string
           from_tier?: string | null
           id?: string
@@ -1624,7 +1627,15 @@ export type Database = {
           triggered_by?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dealer_tier_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dealer_tier_status: {
         Row: {
