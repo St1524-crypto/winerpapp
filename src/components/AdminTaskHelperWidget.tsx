@@ -209,15 +209,18 @@ export function AdminTaskHelperWidget() {
     if (!text) return;
     setBusyId(id);
     try {
+      const content = `【完成度 ${reportProgress}%】${text}`;
       await submitReport({
         data: {
           taskId: id,
-          content: text,
-          statusSnapshot: "submitted",
+          content,
+          statusSnapshot: reportStatus,
         },
       });
       toast.success("進度已回報");
       setReportText("");
+      setReportProgress(50);
+      setReportStatus("in_progress");
       setReportingId(null);
       refresh();
     } catch {
