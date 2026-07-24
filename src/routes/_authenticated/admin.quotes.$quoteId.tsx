@@ -29,6 +29,9 @@ function QuoteDetailPage() {
   const fn = useServerFn(getQuote);
   const delFn = useServerFn(deleteQuote);
   const { data, isLoading } = useQuery({ queryKey: ["quote", quoteId], queryFn: () => fn({ data: { id: quoteId } }) });
+  const printRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+
 
   if (isLoading) return <div className="p-6">載入中…</div>;
   if (!data) return <div className="p-6">找不到報價單</div>;
