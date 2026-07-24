@@ -180,6 +180,7 @@ function AuthLayout() {
           <AdminMobileNav />
         </div>
         {inAdmin && <AdminAIAssistantWidget />}
+        {inAdmin && <AdminTaskHelperWidget />}
       </div>
     </SidebarProvider>
   );
