@@ -23,9 +23,11 @@ function NewQuotePage() {
   const navigate = useNavigate();
   const banksFn = useServerFn(listBankAccounts);
   const productsFn = useServerFn(listProductsLite);
+  const customersFn = useServerFn(listCustomersLite);
   const saveFn = useServerFn(saveQuote);
   const { data: banks } = useQuery({ queryKey: ["qbanks"], queryFn: () => banksFn() });
   const { data: products } = useQuery({ queryKey: ["qproducts"], queryFn: () => productsFn() });
+  const { data: customers } = useQuery({ queryKey: ["qcustomers"], queryFn: () => customersFn() });
 
   const [form, setForm] = useState({
     customer_name: "", customer_phone: "", customer_email: "", customer_address: "",
