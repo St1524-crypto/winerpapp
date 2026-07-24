@@ -57,6 +57,8 @@ type Task = {
   priority: "low" | "normal" | "high" | "urgent";
   due_at: string | null;
   assignee_id: string | null;
+  created_at?: string | null;
+  department?: string | null;
 };
 
 const STATUS_LABEL: Record<Task["status"], string> = {
