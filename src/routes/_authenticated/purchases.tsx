@@ -23,10 +23,11 @@ import { useBranding } from "@/hooks/use-branding";
 
 const STATUS = [
   { v: "draft", label: "草稿", variant: "secondary" as const },
-  { v: "submitted", label: "已送出", variant: "outline" as const },
-  { v: "confirmed", label: "已確認", variant: "default" as const },
+  { v: "submitted", label: "待審核", variant: "outline" as const },
+  { v: "confirmed", label: "已核准", variant: "default" as const },
   { v: "partial", label: "部分到貨", variant: "secondary" as const },
-  { v: "completed", label: "全部到貨", variant: "default" as const },
+  { v: "completed", label: "已收貨", variant: "default" as const },
+  { v: "closed", label: "已結案", variant: "default" as const },
   { v: "cancelled", label: "已取消", variant: "destructive" as const },
 ];
 const statusMeta = (s: string) => STATUS.find((x) => x.v === s) ?? STATUS[0];
@@ -37,7 +38,8 @@ const TRANSITIONS: Record<string, string[]> = {
   submitted: ["confirmed", "draft", "cancelled"],
   confirmed: ["partial", "completed", "cancelled"],
   partial: ["completed", "cancelled"],
-  completed: [],
+  completed: ["closed"],
+  closed: [],
   cancelled: [],
 };
 
@@ -562,7 +564,7 @@ function Page() {
                             ))
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground">流程：草稿 → 已送出 → 已確認 → 部分到貨 → 全部到貨（任一階段可取消）</p>
+                        <p className="text-xs text-muted-foreground">流程：草稿 → 待審核 → 已核准 →（部分到貨）→ 已收貨 → 已結案（任一階段可取消）</p>
                       </>
                     );
                   })()}
