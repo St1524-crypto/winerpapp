@@ -60,6 +60,8 @@ const CartContext = createContext<CartCtx>({
   open: false, setOpen: () => {},
   addItem: async () => {}, updateQty: async () => {}, removeItem: async () => {}, clear: async () => {}, refresh: async () => {},
   getItemUnitPrice: () => 0,
+  getItemUnitReward: () => 0,
+
 });
 
 type BundleAllocInfo = {
