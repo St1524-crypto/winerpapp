@@ -116,13 +116,26 @@ function TasksAdminPage() {
                   <TableCell className="max-w-xs"><div className="font-medium">{t.title}</div><div className="text-xs text-muted-foreground line-clamp-2">{t.description}</div></TableCell>
                   <TableCell><Badge variant={t.status === "completed" ? "default" : "secondary"}>{t.status}</Badge></TableCell>
                   <TableCell>{t.priority}</TableCell>
-                  <TableCell className="font-mono text-xs">{t.assignee_id ?? "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {(() => {
+                      const u = users.find((x: any) => x.user_id === t.assignee_id);
+                      return u ? u.label : (t.assignee_id ? <span className="font-mono">{t.assignee_id.slice(0, 8)}…</span> : "—");
+                    })()}
+                  </TableCell>
                   <TableCell className="text-xs">{t.due_at ? new Date(t.due_at).toLocaleString() : "—"}</TableCell>
                   <TableCell className="space-x-1">
-                    <Button size="sm" variant="outline" onClick={() => {
-                      const v = prompt("指派 User ID（留空取消指派）", t.assignee_id ?? "");
-                      if (v !== null) assign.mutate({ id: t.id, assigneeId: v });
-                    }}>指派</Button>
+                    <Select
+                      value={t.assignee_id ?? UNASSIGNED}
+                      onValueChange={(v) => assign.mutate({ id: t.id, assigneeId: v === UNASSIGNED ? null : v })}
+                    >
+                      <SelectTrigger className="inline-flex w-32"><SelectValue placeholder="指派" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={UNASSIGNED}>不指派</SelectItem>
+                        {users.map((u: any) => (
+                          <SelectItem key={u.user_id} value={u.user_id}>{u.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Select value={t.status} onValueChange={(v) => setStatus.mutate({ id: t.id, status: v })}>
                       <SelectTrigger className="inline-flex w-32"><SelectValue /></SelectTrigger>
                       <SelectContent>
