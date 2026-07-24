@@ -26,6 +26,7 @@ import { toast } from "sonner";
 
 type FilterKey = "today" | "overdue" | "pending" | "completed" | "all";
 type SortKey = "due_asc" | "due_desc" | "priority" | "created_desc";
+type ScopeKey = "mine" | "all";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "today", label: "今日" },
@@ -88,6 +89,7 @@ export function AdminTaskHelperWidget() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>("today");
   const [sort, setSort] = useState<SortKey>("due_asc");
+  const [scope, setScope] = useState<ScopeKey>("mine");
   const [keyword, setKeyword] = useState("");
   const hidden = useAdminFabsHidden();
 
@@ -99,7 +101,7 @@ export function AdminTaskHelperWidget() {
     if (!user) return;
     setLoading(true);
     try {
-      const rows = (await list({ data: { scope: "mine" } })) as Task[];
+      const rows = (await list({ data: { scope } })) as Task[];
       setTasks(rows);
     } catch {
       toast.error("無法載入任務清單");
@@ -111,7 +113,7 @@ export function AdminTaskHelperWidget() {
   useEffect(() => {
     if (open) refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, scope]);
 
   const counts = useMemo(() => {
     const now = Date.now();
@@ -295,6 +297,23 @@ export function AdminTaskHelperWidget() {
           </div>
 
           <div className="px-3 py-2 border-b bg-background/40 space-y-2">
+            <div className="flex items-center gap-1">
+              {(["mine", "all"] as ScopeKey[]).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setScope(s)}
+                  className={cn(
+                    "px-2 py-0.5 rounded-md border text-[11px] transition",
+                    scope === s
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "bg-background hover:bg-muted text-muted-foreground",
+                  )}
+                >
+                  {s === "mine" ? "我的任務" : "全部任務"}
+                </button>
+              ))}
+            </div>
             <div className="flex flex-wrap gap-1">
               {FILTERS.map((f) => {
                 const n =
@@ -380,7 +399,7 @@ export function AdminTaskHelperWidget() {
           </div>
 
           <div className="border-t px-3 py-2 text-[10px] text-muted-foreground">
-            只顯示指派給您的任務；可直接更新狀態或回報進度。
+            {scope === "mine" ? "只顯示指派給您的任務" : "顯示全部任務清單"}；可直接更新狀態或回報進度。
           </div>
         </div>
       )}
