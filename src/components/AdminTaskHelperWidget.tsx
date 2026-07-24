@@ -396,6 +396,10 @@ export function AdminTaskHelperWidget() {
                 reportingId={reportingId}
                 reportText={reportText}
                 setReportText={setReportText}
+                reportProgress={reportProgress}
+                setReportProgress={setReportProgress}
+                reportStatus={reportStatus}
+                setReportStatus={setReportStatus}
                 setReportingId={setReportingId}
                 onStatus={handleQuickStatus}
                 onSubmitReport={handleSubmitReport}
