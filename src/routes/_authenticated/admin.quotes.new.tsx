@@ -128,12 +128,19 @@ function NewQuotePage() {
             <div key={i} className="grid grid-cols-12 gap-2 items-end border-b pb-2">
               <div className="col-span-3">
                 <Label className="text-xs">商品 / 自訂</Label>
-                <Select value={it.product_id ?? ""} onValueChange={(v) => pickProduct(i, v)}>
-                  <SelectTrigger><SelectValue placeholder="選擇或自訂" /></SelectTrigger>
-                  <SelectContent>
-                    {(products ?? []).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <SearchSelect
+                  options={(products ?? []).map((p) => ({
+                    value: p.id,
+                    label: p.name,
+                    keywords: `${p.name} ${p.sku ?? ""}`,
+                    hint: [p.sku, p.price != null ? `$${Number(p.price).toLocaleString()}` : null].filter(Boolean).join(" · "),
+                  }))}
+                  value={it.product_id ?? null}
+                  onChange={(id) => id && pickProduct(i, id)}
+                  placeholder="搜尋商品或自訂"
+                  searchPlaceholder="輸入品名 / SKU..."
+                  emptyText="查無商品"
+                />
                 <Input className="mt-1" placeholder="品名" value={it.item_name} onChange={(e) => updItem(i, { item_name: e.target.value })} />
               </div>
               <div className="col-span-2"><Label className="text-xs">規格</Label><Input value={it.spec ?? ""} onChange={(e) => updItem(i, { spec: e.target.value })} /></div>
