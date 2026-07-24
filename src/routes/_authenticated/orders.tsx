@@ -3512,7 +3512,7 @@ function EditOrderDialog({
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" />訂單品項 ({editItems.length})</Label>
+              <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" />訂單品項 ({editItems.length}){(custStatus.is_vip || custStatus.is_dealer) && (<Badge variant="outline" className="ml-1 border-emerald-500/40 text-emerald-700">已自動套用{custStatus.is_vip ? "VIP" : "經銷"}批發價</Badge>)}</Label>
               <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
                 <PopoverTrigger asChild>
                   <Button type="button" size="sm" variant="outline">
