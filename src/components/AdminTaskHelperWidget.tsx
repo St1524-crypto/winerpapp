@@ -121,22 +121,76 @@ export function AdminTaskHelperWidget() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const todayTasks = useMemo(
-    () =>
-      tasks.filter(
+  const counts = useMemo(() => {
+    const now = Date.now();
+    let today = 0;
+    let overdue = 0;
+    let pending = 0;
+    let completed = 0;
+    for (const t of tasks) {
+      const active = t.status === "pending" || t.status === "in_progress";
+      if (active) pending += 1;
+      if (t.status === "completed") completed += 1;
+      if (active && t.due_at) {
+        const due = new Date(t.due_at).getTime();
+        if (due < now) overdue += 1;
+        else if (new Date(t.due_at).toDateString() === new Date().toDateString()) today += 1;
+      } else if (active && !t.due_at) {
+        today += 1;
+      }
+    }
+    return { today, overdue, pending, completed, all: tasks.length };
+  }, [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    const now = Date.now();
+    const kw = keyword.trim().toLowerCase();
+    const active = (t: Task) => t.status === "pending" || t.status === "in_progress";
+    let rows = tasks.filter((t) => {
+      switch (filter) {
+        case "today":
+          if (!active(t)) return false;
+          if (!t.due_at) return true;
+          return new Date(t.due_at).toDateString() === new Date().toDateString();
+        case "overdue":
+          return active(t) && !!t.due_at && new Date(t.due_at).getTime() < now;
+        case "pending":
+          return active(t);
+        case "completed":
+          return t.status === "completed";
+        case "all":
+        default:
+          return t.status !== "cancelled";
+      }
+    });
+    if (kw) {
+      rows = rows.filter(
         (t) =>
-          (t.status === "pending" || t.status === "in_progress") &&
-          isTodayOrOverdue(t.due_at),
-      ),
-    [tasks],
-  );
-  const otherTasks = useMemo(
-    () =>
-      tasks.filter(
-        (t) => !todayTasks.includes(t) && t.status !== "cancelled",
-      ),
-    [tasks, todayTasks],
-  );
+          t.title.toLowerCase().includes(kw) ||
+          (t.description ?? "").toLowerCase().includes(kw) ||
+          (t.department ?? "").toLowerCase().includes(kw),
+      );
+    }
+    const dueVal = (t: Task) =>
+      t.due_at ? new Date(t.due_at).getTime() : Number.POSITIVE_INFINITY;
+    rows = [...rows].sort((a, b) => {
+      switch (sort) {
+        case "due_desc":
+          return dueVal(b) - dueVal(a);
+        case "priority":
+          return PRIORITY_WEIGHT[b.priority] - PRIORITY_WEIGHT[a.priority];
+        case "created_desc":
+          return (
+            new Date(b.created_at ?? 0).getTime() -
+            new Date(a.created_at ?? 0).getTime()
+          );
+        case "due_asc":
+        default:
+          return dueVal(a) - dueVal(b);
+      }
+    });
+    return rows;
+  }, [tasks, filter, sort, keyword]);
 
   async function handleQuickStatus(
     id: string,
