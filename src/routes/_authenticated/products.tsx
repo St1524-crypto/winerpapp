@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   Plus, Search, Pencil, Trash2, Eye, Boxes, Package,
-  ArrowUpDown, ChevronLeft, ChevronRight, Image as ImageIcon, Flame, FileDown,
+  ArrowUpDown, ChevronLeft, ChevronRight, Image as ImageIcon, Flame, FileDown, Upload,
 } from "lucide-react";
+import { ProductBulkImportDialog } from "@/components/products/ProductBulkImportDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
