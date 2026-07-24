@@ -68,7 +68,21 @@ function TasksAdminPage() {
         <CardContent className="grid gap-3 md:grid-cols-2">
           <div className="md:col-span-2"><Label>標題</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
           <div className="md:col-span-2"><Label>說明</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-          <div><Label>指派對象 User ID</Label><Input value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} placeholder="UUID" /></div>
+          <div>
+            <Label>指派對象</Label>
+            <Select value={assigneeId || UNASSIGNED} onValueChange={(v) => setAssigneeId(v === UNASSIGNED ? "" : v)}>
+              <SelectTrigger><SelectValue placeholder="不指派" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UNASSIGNED}>不指派</SelectItem>
+                {users.map((u: any) => (
+                  <SelectItem key={u.user_id} value={u.user_id}>
+                    {u.label}{u.department ? `（${u.department}）` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {users.length === 0 && <p className="text-xs text-muted-foreground mt-1">尚無協作成員，請先於「協作成員」頁新增</p>}
+          </div>
           <div>
             <Label>優先級</Label>
             <Select value={priority} onValueChange={(v) => setPriority(v as any)}>
