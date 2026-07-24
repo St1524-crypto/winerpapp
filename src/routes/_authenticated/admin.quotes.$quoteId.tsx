@@ -1,12 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getQuote } from "@/lib/quotes.functions";
+import { getQuote, deleteQuote } from "@/lib/quotes.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Printer, FileDown, Share2, ArrowRightLeft } from "lucide-react";
+import { Printer, FileDown, Share2, ArrowRightLeft, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/_authenticated/admin/quotes/$quoteId")({
   component: QuoteDetailPage,
