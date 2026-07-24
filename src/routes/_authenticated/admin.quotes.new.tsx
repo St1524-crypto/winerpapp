@@ -148,7 +148,7 @@ function NewQuotePage() {
               <div className="col-span-1"><Label className="text-xs">數量</Label><Input type="number" value={it.quantity} onChange={(e) => updItem(i, { quantity: Number(e.target.value) })} /></div>
               <div className="col-span-2"><Label className="text-xs">單價</Label><Input type="number" value={it.unit_price} onChange={(e) => updItem(i, { unit_price: Number(e.target.value) })} /></div>
               <div className="col-span-2"><Label className="text-xs">折扣</Label><Input type="number" value={it.discount} onChange={(e) => updItem(i, { discount: Number(e.target.value) })} /></div>
-              <div className="col-span-1 text-right text-sm">${(it.quantity * it.unit_price - (it.discount || 0)).toLocaleString()}</div>
+              <div className="col-span-1 text-right text-sm">${lineTotal(it).toLocaleString()}</div>
               <div className="col-span-1"><Button size="icon" variant="ghost" onClick={() => rmItem(i)}><Trash2 className="h-4 w-4" /></Button></div>
             </div>
           ))}
