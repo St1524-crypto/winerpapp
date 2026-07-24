@@ -86,6 +86,8 @@ export function AdminTaskHelperWidget() {
   const [loading, setLoading] = useState(false);
   const [reportingId, setReportingId] = useState<string | null>(null);
   const [reportText, setReportText] = useState("");
+  const [reportProgress, setReportProgress] = useState(50);
+  const [reportStatus, setReportStatus] = useState<"in_progress" | "submitted" | "completed">("in_progress");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>("today");
   const [sort, setSort] = useState<SortKey>("due_asc");
