@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { SearchSelect } from "@/components/ui/search-select";
 import { toast } from "sonner";
-import { grantParticipant, listParticipants, setParticipantActive } from "@/lib/operations.functions";
+import {
+  grantParticipant,
+  listParticipants,
+  searchMembersForGrant,
+  setParticipantActive,
+} from "@/lib/operations.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/operations/members")({
   component: MembersPage,
@@ -21,15 +27,39 @@ function MembersPage() {
   const listFn = useServerFn(listParticipants);
   const grantFn = useServerFn(grantParticipant);
   const toggleFn = useServerFn(setParticipantActive);
+  const searchFn = useServerFn(searchMembersForGrant);
   const { data = [] } = useQuery({ queryKey: ["ops-participants"], queryFn: () => listFn({}) });
 
   const [userId, setUserId] = useState("");
   const [opRole, setOpRole] = useState<"manager" | "staff" | "assistant" | "collaborator">("staff");
   const [department, setDepartment] = useState("");
+  const [keyword, setKeyword] = useState("");
+
+  const { data: results = [], isFetching } = useQuery({
+    queryKey: ["ops-member-search", keyword],
+    queryFn: () => searchFn({ data: { keyword } }),
+    staleTime: 30_000,
+  });
+
+  const options = useMemo(
+    () =>
+      (results as Array<{ user_id: string; label: string; hint?: string }>).map((r) => ({
+        value: r.user_id,
+        label: r.label,
+        hint: r.hint,
+        keywords: `${r.label} ${r.hint ?? ""}`,
+      })),
+    [results],
+  );
 
   const grant = useMutation({
     mutationFn: () => grantFn({ data: { userId, opRole, department: department || null } }),
-    onSuccess: () => { toast.success("已授權"); setUserId(""); setDepartment(""); qc.invalidateQueries({ queryKey: ["ops-participants"] }); },
+    onSuccess: () => {
+      toast.success("已授權");
+      setUserId("");
+      setDepartment("");
+      qc.invalidateQueries({ queryKey: ["ops-participants"] });
+    },
     onError: (e: any) => toast.error(e?.message ?? "授權失敗"),
   });
 
@@ -43,9 +73,24 @@ function MembersPage() {
       <Card>
         <CardHeader><CardTitle>授權協作成員</CardTitle></CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <Label>會員 User ID (UUID)</Label>
-            <Input value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="auth.users.id" />
+          <div className="md:col-span-2 space-y-2">
+            <Label>會員（可用姓名 / 手機 / 會員編號 / Email 搜尋）</Label>
+            <Input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="輸入姓名、手機、會員編號或 Email"
+            />
+            <SearchSelect
+              options={options}
+              value={userId}
+              onChange={setUserId}
+              placeholder={isFetching ? "搜尋中…" : "從搜尋結果選擇會員"}
+              searchPlaceholder="於結果中再篩選"
+              emptyText={keyword ? "查無會員" : "請先輸入關鍵字"}
+            />
+            {userId && (
+              <p className="text-xs text-muted-foreground font-mono break-all">User ID: {userId}</p>
+            )}
           </div>
           <div>
             <Label>角色</Label>
@@ -100,3 +145,4 @@ function MembersPage() {
     </div>
   );
 }
+
