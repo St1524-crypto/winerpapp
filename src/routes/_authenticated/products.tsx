@@ -105,6 +105,7 @@ function ProductsPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={exportPdf}><FileDown className="h-4 w-4 mr-2" />匯出 PDF</Button>
+          <Button variant="secondary" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4 mr-2" />批次匯入</Button>
           <Button asChild variant="secondary"><Link to="/categories"><Boxes className="h-4 w-4 mr-2" />分類管理</Link></Button>
           <Button className="bg-gradient-primary" onClick={() => { setEditing(null); setOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" />新增商品
