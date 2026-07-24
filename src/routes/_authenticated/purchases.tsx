@@ -564,7 +564,7 @@ function Page() {
                             ))
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground">流程：草稿 → 已送出 → 已確認 → 部分到貨 → 全部到貨（任一階段可取消）</p>
+                        <p className="text-xs text-muted-foreground">流程：草稿 → 待審核 → 已核准 →（部分到貨）→ 已收貨 → 已結案（任一階段可取消）</p>
                       </>
                     );
                   })()}
