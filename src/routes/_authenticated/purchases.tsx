@@ -45,6 +45,8 @@ interface PO {
   id: string; po_no: string; vendor_id: string | null; vendor_name: string;
   status: string; subtotal: number; tax_amount: number; total_amount: number;
   expected_at: string | null; notes: string | null; created_at: string;
+  buyer_id?: string | null; buyer_name?: string | null;
+  supervisor_id?: string | null; supervisor_name?: string | null;
 }
 interface POItem {
   id?: string; product_id: string | null; product_name: string; sku: string;
