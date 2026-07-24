@@ -33,6 +33,9 @@ export function LineContactButton() {
 
   // 非後台（shop/首頁等）不再顯示浮動按鈕，改由 footer「聯絡我們」下方入口取代。
   return null;
+}
+
+
 
 
 /** Inline LINE quick-action button, e.g. for the login page. */
