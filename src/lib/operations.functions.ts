@@ -24,7 +24,7 @@ export const listAssignableUsers = createServerFn({ method: "GET" })
     (parts ?? []).forEach((p: any) => partMap.set(p.user_id, { department: p.department, op_role: p.op_role }));
 
     // Fallback / union：任何具備員工角色的使用者也可被指派為採購/主管
-    const STAFF_ROLES = ["super_admin", "admin", "finance", "warehouse", "sales"];
+    const STAFF_ROLES = ["super_admin", "admin", "finance", "warehouse", "sales"] as const;
     const { data: staffRoles } = await context.supabase
       .from("user_roles")
       .select("user_id, role")
