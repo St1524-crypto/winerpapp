@@ -44,6 +44,7 @@ function ProductsPage() {
   const [open, setOpen] = useState(false);
   const [invProduct, setInvProduct] = useState<Product | null>(null);
   const [delProduct, setDelProduct] = useState<Product | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filters = useMemo(() => ({
     search: search.trim() || undefined,
