@@ -26,8 +26,10 @@ function TasksAdminPage() {
   const createFn = useServerFn(createTask);
   const assignFn = useServerFn(assignTask);
   const statusFn = useServerFn(updateTaskStatus);
+  const usersFn = useServerFn(listAssignableUsers);
 
   const { data = [] } = useQuery({ queryKey: ["ops-tasks-admin"], queryFn: () => listFn({ data: {} }) });
+  const { data: users = [] } = useQuery({ queryKey: ["ops-assignable-users"], queryFn: () => usersFn() });
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
