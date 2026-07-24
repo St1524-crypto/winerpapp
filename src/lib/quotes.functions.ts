@@ -270,3 +270,16 @@ export const listProductsLite = createServerFn({ method: "GET" })
     if (error) throw error;
     return data ?? [];
   });
+
+// customer picker for quote form
+export const listCustomersLite = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("customers")
+      .select("id, customer_no, name, phone, email, company, shipping_address")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (error) throw error;
+    return data ?? [];
+  });

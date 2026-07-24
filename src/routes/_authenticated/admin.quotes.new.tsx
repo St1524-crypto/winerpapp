@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { listBankAccounts, saveQuote, listProductsLite } from "@/lib/quotes.functions";
+import { listBankAccounts, saveQuote, listProductsLite, listCustomersLite } from "@/lib/quotes.functions";
+import { SearchSelect } from "@/components/ui/search-select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,9 +23,11 @@ function NewQuotePage() {
   const navigate = useNavigate();
   const banksFn = useServerFn(listBankAccounts);
   const productsFn = useServerFn(listProductsLite);
+  const customersFn = useServerFn(listCustomersLite);
   const saveFn = useServerFn(saveQuote);
   const { data: banks } = useQuery({ queryKey: ["qbanks"], queryFn: () => banksFn() });
   const { data: products } = useQuery({ queryKey: ["qproducts"], queryFn: () => productsFn() });
+  const { data: customers } = useQuery({ queryKey: ["qcustomers"], queryFn: () => customersFn() });
 
   const [form, setForm] = useState({
     customer_name: "", customer_phone: "", customer_email: "", customer_address: "",
@@ -78,6 +81,33 @@ function NewQuotePage() {
 
       <Card className="p-4 space-y-3">
         <h2 className="font-semibold">客戶資訊</h2>
+        <div>
+          <Label>搜尋既有客戶</Label>
+          <SearchSelect
+            options={(customers ?? []).map((c) => ({
+              value: c.id,
+              label: `${c.name}${c.company ? ` (${c.company})` : ""}`,
+              keywords: `${c.name} ${c.customer_no ?? ""} ${c.phone ?? ""} ${c.email ?? ""} ${c.company ?? ""}`,
+              hint: [c.customer_no, c.phone, c.email].filter(Boolean).join(" · "),
+            }))}
+            value={null}
+            onChange={(id) => {
+              const c = (customers ?? []).find((x) => x.id === id);
+              if (!c) return;
+              setForm((f) => ({
+                ...f,
+                customer_name: c.name ?? "",
+                customer_phone: c.phone ?? "",
+                customer_email: c.email ?? "",
+                customer_address: c.shipping_address ?? "",
+              }));
+              toast.success(`已帶入客戶：${c.name}`);
+            }}
+            placeholder="搜尋姓名 / 編號 / 電話 / Email / 公司"
+            searchPlaceholder="輸入關鍵字..."
+            emptyText="查無客戶"
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div><Label>客戶名稱 *</Label><Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} /></div>
           <div><Label>電話</Label><Input value={form.customer_phone} onChange={(e) => setForm({ ...form, customer_phone: e.target.value })} /></div>
