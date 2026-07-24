@@ -119,7 +119,7 @@ function Page() {
   }), [list, search, statusFilter]);
 
   function openNew() {
-    setForm({ vendor_id: "", vendor_name: "", expected_at: "", notes: "" });
+    setForm({ vendor_id: "", vendor_name: "", expected_at: "", notes: "", buyer_id: "", supervisor_id: "" });
     setItems([]); setTaxRate(5); setOpen(true);
   }
   function addItem() {
