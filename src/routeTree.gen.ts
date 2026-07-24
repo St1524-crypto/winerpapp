@@ -134,7 +134,6 @@ import { Route as ApiPublicAiSupportGuestRouteImport } from './routes/api/public
 import { Route as ApiPublicAiRecruitRouteImport } from './routes/api/public/ai/recruit'
 import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authenticated/b2b.accounts.$id'
 import { Route as AuthenticatedAdminQuotesNewRouteImport } from './routes/_authenticated/admin.quotes.new'
-import { Route as AuthenticatedAdminQuotesQuoteIdRouteImport } from './routes/_authenticated/admin.quotes.$quoteId'
 import { Route as AuthenticatedAdminOperationsTasksRouteImport } from './routes/_authenticated/admin.operations.tasks'
 import { Route as AuthenticatedAdminOperationsMembersRouteImport } from './routes/_authenticated/admin.operations.members'
 import { Route as AuthenticatedAdminOperationsAttendanceRouteImport } from './routes/_authenticated/admin.operations.attendance'
@@ -154,6 +153,7 @@ import { Route as AuthenticatedAdminBonusesDailySummarySplitRouteImport } from '
 import { Route as AuthenticatedAdminBonusesDailySummaryMergedRouteImport } from './routes/_authenticated/admin.bonuses.daily-summary-merged'
 import { Route as AuthenticatedAdminBonusesDailySettlementRouteImport } from './routes/_authenticated/admin.bonuses.daily-settlement'
 import { Route as AuthenticatedAdminBonusesDailyDetailsRouteImport } from './routes/_authenticated/admin.bonuses.daily-details'
+import { Route as AuthenticatedAdminQuotesQuoteIdIndexRouteImport } from './routes/_authenticated/admin.quotes.$quoteId.index'
 import { Route as AuthenticatedAdminQuotesQuoteIdEditRouteImport } from './routes/_authenticated/admin.quotes.$quoteId.edit'
 import { Route as AuthenticatedAdminBonusesBatchesBatchIdRouteImport } from './routes/_authenticated/admin.bonuses.batches.$batchId'
 
@@ -834,12 +834,6 @@ const AuthenticatedAdminQuotesNewRoute =
     path: '/admin/quotes/new',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedAdminQuotesQuoteIdRoute =
-  AuthenticatedAdminQuotesQuoteIdRouteImport.update({
-    id: '/admin/quotes/$quoteId',
-    path: '/admin/quotes/$quoteId',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedAdminOperationsTasksRoute =
   AuthenticatedAdminOperationsTasksRouteImport.update({
     id: '/tasks',
@@ -954,11 +948,17 @@ const AuthenticatedAdminBonusesDailyDetailsRoute =
     path: '/daily-details',
     getParentRoute: () => AuthenticatedAdminBonusesRoute,
   } as any)
+const AuthenticatedAdminQuotesQuoteIdIndexRoute =
+  AuthenticatedAdminQuotesQuoteIdIndexRouteImport.update({
+    id: '/admin/quotes/$quoteId/',
+    path: '/admin/quotes/$quoteId/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminQuotesQuoteIdEditRoute =
   AuthenticatedAdminQuotesQuoteIdEditRouteImport.update({
-    id: '/edit',
-    path: '/edit',
-    getParentRoute: () => AuthenticatedAdminQuotesQuoteIdRoute,
+    id: '/admin/quotes/$quoteId/edit',
+    path: '/admin/quotes/$quoteId/edit',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminBonusesBatchesBatchIdRoute =
   AuthenticatedAdminBonusesBatchesBatchIdRouteImport.update({
@@ -1095,7 +1095,6 @@ export interface FileRoutesByFullPath {
   '/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
   '/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
   '/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
-  '/admin/quotes/$quoteId': typeof AuthenticatedAdminQuotesQuoteIdRouteWithChildren
   '/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
@@ -1114,6 +1113,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/storefront/': typeof ShopAccountStorefrontIndexRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
   '/admin/quotes/$quoteId/edit': typeof AuthenticatedAdminQuotesQuoteIdEditRoute
+  '/admin/quotes/$quoteId/': typeof AuthenticatedAdminQuotesQuoteIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -1238,7 +1238,6 @@ export interface FileRoutesByTo {
   '/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
   '/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
   '/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
-  '/admin/quotes/$quoteId': typeof AuthenticatedAdminQuotesQuoteIdRouteWithChildren
   '/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
   '/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
@@ -1257,6 +1256,7 @@ export interface FileRoutesByTo {
   '/shop/account/storefront': typeof ShopAccountStorefrontIndexRoute
   '/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
   '/admin/quotes/$quoteId/edit': typeof AuthenticatedAdminQuotesQuoteIdEditRoute
+  '/admin/quotes/$quoteId': typeof AuthenticatedAdminQuotesQuoteIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -1388,7 +1388,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
   '/_authenticated/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
   '/_authenticated/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
-  '/_authenticated/admin/quotes/$quoteId': typeof AuthenticatedAdminQuotesQuoteIdRouteWithChildren
   '/_authenticated/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
   '/_authenticated/b2b/accounts/$id': typeof AuthenticatedB2bAccountsIdRoute
   '/api/public/ai/recruit': typeof ApiPublicAiRecruitRoute
@@ -1407,6 +1406,7 @@ export interface FileRoutesById {
   '/shop/account/storefront/': typeof ShopAccountStorefrontIndexRoute
   '/_authenticated/admin/bonuses/batches/$batchId': typeof AuthenticatedAdminBonusesBatchesBatchIdRoute
   '/_authenticated/admin/quotes/$quoteId/edit': typeof AuthenticatedAdminQuotesQuoteIdEditRoute
+  '/_authenticated/admin/quotes/$quoteId/': typeof AuthenticatedAdminQuotesQuoteIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1538,7 +1538,6 @@ export interface FileRouteTypes {
     | '/admin/operations/attendance'
     | '/admin/operations/members'
     | '/admin/operations/tasks'
-    | '/admin/quotes/$quoteId'
     | '/admin/quotes/new'
     | '/b2b/accounts/$id'
     | '/api/public/ai/recruit'
@@ -1557,6 +1556,7 @@ export interface FileRouteTypes {
     | '/shop/account/storefront/'
     | '/admin/bonuses/batches/$batchId'
     | '/admin/quotes/$quoteId/edit'
+    | '/admin/quotes/$quoteId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1681,7 +1681,6 @@ export interface FileRouteTypes {
     | '/admin/operations/attendance'
     | '/admin/operations/members'
     | '/admin/operations/tasks'
-    | '/admin/quotes/$quoteId'
     | '/admin/quotes/new'
     | '/b2b/accounts/$id'
     | '/api/public/ai/recruit'
@@ -1700,6 +1699,7 @@ export interface FileRouteTypes {
     | '/shop/account/storefront'
     | '/admin/bonuses/batches/$batchId'
     | '/admin/quotes/$quoteId/edit'
+    | '/admin/quotes/$quoteId'
   id:
     | '__root__'
     | '/'
@@ -1830,7 +1830,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/operations/attendance'
     | '/_authenticated/admin/operations/members'
     | '/_authenticated/admin/operations/tasks'
-    | '/_authenticated/admin/quotes/$quoteId'
     | '/_authenticated/admin/quotes/new'
     | '/_authenticated/b2b/accounts/$id'
     | '/api/public/ai/recruit'
@@ -1849,6 +1848,7 @@ export interface FileRouteTypes {
     | '/shop/account/storefront/'
     | '/_authenticated/admin/bonuses/batches/$batchId'
     | '/_authenticated/admin/quotes/$quoteId/edit'
+    | '/_authenticated/admin/quotes/$quoteId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2759,13 +2759,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminQuotesNewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/admin/quotes/$quoteId': {
-      id: '/_authenticated/admin/quotes/$quoteId'
-      path: '/admin/quotes/$quoteId'
-      fullPath: '/admin/quotes/$quoteId'
-      preLoaderRoute: typeof AuthenticatedAdminQuotesQuoteIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/admin/operations/tasks': {
       id: '/_authenticated/admin/operations/tasks'
       path: '/tasks'
@@ -2899,12 +2892,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBonusesDailyDetailsRouteImport
       parentRoute: typeof AuthenticatedAdminBonusesRoute
     }
+    '/_authenticated/admin/quotes/$quoteId/': {
+      id: '/_authenticated/admin/quotes/$quoteId/'
+      path: '/admin/quotes/$quoteId'
+      fullPath: '/admin/quotes/$quoteId/'
+      preLoaderRoute: typeof AuthenticatedAdminQuotesQuoteIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/quotes/$quoteId/edit': {
       id: '/_authenticated/admin/quotes/$quoteId/edit'
-      path: '/edit'
+      path: '/admin/quotes/$quoteId/edit'
       fullPath: '/admin/quotes/$quoteId/edit'
       preLoaderRoute: typeof AuthenticatedAdminQuotesQuoteIdEditRouteImport
-      parentRoute: typeof AuthenticatedAdminQuotesQuoteIdRoute
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/admin/bonuses/batches/$batchId': {
       id: '/_authenticated/admin/bonuses/batches/$batchId'
@@ -3056,21 +3056,6 @@ const AuthenticatedB2bAccountsRouteWithChildren =
     AuthenticatedB2bAccountsRouteChildren,
   )
 
-interface AuthenticatedAdminQuotesQuoteIdRouteChildren {
-  AuthenticatedAdminQuotesQuoteIdEditRoute: typeof AuthenticatedAdminQuotesQuoteIdEditRoute
-}
-
-const AuthenticatedAdminQuotesQuoteIdRouteChildren: AuthenticatedAdminQuotesQuoteIdRouteChildren =
-  {
-    AuthenticatedAdminQuotesQuoteIdEditRoute:
-      AuthenticatedAdminQuotesQuoteIdEditRoute,
-  }
-
-const AuthenticatedAdminQuotesQuoteIdRouteWithChildren =
-  AuthenticatedAdminQuotesQuoteIdRoute._addFileChildren(
-    AuthenticatedAdminQuotesQuoteIdRouteChildren,
-  )
-
 interface AuthenticatedRouteChildren {
   AuthenticatedCashAdminRoute: typeof AuthenticatedCashAdminRoute
   AuthenticatedCategoriesRoute: typeof AuthenticatedCategoriesRoute
@@ -3129,9 +3114,10 @@ interface AuthenticatedRouteChildren {
   AuthenticatedB2bAccountsRoute: typeof AuthenticatedB2bAccountsRouteWithChildren
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminBonusesVipDetailRoute: typeof AuthenticatedAdminBonusesVipDetailRoute
-  AuthenticatedAdminQuotesQuoteIdRoute: typeof AuthenticatedAdminQuotesQuoteIdRouteWithChildren
   AuthenticatedAdminQuotesNewRoute: typeof AuthenticatedAdminQuotesNewRoute
   AuthenticatedAdminQuotesIndexRoute: typeof AuthenticatedAdminQuotesIndexRoute
+  AuthenticatedAdminQuotesQuoteIdEditRoute: typeof AuthenticatedAdminQuotesQuoteIdEditRoute
+  AuthenticatedAdminQuotesQuoteIdIndexRoute: typeof AuthenticatedAdminQuotesQuoteIdIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -3205,10 +3191,12 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminBonusesVipDetailRoute:
     AuthenticatedAdminBonusesVipDetailRoute,
-  AuthenticatedAdminQuotesQuoteIdRoute:
-    AuthenticatedAdminQuotesQuoteIdRouteWithChildren,
   AuthenticatedAdminQuotesNewRoute: AuthenticatedAdminQuotesNewRoute,
   AuthenticatedAdminQuotesIndexRoute: AuthenticatedAdminQuotesIndexRoute,
+  AuthenticatedAdminQuotesQuoteIdEditRoute:
+    AuthenticatedAdminQuotesQuoteIdEditRoute,
+  AuthenticatedAdminQuotesQuoteIdIndexRoute:
+    AuthenticatedAdminQuotesQuoteIdIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
