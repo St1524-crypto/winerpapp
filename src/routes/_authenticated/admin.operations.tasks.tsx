@@ -11,7 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { assignTask, createTask, listTasks, updateTaskStatus } from "@/lib/operations.functions";
+import { assignTask, createTask, listAssignableUsers, listTasks, updateTaskStatus } from "@/lib/operations.functions";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UNASSIGNED = "__unassigned__";
 
 export const Route = createFileRoute("/_authenticated/admin/operations/tasks")({
   component: TasksAdminPage,
