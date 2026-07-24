@@ -13,6 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { SearchSelect } from "@/components/ui/search-select";
+import { useServerFn } from "@tanstack/react-start";
+import { listAssignableUsers } from "@/lib/operations.functions";
 import { toast } from "sonner";
 import { Plus, Search, Truck, Eye, Printer, Trash2, FileDown, ArrowRight } from "lucide-react";
 import { exportPdfReport } from "@/lib/pdf-report";
@@ -42,6 +45,8 @@ interface PO {
   id: string; po_no: string; vendor_id: string | null; vendor_name: string;
   status: string; subtotal: number; tax_amount: number; total_amount: number;
   expected_at: string | null; notes: string | null; created_at: string;
+  buyer_id?: string | null; buyer_name?: string | null;
+  supervisor_id?: string | null; supervisor_name?: string | null;
 }
 interface POItem {
   id?: string; product_id: string | null; product_name: string; sku: string;
@@ -62,14 +67,20 @@ function Page() {
 
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [staff, setStaff] = useState<Array<{ user_id: string; label: string; department?: string | null; op_role?: string | null }>>([]);
 
   const [open, setOpen] = useState(false);
   const [taxRate, setTaxRate] = useState(5);
-  const [form, setForm] = useState({ vendor_id: "", vendor_name: "", expected_at: "", notes: "" });
+  const [form, setForm] = useState({
+    vendor_id: "", vendor_name: "", expected_at: "", notes: "",
+    buyer_id: "", supervisor_id: "",
+  });
   const [items, setItems] = useState<POItem[]>([]);
 
   const [viewing, setViewing] = useState<PO | null>(null);
   const [viewItems, setViewItems] = useState<POItem[]>([]);
+
+  const listAssignableFn = useServerFn(listAssignableUsers);
 
   async function load() {
     setLoading(true);
@@ -92,6 +103,12 @@ function Page() {
       merged = productRows.map((r) => ({ ...r, cost_price: cm.get(r.id) ?? 0, status: r.status }));
     }
     setVendors(v ?? []); setProducts(merged);
+    try {
+      const users = await listAssignableFn();
+      setStaff(users ?? []);
+    } catch (e: any) {
+      // 靜默：非必填
+    }
   }
   useEffect(() => { load(); loadRefs(); }, []);
 
@@ -102,7 +119,7 @@ function Page() {
   }), [list, search, statusFilter]);
 
   function openNew() {
-    setForm({ vendor_id: "", vendor_name: "", expected_at: "", notes: "" });
+    setForm({ vendor_id: "", vendor_name: "", expected_at: "", notes: "", buyer_id: "", supervisor_id: "" });
     setItems([]); setTaxRate(5); setOpen(true);
   }
   function addItem() {
@@ -133,6 +150,8 @@ function Page() {
     if (poNoErr) return toast.error(poNoErr.message);
 
     const vendor = vendors.find((v) => v.id === form.vendor_id);
+    const buyer = staff.find((s) => s.user_id === form.buyer_id);
+    const supervisor = staff.find((s) => s.user_id === form.supervisor_id);
     const { data: po, error } = await sb.from("purchase_orders").insert({
       po_no: poNoData,
       vendor_id: form.vendor_id,
@@ -142,6 +161,10 @@ function Page() {
       expected_at: form.expected_at || null,
       notes: form.notes || null,
       created_by: user?.id ?? null,
+      buyer_id: form.buyer_id || null,
+      buyer_name: buyer?.label ?? null,
+      supervisor_id: form.supervisor_id || null,
+      supervisor_name: supervisor?.label ?? null,
     }).select().single();
     if (error) return toast.error(error.message);
 
@@ -359,12 +382,19 @@ function Page() {
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>供應商 *</Label>
-                <Select value={form.vendor_id} onValueChange={(v) => setForm({ ...form, vendor_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="選擇供應商" /></SelectTrigger>
-                  <SelectContent>
-                    {vendors.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <SearchSelect
+                  value={form.vendor_id}
+                  onChange={(v) => setForm({ ...form, vendor_id: v })}
+                  options={vendors.map((v) => ({
+                    value: v.id,
+                    label: v.name,
+                    keywords: `${v.code} ${v.name}`,
+                    hint: v.code,
+                  }))}
+                  placeholder="選擇供應商"
+                  searchPlaceholder="搜尋供應商名稱或代號..."
+                  emptyText="找不到供應商"
+                />
               </div>
               <div className="space-y-2">
                 <Label>預計到貨日</Label>
@@ -373,6 +403,38 @@ function Page() {
               <div className="space-y-2">
                 <Label>稅率 (%)</Label>
                 <Input type="number" value={taxRate} onChange={(e) => setTaxRate(Number(e.target.value) || 0)} />
+              </div>
+              <div className="space-y-2">
+                <Label>採購人員</Label>
+                <SearchSelect
+                  value={form.buyer_id}
+                  onChange={(v) => setForm({ ...form, buyer_id: v })}
+                  options={staff.map((s) => ({
+                    value: s.user_id,
+                    label: s.label,
+                    keywords: `${s.label} ${s.department ?? ""} ${s.op_role ?? ""}`,
+                    hint: [s.department, s.op_role].filter(Boolean).join(" · ") || undefined,
+                  }))}
+                  placeholder="選擇採購人員"
+                  searchPlaceholder="搜尋姓名或部門..."
+                  emptyText="無可指派人員"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>主管</Label>
+                <SearchSelect
+                  value={form.supervisor_id}
+                  onChange={(v) => setForm({ ...form, supervisor_id: v })}
+                  options={staff.map((s) => ({
+                    value: s.user_id,
+                    label: s.label,
+                    keywords: `${s.label} ${s.department ?? ""} ${s.op_role ?? ""}`,
+                    hint: [s.department, s.op_role].filter(Boolean).join(" · ") || undefined,
+                  }))}
+                  placeholder="選擇核可主管"
+                  searchPlaceholder="搜尋姓名或部門..."
+                  emptyText="無可指派人員"
+                />
               </div>
             </div>
 
@@ -399,12 +461,18 @@ function Page() {
                     ) : items.map((it, i) => (
                       <TableRow key={i}>
                         <TableCell>
-                          <Select value={it.product_id ?? ""} onValueChange={(v) => updateItem(i, { product_id: v })}>
-                            <SelectTrigger><SelectValue placeholder="選擇商品" /></SelectTrigger>
-                            <SelectContent>
-                              {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.sku} · {p.name}{p.status && p.status !== "active" ? "（已下架）" : ""}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
+                          <SearchSelect
+                            value={it.product_id ?? ""}
+                            onChange={(v) => updateItem(i, { product_id: v })}
+                            options={products.map((p) => ({
+                              value: p.id,
+                              label: `${p.sku} · ${p.name}${p.status && p.status !== "active" ? "（已下架）" : ""}`,
+                              keywords: `${p.sku} ${p.name}`,
+                            }))}
+                            placeholder="選擇商品"
+                            searchPlaceholder="搜尋 SKU 或商品名稱..."
+                            emptyText="找不到商品"
+                          />
                         </TableCell>
                         <TableCell><Input value={it.unit} onChange={(e) => updateItem(i, { unit: e.target.value })} className="w-16" /></TableCell>
                         <TableCell><Input type="number" value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) || 0 })} /></TableCell>
@@ -450,6 +518,8 @@ function Page() {
                 <div className="grid grid-cols-2 gap-3">
                   <div><div className="text-muted-foreground text-xs">供應商</div><div className="font-medium">{viewing.vendor_name}</div></div>
                   <div><div className="text-muted-foreground text-xs">預計到貨</div><div>{viewing.expected_at ?? "—"}</div></div>
+                  <div><div className="text-muted-foreground text-xs">採購人員</div><div>{viewing.buyer_name ?? "—"}</div></div>
+                  <div><div className="text-muted-foreground text-xs">主管</div><div>{viewing.supervisor_name ?? "—"}</div></div>
                   <div><div className="text-muted-foreground text-xs">未稅</div><div className="font-mono">NT$ {viewing.subtotal?.toLocaleString()}</div></div>
                   <div><div className="text-muted-foreground text-xs">稅額</div><div className="font-mono">NT$ {viewing.tax_amount?.toLocaleString()}</div></div>
                   <div className="col-span-2"><div className="text-muted-foreground text-xs">總金額</div><div className="text-xl font-bold text-primary">NT$ {viewing.total_amount?.toLocaleString()}</div></div>

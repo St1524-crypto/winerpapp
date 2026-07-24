@@ -4101,6 +4101,8 @@ export type Database = {
       }
       purchase_orders: {
         Row: {
+          buyer_id: string | null
+          buyer_name: string | null
           company_id: string
           created_at: string
           created_by: string | null
@@ -4110,6 +4112,8 @@ export type Database = {
           po_no: string
           status: string
           subtotal: number
+          supervisor_id: string | null
+          supervisor_name: string | null
           tax_amount: number
           total_amount: number
           updated_at: string
@@ -4117,6 +4121,8 @@ export type Database = {
           vendor_name: string
         }
         Insert: {
+          buyer_id?: string | null
+          buyer_name?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
@@ -4126,6 +4132,8 @@ export type Database = {
           po_no: string
           status?: string
           subtotal?: number
+          supervisor_id?: string | null
+          supervisor_name?: string | null
           tax_amount?: number
           total_amount?: number
           updated_at?: string
@@ -4133,6 +4141,8 @@ export type Database = {
           vendor_name: string
         }
         Update: {
+          buyer_id?: string | null
+          buyer_name?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
@@ -4142,6 +4152,8 @@ export type Database = {
           po_no?: string
           status?: string
           subtotal?: number
+          supervisor_id?: string | null
+          supervisor_name?: string | null
           tax_amount?: number
           total_amount?: number
           updated_at?: string
