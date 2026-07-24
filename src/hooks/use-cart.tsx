@@ -51,6 +51,8 @@ interface CartCtx {
   clear: () => Promise<void>;
   refresh: () => Promise<void>;
   getItemUnitPrice: (item: CartItem) => number;
+  getItemUnitReward: (item: CartItem) => number;
+
 }
 
 const CartContext = createContext<CartCtx>({
