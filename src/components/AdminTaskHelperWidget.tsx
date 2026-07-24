@@ -86,6 +86,8 @@ export function AdminTaskHelperWidget() {
   const [loading, setLoading] = useState(false);
   const [reportingId, setReportingId] = useState<string | null>(null);
   const [reportText, setReportText] = useState("");
+  const [reportProgress, setReportProgress] = useState(50);
+  const [reportStatus, setReportStatus] = useState<"in_progress" | "submitted" | "completed">("in_progress");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>("today");
   const [sort, setSort] = useState<SortKey>("due_asc");
@@ -207,15 +209,18 @@ export function AdminTaskHelperWidget() {
     if (!text) return;
     setBusyId(id);
     try {
+      const content = `【完成度 ${reportProgress}%】${text}`;
       await submitReport({
         data: {
           taskId: id,
-          content: text,
-          statusSnapshot: "submitted",
+          content,
+          statusSnapshot: reportStatus,
         },
       });
       toast.success("進度已回報");
       setReportText("");
+      setReportProgress(50);
+      setReportStatus("in_progress");
       setReportingId(null);
       refresh();
     } catch {
@@ -391,6 +396,10 @@ export function AdminTaskHelperWidget() {
                 reportingId={reportingId}
                 reportText={reportText}
                 setReportText={setReportText}
+                reportProgress={reportProgress}
+                setReportProgress={setReportProgress}
+                reportStatus={reportStatus}
+                setReportStatus={setReportStatus}
                 setReportingId={setReportingId}
                 onStatus={handleQuickStatus}
                 onSubmitReport={handleSubmitReport}
@@ -415,6 +424,10 @@ function Section({
   reportingId,
   reportText,
   setReportText,
+  reportProgress,
+  setReportProgress,
+  reportStatus,
+  setReportStatus,
   setReportingId,
   onStatus,
   onSubmitReport,
@@ -427,6 +440,10 @@ function Section({
   reportingId: string | null;
   reportText: string;
   setReportText: (s: string) => void;
+  reportProgress: number;
+  setReportProgress: (n: number) => void;
+  reportStatus: "in_progress" | "submitted" | "completed";
+  setReportStatus: (s: "in_progress" | "submitted" | "completed") => void;
   setReportingId: (s: string | null) => void;
   onStatus: (id: string, status: "in_progress" | "completed") => void;
   onSubmitReport: (id: string) => void;
@@ -530,40 +547,85 @@ function Section({
                 </div>
 
                 {reporting && (
-                  <div className="space-y-2 pt-1">
+                  <div className="space-y-2 pt-1 border-t mt-1">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>完成度</span>
+                        <span className="font-semibold text-foreground">{reportProgress}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={5}
+                        value={reportProgress}
+                        onChange={(e) => setReportProgress(Number(e.target.value))}
+                        className="w-full accent-emerald-500"
+                        disabled={busy}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[11px] text-muted-foreground">狀態更新</div>
+                      <div className="flex gap-1">
+                        {([
+                          { k: "in_progress", label: "進行中" },
+                          { k: "submitted", label: "已回報" },
+                          { k: "completed", label: "已完成" },
+                        ] as const).map((opt) => (
+                          <button
+                            key={opt.k}
+                            type="button"
+                            onClick={() => setReportStatus(opt.k)}
+                            disabled={busy}
+                            className={cn(
+                              "flex-1 h-7 rounded-md border text-[11px] transition",
+                              reportStatus === opt.k
+                                ? "bg-emerald-500 border-emerald-500 text-white"
+                                : "bg-background hover:bg-muted text-muted-foreground",
+                            )}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                     <textarea
                       value={reportText}
                       onChange={(e) => setReportText(e.target.value)}
-                      rows={2}
-                      placeholder="輸入本次進度說明…"
+                      rows={3}
+                      maxLength={1000}
+                      placeholder="備註：本次進度說明、遇到的問題、下一步計畫…"
                       className="w-full resize-none rounded-md border bg-background px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                       disabled={busy}
                     />
-                    <div className="flex justify-end gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 text-xs"
-                        disabled={busy}
-                        onClick={() => {
-                          setReportingId(null);
-                          setReportText("");
-                        }}
-                      >
-                        取消
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="h-7 text-xs"
-                        disabled={busy || !reportText.trim()}
-                        onClick={() => onSubmitReport(t.id)}
-                      >
-                        {busy ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          "送出回報"
-                        )}
-                      </Button>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground">{reportText.length}/1000</span>
+                      <div className="flex gap-1.5">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          disabled={busy}
+                          onClick={() => {
+                            setReportingId(null);
+                            setReportText("");
+                          }}
+                        >
+                          取消
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="h-7 text-xs"
+                          disabled={busy || !reportText.trim()}
+                          onClick={() => onSubmitReport(t.id)}
+                        >
+                          {busy ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            "送出回報"
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
