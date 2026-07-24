@@ -382,12 +382,19 @@ function Page() {
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>供應商 *</Label>
-                <Select value={form.vendor_id} onValueChange={(v) => setForm({ ...form, vendor_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="選擇供應商" /></SelectTrigger>
-                  <SelectContent>
-                    {vendors.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <SearchSelect
+                  value={form.vendor_id}
+                  onChange={(v) => setForm({ ...form, vendor_id: v })}
+                  options={vendors.map((v) => ({
+                    value: v.id,
+                    label: v.name,
+                    keywords: `${v.code} ${v.name}`,
+                    hint: v.code,
+                  }))}
+                  placeholder="選擇供應商"
+                  searchPlaceholder="搜尋供應商名稱或代號..."
+                  emptyText="找不到供應商"
+                />
               </div>
               <div className="space-y-2">
                 <Label>預計到貨日</Label>
@@ -396,6 +403,38 @@ function Page() {
               <div className="space-y-2">
                 <Label>稅率 (%)</Label>
                 <Input type="number" value={taxRate} onChange={(e) => setTaxRate(Number(e.target.value) || 0)} />
+              </div>
+              <div className="space-y-2">
+                <Label>採購人員</Label>
+                <SearchSelect
+                  value={form.buyer_id}
+                  onChange={(v) => setForm({ ...form, buyer_id: v })}
+                  options={staff.map((s) => ({
+                    value: s.user_id,
+                    label: s.label,
+                    keywords: `${s.label} ${s.department ?? ""} ${s.op_role ?? ""}`,
+                    hint: [s.department, s.op_role].filter(Boolean).join(" · ") || undefined,
+                  }))}
+                  placeholder="選擇採購人員"
+                  searchPlaceholder="搜尋姓名或部門..."
+                  emptyText="無可指派人員"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>主管</Label>
+                <SearchSelect
+                  value={form.supervisor_id}
+                  onChange={(v) => setForm({ ...form, supervisor_id: v })}
+                  options={staff.map((s) => ({
+                    value: s.user_id,
+                    label: s.label,
+                    keywords: `${s.label} ${s.department ?? ""} ${s.op_role ?? ""}`,
+                    hint: [s.department, s.op_role].filter(Boolean).join(" · ") || undefined,
+                  }))}
+                  placeholder="選擇核可主管"
+                  searchPlaceholder="搜尋姓名或部門..."
+                  emptyText="無可指派人員"
+                />
               </div>
             </div>
 
