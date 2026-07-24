@@ -424,6 +424,10 @@ function Section({
   reportingId,
   reportText,
   setReportText,
+  reportProgress,
+  setReportProgress,
+  reportStatus,
+  setReportStatus,
   setReportingId,
   onStatus,
   onSubmitReport,
@@ -436,6 +440,10 @@ function Section({
   reportingId: string | null;
   reportText: string;
   setReportText: (s: string) => void;
+  reportProgress: number;
+  setReportProgress: (n: number) => void;
+  reportStatus: "in_progress" | "submitted" | "completed";
+  setReportStatus: (s: "in_progress" | "submitted" | "completed") => void;
   setReportingId: (s: string | null) => void;
   onStatus: (id: string, status: "in_progress" | "completed") => void;
   onSubmitReport: (id: string) => void;
