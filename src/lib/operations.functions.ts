@@ -35,6 +35,32 @@ export const listAssignableUsers = createServerFn({ method: "GET" })
     });
   });
 
+export const searchMembersForGrant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { keyword?: string } = {}) => d)
+  .handler(async ({ data, context }) => {
+    const kw = (data.keyword ?? "").trim();
+    let q = context.supabase
+      .from("profiles")
+      .select("id, name, display_name, email, member_no, phone")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (kw) {
+      const like = `%${kw.replace(/[%_]/g, "")}%`;
+      q = q.or(
+        `name.ilike.${like},display_name.ilike.${like},email.ilike.${like},member_no.ilike.${like},phone.ilike.${like}`,
+      );
+    }
+    const { data: rows, error } = await q;
+    if (error) throw error;
+    return (rows ?? []).map((p: any) => ({
+      user_id: p.id,
+      label: p.display_name || p.name || p.email || p.member_no || p.id,
+      hint: [p.member_no, p.phone, p.email].filter(Boolean).join(" · "),
+    }));
+  });
+
+
 export const grantParticipant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { userId: string; opRole?: "manager" | "staff" | "assistant" | "collaborator"; department?: string | null; notes?: string | null }) => d)
