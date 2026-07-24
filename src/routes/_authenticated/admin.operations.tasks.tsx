@@ -38,14 +38,22 @@ function TasksAdminPage() {
   const [dueAt, setDueAt] = useState("");
 
   const create = useMutation({
-    mutationFn: () => createFn({ data: { title, description, assigneeId: assigneeId || null, priority, dueAt: dueAt || null } }),
+    mutationFn: () => {
+      const id = assigneeId && assigneeId !== UNASSIGNED ? assigneeId : null;
+      if (id && !UUID_RE.test(id)) throw new Error("指派對象格式錯誤，請從清單中選擇");
+      return createFn({ data: { title, description, assigneeId: id, priority, dueAt: dueAt || null } });
+    },
     onSuccess: () => { toast.success("任務已建立"); setTitle(""); setDescription(""); setAssigneeId(""); setDueAt(""); qc.invalidateQueries({ queryKey: ["ops-tasks-admin"] }); },
     onError: (e: any) => toast.error(e?.message ?? "建立失敗"),
   });
 
   const assign = useMutation({
-    mutationFn: (v: { id: string; assigneeId: string }) => assignFn({ data: { id: v.id, assigneeId: v.assigneeId || null } }),
+    mutationFn: (v: { id: string; assigneeId: string | null }) => {
+      if (v.assigneeId && !UUID_RE.test(v.assigneeId)) throw new Error("指派對象格式錯誤");
+      return assignFn({ data: { id: v.id, assigneeId: v.assigneeId || null } });
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ops-tasks-admin"] }),
+    onError: (e: any) => toast.error(e?.message ?? "指派失敗"),
   });
 
   const setStatus = useMutation({
