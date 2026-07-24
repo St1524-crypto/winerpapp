@@ -262,6 +262,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const tiers = tiersMap[i.product_id] ?? [];
     return applyWholesalePricing(base, 0, tiers, i.quantity).unitPrice;
   };
+  const getItemUnitReward = (i: CartItem) => {
+    // 套組不用單品獎勵點階梯（獎勵點由套組層另計）
+    const bid = (i as any).bundle_id as string | undefined;
+    if (bid) return 0;
+    const baseReward = Number((i.product as any)?.reward_points ?? 0) || 0;
+    const basePrice = Number(getEffectivePrice(i.product as any, isDealer)) || 0;
+    const tiers = tiersMap[i.product_id] ?? [];
+    return applyWholesalePricing(basePrice, baseReward, tiers, i.quantity).unitRewardPoints;
+  };
+
   const count = items.reduce((s, i) => s + i.quantity, 0);
   const subtotal = items.reduce((s, i) => s + getItemUnitPrice(i) * i.quantity, 0);
 
