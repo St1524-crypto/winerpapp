@@ -32,7 +32,7 @@ const FREE_SHIPPING = 2000;
 
 function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
-  const { items, clear, getItemUnitPrice } = useCart();
+  const { items, clear, getItemUnitPrice, getItemUnitReward } = useCart();
   const isDealer = useIsDealer();
   const subtotal = useMemo(
     () => items.reduce((s, it) => s + getItemUnitPrice(it) * it.quantity, 0),
@@ -125,6 +125,7 @@ function CheckoutPage() {
 
       const rows = items.map((it) => {
         const unit = getItemUnitPrice(it);
+        const unitReward = getItemUnitReward(it);
         return {
           company_id: (prodCompanyMap.get(it.product_id) as string) ?? companyId,
           product_id: it.product_id,
@@ -134,10 +135,12 @@ function CheckoutPage() {
           unit_price: unit,
           quantity: it.quantity,
           subtotal: unit * it.quantity,
+          tier_reward_points: unitReward,
           bundle_id: (it as any).bundle_id ?? null,
           bundle_line_key: (it as any).bundle_line_key ?? null,
         };
       });
+
 
       const pointPayments: Array<{
         point_type: "discount" | "shopping" | "reward";
