@@ -16,23 +16,49 @@ export const listParticipants = createServerFn({ method: "GET" })
 export const listAssignableUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data: parts, error } = await context.supabase
+    const { data: parts } = await context.supabase
       .from("operation_participants")
       .select("user_id, department, op_role, is_active")
       .eq("is_active", true);
-    if (error) throw error;
-    const ids = Array.from(new Set((parts ?? []).map((p: any) => p.user_id)));
+    const partMap = new Map<string, { department?: string | null; op_role?: string | null }>();
+    (parts ?? []).forEach((p: any) => partMap.set(p.user_id, { department: p.department, op_role: p.op_role }));
+
+    // Fallback / union：任何具備員工角色的使用者也可被指派為採購/主管
+    const STAFF_ROLES = ["super_admin", "admin", "finance", "warehouse", "sales"];
+    const { data: staffRoles } = await context.supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .in("role", STAFF_ROLES);
+    const roleMap = new Map<string, string[]>();
+    (staffRoles ?? []).forEach((r: any) => {
+      const arr = roleMap.get(r.user_id) ?? [];
+      arr.push(r.role);
+      roleMap.set(r.user_id, arr);
+    });
+
+    const ids = Array.from(new Set([...partMap.keys(), ...roleMap.keys()]));
     if (ids.length === 0) return [];
     const { data: profs } = await context.supabase
       .from("profiles")
       .select("id, name, display_name, email, member_no")
       .in("id", ids);
-    const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
-    return (parts ?? []).map((p: any) => {
-      const pr: any = map.get(p.user_id) ?? {};
-      const label = pr.display_name || pr.name || pr.email || pr.member_no || p.user_id;
-      return { user_id: p.user_id, department: p.department, op_role: p.op_role, label };
-    });
+    const profMap = new Map((profs ?? []).map((p: any) => [p.id, p]));
+    const ROLE_LABELS: Record<string, string> = {
+      super_admin: "超級管理員", admin: "管理員", finance: "財務", warehouse: "倉儲", sales: "業務",
+    };
+    return ids.map((uid) => {
+      const pr: any = profMap.get(uid) ?? {};
+      const part = partMap.get(uid);
+      const roles = roleMap.get(uid) ?? [];
+      const roleLabel = roles.map((r) => ROLE_LABELS[r] ?? r).join("/");
+      const label = pr.display_name || pr.name || pr.email || pr.member_no || uid;
+      return {
+        user_id: uid,
+        department: part?.department ?? null,
+        op_role: part?.op_role ?? (roleLabel || null),
+        label,
+      };
+    }).sort((a, b) => String(a.label).localeCompare(String(b.label), "zh-Hant"));
   });
 
 export const searchMembersForGrant = createServerFn({ method: "POST" })
