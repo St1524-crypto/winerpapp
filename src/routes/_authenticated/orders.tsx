@@ -25,7 +25,7 @@ import { OrderRewardSummary } from "@/components/OrderRewardSummary";
 import { OrderRewardDetailCard } from "@/components/OrderRewardDetailCard";
 import { logOrderRewardPointsAudit } from "@/lib/audit.functions";
 
-/** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/升級獎金（失敗不擋主流程） */
+/** 訂單轉為 paid 時自動結算 VIP 推薦佣金 + 觸發復購/推薦獎金（失敗不擋主流程） */
 async function autoSettleCommission(orderId: string, nextStatus: string) {
   if (nextStatus !== "paid") return;
   try {
