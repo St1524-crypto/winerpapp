@@ -101,7 +101,7 @@ function Page() {
       const req = d.required_points ?? d.daily_settlement?.responsibility_required_points ?? "";
       const passed = r.required_points_passed === true ? "是" : r.required_points_passed === false ? "否" : "";
       return [
-        r.settlement_date ?? "", r.release_date ?? "", r.released_at ?? "",
+        r.order_date ?? "", r.settlement_date ?? "", r.release_date ?? "", r.released_at ?? "",
         m.name ?? "", m.member_no ?? "", tiers[r.member_id] ?? "—", vip.label, m.vip_expires_at ?? "",
         src.name ? `${src.name}(${src.member_no ?? ""})` : "",
         o.order_no ?? r.source_order_id ?? "",
