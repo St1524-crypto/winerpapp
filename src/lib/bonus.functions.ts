@@ -772,6 +772,105 @@ export const scanUnsettledDailyBonusDates = createServerFn({ method: "POST" })
     return { scannedFrom: data.fromDate, scannedTo: data.toDate, dates: rows };
   });
 
+/* ───────────── 日獎金對帳：records + 來源訂單 + 孤兒摘要 ───────────── */
+export const getDailyBonusAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      settlementDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+
+    const { data: records } = await (supabaseAdmin as any)
+      .from("bonus_records")
+      .select(
+        "id, member_id, source_member_id, source_order_id, bonus_type, status, bonus_points, base_amount, bonus_rate, generation_level, settlement_date, release_date, fail_reason, created_at",
+      )
+      .eq("settlement_date", data.settlementDate)
+      .order("created_at", { ascending: false })
+      .limit(2000);
+    const recs = (records ?? []) as any[];
+
+    // 來源訂單（該日 sales_orders + 被 records 引用的訂單）
+    const dayStart = `${data.settlementDate}T00:00:00+08:00`;
+    const dayEnd = new Date(new Date(dayStart).getTime() + 86400000).toISOString();
+    const { data: dayOrders } = await (supabaseAdmin as any)
+      .from("sales_orders")
+      .select("id, order_no, buyer_id, total_amount, order_earn, order_earn_referrer, status, created_at")
+      .gte("created_at", dayStart)
+      .lt("created_at", dayEnd)
+      .limit(2000);
+
+    const refOrderIds = Array.from(
+      new Set(recs.map((r) => r.source_order_id).filter(Boolean) as string[]),
+    );
+    const { data: refOrders } = refOrderIds.length
+      ? await (supabaseAdmin as any)
+          .from("sales_orders")
+          .select("id, order_no, buyer_id, total_amount, status, created_at")
+          .in("id", refOrderIds)
+      : { data: [] as any[] };
+
+    const foundOrderIds = new Set((refOrders ?? []).map((o: any) => o.id));
+    const orphanRecs = recs.filter(
+      (r) => r.source_order_id && !foundOrderIds.has(r.source_order_id),
+    );
+    const orphanByStatus: Record<string, { count: number; points: number }> = {};
+    for (const r of orphanRecs) {
+      const s = r.status ?? "unknown";
+      orphanByStatus[s] = orphanByStatus[s] ?? { count: 0, points: 0 };
+      orphanByStatus[s].count += 1;
+      orphanByStatus[s].points += Number(r.bonus_points ?? 0);
+    }
+
+    // 收集會員名稱
+    const memberIds = Array.from(
+      new Set([...recs.map((r) => r.member_id), ...recs.map((r) => r.source_member_id)].filter(Boolean) as string[]),
+    );
+    const { data: profs } = memberIds.length
+      ? await (supabaseAdmin as any)
+          .from("profiles")
+          .select("id, name, member_no")
+          .in("id", memberIds)
+      : { data: [] as any[] };
+    const nameMap = new Map<string, { name: string; member_no: string }>();
+    for (const p of profs ?? []) nameMap.set(p.id, { name: p.name, member_no: p.member_no });
+
+    return {
+      settlementDate: data.settlementDate,
+      records: recs,
+      recordsSummary: {
+        total: recs.length,
+        totalPoints: recs.reduce((s, r) => s + Number(r.bonus_points ?? 0), 0),
+        byStatus: recs.reduce((acc: any, r) => {
+          const s = r.status ?? "unknown";
+          acc[s] = acc[s] ?? { count: 0, points: 0 };
+          acc[s].count += 1;
+          acc[s].points += Number(r.bonus_points ?? 0);
+          return acc;
+        }, {}),
+      },
+      dayOrders: dayOrders ?? [],
+      dayOrdersSummary: {
+        count: (dayOrders ?? []).length,
+        expectedPoints: (dayOrders ?? []).reduce(
+          (s: number, o: any) => s + Number(o.order_earn ?? 0) + Number(o.order_earn_referrer ?? 0),
+          0,
+        ),
+      },
+      referencedOrders: refOrders ?? [],
+      orphanRecords: orphanRecs,
+      orphanSummary: {
+        count: orphanRecs.length,
+        points: orphanRecs.reduce((s, r) => s + Number(r.bonus_points ?? 0), 0),
+        byStatus: orphanByStatus,
+      },
+      members: Object.fromEntries(nameMap),
+    };
+  });
+
 /* ───────────── 月結算（VIP 責任額 + 超額回饋） ───────────── */
 const bonusRecalculationRunSchema = z.object({
   scope: z.enum(["daily", "monthly"]),
