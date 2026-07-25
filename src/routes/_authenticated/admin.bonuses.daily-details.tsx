@@ -357,7 +357,8 @@ function Page() {
                     const stopReason = r.release_redirect_reason || r.fail_reason || d.block_reason || "—";
                     return (
                       <TableRow key={r.id}>
-                        <TableCell className="whitespace-nowrap">{r.settlement_date ?? "—"}</TableCell>
+                        <TableCell className="whitespace-nowrap font-semibold">{r.order_date ?? "—"}</TableCell>
+                        <TableCell className="whitespace-nowrap text-muted-foreground">{r.settlement_date ?? "—"}</TableCell>
                         <TableCell className="whitespace-nowrap">{r.release_date ?? "—"}</TableCell>
                         <TableCell>
                           <div className="font-medium">{m.name ?? "—"}</div>
