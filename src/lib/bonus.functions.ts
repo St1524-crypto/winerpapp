@@ -2378,9 +2378,12 @@ async function fetchDetailRows(
     if (r.source_order_id && orders[r.source_order_id]?.created_at) {
       orderDate = toTwDateStr(orders[r.source_order_id].created_at);
     } else if (!r.source_order_id && r.settlement_date) {
-      const t = new Date(`${r.settlement_date}T00:00:00+08:00`);
-      t.setUTCDate(t.getUTCDate() - 1);
-      orderDate = t.toISOString().slice(0, 10);
+      const [y, m, day] = String(r.settlement_date).split("-").map(Number);
+      if (y && m && day) {
+        const t = new Date(Date.UTC(y, m - 1, day, 12, 0, 0));
+        t.setUTCDate(t.getUTCDate() - 1);
+        orderDate = t.toISOString().slice(0, 10);
+      }
     }
     return { ...r, order_date: orderDate };
   });
