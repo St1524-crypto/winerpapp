@@ -85,7 +85,7 @@ function Page() {
     const orders = payload.orders ?? {};
     const tiers = payload.tiers ?? {};
     const header = [
-      "結算日期","發放日期","實際發放時間","會員名稱","會員編號","VIP階級","是否有效VIP","VIP到期日",
+      "訂單日期","結算日期","發放日期","實際發放時間","會員名稱","會員編號","VIP階級","是否有效VIP","VIP到期日",
       "來源會員","來源訂單","獎金類型","規則版本","適用制度","獎勵點來源","原始訂單獎勵點","代數","適用比例%",
       "責任額","是否完成責任額","應發貢獻點","實際發放貢獻點","實際領取人","改發原因","停發原因","狀態","計算說明","批次ID",
     ];
@@ -101,7 +101,7 @@ function Page() {
       const req = d.required_points ?? d.daily_settlement?.responsibility_required_points ?? "";
       const passed = r.required_points_passed === true ? "是" : r.required_points_passed === false ? "否" : "";
       return [
-        r.settlement_date ?? "", r.release_date ?? "", r.released_at ?? "",
+        r.order_date ?? "", r.settlement_date ?? "", r.release_date ?? "", r.released_at ?? "",
         m.name ?? "", m.member_no ?? "", tiers[r.member_id] ?? "—", vip.label, m.vip_expires_at ?? "",
         src.name ? `${src.name}(${src.member_no ?? ""})` : "",
         o.order_no ?? r.source_order_id ?? "",
@@ -212,7 +212,9 @@ function Page() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">每日獎金明細表</h1>
-          <p className="mt-1 text-sm text-muted-foreground">推薦獎勵 / 復購獎勵每日結算明細，依 VIP獎金參數管理 與 月達成獎金管理 演算。</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            日期篩選以「<span className="font-semibold text-foreground">訂單日期（UTC+8）</span>」為準：7/24 的訂單所產生的獎金會列在 7/24，即使結算日為 7/25。日結池（無來源訂單）以「結算日 − 1」對應。
+          </p>
         </div>
         <Button asChild variant="outline">
           <Link to="/admin/bonuses"><ArrowLeft className="mr-2 h-4 w-4" />返回獎金營運中心</Link>
@@ -317,6 +319,7 @@ function Page() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>訂單日期</TableHead>
                     <TableHead>結算日期</TableHead>
                     <TableHead>發放日期</TableHead>
                     <TableHead>會員 / 編號</TableHead>
@@ -354,7 +357,8 @@ function Page() {
                     const stopReason = r.release_redirect_reason || r.fail_reason || d.block_reason || "—";
                     return (
                       <TableRow key={r.id}>
-                        <TableCell className="whitespace-nowrap">{r.settlement_date ?? "—"}</TableCell>
+                        <TableCell className="whitespace-nowrap font-semibold">{r.order_date ?? "—"}</TableCell>
+                        <TableCell className="whitespace-nowrap text-muted-foreground">{r.settlement_date ?? "—"}</TableCell>
                         <TableCell className="whitespace-nowrap">{r.release_date ?? "—"}</TableCell>
                         <TableCell>
                           <div className="font-medium">{m.name ?? "—"}</div>
