@@ -55,13 +55,21 @@ export const listWebhookEndpoints = createServerFn({ method: "GET" })
     await requireAdmin(context.supabase);
     const { data, error } = await context.supabase
       .from("webhook_endpoints")
-      .select("id,name,url,events,active,company_id,created_at,bearer_token")
+      .select("id,name,url,events,active,company_id,created_at")
       .order("created_at", { ascending: false });
     if (error) throw error;
+    const ids = (data ?? []).map((r: any) => r.id);
+    let tokenMap = new Map<string, string>();
+    if (ids.length > 0) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: toks, error: tErr } = await (supabaseAdmin as any)
+        .from("webhook_endpoints").select("id,bearer_token").in("id", ids);
+      if (tErr) throw tErr;
+      tokenMap = new Map((toks ?? []).map((r: any) => [r.id as string, (r.bearer_token as string) ?? ""]));
+    }
     const endpoints = (data ?? []).map((ep: any) => {
-      const t: string = ep.bearer_token ?? "";
-      const { bearer_token, ...rest } = ep;
-      return { ...rest, token_last4: t.slice(-4), token_masked: t ? `••••${t.slice(-4)}` : "" };
+      const t = tokenMap.get(ep.id) ?? "";
+      return { ...ep, token_last4: t.slice(-4), token_masked: t ? `••••${t.slice(-4)}` : "" };
     });
     return { endpoints };
   });
@@ -71,7 +79,13 @@ export const revealWebhookToken = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await requireAdmin(context.supabase);
-    const { data: row, error } = await context.supabase
+    // Confirm caller's company owns this endpoint via RLS-scoped client
+    const { data: own, error: ownErr } = await context.supabase
+      .from("webhook_endpoints").select("id").eq("id", data.id).maybeSingle();
+    if (ownErr) throw ownErr;
+    if (!own) throw new Error("找不到 webhook endpoint");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await (supabaseAdmin as any)
       .from("webhook_endpoints").select("bearer_token").eq("id", data.id).single();
     if (error) throw error;
     return { token: row.bearer_token as string };
