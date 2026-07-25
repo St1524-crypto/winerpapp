@@ -154,8 +154,13 @@ export const rerollWebhookToken = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await requireAdmin(context.supabase);
+    const { data: own, error: ownErr } = await context.supabase
+      .from("webhook_endpoints").select("id").eq("id", data.id).maybeSingle();
+    if (ownErr) throw ownErr;
+    if (!own) throw new Error("找不到 webhook endpoint");
     const newToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 16);
-    const { error } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any)
       .from("webhook_endpoints").update({ bearer_token: newToken }).eq("id", data.id);
     if (error) throw error;
     return { token: newToken };
