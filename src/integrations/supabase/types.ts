@@ -4633,7 +4633,7 @@ export type Database = {
         Row: {
           base_amount: number
           buyer_id: string | null
-          company_id: string | null
+          company_id: string
           created_at: string
           id: string
           note: string | null
@@ -4646,7 +4646,7 @@ export type Database = {
         Insert: {
           base_amount?: number
           buyer_id?: string | null
-          company_id?: string | null
+          company_id?: string
           created_at?: string
           id?: string
           note?: string | null
@@ -4659,7 +4659,7 @@ export type Database = {
         Update: {
           base_amount?: number
           buyer_id?: string | null
-          company_id?: string | null
+          company_id?: string
           created_at?: string
           id?: string
           note?: string | null
