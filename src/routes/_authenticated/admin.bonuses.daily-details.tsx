@@ -215,6 +215,7 @@ function Page() {
           <p className="mt-1 text-sm text-muted-foreground">
             日期篩選以「<span className="font-semibold text-foreground">訂單日期（UTC+8）</span>」為準：7/24 的訂單所產生的獎金會列在 7/24，即使結算日為 7/25。日結池（無來源訂單）以「結算日 − 1」對應。
           </p>
+        </div>
         <Button asChild variant="outline">
           <Link to="/admin/bonuses"><ArrowLeft className="mr-2 h-4 w-4" />返回獎金營運中心</Link>
         </Button>
