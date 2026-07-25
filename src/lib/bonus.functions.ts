@@ -2271,9 +2271,25 @@ async function resolveMemberFilter(memberName?: string, memberNo?: string) {
   return (data ?? []).map((p: any) => p.id);
 }
 
+// 將 YYYY-MM-DD 視為 UTC+8 當日的 00:00 / 23:59:59.999，轉為 ISO
+function twDateBoundsToUtcIso(dateFrom?: string, dateTo?: string) {
+  const from = dateFrom ? new Date(`${dateFrom}T00:00:00+08:00`).toISOString() : null;
+  const to = dateTo ? new Date(`${dateTo}T23:59:59.999+08:00`).toISOString() : null;
+  return { from, to };
+}
+
+// UTC ISO → UTC+8 的 YYYY-MM-DD
+function toTwDateStr(iso: string | null | undefined) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  const tw = new Date(d.getTime() + 8 * 3600 * 1000);
+  return tw.toISOString().slice(0, 10);
+}
+
 async function fetchDetailRows(
   types: string[],
   data: z.infer<typeof detailFilterSchema>,
+  opts: { filterByOrderDate?: boolean } = {},
 ) {
   const memberIdFilter = await resolveMemberFilter(data.memberName, data.memberNo);
   if (memberIdFilter && memberIdFilter.length === 0) {
@@ -2295,8 +2311,44 @@ async function fetchDetailRows(
   if (data.status) q = q.eq("status", data.status);
   if (data.settlementBatchId) q = q.eq("settlement_batch_id", data.settlementBatchId);
   if (memberIdFilter) q = q.in("member_id", memberIdFilter);
-  if (data.dateFrom) q = q.gte("settlement_date", data.dateFrom);
-  if (data.dateTo) q = q.lte("settlement_date", data.dateTo);
+
+  if (opts.filterByOrderDate && (data.dateFrom || data.dateTo)) {
+    // 以「訂單日期（UTC+8）」為篩選基準：
+    // 1) 先找出該區間內建立的 sales_orders id
+    // 2) bonus_records.source_order_id in (那些 id)
+    // 3) 池類（source_order_id is null）以 settlement_date = orderDate + 1 對應（日結池為前一日營業額）
+    const { from, to } = twDateBoundsToUtcIso(data.dateFrom, data.dateTo);
+    let oq = supabaseAdmin.from("sales_orders").select("id").limit(50000);
+    if (from) oq = oq.gte("created_at", from);
+    if (to) oq = oq.lte("created_at", to);
+    const { data: ords, error: oe } = await oq;
+    if (oe) throw new Error(oe.message);
+    const orderIds = (ords ?? []).map((o: any) => o.id);
+
+    // 對應的日結池 settlement_date 範圍 = 訂單日 + 1
+    const shift = (d?: string) => {
+      if (!d) return undefined;
+      const t = new Date(`${d}T00:00:00+08:00`);
+      t.setUTCDate(t.getUTCDate() + 1);
+      return t.toISOString().slice(0, 10);
+    };
+    const poolFrom = shift(data.dateFrom);
+    const poolTo = shift(data.dateTo);
+
+    const orParts: string[] = [];
+    if (orderIds.length > 0) orParts.push(`source_order_id.in.(${orderIds.join(",")})`);
+    if (poolFrom && poolTo) {
+      orParts.push(`and(source_order_id.is.null,settlement_date.gte.${poolFrom},settlement_date.lte.${poolTo})`);
+    }
+    if (orParts.length === 0) {
+      return { rows: [], members: {}, batches: {}, orders: {}, tiers: {}, missingCalculationDetail: 0 };
+    }
+    q = q.or(orParts.join(","));
+  } else {
+    if (data.dateFrom) q = q.gte("settlement_date", data.dateFrom);
+    if (data.dateTo) q = q.lte("settlement_date", data.dateTo);
+  }
+
   const { data: rows, error } = await q;
   if (error) throw new Error(error.message);
   const list = rows ?? [];
@@ -2306,7 +2358,7 @@ async function fetchDetailRows(
   const [profRes, batchRes, orderRes, tierRes] = await Promise.all([
     memberIds.length ? supabaseAdmin.from("profiles").select("id, name, member_no, is_vip, vip_expires_at").in("id", memberIds) : Promise.resolve({ data: [], error: null } as any),
     batchIds.length ? supabaseAdmin.from("bonus_settlement_batches").select("*").in("id", batchIds) : Promise.resolve({ data: [], error: null } as any),
-    orderIds.length ? supabaseAdmin.from("sales_orders").select("id, order_no, total_amount, order_type").in("id", orderIds) : Promise.resolve({ data: [], error: null } as any),
+    orderIds.length ? supabaseAdmin.from("sales_orders").select("id, order_no, total_amount, order_type, created_at").in("id", orderIds) : Promise.resolve({ data: [], error: null } as any),
     memberIds.length ? supabaseAdmin.from("dealer_tier_status").select("user_id, current_tier").in("user_id", memberIds) : Promise.resolve({ data: [], error: null } as any),
   ]);
   const members: Record<string, any> = {};
@@ -2317,8 +2369,20 @@ async function fetchDetailRows(
   (orderRes.data ?? []).forEach((o: any) => { orders[o.id] = o; });
   const tiers: Record<string, string> = {};
   (tierRes.data ?? []).forEach((t: any) => { if (t.current_tier) tiers[t.user_id] = t.current_tier; });
-  const missingCalculationDetail = list.filter((r: any) => !r.calculation_detail).length;
-  return { rows: list, members, batches, orders, tiers, missingCalculationDetail };
+  // 為每筆補上 order_date（UTC+8）：有 source_order_id → 訂單建立日；池類（無 source_order_id）→ settlement_date - 1
+  const enriched = list.map((r: any) => {
+    let orderDate: string | null = null;
+    if (r.source_order_id && orders[r.source_order_id]?.created_at) {
+      orderDate = toTwDateStr(orders[r.source_order_id].created_at);
+    } else if (!r.source_order_id && r.settlement_date) {
+      const t = new Date(`${r.settlement_date}T00:00:00+08:00`);
+      t.setUTCDate(t.getUTCDate() - 1);
+      orderDate = t.toISOString().slice(0, 10);
+    }
+    return { ...r, order_date: orderDate };
+  });
+  const missingCalculationDetail = enriched.filter((r: any) => !r.calculation_detail).length;
+  return { rows: enriched, members, batches, orders, tiers, missingCalculationDetail };
 }
 
 export const listDailyBonusDetails = createServerFn({ method: "POST" })
@@ -2326,7 +2390,7 @@ export const listDailyBonusDetails = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => detailFilterSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertRoles(context.userId, ADMIN_ROLES);
-    return await fetchDetailRows(DAILY_BONUS_DETAIL_TYPES, data);
+    return await fetchDetailRows(DAILY_BONUS_DETAIL_TYPES, data, { filterByOrderDate: true });
   });
 
 export const listMonthlyBonusDetails = createServerFn({ method: "POST" })
