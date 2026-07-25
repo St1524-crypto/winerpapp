@@ -319,6 +319,7 @@ function Page() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>訂單日期</TableHead>
                     <TableHead>結算日期</TableHead>
                     <TableHead>發放日期</TableHead>
                     <TableHead>會員 / 編號</TableHead>
