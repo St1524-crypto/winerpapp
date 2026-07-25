@@ -153,6 +153,7 @@ import { Route as AuthenticatedAdminBonusesDailySummarySplitRouteImport } from '
 import { Route as AuthenticatedAdminBonusesDailySummaryMergedRouteImport } from './routes/_authenticated/admin.bonuses.daily-summary-merged'
 import { Route as AuthenticatedAdminBonusesDailySettlementRouteImport } from './routes/_authenticated/admin.bonuses.daily-settlement'
 import { Route as AuthenticatedAdminBonusesDailyDetailsRouteImport } from './routes/_authenticated/admin.bonuses.daily-details'
+import { Route as AuthenticatedAdminBonusesDailyAuditRouteImport } from './routes/_authenticated/admin.bonuses.daily-audit'
 import { Route as AuthenticatedAdminQuotesQuoteIdIndexRouteImport } from './routes/_authenticated/admin.quotes.$quoteId.index'
 import { Route as AuthenticatedAdminQuotesQuoteIdEditRouteImport } from './routes/_authenticated/admin.quotes.$quoteId.edit'
 import { Route as AuthenticatedAdminBonusesBatchesBatchIdRouteImport } from './routes/_authenticated/admin.bonuses.batches.$batchId'
@@ -948,6 +949,12 @@ const AuthenticatedAdminBonusesDailyDetailsRoute =
     path: '/daily-details',
     getParentRoute: () => AuthenticatedAdminBonusesRoute,
   } as any)
+const AuthenticatedAdminBonusesDailyAuditRoute =
+  AuthenticatedAdminBonusesDailyAuditRouteImport.update({
+    id: '/daily-audit',
+    path: '/daily-audit',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
 const AuthenticatedAdminQuotesQuoteIdIndexRoute =
   AuthenticatedAdminQuotesQuoteIdIndexRouteImport.update({
     id: '/admin/quotes/$quoteId/',
@@ -1076,6 +1083,7 @@ export interface FileRoutesByFullPath {
   '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/shop/bundles/': typeof ShopBundlesIndexRoute
+  '/admin/bonuses/daily-audit': typeof AuthenticatedAdminBonusesDailyAuditRoute
   '/admin/bonuses/daily-details': typeof AuthenticatedAdminBonusesDailyDetailsRoute
   '/admin/bonuses/daily-settlement': typeof AuthenticatedAdminBonusesDailySettlementRoute
   '/admin/bonuses/daily-summary-merged': typeof AuthenticatedAdminBonusesDailySummaryMergedRoute
@@ -1219,6 +1227,7 @@ export interface FileRoutesByTo {
   '/finance': typeof AuthenticatedFinanceIndexRoute
   '/shop/account': typeof ShopAccountIndexRoute
   '/shop/bundles': typeof ShopBundlesIndexRoute
+  '/admin/bonuses/daily-audit': typeof AuthenticatedAdminBonusesDailyAuditRoute
   '/admin/bonuses/daily-details': typeof AuthenticatedAdminBonusesDailyDetailsRoute
   '/admin/bonuses/daily-settlement': typeof AuthenticatedAdminBonusesDailySettlementRoute
   '/admin/bonuses/daily-summary-merged': typeof AuthenticatedAdminBonusesDailySummaryMergedRoute
@@ -1369,6 +1378,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/shop/account/': typeof ShopAccountIndexRoute
   '/shop/bundles/': typeof ShopBundlesIndexRoute
+  '/_authenticated/admin/bonuses/daily-audit': typeof AuthenticatedAdminBonusesDailyAuditRoute
   '/_authenticated/admin/bonuses/daily-details': typeof AuthenticatedAdminBonusesDailyDetailsRoute
   '/_authenticated/admin/bonuses/daily-settlement': typeof AuthenticatedAdminBonusesDailySettlementRoute
   '/_authenticated/admin/bonuses/daily-summary-merged': typeof AuthenticatedAdminBonusesDailySummaryMergedRoute
@@ -1519,6 +1529,7 @@ export interface FileRouteTypes {
     | '/finance/'
     | '/shop/account/'
     | '/shop/bundles/'
+    | '/admin/bonuses/daily-audit'
     | '/admin/bonuses/daily-details'
     | '/admin/bonuses/daily-settlement'
     | '/admin/bonuses/daily-summary-merged'
@@ -1662,6 +1673,7 @@ export interface FileRouteTypes {
     | '/finance'
     | '/shop/account'
     | '/shop/bundles'
+    | '/admin/bonuses/daily-audit'
     | '/admin/bonuses/daily-details'
     | '/admin/bonuses/daily-settlement'
     | '/admin/bonuses/daily-summary-merged'
@@ -1811,6 +1823,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/'
     | '/shop/account/'
     | '/shop/bundles/'
+    | '/_authenticated/admin/bonuses/daily-audit'
     | '/_authenticated/admin/bonuses/daily-details'
     | '/_authenticated/admin/bonuses/daily-settlement'
     | '/_authenticated/admin/bonuses/daily-summary-merged'
@@ -2892,6 +2905,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBonusesDailyDetailsRouteImport
       parentRoute: typeof AuthenticatedAdminBonusesRoute
     }
+    '/_authenticated/admin/bonuses/daily-audit': {
+      id: '/_authenticated/admin/bonuses/daily-audit'
+      path: '/daily-audit'
+      fullPath: '/admin/bonuses/daily-audit'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesDailyAuditRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
     '/_authenticated/admin/quotes/$quoteId/': {
       id: '/_authenticated/admin/quotes/$quoteId/'
       path: '/admin/quotes/$quoteId'
@@ -2949,6 +2969,7 @@ const AuthenticatedProductsRouteWithChildren =
   )
 
 interface AuthenticatedAdminBonusesRouteChildren {
+  AuthenticatedAdminBonusesDailyAuditRoute: typeof AuthenticatedAdminBonusesDailyAuditRoute
   AuthenticatedAdminBonusesDailyDetailsRoute: typeof AuthenticatedAdminBonusesDailyDetailsRoute
   AuthenticatedAdminBonusesDailySettlementRoute: typeof AuthenticatedAdminBonusesDailySettlementRoute
   AuthenticatedAdminBonusesDailySummaryMergedRoute: typeof AuthenticatedAdminBonusesDailySummaryMergedRoute
@@ -2968,6 +2989,8 @@ interface AuthenticatedAdminBonusesRouteChildren {
 
 const AuthenticatedAdminBonusesRouteChildren: AuthenticatedAdminBonusesRouteChildren =
   {
+    AuthenticatedAdminBonusesDailyAuditRoute:
+      AuthenticatedAdminBonusesDailyAuditRoute,
     AuthenticatedAdminBonusesDailyDetailsRoute:
       AuthenticatedAdminBonusesDailyDetailsRoute,
     AuthenticatedAdminBonusesDailySettlementRoute:
@@ -3346,3 +3369,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
