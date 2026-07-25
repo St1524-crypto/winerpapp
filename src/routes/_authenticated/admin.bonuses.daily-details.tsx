@@ -212,8 +212,9 @@ function Page() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">每日獎金明細表</h1>
-          <p className="mt-1 text-sm text-muted-foreground">推薦獎勵 / 復購獎勵每日結算明細，依 VIP獎金參數管理 與 月達成獎金管理 演算。</p>
-        </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            日期篩選以「<span className="font-semibold text-foreground">訂單日期（UTC+8）</span>」為準：7/24 的訂單所產生的獎金會列在 7/24，即使結算日為 7/25。日結池（無來源訂單）以「結算日 − 1」對應。
+          </p>
         <Button asChild variant="outline">
           <Link to="/admin/bonuses"><ArrowLeft className="mr-2 h-4 w-4" />返回獎金營運中心</Link>
         </Button>
