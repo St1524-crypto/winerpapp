@@ -2326,14 +2326,17 @@ async function fetchDetailRows(
     const orderIds = (ords ?? []).map((o: any) => o.id);
 
     // 對應的日結池 settlement_date 範圍 = 訂單日 + 1
-    const shift = (d?: string) => {
+    // 用純字串日期運算，避免 new Date("YYYY-MM-DDT00:00:00+08:00") 轉成 UTC 後 getUTCDate() 已是前一日的 off-by-one。
+    const shiftTwDate = (d: string | undefined, deltaDays: number): string | undefined => {
       if (!d) return undefined;
-      const t = new Date(`${d}T00:00:00+08:00`);
-      t.setUTCDate(t.getUTCDate() + 1);
+      const [y, m, day] = d.split("-").map(Number);
+      if (!y || !m || !day) return undefined;
+      const t = new Date(Date.UTC(y, m - 1, day, 12, 0, 0));
+      t.setUTCDate(t.getUTCDate() + deltaDays);
       return t.toISOString().slice(0, 10);
     };
-    const poolFrom = shift(data.dateFrom);
-    const poolTo = shift(data.dateTo);
+    const poolFrom = shiftTwDate(data.dateFrom, 1);
+    const poolTo = shiftTwDate(data.dateTo, 1);
 
     const orParts: string[] = [];
     if (orderIds.length > 0) orParts.push(`source_order_id.in.(${orderIds.join(",")})`);
@@ -2375,9 +2378,12 @@ async function fetchDetailRows(
     if (r.source_order_id && orders[r.source_order_id]?.created_at) {
       orderDate = toTwDateStr(orders[r.source_order_id].created_at);
     } else if (!r.source_order_id && r.settlement_date) {
-      const t = new Date(`${r.settlement_date}T00:00:00+08:00`);
-      t.setUTCDate(t.getUTCDate() - 1);
-      orderDate = t.toISOString().slice(0, 10);
+      const [y, m, day] = String(r.settlement_date).split("-").map(Number);
+      if (y && m && day) {
+        const t = new Date(Date.UTC(y, m - 1, day, 12, 0, 0));
+        t.setUTCDate(t.getUTCDate() - 1);
+        orderDate = t.toISOString().slice(0, 10);
+      }
     }
     return { ...r, order_date: orderDate };
   });
