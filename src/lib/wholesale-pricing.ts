@@ -43,6 +43,10 @@ export function applyWholesalePricing(
 
 export async function fetchTiersByProductIds(productIds: string[]): Promise<Record<string, WholesaleTier[]>> {
   if (productIds.length === 0) return {};
+  // 階梯價僅對已登入的 VIP / 經銷 / 員工可見；訪客直接跳過查詢，
+  // 避免 anon 觸發 RLS `permission denied for table product_wholesale_tiers`（42501）。
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return {};
   const { data } = await supabase
     .from("product_wholesale_tiers" as any)
     .select("*")
@@ -57,6 +61,9 @@ export async function fetchTiersByProductIds(productIds: string[]): Promise<Reco
 }
 
 export async function fetchTiersForProduct(productId: string): Promise<WholesaleTier[]> {
+  // 同上：訪客略過，避免 RLS 拒絕造成日誌噪音。
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) return [];
   const { data } = await supabase
     .from("product_wholesale_tiers" as any)
     .select("*")
