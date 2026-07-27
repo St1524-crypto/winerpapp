@@ -16,7 +16,7 @@ import { deleteSalesOrder, adminRerunOrderUpgrades } from "@/lib/orders-admin.fu
 import { processOrderCommission } from "@/lib/referral.functions";
 import { processOrderPaymentBonus } from "@/lib/bonus.functions";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
-import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
+import { processOrderVipPackageUpgrade, listVipUpgradeBonusMap, listVipUpgradeGiftsForProducts } from "@/lib/vip-tiers.functions";
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 import { computeOrderPaymentTotals } from "@/lib/order-payment-totals";
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
@@ -1051,15 +1051,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   });
 
   // 載入 VIP 升級套組（依綁定的 anchor product_id 對應 bonus_points，付款後僅發一次）
+  const loadBonusMap = useServerFn(listVipUpgradeBonusMap);
   const packagesQ = useQuery({
     queryKey: ["vip-packages-bonus", currentCompanyId],
     enabled: open,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vip_upgrade_packages")
-        .select("product_id,bonus_points,name")
-        .eq("status", "active");
-      if (error) throw new Error(error.message);
+      const data = await loadBonusMap();
       const map: Record<string, { bonus_points: number; name: string }> = {};
       for (const r of (data ?? []) as any[]) {
         if (r.product_id) map[r.product_id] = { bonus_points: Number(r.bonus_points || 0), name: r.name };
@@ -2278,49 +2275,13 @@ function OrderDetailDialog({
   // 載入 VIP 升級套組贈品（依訂單品項中 anchor product_id 對應）
   const itemProductIds = (items as any[]).map((i) => i.product_id).filter(Boolean);
   const itemPidKey = itemProductIds.slice().sort().join(",");
+  const loadVipGifts = useServerFn(listVipUpgradeGiftsForProducts);
   const giftsQ = useQuery({
     queryKey: ["order-vip-gifts", orderId, itemPidKey],
     enabled: !!orderId && itemProductIds.length > 0,
     queryFn: async () => {
-      // 1. 找出對應的套組（僅依訂單中的「套組主商品 package_product_id」比對，
-      //    避免舊資料 product_id（贈品）誤觸發把非升級訂單顯示為 VIP 升級套組）
-      const { data: pkgs } = await supabase
-        .from("vip_upgrade_packages")
-        .select("id, name, tier_code, bonus_points, package_product_id, product_id")
-        .in("package_product_id", itemProductIds);
-
-      if (!pkgs || pkgs.length === 0) return [] as any[];
-      const pkgIds = pkgs.map((p: any) => p.id);
-      // 2. 取得套組綁定贈品（多商品）
-      const { data: binds } = await supabase
-        .from("vip_upgrade_package_products")
-        .select("package_id, product_id, quantity")
-        .in("package_id", pkgIds);
-      const productIds = Array.from(new Set((binds ?? []).map((b: any) => b.product_id).filter(Boolean)));
-      // 含舊欄位 product_id（向下相容）
-      for (const p of pkgs as any[]) {
-        if (p.product_id && p.product_id !== p.package_product_id && !productIds.includes(p.product_id)) {
-          productIds.push(p.product_id);
-        }
-      }
-      if (productIds.length === 0) return pkgs.map((p: any) => ({ ...p, gifts: [] }));
-      const { data: prods } = await supabase
-        .from("products")
-        .select("id, name, sku, image")
-        .in("id", productIds);
-      const prodMap = new Map((prods ?? []).map((p: any) => [p.id, p]));
-      return (pkgs as any[]).map((p) => {
-        const gifts = (binds ?? [])
-          .filter((b: any) => b.package_id === p.id && b.product_id !== p.package_product_id)
-          .map((b: any) => ({ ...prodMap.get(b.product_id), quantity: Number(b.quantity ?? 1) }))
-          .filter((g: any) => g.id);
-        // 向下相容：舊資料若僅有 pkg.product_id 且未在 binds 中，視為單一贈品
-        if (gifts.length === 0 && p.product_id && p.product_id !== p.package_product_id) {
-          const g = prodMap.get(p.product_id);
-          if (g) gifts.push({ ...g, quantity: 1 });
-        }
-        return { ...p, gifts };
-      });
+      const data = await loadVipGifts({ data: { productIds: itemProductIds } });
+      return (data ?? []) as any[];
     },
   });
   const vipPackages = (giftsQ.data ?? []) as any[];
