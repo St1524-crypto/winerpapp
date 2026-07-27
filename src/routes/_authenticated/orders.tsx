@@ -1051,15 +1051,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   });
 
   // 載入 VIP 升級套組（依綁定的 anchor product_id 對應 bonus_points，付款後僅發一次）
+  const loadBonusMap = useServerFn(listVipUpgradeBonusMap);
   const packagesQ = useQuery({
     queryKey: ["vip-packages-bonus", currentCompanyId],
     enabled: open,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vip_upgrade_packages")
-        .select("product_id,bonus_points,name")
-        .eq("status", "active");
-      if (error) throw new Error(error.message);
+      const data = await loadBonusMap();
       const map: Record<string, { bonus_points: number; name: string }> = {};
       for (const r of (data ?? []) as any[]) {
         if (r.product_id) map[r.product_id] = { bonus_points: Number(r.bonus_points || 0), name: r.name };
