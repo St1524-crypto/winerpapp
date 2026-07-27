@@ -146,6 +146,7 @@ import { Route as AuthenticatedAdminBonusesRecalculationRouteImport } from './ro
 import { Route as AuthenticatedAdminBonusesNationalShareSettingsRouteImport } from './routes/_authenticated/admin.bonuses.national-share-settings'
 import { Route as AuthenticatedAdminBonusesNationalShareRouteImport } from './routes/_authenticated/admin.bonuses.national-share'
 import { Route as AuthenticatedAdminBonusesMonthlySummaryRouteImport } from './routes/_authenticated/admin.bonuses.monthly-summary'
+import { Route as AuthenticatedAdminBonusesMonthlySettlementRouteImport } from './routes/_authenticated/admin.bonuses.monthly-settlement'
 import { Route as AuthenticatedAdminBonusesMonthlyDetailsRouteImport } from './routes/_authenticated/admin.bonuses.monthly-details'
 import { Route as AuthenticatedAdminBonusesMonthlyDetailSplitRouteImport } from './routes/_authenticated/admin.bonuses.monthly-detail-split'
 import { Route as AuthenticatedAdminBonusesMemberDetailsRouteImport } from './routes/_authenticated/admin.bonuses.member-details'
@@ -907,6 +908,12 @@ const AuthenticatedAdminBonusesMonthlySummaryRoute =
     path: '/monthly-summary',
     getParentRoute: () => AuthenticatedAdminBonusesRoute,
   } as any)
+const AuthenticatedAdminBonusesMonthlySettlementRoute =
+  AuthenticatedAdminBonusesMonthlySettlementRouteImport.update({
+    id: '/monthly-settlement',
+    path: '/monthly-settlement',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
 const AuthenticatedAdminBonusesMonthlyDetailsRoute =
   AuthenticatedAdminBonusesMonthlyDetailsRouteImport.update({
     id: '/monthly-details',
@@ -1091,6 +1098,7 @@ export interface FileRoutesByFullPath {
   '/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
   '/admin/bonuses/monthly-detail-split': typeof AuthenticatedAdminBonusesMonthlyDetailSplitRoute
   '/admin/bonuses/monthly-details': typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  '/admin/bonuses/monthly-settlement': typeof AuthenticatedAdminBonusesMonthlySettlementRoute
   '/admin/bonuses/monthly-summary': typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   '/admin/bonuses/national-share': typeof AuthenticatedAdminBonusesNationalShareRoute
   '/admin/bonuses/national-share-settings': typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
@@ -1235,6 +1243,7 @@ export interface FileRoutesByTo {
   '/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
   '/admin/bonuses/monthly-detail-split': typeof AuthenticatedAdminBonusesMonthlyDetailSplitRoute
   '/admin/bonuses/monthly-details': typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  '/admin/bonuses/monthly-settlement': typeof AuthenticatedAdminBonusesMonthlySettlementRoute
   '/admin/bonuses/monthly-summary': typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   '/admin/bonuses/national-share': typeof AuthenticatedAdminBonusesNationalShareRoute
   '/admin/bonuses/national-share-settings': typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
@@ -1386,6 +1395,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bonuses/member-details': typeof AuthenticatedAdminBonusesMemberDetailsRoute
   '/_authenticated/admin/bonuses/monthly-detail-split': typeof AuthenticatedAdminBonusesMonthlyDetailSplitRoute
   '/_authenticated/admin/bonuses/monthly-details': typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  '/_authenticated/admin/bonuses/monthly-settlement': typeof AuthenticatedAdminBonusesMonthlySettlementRoute
   '/_authenticated/admin/bonuses/monthly-summary': typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   '/_authenticated/admin/bonuses/national-share': typeof AuthenticatedAdminBonusesNationalShareRoute
   '/_authenticated/admin/bonuses/national-share-settings': typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
@@ -1537,6 +1547,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses/member-details'
     | '/admin/bonuses/monthly-detail-split'
     | '/admin/bonuses/monthly-details'
+    | '/admin/bonuses/monthly-settlement'
     | '/admin/bonuses/monthly-summary'
     | '/admin/bonuses/national-share'
     | '/admin/bonuses/national-share-settings'
@@ -1681,6 +1692,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses/member-details'
     | '/admin/bonuses/monthly-detail-split'
     | '/admin/bonuses/monthly-details'
+    | '/admin/bonuses/monthly-settlement'
     | '/admin/bonuses/monthly-summary'
     | '/admin/bonuses/national-share'
     | '/admin/bonuses/national-share-settings'
@@ -1831,6 +1843,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bonuses/member-details'
     | '/_authenticated/admin/bonuses/monthly-detail-split'
     | '/_authenticated/admin/bonuses/monthly-details'
+    | '/_authenticated/admin/bonuses/monthly-settlement'
     | '/_authenticated/admin/bonuses/monthly-summary'
     | '/_authenticated/admin/bonuses/national-share'
     | '/_authenticated/admin/bonuses/national-share-settings'
@@ -2856,6 +2869,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBonusesMonthlySummaryRouteImport
       parentRoute: typeof AuthenticatedAdminBonusesRoute
     }
+    '/_authenticated/admin/bonuses/monthly-settlement': {
+      id: '/_authenticated/admin/bonuses/monthly-settlement'
+      path: '/monthly-settlement'
+      fullPath: '/admin/bonuses/monthly-settlement'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesMonthlySettlementRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
     '/_authenticated/admin/bonuses/monthly-details': {
       id: '/_authenticated/admin/bonuses/monthly-details'
       path: '/monthly-details'
@@ -2977,6 +2997,7 @@ interface AuthenticatedAdminBonusesRouteChildren {
   AuthenticatedAdminBonusesMemberDetailsRoute: typeof AuthenticatedAdminBonusesMemberDetailsRoute
   AuthenticatedAdminBonusesMonthlyDetailSplitRoute: typeof AuthenticatedAdminBonusesMonthlyDetailSplitRoute
   AuthenticatedAdminBonusesMonthlyDetailsRoute: typeof AuthenticatedAdminBonusesMonthlyDetailsRoute
+  AuthenticatedAdminBonusesMonthlySettlementRoute: typeof AuthenticatedAdminBonusesMonthlySettlementRoute
   AuthenticatedAdminBonusesMonthlySummaryRoute: typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   AuthenticatedAdminBonusesNationalShareRoute: typeof AuthenticatedAdminBonusesNationalShareRoute
   AuthenticatedAdminBonusesNationalShareSettingsRoute: typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
@@ -3005,6 +3026,8 @@ const AuthenticatedAdminBonusesRouteChildren: AuthenticatedAdminBonusesRouteChil
       AuthenticatedAdminBonusesMonthlyDetailSplitRoute,
     AuthenticatedAdminBonusesMonthlyDetailsRoute:
       AuthenticatedAdminBonusesMonthlyDetailsRoute,
+    AuthenticatedAdminBonusesMonthlySettlementRoute:
+      AuthenticatedAdminBonusesMonthlySettlementRoute,
     AuthenticatedAdminBonusesMonthlySummaryRoute:
       AuthenticatedAdminBonusesMonthlySummaryRoute,
     AuthenticatedAdminBonusesNationalShareRoute:
