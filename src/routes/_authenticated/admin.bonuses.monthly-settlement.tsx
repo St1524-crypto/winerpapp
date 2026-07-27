@@ -662,5 +662,3 @@ function RecipientList({
     </div>
   );
 }
-
-}
