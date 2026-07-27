@@ -505,7 +505,16 @@ function Page() {
                 </Table>
               )}
             </CardContent>
+            <CardContent>
+              <RecipientList
+                title="全國分紅 個別分配名單"
+                emptyText="本月尚無全國分紅接收人。"
+                caliber="口徑：VIP 有效判定 = profile.is_vip=true 且 vip_expires_at ≥ 月底 23:59 (UTC+8)；每人平均分配額 = 該級 pool_amount ÷ 合格人數，若達每月累計上限（STAR5 20 萬 / STAR6 30 萬 / STAR7 40 萬 / DIRECTOR 50 萬）將截斷或停發並顯示原因。"
+                items={view.nationalRecipients}
+              />
+            </CardContent>
           </Card>
+
 
           <Card className="border-primary/20 bg-primary/5">
             <CardHeader className="pb-2">
