@@ -845,3 +845,74 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
 
     return { ok: true, results };
   });
+
+/** 已登入使用者：訂單頁使用的 VIP 升級套組獎勵點對照（僅安全欄位）。
+ *  透過 service role 讀取，避免 client JWT 直接觸 vip_upgrade_packages 被 RLS 拒絕。 */
+export const listVipUpgradeBonusMap = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("vip_upgrade_packages")
+      .select("product_id,package_product_id,bonus_points,name")
+      .eq("status", "active");
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Array<{
+      product_id: string | null;
+      package_product_id: string | null;
+      bonus_points: number | null;
+      name: string;
+    }>;
+  });
+
+/** 已登入使用者：依訂單商品 id 找對應升級套組與贈品（訂單詳情頁使用）。 */
+export const listVipUpgradeGiftsForProducts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { productIds: string[] }) =>
+    z.object({ productIds: z.array(z.string().uuid()).max(200) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.productIds.length === 0) return [] as any[];
+    const { data: pkgs, error: e1 } = await supabaseAdmin
+      .from("vip_upgrade_packages")
+      .select("id, name, tier_code, bonus_points, package_product_id, product_id")
+      .in("package_product_id", data.productIds);
+    if (e1) throw new Error(e1.message);
+    if (!pkgs || pkgs.length === 0) return [] as any[];
+    const pkgIds = pkgs.map((p: any) => p.id);
+    const { data: binds } = await supabaseAdmin
+      .from("vip_upgrade_package_products")
+      .select("package_id, product_id, quantity")
+      .in("package_id", pkgIds);
+    const productIds = Array.from(
+      new Set((binds ?? []).map((b: any) => b.product_id).filter(Boolean)),
+    );
+    for (const p of pkgs as any[]) {
+      if (p.product_id && p.product_id !== p.package_product_id && !productIds.includes(p.product_id)) {
+        productIds.push(p.product_id);
+      }
+    }
+    let prodMap = new Map<string, any>();
+    if (productIds.length > 0) {
+      const { data: prods } = await supabaseAdmin
+        .from("products")
+        .select("id, name, sku, image")
+        .in("id", productIds);
+      prodMap = new Map((prods ?? []).map((p: any) => [p.id, p]));
+    }
+    return (pkgs as any[]).map((p) => {
+      const gifts = (binds ?? [])
+        .filter((b: any) => b.package_id === p.id && b.product_id !== p.package_product_id)
+        .map((b: any) => {
+          const prod = prodMap.get(b.product_id);
+          return prod ? { ...prod, quantity: Number(b.quantity ?? 1) } : null;
+        })
+        .filter(Boolean);
+      if (gifts.length === 0 && p.product_id && p.product_id !== p.package_product_id) {
+        const g = prodMap.get(p.product_id);
+        if (g) gifts.push({ ...g, quantity: 1 });
+      }
+      return { ...p, gifts };
+    });
+  });
