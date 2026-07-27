@@ -451,7 +451,17 @@ function Page() {
                 </Table>
               )}
             </CardContent>
+            <CardContent>
+              <RecipientList
+                title="推薦級差 個別分配名單"
+                emptyText="本月無級差分配紀錄。"
+                caliber="口徑：僅列出實際落到接收人身上的級差紀錄；上線若 VIP 不合格或已到期，該筆狀態會為 cancelled 並附原因。「上限 / 取消原因」欄取自 calculation_detail.blocked_reason / cap_reason。"
+                items={view.diffRecipients}
+                showSource
+              />
+            </CardContent>
           </Card>
+
 
           {/* Section 4: 全國分紅 */}
           <Card>
