@@ -16,7 +16,7 @@ import { deleteSalesOrder, adminRerunOrderUpgrades } from "@/lib/orders-admin.fu
 import { processOrderCommission } from "@/lib/referral.functions";
 import { processOrderPaymentBonus } from "@/lib/bonus.functions";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
-import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
+import { processOrderVipPackageUpgrade, listVipUpgradeBonusMap, listVipUpgradeGiftsForProducts } from "@/lib/vip-tiers.functions";
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 import { computeOrderPaymentTotals } from "@/lib/order-payment-totals";
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
