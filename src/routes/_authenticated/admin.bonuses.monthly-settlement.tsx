@@ -96,6 +96,50 @@ function Page() {
     const members: Record<string, any> = payload?.members ?? {};
     const tiers: Record<string, string> = payload?.tiers ?? {};
 
+    // 月末（作為 VIP 有效性判定基準）
+    const monthEnd = period ? new Date(`${period.to}T23:59:59+08:00`) : null;
+    const vipStatus = (mid: string): { eligible: boolean; label: string } => {
+      const m = members[mid];
+      if (!m) return { eligible: false, label: "無 profile" };
+      if (!m.is_vip) return { eligible: false, label: "非 VIP" };
+      if (!m.vip_expires_at) return { eligible: true, label: "VIP 永久" };
+      const exp = new Date(m.vip_expires_at);
+      if (monthEnd && exp < monthEnd) {
+        return { eligible: false, label: `VIP 到期 ${String(m.vip_expires_at).slice(0, 10)}` };
+      }
+      return { eligible: true, label: `至 ${String(m.vip_expires_at).slice(0, 10)}` };
+    };
+
+    const reasonOf = (r: any): string => {
+      const d = r?.calculation_detail && typeof r.calculation_detail === "object" ? r.calculation_detail : {};
+      return (
+        r?.blocked_reason ??
+        d?.blocked_reason ??
+        d?.cap_reason ??
+        d?.skip_reason ??
+        d?.reason ??
+        ""
+      );
+    };
+
+    const capHit = (r: any): { hit: boolean; note: string } => {
+      const d = r?.calculation_detail && typeof r.calculation_detail === "object" ? r.calculation_detail : {};
+      const cap = Number(d?.cap_amount ?? d?.monthly_cap ?? d?.cap ?? 0);
+      const paid = Number(d?.payable_amount ?? r?.bonus_points ?? 0);
+      const requested = Number(d?.requested_amount ?? d?.raw_amount ?? 0);
+      if (r?.status === "cancelled" || r?.status === "failed") {
+        const reason = reasonOf(r);
+        if (reason) return { hit: true, note: reason };
+      }
+      if (cap > 0 && requested > paid) {
+        return { hit: true, note: `達上限 ${fmt(cap)}（原始 ${fmt(requested)} → 實發 ${fmt(paid)}）` };
+      }
+      if (cap > 0 && Number(d?.cumulative_amount ?? 0) >= cap) {
+        return { hit: true, note: `已達累計上限 ${fmt(cap)}` };
+      }
+      return { hit: false, note: "" };
+    };
+
     // 責任額達成情況（以 monthly_vip 記錄為主，其擁有 required_points_passed 快照）
     const monthly = rows.filter((r) => r.bonus_type === "monthly_vip");
     const passedMembers = new Set<string>();
@@ -131,6 +175,7 @@ function Page() {
     // 推薦級差（rank_diff_rebate = 上線級差回饋）
     const diff = rows.filter((r) => r.bonus_type === "rank_diff_rebate");
     const diffIncome = diff.filter((r) => INCOME_STATUSES.has(r.status));
+    const diffBlocked = diff.filter((r) => !INCOME_STATUSES.has(r.status));
     const diffSum = diffIncome.reduce((s, r) => s + Number(r.bonus_points ?? 0), 0);
     const diffByTier = new Map<string, { count: number; points: number; members: Set<string> }>();
     for (const r of diffIncome) {
@@ -141,6 +186,33 @@ function Page() {
       b.members.add(r.member_id);
       diffByTier.set(tier, b);
     }
+
+    // 建立每筆接收人卡片
+    const buildRecipient = (r: any) => {
+      const m = members[r.member_id] ?? {};
+      const d = calcDetail(r);
+      const tier = tiers[r.member_id] || d.tierCode || "—";
+      const vip = vipStatus(r.member_id);
+      const cap = capHit(r);
+      const src = members[r.source_member_id] ?? {};
+      return {
+        id: r.id,
+        member_id: r.member_id,
+        name: m.name ?? "—",
+        member_no: m.member_no ?? "—",
+        tier,
+        points: Number(r.bonus_points ?? 0),
+        status: r.status as string,
+        vipEligible: vip.eligible,
+        vipLabel: vip.label,
+        capHit: cap.hit,
+        capNote: cap.note,
+        reason: reasonOf(r),
+        sourceName: src.name ?? null,
+        sourceNo: src.member_no ?? null,
+      };
+    };
+    const diffRecipients = diff.map(buildRecipient).sort((a, b) => b.points - a.points);
 
     // 全國分紅（STAR5~DIRECTOR，月結）
     const national = rows.filter((r) => r.bonus_type === "national_share");
@@ -158,6 +230,10 @@ function Page() {
       if (pa > b.poolAmount) b.poolAmount = pa;
       nationalByTier.set(tier, b);
     }
+    const nationalRecipients = national.map(buildRecipient).sort((a, b) => {
+      if (a.tier !== b.tier) return a.tier.localeCompare(b.tier);
+      return b.points - a.points;
+    });
 
     // 未達成明細（cancelled 且 required_points_passed=false）
     const failedList = monthly
@@ -184,14 +260,17 @@ function Page() {
       rebateSum, rebateMemberCount: new Set(rebateIncome.map((r) => r.member_id)).size,
       rebateByTier: Array.from(rebateByTier.entries()).map(([tier, v]) => ({ tier, ...v, memberCount: v.members.size })),
       diffSum, diffMemberCount: new Set(diffIncome.map((r) => r.member_id)).size, diffRecordCount: diffIncome.length,
+      diffBlockedCount: diffBlocked.length,
       diffByTier: Array.from(diffByTier.entries()).map(([tier, v]) => ({ tier, ...v, memberCount: v.members.size })),
+      diffRecipients,
       nationalByTier: Array.from(nationalByTier.entries()).map(([tier, v]) => ({
         tier, memberCount: v.members.size, released: v.released, waiting: v.waiting, blocked: v.blocked, poolAmount: v.poolAmount,
       })).sort((a, b) => a.tier.localeCompare(b.tier)),
+      nationalRecipients,
       failedList,
       totalRecords: rows.length,
     };
-  }, [payload]);
+  }, [payload, period]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -372,7 +451,17 @@ function Page() {
                 </Table>
               )}
             </CardContent>
+            <CardContent>
+              <RecipientList
+                title="推薦級差 個別分配名單"
+                emptyText="本月無級差分配紀錄。"
+                caliber="口徑：僅列出實際落到接收人身上的級差紀錄；上線若 VIP 不合格或已到期，該筆狀態會為 cancelled 並附原因。「上限 / 取消原因」欄取自 calculation_detail.blocked_reason / cap_reason。"
+                items={view.diffRecipients}
+                showSource
+              />
+            </CardContent>
           </Card>
+
 
           {/* Section 4: 全國分紅 */}
           <Card>
@@ -416,7 +505,16 @@ function Page() {
                 </Table>
               )}
             </CardContent>
+            <CardContent>
+              <RecipientList
+                title="全國分紅 個別分配名單"
+                emptyText="本月尚無全國分紅接收人。"
+                caliber="口徑：VIP 有效判定 = profile.is_vip=true 且 vip_expires_at ≥ 月底 23:59 (UTC+8)；每人平均分配額 = 該級 pool_amount ÷ 合格人數，若達每月累計上限（STAR5 20 萬 / STAR6 30 萬 / STAR7 40 萬 / DIRECTOR 50 萬）將截斷或停發並顯示原因。"
+                items={view.nationalRecipients}
+              />
+            </CardContent>
           </Card>
+
 
           <Card className="border-primary/20 bg-primary/5">
             <CardHeader className="pb-2">
@@ -442,6 +540,125 @@ function Metric({ icon, label, value, suffix, accent }: { icon?: React.ReactNode
         {typeof value === "number" ? fmt(value) : value}
         {suffix && <span className="ml-1 text-xs font-normal text-muted-foreground">{suffix}</span>}
       </div>
+    </div>
+  );
+}
+
+type Recipient = {
+  id: string;
+  member_id: string;
+  name: string;
+  member_no: string;
+  tier: string;
+  points: number;
+  status: string;
+  vipEligible: boolean;
+  vipLabel: string;
+  capHit: boolean;
+  capNote: string;
+  reason: string;
+  sourceName?: string | null;
+  sourceNo?: string | null;
+};
+
+function statusBadge(s: string) {
+  if (s === "released") return <Badge className="bg-green-600 hover:bg-green-600">已發放</Badge>;
+  if (s === "waiting_release") return <Badge>待發放</Badge>;
+  if (s === "pending") return <Badge variant="secondary">待處理</Badge>;
+  if (s === "cancelled") return <Badge variant="outline" className="text-muted-foreground">已取消</Badge>;
+  if (s === "failed") return <Badge variant="destructive">失敗</Badge>;
+  return <Badge variant="secondary">{s}</Badge>;
+}
+
+function RecipientList({
+  title,
+  emptyText,
+  caliber,
+  items,
+  showSource,
+}: {
+  title: string;
+  emptyText: string;
+  caliber: string;
+  items: Recipient[];
+  showSource?: boolean;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const [onlyIncome, setOnlyIncome] = useState(false);
+  const filtered = onlyIncome
+    ? items.filter((x) => ["released", "waiting_release", "pending"].includes(x.status))
+    : items;
+  const visible = showAll ? filtered : filtered.slice(0, 50);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-sm font-semibold">{title}（{filtered.length} 筆）</div>
+        <div className="flex items-center gap-2 text-xs">
+          <label className="flex items-center gap-1 cursor-pointer">
+            <input type="checkbox" checked={onlyIncome} onChange={(e) => setOnlyIncome(e.target.checked)} />
+            只看有收入
+          </label>
+          {filtered.length > 50 && (
+            <Button variant="ghost" size="sm" onClick={() => setShowAll((v) => !v)}>
+              {showAll ? "收合" : `顯示全部（+${filtered.length - 50}）`}
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="rounded-md border bg-muted/30 p-2 text-xs text-muted-foreground">{caliber}</div>
+      {filtered.length === 0 ? (
+        <div className="text-xs text-muted-foreground py-4 text-center">{emptyText}</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>接收人</TableHead>
+                <TableHead>編號</TableHead>
+                <TableHead>位階</TableHead>
+                <TableHead>VIP 狀態</TableHead>
+                <TableHead>發放狀態</TableHead>
+                <TableHead className="text-right">獎勵點</TableHead>
+                {showSource && <TableHead>來源會員</TableHead>}
+                <TableHead>上限 / 取消原因</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="whitespace-nowrap">{r.name}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.member_no}</TableCell>
+                  <TableCell><Badge variant="secondary">{r.tier}</Badge></TableCell>
+                  <TableCell className="text-xs">
+                    {r.vipEligible ? (
+                      <span className="text-green-700 dark:text-green-400">合格 · {r.vipLabel}</span>
+                    ) : (
+                      <span className="text-destructive">不合格 · {r.vipLabel}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>{statusBadge(r.status)}</TableCell>
+                  <TableCell className="text-right tabular-nums font-semibold">{fmt(r.points)}</TableCell>
+                  {showSource && (
+                    <TableCell className="text-xs text-muted-foreground">
+                      {r.sourceName ? `${r.sourceName}${r.sourceNo ? ` (${r.sourceNo})` : ""}` : "—"}
+                    </TableCell>
+                  )}
+                  <TableCell className="text-xs">
+                    {r.capHit ? (
+                      <span className="text-amber-700 dark:text-amber-400">{r.capNote || r.reason || "已達上限"}</span>
+                    ) : r.reason ? (
+                      <span className="text-muted-foreground">{r.reason}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
