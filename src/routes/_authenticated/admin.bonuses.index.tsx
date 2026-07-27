@@ -261,6 +261,12 @@ function BonusOperationsPage() {
             </Link>
           </Button>
           <Button asChild variant="outline">
+            <Link to="/admin/bonuses/monthly-settlement">
+              <Search className="mr-2 h-4 w-4" />
+              月獎金結算明細
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link to="/admin/bonuses/summary">
               <Search className="mr-2 h-4 w-4" />
               獎金總表
