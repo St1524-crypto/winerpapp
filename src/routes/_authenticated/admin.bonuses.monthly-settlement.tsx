@@ -543,3 +543,124 @@ function Metric({ icon, label, value, suffix, accent }: { icon?: React.ReactNode
     </div>
   );
 }
+
+type Recipient = {
+  id: string;
+  member_id: string;
+  name: string;
+  member_no: string;
+  tier: string;
+  points: number;
+  status: string;
+  vipEligible: boolean;
+  vipLabel: string;
+  capHit: boolean;
+  capNote: string;
+  reason: string;
+  sourceName?: string | null;
+  sourceNo?: string | null;
+};
+
+function statusBadge(s: string) {
+  if (s === "released") return <Badge className="bg-green-600 hover:bg-green-600">已發放</Badge>;
+  if (s === "waiting_release") return <Badge>待發放</Badge>;
+  if (s === "pending") return <Badge variant="secondary">待處理</Badge>;
+  if (s === "cancelled") return <Badge variant="outline" className="text-muted-foreground">已取消</Badge>;
+  if (s === "failed") return <Badge variant="destructive">失敗</Badge>;
+  return <Badge variant="secondary">{s}</Badge>;
+}
+
+function RecipientList({
+  title,
+  emptyText,
+  caliber,
+  items,
+  showSource,
+}: {
+  title: string;
+  emptyText: string;
+  caliber: string;
+  items: Recipient[];
+  showSource?: boolean;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const [onlyIncome, setOnlyIncome] = useState(false);
+  const filtered = onlyIncome
+    ? items.filter((x) => ["released", "waiting_release", "pending"].includes(x.status))
+    : items;
+  const visible = showAll ? filtered : filtered.slice(0, 50);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-sm font-semibold">{title}（{filtered.length} 筆）</div>
+        <div className="flex items-center gap-2 text-xs">
+          <label className="flex items-center gap-1 cursor-pointer">
+            <input type="checkbox" checked={onlyIncome} onChange={(e) => setOnlyIncome(e.target.checked)} />
+            只看有收入
+          </label>
+          {filtered.length > 50 && (
+            <Button variant="ghost" size="sm" onClick={() => setShowAll((v) => !v)}>
+              {showAll ? "收合" : `顯示全部（+${filtered.length - 50}）`}
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="rounded-md border bg-muted/30 p-2 text-xs text-muted-foreground">{caliber}</div>
+      {filtered.length === 0 ? (
+        <div className="text-xs text-muted-foreground py-4 text-center">{emptyText}</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>接收人</TableHead>
+                <TableHead>編號</TableHead>
+                <TableHead>位階</TableHead>
+                <TableHead>VIP 狀態</TableHead>
+                <TableHead>發放狀態</TableHead>
+                <TableHead className="text-right">獎勵點</TableHead>
+                {showSource && <TableHead>來源會員</TableHead>}
+                <TableHead>上限 / 取消原因</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="whitespace-nowrap">{r.name}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.member_no}</TableCell>
+                  <TableCell><Badge variant="secondary">{r.tier}</Badge></TableCell>
+                  <TableCell className="text-xs">
+                    {r.vipEligible ? (
+                      <span className="text-green-700 dark:text-green-400">合格 · {r.vipLabel}</span>
+                    ) : (
+                      <span className="text-destructive">不合格 · {r.vipLabel}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>{statusBadge(r.status)}</TableCell>
+                  <TableCell className="text-right tabular-nums font-semibold">{fmt(r.points)}</TableCell>
+                  {showSource && (
+                    <TableCell className="text-xs text-muted-foreground">
+                      {r.sourceName ? `${r.sourceName}${r.sourceNo ? ` (${r.sourceNo})` : ""}` : "—"}
+                    </TableCell>
+                  )}
+                  <TableCell className="text-xs">
+                    {r.capHit ? (
+                      <span className="text-amber-700 dark:text-amber-400">{r.capNote || r.reason || "已達上限"}</span>
+                    ) : r.reason ? (
+                      <span className="text-muted-foreground">{r.reason}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+}
