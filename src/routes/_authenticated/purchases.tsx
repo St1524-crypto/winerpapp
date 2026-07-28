@@ -438,7 +438,7 @@ function Page() {
       {/* 建立採購單 */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-4xl">
-          <DialogHeader><DialogTitle>新增採購單</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? "編輯採購單（草稿）" : "新增採購單"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto">
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-2">
