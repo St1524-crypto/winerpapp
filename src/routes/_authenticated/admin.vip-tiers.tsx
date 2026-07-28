@@ -34,6 +34,7 @@ const emptyTier = {
   required_mentor_count: 0,
   cashback_rate: 0,
   revenue_share_rate: 0,
+  business_bonus_rate: 0,
   upgrade_bonus_cap: 0,
   business_bonus_cap_amount: 0,
   renewal_window_days: 0,
@@ -117,6 +118,7 @@ function VipTiersAdmin() {
         required_mentor_count: Number(form.required_mentor_count) || 0,
         cashback_rate: Number(form.cashback_rate) || 0,
         revenue_share_rate: Number(form.revenue_share_rate) || 0,
+        business_bonus_rate: Number(form.business_bonus_rate) || 0,
         upgrade_bonus_cap: Number(form.upgrade_bonus_cap) || 0,
         business_bonus_cap_amount: Number(form.business_bonus_cap_amount) || 0,
         renewal_window_days: Number(form.renewal_window_days) || 0,
@@ -159,7 +161,7 @@ function VipTiersAdmin() {
               {isBusinessDividendTier(r) ? (
                 <div>營業分紅：{dividendRate(r)}%</div>
               ) : (
-                <div>回饋率：{r.cashback_rate}%　消費分紅：{r.cashback_rate}%</div>
+                <div>回饋率：{r.cashback_rate}%　消費分紅：{Number(r.business_bonus_rate ?? 0)}%</div>
               )}
               <div>{capLabel(r)}：{capValue(r).toLocaleString()}</div>
               {r.renewal_window_days > 0 && <div>續領：每 {r.renewal_window_days} 天需新增 {r.renewal_required_new_vip} VIP</div>}
@@ -186,8 +188,18 @@ function VipTiersAdmin() {
                 type="number"
                 step="0.01"
                 value={form.revenue_share_rate}
-                disabled={!formIsBusinessDividendTier}
+                disabled={formIsBusinessDividendTier ? false : true}
                 onChange={(e) => setForm({ ...form, revenue_share_rate: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>{formIsBusinessDividendTier ? "消費分紅 %（STAR/DIRECTOR 不適用）" : "消費分紅 %"}</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.business_bonus_rate}
+                disabled={formIsBusinessDividendTier}
+                onChange={(e) => setForm({ ...form, business_bonus_rate: e.target.value })}
               />
             </div>
             <div>
