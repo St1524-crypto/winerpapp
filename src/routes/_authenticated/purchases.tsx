@@ -122,8 +122,34 @@ function Page() {
   }), [list, search, statusFilter]);
 
   function openNew() {
+    setEditingId(null);
     setForm({ vendor_id: "", vendor_name: "", expected_at: "", notes: "", buyer_id: "", supervisor_id: "" });
     setItems([]); setTaxRate(5); setOpen(true);
+  }
+  async function openEdit(po: PO) {
+    if (po.status !== "draft") { toast.error("僅草稿狀態可修改"); return; }
+    const { data: rows, error } = await sb.from("purchase_order_items").select("*").eq("purchase_order_id", po.id);
+    if (error) { toast.error(error.message); return; }
+    setEditingId(po.id);
+    setForm({
+      vendor_id: po.vendor_id ?? "",
+      vendor_name: po.vendor_name ?? "",
+      expected_at: po.expected_at ?? "",
+      notes: po.notes ?? "",
+      buyer_id: po.buyer_id ?? "",
+      supervisor_id: po.supervisor_id ?? "",
+    });
+    const sub = (rows ?? []).reduce((s: number, r: any) => s + Number(r.subtotal ?? 0), 0);
+    const rate = sub > 0 ? Math.round((Number(po.tax_amount ?? 0) / sub) * 100) : 5;
+    setTaxRate(Number.isFinite(rate) ? rate : 5);
+    setItems((rows ?? []).map((r: any) => ({
+      id: r.id, product_id: r.product_id, product_name: r.product_name, sku: r.sku,
+      unit: r.unit ?? "件", quantity: Number(r.quantity) || 0,
+      received_quantity: Number(r.received_quantity) || 0,
+      price: Number(r.price) || 0, subtotal: Number(r.subtotal) || 0,
+    })));
+    setViewing(null);
+    setOpen(true);
   }
   function addItem() {
     setItems([...items, { product_id: null, product_name: "", sku: "", unit: "件", quantity: 1, received_quantity: 0, price: 0, subtotal: 0 }]);
