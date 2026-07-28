@@ -161,7 +161,7 @@ function VipTiersAdmin() {
               {isBusinessDividendTier(r) ? (
                 <div>營業分紅：{dividendRate(r)}%</div>
               ) : (
-                <div>回饋率：{r.cashback_rate}%　消費分紅：{r.cashback_rate}%</div>
+                <div>回饋率：{r.cashback_rate}%　消費分紅：{Number(r.business_bonus_rate ?? 0)}%</div>
               )}
               <div>{capLabel(r)}：{capValue(r).toLocaleString()}</div>
               {r.renewal_window_days > 0 && <div>續領：每 {r.renewal_window_days} 天需新增 {r.renewal_required_new_vip} VIP</div>}
