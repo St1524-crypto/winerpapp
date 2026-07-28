@@ -17,7 +17,7 @@ import { SearchSelect } from "@/components/ui/search-select";
 import { useServerFn } from "@tanstack/react-start";
 import { listAssignableUsers } from "@/lib/operations.functions";
 import { toast } from "sonner";
-import { Plus, Search, Truck, Eye, Printer, Trash2, FileDown, ArrowRight } from "lucide-react";
+import { Plus, Search, Truck, Eye, Printer, Trash2, FileDown, ArrowRight, Pencil } from "lucide-react";
 import { exportPdfReport } from "@/lib/pdf-report";
 import { useBranding } from "@/hooks/use-branding";
 
@@ -72,6 +72,7 @@ function Page() {
   const [staff, setStaff] = useState<Array<{ user_id: string; label: string; department?: string | null; op_role?: string | null }>>([]);
 
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [taxRate, setTaxRate] = useState(5);
   const [form, setForm] = useState({
     vendor_id: "", vendor_name: "", expected_at: "", notes: "",
@@ -121,8 +122,34 @@ function Page() {
   }), [list, search, statusFilter]);
 
   function openNew() {
+    setEditingId(null);
     setForm({ vendor_id: "", vendor_name: "", expected_at: "", notes: "", buyer_id: "", supervisor_id: "" });
     setItems([]); setTaxRate(5); setOpen(true);
+  }
+  async function openEdit(po: PO) {
+    if (po.status !== "draft") { toast.error("僅草稿狀態可修改"); return; }
+    const { data: rows, error } = await sb.from("purchase_order_items").select("*").eq("purchase_order_id", po.id);
+    if (error) { toast.error(error.message); return; }
+    setEditingId(po.id);
+    setForm({
+      vendor_id: po.vendor_id ?? "",
+      vendor_name: po.vendor_name ?? "",
+      expected_at: po.expected_at ?? "",
+      notes: po.notes ?? "",
+      buyer_id: po.buyer_id ?? "",
+      supervisor_id: po.supervisor_id ?? "",
+    });
+    const sub = (rows ?? []).reduce((s: number, r: any) => s + Number(r.subtotal ?? 0), 0);
+    const rate = sub > 0 ? Math.round((Number(po.tax_amount ?? 0) / sub) * 100) : 5;
+    setTaxRate(Number.isFinite(rate) ? rate : 5);
+    setItems((rows ?? []).map((r: any) => ({
+      id: r.id, product_id: r.product_id, product_name: r.product_name, sku: r.sku,
+      unit: r.unit ?? "件", quantity: Number(r.quantity) || 0,
+      received_quantity: Number(r.received_quantity) || 0,
+      price: Number(r.price) || 0, subtotal: Number(r.subtotal) || 0,
+    })));
+    setViewing(null);
+    setOpen(true);
   }
   function addItem() {
     setItems([...items, { product_id: null, product_name: "", sku: "", unit: "件", quantity: 1, received_quantity: 0, price: 0, subtotal: 0 }]);
@@ -148,12 +175,41 @@ function Page() {
     if (items.length === 0) return toast.error("請至少新增一個商品");
     if (items.some((i) => !i.product_id || i.quantity <= 0)) return toast.error("請完整填寫商品與數量");
 
-    const { data: poNoData, error: poNoErr } = await sb.rpc("generate_po_no");
-    if (poNoErr) return toast.error(poNoErr.message);
-
     const vendor = vendors.find((v) => v.id === form.vendor_id);
     const buyer = staff.find((s) => s.user_id === form.buyer_id);
     const supervisor = staff.find((s) => s.user_id === form.supervisor_id);
+
+    if (editingId) {
+      const { error: upErr } = await sb.from("purchase_orders").update({
+        vendor_id: form.vendor_id,
+        vendor_name: vendor?.name ?? form.vendor_name,
+        subtotal, tax_amount: tax, total_amount: total,
+        expected_at: form.expected_at || null,
+        notes: form.notes || null,
+        buyer_id: form.buyer_id || null,
+        buyer_name: buyer?.label ?? null,
+        supervisor_id: form.supervisor_id || null,
+        supervisor_name: supervisor?.label ?? null,
+      }).eq("id", editingId).eq("status", "draft");
+      if (upErr) return toast.error(upErr.message);
+
+      const { error: delErr } = await sb.from("purchase_order_items").delete().eq("purchase_order_id", editingId);
+      if (delErr) return toast.error(delErr.message);
+      const payload = items.map((i) => ({
+        purchase_order_id: editingId, product_id: i.product_id, product_name: i.product_name,
+        sku: i.sku, unit: i.unit, quantity: i.quantity, price: i.price, subtotal: i.subtotal,
+      }));
+      const { error: e2 } = await sb.from("purchase_order_items").insert(payload);
+      if (e2) return toast.error(e2.message);
+
+      toast.success("採購單已更新");
+      setOpen(false); setEditingId(null); load();
+      return;
+    }
+
+    const { data: poNoData, error: poNoErr } = await sb.rpc("generate_po_no");
+    if (poNoErr) return toast.error(poNoErr.message);
+
     const { data: po, error } = await sb.from("purchase_orders").insert({
       po_no: poNoData,
       vendor_id: form.vendor_id,
@@ -363,6 +419,9 @@ function Page() {
                     <TableCell className="text-right font-medium">NT$ {(p.total_amount ?? 0).toLocaleString()}</TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <Button size="icon" variant="ghost" onClick={() => view(p)} title="檢視"><Eye className="h-4 w-4" /></Button>
+                      {p.status === "draft" && (
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(p)} title="編輯"><Pencil className="h-4 w-4" /></Button>
+                      )}
                       <Button size="icon" variant="ghost" onClick={() => printBrowser(p)} title="列印"><Printer className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => printPdf(p)} title="匯出 PDF"><FileDown className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => remove(p)} title="刪除"><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -379,7 +438,7 @@ function Page() {
       {/* 建立採購單 */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-4xl">
-          <DialogHeader><DialogTitle>新增採購單</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? "編輯採購單（草稿）" : "新增採購單"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2 max-h-[70vh] overflow-y-auto">
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -500,8 +559,8 @@ function Page() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>取消</Button>
-            <Button onClick={save} className="bg-gradient-primary">建立採購單</Button>
+            <Button variant="ghost" onClick={() => { setOpen(false); setEditingId(null); }}>取消</Button>
+            <Button onClick={save} className="bg-gradient-primary">{editingId ? "儲存變更" : "建立採購單"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -569,7 +628,10 @@ function Page() {
                     );
                   })()}
                 </div>
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2 pt-2 flex-wrap">
+                  {viewing.status === "draft" && (
+                    <Button onClick={() => openEdit(viewing)}><Pencil className="h-4 w-4 mr-1" />編輯草稿</Button>
+                  )}
                   <Button onClick={() => printBrowser(viewing)} variant="outline"><Printer className="h-4 w-4 mr-1" />列印</Button>
                   <Button onClick={() => printPdf(viewing)} variant="outline"><FileDown className="h-4 w-4 mr-1" />匯出 PDF</Button>
                 </div>
