@@ -2258,7 +2258,7 @@ const detailFilterSchema = z.object({
   memberName: z.string().trim().optional(),
   memberNo: z.string().trim().optional(),
   settlementBatchId: z.string().uuid().optional(),
-  limit: z.number().int().min(1).max(2000).default(1000),
+  limit: z.number().int().min(1).max(5000).default(1000),
 });
 
 async function resolveMemberFilter(memberName?: string, memberNo?: string) {
