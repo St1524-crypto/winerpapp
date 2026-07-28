@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,13 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Pencil, TrendingUp } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Crown, Pencil, TrendingUp, Coins, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  adminListVipBonusPools,
+  upsertVipBonusPool,
+  deleteVipBonusPool,
+} from "@/lib/vip-bonus-pools.functions";
 
 export const Route = createFileRoute("/_authenticated/dealer-tiers")({
   component: DealerTiersAdmin,
 });
+
 
 type Tier = {
   code: string;
@@ -86,7 +95,10 @@ function DealerTiersAdmin() {
 
       </div>
 
+      <BonusPoolsSection />
+
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+
         {tiers.map((t) => (
           <Card key={t.code} className="relative">
             <CardHeader className="flex flex-row justify-between items-start pb-2">
@@ -258,3 +270,209 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+const emptyPool: any = {
+  id: "",
+  name: "",
+  code: "",
+  tier_codes: "",
+  bonus_rate: 0.05,
+  distribution_method: "equal",
+  apply_total_income_cap: true,
+  total_income_cap_amount: "",
+  sort_order: 0,
+  status: "active",
+  description: "",
+};
+
+function poolCategory(codes: string[] | null | undefined): "consumption" | "business" | "other" {
+  const arr = (codes ?? []).map((c) => String(c).toUpperCase());
+  if (arr.some((c) => ["V", "S", "T", "E", "A"].includes(c))) return "consumption";
+  if (arr.some((c) => /^(STAR[1-7]|DIRECTOR|[1-7])$/.test(c))) return "business";
+  return "other";
+}
+
+function BonusPoolsSection() {
+  const listFn = useServerFn(adminListVipBonusPools);
+  const saveFn = useServerFn(upsertVipBonusPool);
+  const delFn = useServerFn(deleteVipBonusPool);
+
+  const [rows, setRows] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<any>({ ...emptyPool });
+
+  async function load() {
+    try { setRows((await listFn()) as any[]); } catch (e: any) { toast.error(e.message); }
+  }
+  useEffect(() => { load(); }, []);
+
+  function edit(r: any) {
+    setForm({
+      ...emptyPool,
+      ...r,
+      tier_codes: Array.isArray(r.tier_codes) ? r.tier_codes.join(",") : (r.tier_codes ?? ""),
+      total_income_cap_amount: r.total_income_cap_amount ?? "",
+      description: r.description ?? "",
+      code: r.code ?? "",
+    });
+    setOpen(true);
+  }
+  function add(preset: "consumption" | "business") {
+    setForm({
+      ...emptyPool,
+      name: preset === "consumption" ? "消費分紅池 (V/S/T/E/A)" : "營業分紅池 (STAR1~DIRECTOR)",
+      code: preset === "consumption" ? "POOL_VSTEA" : "POOL_STAR",
+      tier_codes: preset === "consumption" ? "V,S,T,E,A" : "STAR1,STAR2,STAR3,STAR4,STAR5,STAR6,STAR7,DIRECTOR",
+    });
+    setOpen(true);
+  }
+
+  async function save() {
+    try {
+      const payload: any = {
+        ...form,
+        bonus_rate: Number(form.bonus_rate) || 0,
+        sort_order: Number(form.sort_order) || 0,
+        tier_codes: String(form.tier_codes || "").split(",").map((s: string) => s.trim()).filter(Boolean),
+        total_income_cap_amount: form.total_income_cap_amount === "" ? null : Number(form.total_income_cap_amount),
+        code: form.code || null,
+        description: form.description || null,
+      };
+      if (!payload.id) delete payload.id;
+      await saveFn({ data: payload });
+      toast.success("已儲存");
+      setOpen(false);
+      load();
+    } catch (e: any) { toast.error(e.message); }
+  }
+
+  async function remove(id: string) {
+    if (!confirm("確定刪除此分紅池？")) return;
+    try { await delFn({ data: { id } }); toast.success("已刪除"); load(); }
+    catch (e: any) { toast.error(e.message); }
+  }
+
+  const consumption = rows.filter((r) => poolCategory(r.tier_codes) === "consumption");
+  const business = rows.filter((r) => poolCategory(r.tier_codes) === "business");
+  const others = rows.filter((r) => poolCategory(r.tier_codes) === "other");
+
+  const renderTable = (list: any[], emptyHint: string) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>名稱</TableHead>
+          <TableHead>代碼</TableHead>
+          <TableHead>適用階級</TableHead>
+          <TableHead>比例</TableHead>
+          <TableHead>總收益上限</TableHead>
+          <TableHead>狀態</TableHead>
+          <TableHead className="w-[100px]">操作</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {list.length === 0 && (
+          <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground">{emptyHint}</TableCell></TableRow>
+        )}
+        {list.map((r) => (
+          <TableRow key={r.id}>
+            <TableCell className="font-medium">{r.name}</TableCell>
+            <TableCell className="text-xs">{r.code ?? "—"}</TableCell>
+            <TableCell className="text-xs">{(r.tier_codes ?? []).join(" / ") || "—"}</TableCell>
+            <TableCell>{(Number(r.bonus_rate) * 100).toFixed(2)}%</TableCell>
+            <TableCell className="text-xs">
+              {r.apply_total_income_cap ? (r.total_income_cap_amount ? `NT$${Number(r.total_income_cap_amount).toLocaleString()}` : "—") : "不套用"}
+            </TableCell>
+            <TableCell><Badge variant={r.status === "active" ? "default" : "secondary"}>{r.status}</Badge></TableCell>
+            <TableCell className="flex gap-1">
+              <Button size="icon" variant="ghost" onClick={() => edit(r)}><Pencil className="h-4 w-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4" /></Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Coins className="h-5 w-5 text-primary" />分紅池設定
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          V/S/T/E/A 領「消費分紅」；一星以上（STAR1~DIRECTOR）領「營業分紅」。此處與
+          <a href="/admin/vip-bonus-pools" className="underline mx-1">分紅池管理</a>共用同一份設定。
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">消費分紅池（V / S / T / E / A）</h3>
+            <Button size="sm" variant="outline" onClick={() => add("consumption")}>
+              <Plus className="h-3.5 w-3.5 mr-1" />新增消費池
+            </Button>
+          </div>
+          {renderTable(consumption, "尚未建立消費分紅池")}
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">營業分紅池（STAR1 ~ DIRECTOR）</h3>
+            <Button size="sm" variant="outline" onClick={() => add("business")}>
+              <Plus className="h-3.5 w-3.5 mr-1" />新增營業池
+            </Button>
+          </div>
+          {renderTable(business, "尚未建立營業分紅池")}
+        </div>
+
+        {others.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-muted-foreground">其他 / 未分類</h3>
+            {renderTable(others, "—")}
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>{form.id ? "編輯" : "新增"}分紅池</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>名稱</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+            <div><Label>代碼</Label><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></div>
+            <div className="col-span-2"><Label>適用階級（逗號分隔，例 V,S,T,E,A 或 STAR1,STAR2）</Label>
+              <Input value={form.tier_codes} onChange={(e) => setForm({ ...form, tier_codes: e.target.value })} />
+            </div>
+            <div><Label>分紅比例（0.05 = 5%）</Label>
+              <Input type="number" step="0.0001" value={form.bonus_rate} onChange={(e) => setForm({ ...form, bonus_rate: e.target.value })} />
+            </div>
+            <div><Label>分配方式</Label>
+              <select className="w-full border rounded h-9 px-2 bg-background" value={form.distribution_method} onChange={(e) => setForm({ ...form, distribution_method: e.target.value })}>
+                <option value="equal">平均分配</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <Switch checked={!!form.apply_total_income_cap} onCheckedChange={(v) => setForm({ ...form, apply_total_income_cap: v })} />
+              <Label>套用個人總收益上限</Label>
+            </div>
+            <div><Label>總收益上限金額</Label>
+              <Input type="number" value={form.total_income_cap_amount} onChange={(e) => setForm({ ...form, total_income_cap_amount: e.target.value })} disabled={!form.apply_total_income_cap} />
+            </div>
+            <div><Label>排序</Label>
+              <Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} />
+            </div>
+            <div><Label>狀態</Label>
+              <select className="w-full border rounded h-9 px-2 bg-background" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                <option value="active">啟用</option><option value="inactive">停用</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>取消</Button>
+            <Button onClick={save}>儲存</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
