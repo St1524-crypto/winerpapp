@@ -95,7 +95,10 @@ function DealerTiersAdmin() {
 
       </div>
 
+      <BonusPoolsSection />
+
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+
         {tiers.map((t) => (
           <Card key={t.code} className="relative">
             <CardHeader className="flex flex-row justify-between items-start pb-2">
