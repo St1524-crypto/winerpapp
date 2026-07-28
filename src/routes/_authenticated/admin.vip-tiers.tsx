@@ -34,6 +34,7 @@ const emptyTier = {
   required_mentor_count: 0,
   cashback_rate: 0,
   revenue_share_rate: 0,
+  business_bonus_rate: 0,
   upgrade_bonus_cap: 0,
   business_bonus_cap_amount: 0,
   renewal_window_days: 0,
