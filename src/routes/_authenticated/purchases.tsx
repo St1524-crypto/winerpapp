@@ -628,7 +628,10 @@ function Page() {
                     );
                   })()}
                 </div>
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2 pt-2 flex-wrap">
+                  {viewing.status === "draft" && (
+                    <Button onClick={() => openEdit(viewing)}><Pencil className="h-4 w-4 mr-1" />編輯草稿</Button>
+                  )}
                   <Button onClick={() => printBrowser(viewing)} variant="outline"><Printer className="h-4 w-4 mr-1" />列印</Button>
                   <Button onClick={() => printPdf(viewing)} variant="outline"><FileDown className="h-4 w-4 mr-1" />匯出 PDF</Button>
                 </div>
