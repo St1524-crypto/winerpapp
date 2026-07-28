@@ -419,6 +419,9 @@ function Page() {
                     <TableCell className="text-right font-medium">NT$ {(p.total_amount ?? 0).toLocaleString()}</TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <Button size="icon" variant="ghost" onClick={() => view(p)} title="檢視"><Eye className="h-4 w-4" /></Button>
+                      {p.status === "draft" && (
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(p)} title="編輯"><Pencil className="h-4 w-4" /></Button>
+                      )}
                       <Button size="icon" variant="ghost" onClick={() => printBrowser(p)} title="列印"><Printer className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => printPdf(p)} title="匯出 PDF"><FileDown className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => remove(p)} title="刪除"><Trash2 className="h-4 w-4 text-destructive" /></Button>
