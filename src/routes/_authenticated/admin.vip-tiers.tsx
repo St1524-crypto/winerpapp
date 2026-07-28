@@ -188,8 +188,18 @@ function VipTiersAdmin() {
                 type="number"
                 step="0.01"
                 value={form.revenue_share_rate}
-                disabled={!formIsBusinessDividendTier}
+                disabled={formIsBusinessDividendTier ? false : true}
                 onChange={(e) => setForm({ ...form, revenue_share_rate: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>{formIsBusinessDividendTier ? "消費分紅 %（STAR/DIRECTOR 不適用）" : "消費分紅 %"}</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={form.business_bonus_rate}
+                disabled={formIsBusinessDividendTier}
+                onChange={(e) => setForm({ ...form, business_bonus_rate: e.target.value })}
               />
             </div>
             <div>
