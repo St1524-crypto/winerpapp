@@ -72,6 +72,7 @@ function Page() {
   const [staff, setStaff] = useState<Array<{ user_id: string; label: string; department?: string | null; op_role?: string | null }>>([]);
 
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [taxRate, setTaxRate] = useState(5);
   const [form, setForm] = useState({
     vendor_id: "", vendor_name: "", expected_at: "", notes: "",
