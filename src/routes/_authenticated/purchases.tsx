@@ -175,12 +175,41 @@ function Page() {
     if (items.length === 0) return toast.error("請至少新增一個商品");
     if (items.some((i) => !i.product_id || i.quantity <= 0)) return toast.error("請完整填寫商品與數量");
 
-    const { data: poNoData, error: poNoErr } = await sb.rpc("generate_po_no");
-    if (poNoErr) return toast.error(poNoErr.message);
-
     const vendor = vendors.find((v) => v.id === form.vendor_id);
     const buyer = staff.find((s) => s.user_id === form.buyer_id);
     const supervisor = staff.find((s) => s.user_id === form.supervisor_id);
+
+    if (editingId) {
+      const { error: upErr } = await sb.from("purchase_orders").update({
+        vendor_id: form.vendor_id,
+        vendor_name: vendor?.name ?? form.vendor_name,
+        subtotal, tax_amount: tax, total_amount: total,
+        expected_at: form.expected_at || null,
+        notes: form.notes || null,
+        buyer_id: form.buyer_id || null,
+        buyer_name: buyer?.label ?? null,
+        supervisor_id: form.supervisor_id || null,
+        supervisor_name: supervisor?.label ?? null,
+      }).eq("id", editingId).eq("status", "draft");
+      if (upErr) return toast.error(upErr.message);
+
+      const { error: delErr } = await sb.from("purchase_order_items").delete().eq("purchase_order_id", editingId);
+      if (delErr) return toast.error(delErr.message);
+      const payload = items.map((i) => ({
+        purchase_order_id: editingId, product_id: i.product_id, product_name: i.product_name,
+        sku: i.sku, unit: i.unit, quantity: i.quantity, price: i.price, subtotal: i.subtotal,
+      }));
+      const { error: e2 } = await sb.from("purchase_order_items").insert(payload);
+      if (e2) return toast.error(e2.message);
+
+      toast.success("採購單已更新");
+      setOpen(false); setEditingId(null); load();
+      return;
+    }
+
+    const { data: poNoData, error: poNoErr } = await sb.rpc("generate_po_no");
+    if (poNoErr) return toast.error(poNoErr.message);
+
     const { data: po, error } = await sb.from("purchase_orders").insert({
       po_no: poNoData,
       vendor_id: form.vendor_id,
