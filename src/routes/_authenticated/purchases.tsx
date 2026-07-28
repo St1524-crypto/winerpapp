@@ -17,7 +17,7 @@ import { SearchSelect } from "@/components/ui/search-select";
 import { useServerFn } from "@tanstack/react-start";
 import { listAssignableUsers } from "@/lib/operations.functions";
 import { toast } from "sonner";
-import { Plus, Search, Truck, Eye, Printer, Trash2, FileDown, ArrowRight } from "lucide-react";
+import { Plus, Search, Truck, Eye, Printer, Trash2, FileDown, ArrowRight, Pencil } from "lucide-react";
 import { exportPdfReport } from "@/lib/pdf-report";
 import { useBranding } from "@/hooks/use-branding";
 
