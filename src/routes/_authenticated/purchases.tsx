@@ -559,8 +559,8 @@ function Page() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>取消</Button>
-            <Button onClick={save} className="bg-gradient-primary">建立採購單</Button>
+            <Button variant="ghost" onClick={() => { setOpen(false); setEditingId(null); }}>取消</Button>
+            <Button onClick={save} className="bg-gradient-primary">{editingId ? "儲存變更" : "建立採購單"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
