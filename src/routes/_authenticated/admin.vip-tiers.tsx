@@ -118,6 +118,7 @@ function VipTiersAdmin() {
         required_mentor_count: Number(form.required_mentor_count) || 0,
         cashback_rate: Number(form.cashback_rate) || 0,
         revenue_share_rate: Number(form.revenue_share_rate) || 0,
+        business_bonus_rate: Number(form.business_bonus_rate) || 0,
         upgrade_bonus_cap: Number(form.upgrade_bonus_cap) || 0,
         business_bonus_cap_amount: Number(form.business_bonus_cap_amount) || 0,
         renewal_window_days: Number(form.renewal_window_days) || 0,
