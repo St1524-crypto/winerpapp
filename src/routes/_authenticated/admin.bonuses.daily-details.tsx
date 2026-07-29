@@ -22,6 +22,21 @@ import { exportDailyBonusStatements } from "@/lib/bonus-daily-statement";
 import logo from "@/assets/logo.jpg";
 import { FileDown, FileText, Printer } from "lucide-react";
 
+const ORDER_TYPE_LABEL: Record<string, string> = {
+  repurchase: "復購",
+  upgrade: "VIP升級套組",
+  normal: "一般訂單",
+};
+const ORDER_TYPE_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+  repurchase: "default",
+  upgrade: "secondary",
+  normal: "outline",
+};
+function orderTypeLabel(t?: string | null) {
+  if (!t) return "—";
+  return ORDER_TYPE_LABEL[t] ?? t;
+}
+
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
 export const Route = createFileRoute("/_authenticated/admin/bonuses/daily-details")({ component: Guard });
