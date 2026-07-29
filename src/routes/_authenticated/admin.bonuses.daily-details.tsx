@@ -101,7 +101,7 @@ function Page() {
     const tiers = payload.tiers ?? {};
     const header = [
       "訂單日期","結算日期","發放日期","實際發放時間","會員名稱","會員編號","VIP階級","是否有效VIP","VIP到期日",
-      "來源會員","來源訂單","獎金類型","規則版本","適用制度","獎勵點來源","原始訂單獎勵點","代數","適用比例%",
+      "來源會員","來源訂單","訂單類型","獎金類型","規則版本","適用制度","獎勵點來源","原始訂單獎勵點","代數","適用比例%",
       "責任額","是否完成責任額","應發貢獻點","實際發放貢獻點","實際領取人","改發原因","停發原因","狀態","計算說明","批次ID",
     ];
     const csvRows = rows.map((r: any) => {
@@ -120,6 +120,7 @@ function Page() {
         m.name ?? "", m.member_no ?? "", tiers[r.member_id] ?? "—", vip.label, m.vip_expires_at ?? "",
         src.name ? `${src.name}(${src.member_no ?? ""})` : "",
         o.order_no ?? r.source_order_id ?? "",
+        orderTypeLabel(o.order_type),
         bonusTypeLabel(r.bonus_type), d.rule_version ?? "", meta.rule, meta.source,
         r.base_amount ?? "", r.generation_level ?? r.layer_level ?? "",
         r.bonus_rate ?? "", req, passed, r.bonus_points ?? 0, released,
