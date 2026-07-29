@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { cronAuthErrorResponse, requireAnyCronSecret } from "@/lib/cron-auth.server";
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const toDateOnly = (date: Date) => date.toISOString().slice(0, 10);
+
 /**
- * 日結算 / 發放排程入口
- * 由 pg_cron 每天呼叫，內部判斷：
- *  - 是否到下次日結算時間 → 跑 daily settlement + 營業分紅 + VIP 共享池 + 全國分紅
- *  - 是否為自動發放模式 → 跑到期發放
- *  - 是否為月結算日且 mode=auto → 跑當月月結算
+ * 每日獎金排程入口。
+ *
+ * pg_cron 在台灣時間 03:00 呼叫，執行的是前一個營業日的池分紅。
+ * 因此營業分紅與消費分紅都必須用「來源訂單的台灣日期」作為日基準，
+ * 不可直接使用凌晨執行當天的 settlement_date。
  */
 export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
   server: {
@@ -18,19 +21,28 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         const { data: s } = await supabaseAdmin
-          .from("bonus_settings").select("*").limit(1).maybeSingle();
+          .from("bonus_settings")
+          .select("*")
+          .limit(1)
+          .maybeSingle();
         if (!s) return new Response(JSON.stringify({ ok: false, reason: "no_settings" }), { status: 500 });
 
         const now = new Date();
-        // settle_daily_bonus 內部以 Asia/Taipei 的今天為 settlement_date
         const twNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-        const settlementDate = twNow.toISOString().slice(0, 10);
-        const result: Record<string, any> = { ran_at: now.toISOString(), settlement_date: settlementDate };
-
-        // ── 日結算 ──
-        let dailyOk = false;
-        // 容忍 60 秒排程秒差：pg_cron 可能於 19:00:00 觸發，但 daily_next_settlement_at 為 19:00:05
+        const settlementDate = toDateOnly(twNow);
         const dailyDueAt = new Date((s as any).daily_next_settlement_at);
+        const fallbackPoolSourceDate = toDateOnly(new Date(twNow.getTime() - DAY_MS));
+        const poolSourceDate = Number.isNaN(dailyDueAt.getTime())
+          ? fallbackPoolSourceDate
+          : toDateOnly(dailyDueAt);
+        const result: Record<string, any> = {
+          ran_at: now.toISOString(),
+          settlement_date: settlementDate,
+          pool_source_date: poolSourceDate,
+        };
+
+        let dailyOk = false;
+        // 60 秒容忍窗避免 pg_cron 整點觸發時早於 daily_next_settlement_at 幾秒而略過。
         const dailyTolerance = new Date(now.getTime() + 60 * 1000);
         if ((s as any).daily_bonus_auto_enabled && dailyDueAt <= dailyTolerance) {
           try {
@@ -46,33 +58,28 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
           }
         }
 
-        // ── 日結算成功後：計算 daily_total_reward_points 並執行 營業分紅 / VIP 共享池 / 全國分紅 ──
         if (dailyOk) {
-          // daily_total_reward_points 定義：當日 referral + repurchase 之 bonus_points 合計
-          // 狀態限 waiting_release / released (剛完成日結後皆為 waiting_release)
+          // 池分紅日基準：來源訂單台灣日期 = poolSourceDate；
+          // 以每張來源訂單去重後的 base_amount 加總，避免多代獎金重複計入。
           let dailyTotalRewardPoints = 0;
           try {
-            const { data: rows, error: sumError } = await (supabaseAdmin as any)
-              .from("bonus_records")
-              .select("bonus_points")
-              .eq("settlement_date", settlementDate)
-              .in("bonus_type", ["referral", "repurchase"])
-              .in("status", ["waiting_release", "released"]);
-            if (sumError) throw new Error(sumError.message);
-            dailyTotalRewardPoints = (rows ?? []).reduce(
-              (acc: number, r: any) => acc + Number(r.bonus_points ?? 0),
-              0,
+            const { data: poolBase, error: sumError } = await (supabaseAdmin as any).rpc(
+              "calculate_daily_order_reward_points_by_source_date",
+              { _source_date: poolSourceDate },
             );
+            if (sumError) throw new Error(sumError.message);
+            dailyTotalRewardPoints = Number(poolBase ?? 0);
             result.daily_total_reward_points = dailyTotalRewardPoints;
+            result.daily_total_reward_points_basis = "source_order_tw_date_distinct_order_base_amount";
           } catch (e: any) {
             result.daily_total_reward_points_error = e.message;
           }
 
-          // (1) 營業分紅
+          // 營業分紅：一星以上 VIP，依同一來源訂單日基準平均分配。
           try {
             const { data: revenue, error: revErr } = await (supabaseAdmin as any).rpc(
               "distribute_daily_revenue_bonus",
-              { _date: settlementDate },
+              { _date: poolSourceDate },
             );
             if (revErr) throw new Error(revErr.message);
             result.daily_revenue_bonus = Array.isArray(revenue) ? revenue[0] : revenue;
@@ -80,7 +87,7 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
             result.daily_revenue_bonus_error = e.message;
           }
 
-          // (2) VIP 共享池：對每個 active pool 呼叫
+          // 消費分紅：V/S/T/E/A active pool，依同一來源訂單日基準平均分配。
           try {
             const { data: pools, error: poolErr } = await (supabaseAdmin as any)
               .from("vip_bonus_pools")
@@ -94,12 +101,16 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
                   "distribute_vip_bonus_pool_daily",
                   {
                     _pool_id: (pool as any).id,
-                    _settlement_date: settlementDate,
+                    _settlement_date: poolSourceDate,
                     _daily_total_reward_points: dailyTotalRewardPoints,
                   },
                 );
                 if (payErr) throw new Error(payErr.message);
-                poolResults.push({ pool_id: (pool as any).id, code: (pool as any).code, result: Array.isArray(payout) ? payout[0] : payout });
+                poolResults.push({
+                  pool_id: (pool as any).id,
+                  code: (pool as any).code,
+                  result: Array.isArray(payout) ? payout[0] : payout,
+                });
               } catch (e: any) {
                 poolResults.push({ pool_id: (pool as any).id, code: (pool as any).code, error: e.message });
               }
@@ -109,15 +120,9 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
             result.vip_bonus_pools_error = e.message;
           }
 
-          // (3) 全國分紅：依新獎金制度改為月結執行，日結不再呼叫 distribute_national_bonus_v2。
-          //     Batch 3 會於 settle_monthly_bonus 觸發全國分紅發放。
           result.national_bonus_skipped = "moved_to_monthly_settlement";
         }
 
-
-
-
-        // ── 自動發放 ──
         if ((s as any).reward_release_mode === "auto") {
           try {
             const { data: release, error: releaseError } = await (supabaseAdmin as any).rpc("release_bonus_rewards", {
@@ -131,7 +136,6 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
           }
         }
 
-        // ── 月結算（auto 模式 + 結算日當天）──
         if ((s as any).monthly_bonus_mode === "auto" && now.getDate() === Number((s as any).monthly_bonus_settlement_day)) {
           const prev = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1));
           const yyyymm = `${prev.getUTCFullYear()}${String(prev.getUTCMonth() + 1).padStart(2, "0")}`;
