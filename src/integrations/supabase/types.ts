@@ -7316,6 +7316,10 @@ export type Database = {
           status: string
         }[]
       }
+      calculate_daily_order_reward_points_by_source_date: {
+        Args: { _source_date: string }
+        Returns: number
+      }
       check_guest_signup_rate_limit: {
         Args: { _ip: string; _phone: string }
         Returns: undefined
