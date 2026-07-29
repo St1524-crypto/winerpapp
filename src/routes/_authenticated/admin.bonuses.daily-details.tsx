@@ -395,6 +395,11 @@ function Page() {
                         <TableCell className="text-xs">
                           {src ? <div className="font-medium">{src.name}<span className="text-muted-foreground"> ({src.member_no})</span></div> : "—"}
                           <div className="font-mono text-muted-foreground">{o?.order_no ?? (r.source_order_id ? r.source_order_id.slice(0, 8) : "—")}</div>
+                          {o?.order_type && (
+                            <Badge variant={ORDER_TYPE_VARIANT[o.order_type] ?? "outline"} className="mt-1 text-[10px]">
+                              {orderTypeLabel(o.order_type)}
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">{r.generation_level ?? r.layer_level ?? "—"}</TableCell>
                         <TableCell className="text-right tabular-nums">{fmtN(r.base_amount)}</TableCell>
