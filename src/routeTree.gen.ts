@@ -112,6 +112,7 @@ import { Route as AuthenticatedAdminOperationsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminMemberSearchRouteImport } from './routes/_authenticated/admin.member-search'
 import { Route as AuthenticatedAdminHomepageSectionsRouteImport } from './routes/_authenticated/admin.homepage-sections'
 import { Route as AuthenticatedAdminHomepageFeaturedRouteImport } from './routes/_authenticated/admin.homepage-featured'
+import { Route as AuthenticatedAdminGiftRulesRouteImport } from './routes/_authenticated/admin.gift-rules'
 import { Route as AuthenticatedAdminCooperationApplicationsRouteImport } from './routes/_authenticated/admin.cooperation-applications'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
 import { Route as AuthenticatedAdminBonusesRouteImport } from './routes/_authenticated/admin.bonuses'
@@ -709,6 +710,12 @@ const AuthenticatedAdminHomepageFeaturedRoute =
     path: '/admin/homepage-featured',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminGiftRulesRoute =
+  AuthenticatedAdminGiftRulesRouteImport.update({
+    id: '/admin/gift-rules',
+    path: '/admin/gift-rules',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminCooperationApplicationsRoute =
   AuthenticatedAdminCooperationApplicationsRouteImport.update({
     id: '/admin/cooperation-applications',
@@ -1047,6 +1054,7 @@ export interface FileRoutesByFullPath {
   '/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/cooperation-applications': typeof AuthenticatedAdminCooperationApplicationsRoute
+  '/admin/gift-rules': typeof AuthenticatedAdminGiftRulesRoute
   '/admin/homepage-featured': typeof AuthenticatedAdminHomepageFeaturedRoute
   '/admin/homepage-sections': typeof AuthenticatedAdminHomepageSectionsRoute
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
@@ -1193,6 +1201,7 @@ export interface FileRoutesByTo {
   '/admin/bonus-center': typeof AuthenticatedAdminBonusCenterRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/admin/cooperation-applications': typeof AuthenticatedAdminCooperationApplicationsRoute
+  '/admin/gift-rules': typeof AuthenticatedAdminGiftRulesRoute
   '/admin/homepage-featured': typeof AuthenticatedAdminHomepageFeaturedRoute
   '/admin/homepage-sections': typeof AuthenticatedAdminHomepageSectionsRoute
   '/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
@@ -1344,6 +1353,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bonuses': typeof AuthenticatedAdminBonusesRouteWithChildren
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRouteWithChildren
   '/_authenticated/admin/cooperation-applications': typeof AuthenticatedAdminCooperationApplicationsRoute
+  '/_authenticated/admin/gift-rules': typeof AuthenticatedAdminGiftRulesRoute
   '/_authenticated/admin/homepage-featured': typeof AuthenticatedAdminHomepageFeaturedRoute
   '/_authenticated/admin/homepage-sections': typeof AuthenticatedAdminHomepageSectionsRoute
   '/_authenticated/admin/member-search': typeof AuthenticatedAdminMemberSearchRoute
@@ -1496,6 +1506,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses'
     | '/admin/companies'
     | '/admin/cooperation-applications'
+    | '/admin/gift-rules'
     | '/admin/homepage-featured'
     | '/admin/homepage-sections'
     | '/admin/member-search'
@@ -1642,6 +1653,7 @@ export interface FileRouteTypes {
     | '/admin/bonus-center'
     | '/admin/companies'
     | '/admin/cooperation-applications'
+    | '/admin/gift-rules'
     | '/admin/homepage-featured'
     | '/admin/homepage-sections'
     | '/admin/member-search'
@@ -1792,6 +1804,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bonuses'
     | '/_authenticated/admin/companies'
     | '/_authenticated/admin/cooperation-applications'
+    | '/_authenticated/admin/gift-rules'
     | '/_authenticated/admin/homepage-featured'
     | '/_authenticated/admin/homepage-sections'
     | '/_authenticated/admin/member-search'
@@ -2631,6 +2644,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminHomepageFeaturedRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/gift-rules': {
+      id: '/_authenticated/admin/gift-rules'
+      path: '/admin/gift-rules'
+      fullPath: '/admin/gift-rules'
+      preLoaderRoute: typeof AuthenticatedAdminGiftRulesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/cooperation-applications': {
       id: '/_authenticated/admin/cooperation-applications'
       path: '/admin/cooperation-applications'
@@ -3138,6 +3158,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminBonusesRoute: typeof AuthenticatedAdminBonusesRouteWithChildren
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRouteWithChildren
   AuthenticatedAdminCooperationApplicationsRoute: typeof AuthenticatedAdminCooperationApplicationsRoute
+  AuthenticatedAdminGiftRulesRoute: typeof AuthenticatedAdminGiftRulesRoute
   AuthenticatedAdminHomepageFeaturedRoute: typeof AuthenticatedAdminHomepageFeaturedRoute
   AuthenticatedAdminHomepageSectionsRoute: typeof AuthenticatedAdminHomepageSectionsRoute
   AuthenticatedAdminMemberSearchRoute: typeof AuthenticatedAdminMemberSearchRoute
@@ -3205,6 +3226,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedAdminCompaniesRouteWithChildren,
   AuthenticatedAdminCooperationApplicationsRoute:
     AuthenticatedAdminCooperationApplicationsRoute,
+  AuthenticatedAdminGiftRulesRoute: AuthenticatedAdminGiftRulesRoute,
   AuthenticatedAdminHomepageFeaturedRoute:
     AuthenticatedAdminHomepageFeaturedRoute,
   AuthenticatedAdminHomepageSectionsRoute:
