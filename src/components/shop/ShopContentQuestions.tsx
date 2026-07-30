@@ -31,7 +31,6 @@ export function ShopContentQuestions({ pageId }: { pageId: string }) {
         data: {
           page_id: pageId,
           content: content.trim(),
-          author_name: name.trim() || undefined,
         },
       }),
     onSuccess: () => {
