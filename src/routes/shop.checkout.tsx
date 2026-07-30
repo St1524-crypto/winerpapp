@@ -1,3 +1,4 @@
+import { GiftPreviewPanel } from "@/components/shop/GiftPreviewPanel";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
