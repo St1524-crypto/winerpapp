@@ -107,6 +107,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { z } from "zod";
+import { resolveVipTierCode, vipStatusText, vipTierLabel } from "@/lib/vip-tier-label";
 
 // =================== Quick-add customer schema ===================
 const quickAddCustomerSchema = z.object({
@@ -1527,7 +1528,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   }
 
   // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
-  async function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null; user_id?: string | null }) {
+  async function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null; user_id?: string | null; vip_expires_at?: string | null }) {
     setCustomerId(null);
     setCustomer(e.name);
     setEmail(e.email ?? "");
@@ -1538,7 +1539,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     }
     if (addr) setAddress(addr);
     setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
-    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null, user_id: e.user_id ?? null });
+    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null, user_id: e.user_id ?? null, vip_expires_at: e.vip_expires_at ?? null });
     setPickerOpen(false);
     toast.success(`已帶入${e.label}：${e.name}`);
   }
