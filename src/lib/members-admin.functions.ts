@@ -117,8 +117,8 @@ export const adminCreateMember = createServerFn({ method: "POST" })
       .update({ name: data.name, phone })
       .eq("id", uid);
     if (profileError) {
-      if (/profiles_phone_uidx|duplicate/i.test(profileError.message)) {
-        throw new Error("此電話號碼已被其他會員使用，請更換。");
+      if (/註冊上限|profiles_phone_uidx|duplicate/i.test(profileError.message)) {
+        throw new Error("此電話號碼已達註冊上限（最多 3 位會員），請更換。");
       }
       throw new Error(`會員資料寫入失敗：${profileError.message}`);
     }
