@@ -62,22 +62,62 @@ export const adminCreateMember = createServerFn({ method: "POST" })
       (phone ? `${phone.replace(/^\+/, "")}@phone.local` : "");
     if (!email) throw new Error("缺少有效識別資訊");
 
+    // Pre-check duplicates so the user gets a clear message instead of a
+    // generic "Database error creating new user" from the profile trigger.
+    if (phone) {
+      const { data: dupPhone } = await supabaseAdmin
+        .from("profiles")
+        .select("id, name, member_no")
+        .eq("phone", phone)
+        .limit(1)
+        .maybeSingle();
+      if (dupPhone?.id) {
+        throw new Error(
+          `此電話號碼已被會員「${dupPhone.name ?? ""}（${dupPhone.member_no ?? dupPhone.id}）」使用，請確認或改用其他號碼。`,
+        );
+      }
+    }
+    if (data.email?.trim()) {
+      const { data: dupEmail } = await supabaseAdmin
+        .from("profiles")
+        .select("id, name, member_no")
+        .ilike("email", data.email.trim())
+        .limit(1)
+        .maybeSingle();
+      if (dupEmail?.id) {
+        throw new Error(
+          `此 Email 已被會員「${dupEmail.name ?? ""}（${dupEmail.member_no ?? dupEmail.id}）」使用，請更換。`,
+        );
+      }
+    }
+
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: data.password,
       email_confirm: true,
       user_metadata: { name: data.name, phone: phone ?? undefined },
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (/already|registered|exists/i.test(error.message)) {
+        throw new Error("此 Email 或電話已有帳號，請確認後再建立。");
+      }
+      throw new Error(`建立會員失敗：${error.message}`);
+    }
     const uid = created.user?.id;
     if (!uid) throw new Error("建立會員失敗");
 
     // The handle_new_user trigger will create profile + member_no + 'member' role.
     // Ensure phone/name are set even if metadata path differs.
-    await supabaseAdmin
+    const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .update({ name: data.name, phone })
       .eq("id", uid);
+    if (profileError) {
+      if (/profiles_phone_uidx|duplicate/i.test(profileError.message)) {
+        throw new Error("此電話號碼已被其他會員使用，請更換。");
+      }
+      throw new Error(`會員資料寫入失敗：${profileError.message}`);
+    }
 
     await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,
@@ -89,6 +129,7 @@ export const adminCreateMember = createServerFn({ method: "POST" })
 
     return { ok: true, userId: uid };
   });
+
 
 // ============== Update member basic profile ==============
 const UpdateSchema = z.object({
