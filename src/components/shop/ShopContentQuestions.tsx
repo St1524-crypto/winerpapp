@@ -18,7 +18,6 @@ export function ShopContentQuestions({ pageId }: { pageId: string }) {
   const listFn = useServerFn(listShopContentQuestions);
   const submitFn = useServerFn(submitShopContentQuestion);
   const [content, setContent] = useState("");
-  const [name, setName] = useState("");
 
   const q = useQuery({
     queryKey: ["shop-content-questions", pageId],
