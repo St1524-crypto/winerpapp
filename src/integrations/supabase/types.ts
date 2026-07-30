@@ -1999,6 +1999,143 @@ export type Database = {
           },
         ]
       }
+      gift_rule_conditions: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          rule_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          rule_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          rule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_rule_conditions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_rule_conditions_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "gift_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_rule_gifts: {
+        Row: {
+          created_at: string
+          gift_qty: number
+          id: string
+          product_id: string
+          rule_id: string
+        }
+        Insert: {
+          created_at?: string
+          gift_qty?: number
+          id?: string
+          product_id: string
+          rule_id: string
+        }
+        Update: {
+          created_at?: string
+          gift_qty?: number
+          id?: string
+          product_id?: string
+          rule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_rule_gifts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_rule_gifts_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "gift_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_rules: {
+        Row: {
+          channel_b2b: boolean
+          channel_shop: boolean
+          company_id: string | null
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          max_gift_qty: number
+          name: string
+          note: string | null
+          priority: number
+          starts_at: string | null
+          threshold: number
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          channel_b2b?: boolean
+          channel_shop?: boolean
+          company_id?: string | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_gift_qty?: number
+          name: string
+          note?: string | null
+          priority?: number
+          starts_at?: string | null
+          threshold?: number
+          trigger_type?: string
+          updated_at?: string
+        }
+        Update: {
+          channel_b2b?: boolean
+          channel_shop?: boolean
+          company_id?: string | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_gift_qty?: number
+          name?: string
+          note?: string | null
+          priority?: number
+          starts_at?: string | null
+          threshold?: number
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goods_receiving: {
         Row: {
           company_id: string
@@ -5025,8 +5162,10 @@ export type Database = {
           bundle_line_key: string | null
           company_id: string
           created_at: string
+          gift_rule_id: string | null
           id: string
           image: string | null
+          is_gift: boolean
           original_unit_price: number | null
           pricing_tier_visibility: string | null
           product_id: string | null
@@ -5045,8 +5184,10 @@ export type Database = {
           bundle_line_key?: string | null
           company_id: string
           created_at?: string
+          gift_rule_id?: string | null
           id?: string
           image?: string | null
+          is_gift?: boolean
           original_unit_price?: number | null
           pricing_tier_visibility?: string | null
           product_id?: string | null
@@ -5065,8 +5206,10 @@ export type Database = {
           bundle_line_key?: string | null
           company_id?: string
           created_at?: string
+          gift_rule_id?: string | null
           id?: string
           image?: string | null
+          is_gift?: boolean
           original_unit_price?: number | null
           pricing_tier_visibility?: string | null
           product_id?: string | null
@@ -5093,6 +5236,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_order_items_gift_rule_id_fkey"
+            columns: ["gift_rule_id"]
+            isOneToOne: false
+            referencedRelation: "gift_rules"
             referencedColumns: ["id"]
           },
           {
