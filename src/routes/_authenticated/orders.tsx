@@ -107,6 +107,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { z } from "zod";
+import { resolveVipTierCode, vipStatusText, vipTierLabel } from "@/lib/vip-tier-label";
 
 // =================== Quick-add customer schema ===================
 const quickAddCustomerSchema = z.object({
@@ -930,7 +931,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [orderSource, setOrderSource] = useState("");
   const [salespersonId, setSalespersonId] = useState<string>("");
   const [customerId, setCustomerId] = useState<string | null>(null);
-  const [customerStatus, setCustomerStatus] = useState<{ is_vip: boolean; is_dealer: boolean; vip_tier: string | null; member_no: string | null; user_id: string | null }>({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null });
+  const [customerStatus, setCustomerStatus] = useState<{ is_vip: boolean; is_dealer: boolean; vip_tier: string | null; member_no: string | null; user_id: string | null; vip_expires_at?: string | null }>({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null, vip_expires_at: null });
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [qaName, setQaName] = useState("");
@@ -978,7 +979,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       const s = escLike(debouncedSearch);
       let q = supabase
         .from("profiles")
-        .select("id,name,email,phone,member_no,is_vip,is_dealer,vip_tier,addr_mail,addr_home,current_company_id");
+        .select("id,name,email,phone,member_no,is_vip,is_dealer,vip_tier,legacy_rank,current_tier,vip_expires_at,addr_mail,addr_home,current_company_id");
       if (s) {
         // 有搜尋字 → 跨公司搜尋全部會員（包含 current_company_id 未設定者）
         const like = `%${s}%`;
@@ -1492,7 +1493,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setPhone(c.phone ?? "");
     if (c.address) setAddress(c.address);
     setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
-    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null });
+    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null, vip_expires_at: null });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
     // 嘗試以電話 / Email 對應到會員 profile，自動帶入 VIP 階層與通訊地址
@@ -1503,7 +1504,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (filters.length === 0) return;
       const { data } = await supabase
         .from("profiles")
-        .select("id,member_no,is_vip,is_dealer,vip_tier,addr_mail,addr_home")
+        .select("id,member_no,is_vip,is_dealer,vip_tier,legacy_rank,current_tier,vip_expires_at,addr_mail,addr_home")
         .or(filters.join(","))
         .limit(1)
         .maybeSingle();
@@ -1512,9 +1513,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         setCustomerStatus({
           is_vip: !!(data as any).is_vip,
           is_dealer: !!(data as any).is_dealer,
-          vip_tier: ((data as any).vip_tier as string | null) ?? null,
+          vip_tier: resolveVipTierCode(data as any),
           member_no: ((data as any).member_no as string | null) ?? null,
           user_id: uid,
+          vip_expires_at: ((data as any).vip_expires_at as string | null) ?? null,
         });
         if (!c.address) {
           const memberAddr = (data as any).addr_mail ?? (data as any).addr_home ?? null;
@@ -1526,7 +1528,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   }
 
   // 從會員/經銷/廠商帶入：不綁定 customer_id（送出時會自動建立或對應客戶）
-  async function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null; user_id?: string | null }) {
+  async function pickEntity(e: { name: string; email: string | null; phone: string | null; address?: string | null; label: string; is_vip?: boolean; is_dealer?: boolean; vip_tier?: string | null; member_no?: string | null; user_id?: string | null; vip_expires_at?: string | null }) {
     setCustomerId(null);
     setCustomer(e.name);
     setEmail(e.email ?? "");
@@ -1537,7 +1539,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     }
     if (addr) setAddress(addr);
     setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
-    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null, user_id: e.user_id ?? null });
+    setCustomerStatus({ is_vip: !!e.is_vip, is_dealer: !!e.is_dealer, vip_tier: e.vip_tier ?? null, member_no: e.member_no ?? null, user_id: e.user_id ?? null, vip_expires_at: e.vip_expires_at ?? null });
     setPickerOpen(false);
     toast.success(`已帶入${e.label}：${e.name}`);
   }
@@ -1588,22 +1590,39 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   <Search className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
                 </Button>
               </PopoverTrigger>
-              {(customer || phone || email) && (
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  {customerStatus.is_vip ? (
-                    <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/40 hover:bg-amber-500/20">
-                      VIP{customerStatus.vip_tier ? ` · ${customerStatus.vip_tier}` : ""}
-                    </Badge>
-                  ) : customerStatus.is_dealer ? (
-                    <Badge className="bg-blue-500/15 text-blue-500 border border-blue-500/40 hover:bg-blue-500/20">經銷商</Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-muted-foreground">免費會員 / 一般客戶</Badge>
-                  )}
-                  {customerStatus.member_no && (
-                    <span className="text-xs text-muted-foreground">{customerStatus.member_no}</span>
-                  )}
-                </div>
-              )}
+              {(customer || phone || email) && (() => {
+                const st = vipStatusText({
+                  is_vip: customerStatus.is_vip,
+                  is_dealer: customerStatus.is_dealer,
+                  tierCode: customerStatus.vip_tier,
+                  vip_expires_at: customerStatus.vip_expires_at ?? null,
+                });
+                const tone =
+                  st.tone === "vip"
+                    ? "bg-amber-500/15 text-amber-500 border border-amber-500/40 hover:bg-amber-500/20"
+                    : st.tone === "expired"
+                      ? "bg-rose-500/15 text-rose-500 border border-rose-500/40 hover:bg-rose-500/20"
+                      : st.tone === "dealer"
+                        ? "bg-blue-500/15 text-blue-500 border border-blue-500/40 hover:bg-blue-500/20"
+                        : "";
+                return (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {st.tone === "plain" ? (
+                      <Badge variant="outline" className="text-muted-foreground">{st.text}</Badge>
+                    ) : (
+                      <Badge className={tone}>{st.text}</Badge>
+                    )}
+                    {customerStatus.member_no && (
+                      <span className="text-xs text-muted-foreground">{customerStatus.member_no}</span>
+                    )}
+                    {customerStatus.is_vip && customerStatus.vip_expires_at && (
+                      <span className="text-xs text-muted-foreground">
+                        有效至 {String(customerStatus.vip_expires_at).slice(0, 10)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
               <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
                 {quickAddOpen ? (
                   <div className="p-3 space-y-2">
@@ -1757,36 +1776,58 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                             ))}
                           </CommandGroup>
                           <CommandGroup heading={`會員 (${membersQ.data?.length ?? 0})`}>
-                            {(membersQ.data ?? []).map((m: any) => (
+                            {(membersQ.data ?? []).map((m: any) => {
+                              const tierCode = resolveVipTierCode(m);
+                              const vipExpired = !!m.vip_expires_at && Date.parse(m.vip_expires_at) < Date.now();
+                              return (
                               <CommandItem
                                 key={`mem-${m.id}`}
-                                value={`會員 ${m.name ?? ""} ${m.email ?? ""} ${m.phone ?? ""} ${m.member_no ?? ""}`}
+                                value={`會員 ${m.name ?? ""} ${m.email ?? ""} ${m.phone ?? ""} ${m.member_no ?? ""} ${tierCode ?? ""}`}
                                 onSelect={() => pickEntity({
                                   name: m.name ?? m.member_no ?? "會員",
                                   email: m.email ?? null,
                                   phone: m.phone ?? null,
                                   address: m.addr_mail ?? m.addr_home ?? null,
-                                  label: m.is_vip ? `VIP 會員${m.vip_tier ? ` ${m.vip_tier}` : ""}` : "會員",
+                                  label: m.is_vip ? `VIP 會員${tierCode ? ` ${tierCode}` : ""}` : "會員",
                                   is_vip: !!m.is_vip,
                                   is_dealer: !!m.is_dealer,
-                                  vip_tier: (m.vip_tier as string | null) ?? null,
+                                  vip_tier: tierCode,
                                   member_no: (m.member_no as string | null) ?? null,
                                   user_id: (m.id as string | null) ?? null,
+                                  vip_expires_at: (m.vip_expires_at as string | null) ?? null,
                                 })}
                               >
                                 <div className="flex-1 min-w-0 ml-6">
-                                  <div className="text-sm font-medium truncate">
-                                    {m.name ?? "(未命名)"}
-                                    {m.member_no && <span className="text-xs text-muted-foreground ml-2">{m.member_no}</span>}
-                                    {m.is_vip && <span className="text-xs text-primary ml-2">VIP</span>}
-                                    {m.is_dealer && <span className="text-xs text-primary ml-2">經銷</span>}
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className="text-sm font-medium truncate">{m.name ?? "(未命名)"}</span>
+                                    {m.member_no && <span className="text-xs text-muted-foreground">{m.member_no}</span>}
+                                    {m.is_vip && (
+                                      <Badge
+                                        className={
+                                          vipExpired
+                                            ? "bg-rose-500/15 text-rose-500 border border-rose-500/40 text-[10px] px-1.5 py-0"
+                                            : "bg-amber-500/15 text-amber-500 border border-amber-500/40 text-[10px] px-1.5 py-0"
+                                        }
+                                      >
+                                        {vipExpired ? "VIP 已到期" : `VIP · ${tierCode ? vipTierLabel(tierCode) : "未設定位階"}`}
+                                      </Badge>
+                                    )}
+                                    {!m.is_vip && tierCode && (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                                        {vipTierLabel(tierCode)}
+                                      </Badge>
+                                    )}
+                                    {m.is_dealer && (
+                                      <Badge className="bg-blue-500/15 text-blue-500 border border-blue-500/40 text-[10px] px-1.5 py-0">經銷</Badge>
+                                    )}
                                   </div>
                                   <div className="text-xs text-muted-foreground truncate">
                                     {[m.email, m.phone].filter(Boolean).join(" · ") || "—"}
                                   </div>
                                 </div>
                               </CommandItem>
-                            ))}
+                              );
+                            })}
                           </CommandGroup>
                           <CommandGroup heading={`經銷商 (${dealersQ.data?.length ?? 0})`}>
                             {(dealersQ.data ?? []).map((d: any) => (
