@@ -55,12 +55,9 @@ export function ShopContentQuestions({ pageId }: { pageId: string }) {
 
       {user ? (
         <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-3 mb-6">
-          <Input
-            placeholder="顯示名稱（可留空，預設使用會員名稱）"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={60}
-          />
+          <p className="text-xs text-muted-foreground">
+            將以您的會員名稱顯示
+          </p>
           <Textarea
             placeholder="想詢問或分享的內容…（送出後將通知行政客服）"
             value={content}
