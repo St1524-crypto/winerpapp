@@ -109,5 +109,26 @@ export const createSalesOrderWithPointPayments = createServerFn({ method: "POST"
     if (!order?.id || typeof order.id !== "string") {
       throw new Error("Order was created but no order id was returned.");
     }
+
+    // 多件可加贈品：伺服器端依資料庫規則重算並寫入 0 元 0 獎勵點的贈品列
+    const companyId = (data.order as any).company_id as string | undefined;
+    if (companyId) {
+      try {
+        const { applyGiftLinesToOrder } = await import("./gift-rules.server");
+        await applyGiftLinesToOrder({
+          orderId: order.id,
+          companyId,
+          channel: "shop",
+          lines: data.items.map((it) => ({
+            product_id: String((it as any).product_id ?? ""),
+            quantity: Number(it.quantity) || 0,
+            unit_price: Number(it.unit_price) || 0,
+          })),
+        });
+      } catch (giftErr) {
+        console.warn("[gift-rules] apply failed", giftErr);
+      }
+    }
+
     return { id: order.id };
   });
