@@ -4,6 +4,8 @@ import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { Link } from "@tanstack/react-router";
+import { GiftPreviewPanel } from "@/components/shop/GiftPreviewPanel";
+
 
 const SHIPPING_THRESHOLD = 2000;
 const SHIPPING_FEE = 150;
