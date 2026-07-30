@@ -971,6 +971,18 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  // 依 user_id 補上 dealer_tier_status.current_tier（profiles 無此欄位）
+  async function attachTierStatus(rows: any[]) {
+    const ids = rows.map((r) => r.id).filter(Boolean);
+    if (ids.length === 0) return rows;
+    const { data } = await supabase
+      .from("dealer_tier_status")
+      .select("user_id,current_tier")
+      .in("user_id", ids);
+    const map = new Map<string, string | null>((data ?? []).map((t: any) => [t.user_id, t.current_tier]));
+    return rows.map((r) => ({ ...r, current_tier: map.get(r.id) ?? null }));
+  }
+
   // 會員（profiles）— 限本公司；有關鍵字時改後端搜尋（姓名/電話/Email/編號）
   const membersQ = useQuery({
     queryKey: ["members-picker", currentCompanyId, debouncedSearch],
@@ -979,7 +991,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       const s = escLike(debouncedSearch);
       let q = supabase
         .from("profiles")
-        .select("id,name,email,phone,member_no,is_vip,is_dealer,vip_tier,legacy_rank,current_tier,vip_expires_at,addr_mail,addr_home,current_company_id");
+        .select("id,name,email,phone,member_no,is_vip,is_dealer,vip_tier,legacy_rank,vip_expires_at,addr_mail,addr_home,current_company_id");
       if (s) {
         // 有搜尋字 → 跨公司搜尋全部會員（包含 current_company_id 未設定者）
         const like = `%${s}%`;
@@ -990,7 +1002,39 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       }
       const { data, error } = await q.order("created_at", { ascending: false }).limit(s ? 100 : 300);
       if (error) throw new Error(error.message);
-      return data ?? [];
+      return await attachTierStatus(data ?? []);
+    },
+  });
+
+  // 客戶名單 → 對應會員位階（以電話 / Email 比對）
+  const customerVipQ = useQuery({
+    queryKey: ["customers-picker-vip", (customersQ.data ?? []).map((c: any) => c.id).join(",")],
+    enabled: open && (customersQ.data?.length ?? 0) > 0,
+    queryFn: async () => {
+      const list = customersQ.data ?? [];
+      const phones = list.map((c: any) => c.phone).filter(Boolean);
+      const emails = list.map((c: any) => c.email).filter(Boolean);
+      const filters: string[] = [];
+      if (phones.length) filters.push(`phone.in.(${phones.join(",")})`);
+      if (emails.length) filters.push(`email.in.(${emails.join(",")})`);
+      if (filters.length === 0) return {} as Record<string, any>;
+      const { data } = await supabase
+        .from("profiles")
+        .select("id,email,phone,member_no,is_vip,is_dealer,vip_tier,legacy_rank,vip_expires_at")
+        .or(filters.join(","));
+      const rows = await attachTierStatus(data ?? []);
+      const byPhone = new Map<string, any>();
+      const byEmail = new Map<string, any>();
+      rows.forEach((p: any) => {
+        if (p.phone) byPhone.set(String(p.phone), p);
+        if (p.email) byEmail.set(String(p.email).toLowerCase(), p);
+      });
+      const out: Record<string, any> = {};
+      list.forEach((c: any) => {
+        const hit = (c.phone && byPhone.get(String(c.phone))) || (c.email && byEmail.get(String(c.email).toLowerCase()));
+        if (hit) out[c.id] = hit;
+      });
+      return out;
     },
   });
 
