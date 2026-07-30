@@ -1,65 +1,67 @@
+## 目標
 
-## 批次範圍（本批只做這些；月獎金/專員/全國分紅擴充/後台設定 UI 留待下一批）
+後台可建立「多件可加贈品」規則，官網商城與批發/B2B 下單時自動依倍數累加贈品，贈品 0 元且不計入獎勵點與分紅基數。
 
-依 0715-2 規格，只影響 `settlement_date >= <migration 通過當日>` 起新產生的 bonus_records，不追溯歷史。
+## 一、資料表
 
-## A. Migration（單一 migration，含以下）
+**gift_rules（贈品規則）**
+- 名稱、啟用狀態、生效起訖日
+- 觸發類型：單一商品件數 / 訂單總件數 / 訂單金額 / 指定商品群組件數
+- 門檻值（threshold）
+- 適用通路：商城、批發B2B（可複選）
+- 每張訂單贈品上限（max_gift_qty，0 = 不限）
+- 優先順序、company_id（多租戶）
 
-1. **`bonus_records.calculation_detail` schema 規範（jsonb，欄位由 RPC 寫入）**
-   必填 key：`source_reward_points`、`self_points`、`first_generation_points`、`total_base_points`、`excess_points`、`required_points`、`responsibility_passed`、`tier_snapshot`、`vip_snapshot`、`rule_id`、`rule_version`、`redirect_chain`、`cap_snapshot`。
-   新增 CHECK：`settlement_date >= '2026-07-16'` 時 `calculation_detail ? 'rule_version'`（軟性驗證，避免未寫入）。
+**gift_rule_conditions（觸發商品範圍）**
+- 規則 id、product_id（單一商品或群組成員清單）
 
-2. **`vip_tiers` 條件對齊規格**
-   確認/補齊欄位：`tier_code`、`name`、`required_points`、`direct_vip_count`、`renew_days`、`renew_required_vip`、`renew_required_tier`(給 S→T→E 那種「直推 3 位 S」用)。
-   以 `INSERT ... ON CONFLICT DO UPDATE` upsert V/S/T/E/A/一星~七星/董事 12 筆位階（不動歷史升級紀錄）。
+**gift_rule_gifts（贈品內容）**
+- 規則 id、贈品 product_id、每次達標贈送數量
 
-3. **系統參數：`system_settings` 加一列 `bonus_rules_effective_from = 2026-07-16`**，RPC 讀此值決定新舊制切點。
+**sales_order_items 既有欄位加註**
+- 新增 `is_gift boolean default false`、`gift_rule_id`
+- 贈品列：unit_price = 0、reward_points = 0
 
-## B. 新獎金核心 RPC（Postgres function）
+RLS：管理/業務角色可維護；商城前台以 anon/authenticated 唯讀啟用中的規則。
 
-新增 `public.daily_bonus_tick_v2(_settlement_date date)`，由 `daily_bonus_tick` wrapper 判斷：
-- `_settlement_date < bonus_rules_effective_from` → 呼叫舊版（不動）
-- 否則 → 呼叫 v2
+## 二、計算邏輯（共用模組）
 
-v2 內部四支子函式，每支結束後寫入 `bonus_records` + `calculation_detail`：
+`src/lib/gift-rules.ts`：輸入購物車明細 → 輸出應贈清單。
+- 倍數累加：`floor(符合數量 / threshold) × 贈送數量`，再套 max_gift_qty 上限
+- 金額型：以未含贈品的小計計算
+- 多規則可同時成立，各自累加；同贈品合併數量
+- 贈品本身不參與任何規則的門檻計算
 
-1. `_calc_referral_v2` — 推薦/首購。來源訂單獎勵點 × 領取人階級比例（V10/S20/T25/E40/A50），級差扣減。失效領取人往上找有效 VIP，記 `redirect_chain`。
-2. `_calc_repurchase_v2` — 復購。復購訂單獎勵點 × 階級比例；責任額未達 → `responsibility_passed=false`、`bonus_points=0`、狀態 `skipped`。
-3. `_calc_business_bonus_v2` — 營業分紅。沿用 `vip_bonus_pools` / `vip_business_bonus_ledger`，只補：
-   - VIP 有效性三檢查
-   - 總收益超上限 → `cap_snapshot.blocked=true`、`bonus_points=0`
-   - 完成責任額才計入
-4. `_calc_daily_revenue_bonus_v2` — 消費回饋（E/A）。沿用 `vip_daily_revenue_bonus_ledger`；補：
-   - 上限含累計總收益判斷
-   - 180 天未推薦 1 位 VIP 停發（`skip_reason='no_referral_180d'`）
+## 三、串接點
 
-VIP 三檢查抽出 helper `private.is_vip_valid(_member_id uuid, _on date)`：`is_vip AND vip_expires_at IS NOT NULL AND vip_expires_at >= _on`。
+- 購物車 / 結帳頁（`use-cart.tsx`、`shop.checkout.tsx`）：即時顯示「已達標，加贈 X」與「再買 N 件可再加贈」提示
+- 建單（`create_sales_order_with_items`）：伺服器端重算贈品，不信任前端；贈品列以 0 元 0 獎勵點寫入
+- 批發/B2B 下單流程共用同一模組
 
-**重要保證**：所有子函式僅 `INSERT` 新列到 `bonus_records`，絕不 `UPDATE` 歷史列、絕不 `DELETE` `reward_wallet_logs` / `point_transactions`。已發放者以 `settlement_date` + `bonus_type` unique key 防重複。
+## 四、獎勵點與分紅
 
-## C. 前端：每日獎金明細顯示
+贈品列 `reward_points = 0`，因此：
+- 不進日結消費／營業分紅池基數
+- 不影響責任額、級差獎金計算
+- 訂單詳情的「獎勵點明細」會標示贈品列為 0 並註明來源規則
 
-`src/routes/_authenticated/admin.bonuses.daily-details.tsx` + `BonusCalculationDetailDialog.tsx`：
-- 表格新增欄位：來源獎勵點、責任額、是否完成責任額、VIP 到期日、停發原因、改發原因
-- Dialog 內顯示完整 `calculation_detail` JSON（含 tier_snapshot / vip_snapshot / cap_snapshot / redirect_chain / rule_version）
-- CSV 匯出補齊上述欄位
+## 五、後台頁面
 
-`src/lib/bonus.functions.ts` `listDailyBonusDetails` 回傳補上 `vip_expires_at`、`responsibility_passed` 等衍生欄位。
+`/admin/gift-rules`
+- 規則列表（名稱、觸發條件摘要、贈品、通路、啟用狀態、期間）
+- 新增/編輯彈窗：條件設定 + 商品搜尋選擇（沿用既有 SearchSelect）+ 贈品清單
+- 規則試算器：輸入品項與數量，預覽會贈出什麼
 
-## D. 不做（本批）
-- 月獎金 4 種、全國分紅擴充：下一批
-- 後台四個設定模組 UI：下一批（只在 DB 對齊 schema，不動管理頁）
-- 月獎金明細、獎金總表 UI：下一批
-- 不追溯 / 不重算歷史 bonus_records
-- 不覆寫 reward_wallet_logs / point_transactions
+## 六、實作順序
 
-## E. 驗收
-1. Migration 通過後於 `2026-07-16` 前設定日期 → 走舊版；`2026-07-16` 及之後 → 走 v2 且 calculation_detail 有 rule_version。
-2. Build / typecheck / security scan 全綠。
-3. Handoff 依 mem://preferences/lovable-handoff 回報 A~K。
+1. Migration：三張表 + GRANT + RLS + sales_order_items 欄位
+2. `gift-rules.ts` 計算模組 + 單元測試（含倍數、上限、多規則）
+3. 後台 CRUD 頁面
+4. 購物車/結帳提示
+5. 建單伺服器端重算與寫入
+6. 只讀驗證：測試單確認贈品 0 元、獎勵點與池基數不受影響
 
----
+## 技術備註
 
-**確認即開工**。批准後我會：
-(1) 先送 migration（含 vip_tiers upsert + system_settings + calculation_detail 規範 + v2 RPC），等你核准；
-(2) migration 通過後再改前端 + wrapper。
+- 建單重算放在 `create_sales_order_with_items`（或其前置 server fn），避免前端竄改
+- 訂單編輯／退貨時贈品需連動處理：主商品數量減少低於門檻時，同步移除對應贈品
