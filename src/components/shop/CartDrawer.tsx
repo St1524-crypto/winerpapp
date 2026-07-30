@@ -4,6 +4,8 @@ import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { useIsDealer, getEffectivePrice } from "@/hooks/use-dealer";
 import { Link } from "@tanstack/react-router";
+import { GiftPreviewPanel } from "@/components/shop/GiftPreviewPanel";
+
 
 const SHIPPING_THRESHOLD = 2000;
 const SHIPPING_FEE = 150;
@@ -61,7 +63,17 @@ export function CartDrawer() {
               </div>
             ))
           )}
+          {items.length > 0 && (
+            <GiftPreviewPanel
+              lines={items.map((it) => ({
+                product_id: String(it.product_id ?? it.product?.id ?? ""),
+                quantity: it.quantity,
+                unit_price: getItemUnitPrice(it),
+              }))}
+            />
+          )}
         </div>
+
 
         {items.length > 0 && (
           <div className="border-t px-6 py-4 space-y-2 bg-muted/30">

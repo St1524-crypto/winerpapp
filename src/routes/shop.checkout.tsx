@@ -1,3 +1,4 @@
+import { GiftPreviewPanel } from "@/components/shop/GiftPreviewPanel";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -310,6 +311,17 @@ function CheckoutPage() {
               ))}
               {items.length === 0 && <div className="text-muted-foreground text-center py-4">購物車為空</div>}
             </div>
+            {items.length > 0 && (
+              <GiftPreviewPanel
+                lines={items.map((it) => ({
+                  product_id: String((it as any).product_id ?? it.product?.id ?? ""),
+                  quantity: it.quantity,
+                  unit_price: getItemUnitPrice(it),
+                }))}
+                compact
+              />
+            )}
+
             {items.some((it) => (it as any).bundle_id) && (
               <div className="rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] leading-relaxed text-muted-foreground">
                 <div className="font-medium text-primary mb-0.5">🎁 套組結帳說明</div>
