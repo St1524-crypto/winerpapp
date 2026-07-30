@@ -5,7 +5,6 @@ import { Loader2, MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import {
   listShopContentQuestions,
