@@ -1590,22 +1590,39 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   <Search className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
                 </Button>
               </PopoverTrigger>
-              {(customer || phone || email) && (
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  {customerStatus.is_vip ? (
-                    <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/40 hover:bg-amber-500/20">
-                      VIP{customerStatus.vip_tier ? ` · ${customerStatus.vip_tier}` : ""}
-                    </Badge>
-                  ) : customerStatus.is_dealer ? (
-                    <Badge className="bg-blue-500/15 text-blue-500 border border-blue-500/40 hover:bg-blue-500/20">經銷商</Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-muted-foreground">免費會員 / 一般客戶</Badge>
-                  )}
-                  {customerStatus.member_no && (
-                    <span className="text-xs text-muted-foreground">{customerStatus.member_no}</span>
-                  )}
-                </div>
-              )}
+              {(customer || phone || email) && (() => {
+                const st = vipStatusText({
+                  is_vip: customerStatus.is_vip,
+                  is_dealer: customerStatus.is_dealer,
+                  tierCode: customerStatus.vip_tier,
+                  vip_expires_at: customerStatus.vip_expires_at ?? null,
+                });
+                const tone =
+                  st.tone === "vip"
+                    ? "bg-amber-500/15 text-amber-500 border border-amber-500/40 hover:bg-amber-500/20"
+                    : st.tone === "expired"
+                      ? "bg-rose-500/15 text-rose-500 border border-rose-500/40 hover:bg-rose-500/20"
+                      : st.tone === "dealer"
+                        ? "bg-blue-500/15 text-blue-500 border border-blue-500/40 hover:bg-blue-500/20"
+                        : "";
+                return (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {st.tone === "plain" ? (
+                      <Badge variant="outline" className="text-muted-foreground">{st.text}</Badge>
+                    ) : (
+                      <Badge className={tone}>{st.text}</Badge>
+                    )}
+                    {customerStatus.member_no && (
+                      <span className="text-xs text-muted-foreground">{customerStatus.member_no}</span>
+                    )}
+                    {customerStatus.is_vip && customerStatus.vip_expires_at && (
+                      <span className="text-xs text-muted-foreground">
+                        有效至 {String(customerStatus.vip_expires_at).slice(0, 10)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
               <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
                 {quickAddOpen ? (
                   <div className="p-3 space-y-2">
