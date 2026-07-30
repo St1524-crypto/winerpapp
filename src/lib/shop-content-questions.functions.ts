@@ -36,7 +36,6 @@ export const submitShopContentQuestion = createServerFn({ method: "POST" })
       .object({
         page_id: z.string().uuid(),
         content: z.string().trim().min(1).max(2000),
-        author_name: z.string().trim().max(60).optional(),
       })
       .parse(input),
   )
