@@ -1546,12 +1546,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (c.phone) filters.push(`phone.eq.${c.phone}`);
       if (c.email) filters.push(`email.eq.${c.email}`);
       if (filters.length === 0) return;
-      const { data } = await supabase
+      const { data: raw } = await supabase
         .from("profiles")
-        .select("id,member_no,is_vip,is_dealer,vip_tier,legacy_rank,current_tier,vip_expires_at,addr_mail,addr_home")
+        .select("id,member_no,is_vip,is_dealer,vip_tier,legacy_rank,vip_expires_at,addr_mail,addr_home")
         .or(filters.join(","))
         .limit(1)
         .maybeSingle();
+      const data = raw ? (await attachTierStatus([raw]))[0] : null;
       if (data) {
         const uid = ((data as any).id as string | null) ?? null;
         setCustomerStatus({
