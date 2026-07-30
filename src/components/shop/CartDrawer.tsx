@@ -61,7 +61,17 @@ export function CartDrawer() {
               </div>
             ))
           )}
+          {items.length > 0 && (
+            <GiftPreviewPanel
+              lines={items.map((it) => ({
+                product_id: String(it.product_id ?? it.product?.id ?? ""),
+                quantity: it.quantity,
+                unit_price: getItemUnitPrice(it),
+              }))}
+            />
+          )}
         </div>
+
 
         {items.length > 0 && (
           <div className="border-t px-6 py-4 space-y-2 bg-muted/30">
