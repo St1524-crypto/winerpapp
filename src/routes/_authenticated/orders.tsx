@@ -1801,24 +1801,49 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                             </div>
                           </CommandEmpty>
                           <CommandGroup heading={`客戶 (${customersQ.data?.length ?? 0})`}>
-                            {(customersQ.data ?? []).map((c: any) => (
+                            {(customersQ.data ?? []).map((c: any) => {
+                              const p = customerVipQ.data?.[c.id];
+                              const cTier = p ? resolveVipTierCode(p) : null;
+                              const cExpired = !!p?.vip_expires_at && Date.parse(p.vip_expires_at) < Date.now();
+                              return (
                               <CommandItem
                                 key={`cust-${c.id}`}
-                                value={`客戶 ${c.name} ${c.email ?? ""} ${c.phone ?? ""} ${c.company ?? ""}`}
+                                value={`客戶 ${c.name} ${c.email ?? ""} ${c.phone ?? ""} ${c.company ?? ""} ${cTier ?? ""}`}
                                 onSelect={() => pickCustomer(c)}
                               >
                                 <Check className={`h-4 w-4 mr-2 ${customerId === c.id ? "opacity-100" : "opacity-0"}`} />
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-sm font-medium truncate">
-                                    {c.name}
-                                    {c.company && <span className="text-xs text-muted-foreground ml-2">{c.company}</span>}
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className="text-sm font-medium truncate">{c.name}</span>
+                                    {c.company && <span className="text-xs text-muted-foreground">{c.company}</span>}
+                                    {p?.member_no && <span className="text-xs text-muted-foreground">{p.member_no}</span>}
+                                    {p?.is_vip && (
+                                      <Badge
+                                        className={
+                                          cExpired
+                                            ? "bg-rose-500/15 text-rose-500 border border-rose-500/40 text-[10px] px-1.5 py-0"
+                                            : "bg-amber-500/15 text-amber-500 border border-amber-500/40 text-[10px] px-1.5 py-0"
+                                        }
+                                      >
+                                        {cExpired ? "VIP 已到期" : `VIP · ${cTier ? vipTierLabel(cTier) : "未設定位階"}`}
+                                      </Badge>
+                                    )}
+                                    {!p?.is_vip && cTier && (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                                        {vipTierLabel(cTier)}
+                                      </Badge>
+                                    )}
+                                    {p?.is_dealer && (
+                                      <Badge className="bg-blue-500/15 text-blue-500 border border-blue-500/40 text-[10px] px-1.5 py-0">經銷</Badge>
+                                    )}
                                   </div>
                                   <div className="text-xs text-muted-foreground truncate">
                                     {[c.email, c.phone].filter(Boolean).join(" · ") || "—"}
                                   </div>
                                 </div>
                               </CommandItem>
-                            ))}
+                              );
+                            })}
                           </CommandGroup>
                           <CommandGroup heading={`會員 (${membersQ.data?.length ?? 0})`}>
                             {(membersQ.data ?? []).map((m: any) => {
