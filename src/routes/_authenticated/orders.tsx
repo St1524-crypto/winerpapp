@@ -1492,7 +1492,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setPhone(c.phone ?? "");
     if (c.address) setAddress(c.address);
     setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
-    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null });
+    setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null, vip_expires_at: null });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
     // 嘗試以電話 / Email 對應到會員 profile，自動帶入 VIP 階層與通訊地址
@@ -1503,7 +1503,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (filters.length === 0) return;
       const { data } = await supabase
         .from("profiles")
-        .select("id,member_no,is_vip,is_dealer,vip_tier,addr_mail,addr_home")
+        .select("id,member_no,is_vip,is_dealer,vip_tier,legacy_rank,current_tier,vip_expires_at,addr_mail,addr_home")
         .or(filters.join(","))
         .limit(1)
         .maybeSingle();
@@ -1512,9 +1512,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         setCustomerStatus({
           is_vip: !!(data as any).is_vip,
           is_dealer: !!(data as any).is_dealer,
-          vip_tier: ((data as any).vip_tier as string | null) ?? null,
+          vip_tier: resolveVipTierCode(data as any),
           member_no: ((data as any).member_no as string | null) ?? null,
           user_id: uid,
+          vip_expires_at: ((data as any).vip_expires_at as string | null) ?? null,
         });
         if (!c.address) {
           const memberAddr = (data as any).addr_mail ?? (data as any).addr_home ?? null;
