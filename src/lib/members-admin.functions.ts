@@ -65,18 +65,22 @@ export const adminCreateMember = createServerFn({ method: "POST" })
     // Pre-check duplicates so the user gets a clear message instead of a
     // generic "Database error creating new user" from the profile trigger.
     if (phone) {
-      const { data: dupPhone } = await supabaseAdmin
+      const { data: samePhone } = await supabaseAdmin
         .from("profiles")
         .select("id, name, member_no")
         .eq("phone", phone)
-        .limit(1)
-        .maybeSingle();
-      if (dupPhone?.id) {
+        .limit(4);
+      if (samePhone && samePhone.length >= 3) {
+        const list = samePhone
+          .slice(0, 3)
+          .map((p: any) => `${p.name ?? ""}（${p.member_no ?? p.id}）`)
+          .join("、");
         throw new Error(
-          `此電話號碼已被會員「${dupPhone.name ?? ""}（${dupPhone.member_no ?? dupPhone.id}）」使用，請確認或改用其他號碼。`,
+          `此電話號碼已註冊 ${samePhone.length} 位會員（上限 3 位）：${list}，請改用其他號碼。`,
         );
       }
     }
+
     if (data.email?.trim()) {
       const { data: dupEmail } = await supabaseAdmin
         .from("profiles")
@@ -113,8 +117,8 @@ export const adminCreateMember = createServerFn({ method: "POST" })
       .update({ name: data.name, phone })
       .eq("id", uid);
     if (profileError) {
-      if (/profiles_phone_uidx|duplicate/i.test(profileError.message)) {
-        throw new Error("此電話號碼已被其他會員使用，請更換。");
+      if (/註冊上限|profiles_phone_uidx|duplicate/i.test(profileError.message)) {
+        throw new Error("此電話號碼已達註冊上限（最多 3 位會員），請更換。");
       }
       throw new Error(`會員資料寫入失敗：${profileError.message}`);
     }
