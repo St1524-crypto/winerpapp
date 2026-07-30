@@ -36,7 +36,6 @@ export const submitShopContentQuestion = createServerFn({ method: "POST" })
       .object({
         page_id: z.string().uuid(),
         content: z.string().trim().min(1).max(2000),
-        author_name: z.string().trim().max(60).optional(),
       })
       .parse(input),
   )
@@ -52,19 +51,15 @@ export const submitShopContentQuestion = createServerFn({ method: "POST" })
       throw new Error("找不到文章或尚未發布");
     }
 
-    // Get profile display name fallback — never expose email as public author name
-    let authorName = data.author_name?.trim();
-    if (!authorName) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("name, display_name")
-        .eq("id", userId)
-        .maybeSingle();
-      authorName =
-        (profile as any)?.display_name ||
-        (profile as any)?.name ||
-        "會員";
-    }
+    // Author name is always derived server-side from the caller's own profile.
+    // Client-supplied names are ignored to prevent impersonation.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("name, display_name")
+      .eq("id", userId)
+      .maybeSingle();
+    let authorName =
+      ((profile as any)?.display_name || (profile as any)?.name || "").trim();
     if (!authorName || authorName.includes("@")) authorName = "會員";
 
 
