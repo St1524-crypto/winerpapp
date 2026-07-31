@@ -58,9 +58,22 @@ export const adminCreateMember = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
 
     const phone = normalizePhone(data.phone);
-    const email = data.email?.trim() ||
-      (phone ? `${phone.replace(/^\+/, "")}@phone.local` : "");
-    if (!email) throw new Error("缺少有效識別資訊");
+    const explicitEmail = data.email?.trim() || "";
+    // 同一組電話最多可註冊 3 位會員：未填 Email 時，為第 2、3 位自動產生不重複的
+    // 佔位 Email（auth.users.email 全域唯一，否則第 2 位會被判定為重複註冊）。
+    const phoneLocal = phone ? phone.replace(/^\+/, "") : "";
+    const candidateEmails = explicitEmail
+      ? [explicitEmail]
+      : phoneLocal
+        ? [
+            `${phoneLocal}@phone.local`,
+            `${phoneLocal}.2@phone.local`,
+            `${phoneLocal}.3@phone.local`,
+            `${phoneLocal}.${Date.now().toString(36)}@phone.local`,
+          ]
+        : [];
+    if (candidateEmails.length === 0) throw new Error("缺少有效識別資訊");
+    const email = candidateEmails[0];
 
     // Pre-check duplicates so the user gets a clear message instead of a
     // generic "Database error creating new user" from the profile trigger.
