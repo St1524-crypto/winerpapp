@@ -916,7 +916,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [items, setItems] = useState<Array<{ product_id: string; name: string; sku: string | null; image: string | null; unit_price: number; quantity: number; reward_points: number }>>([]);
+  const [items, setItems] = useState<Array<{ product_id: string; name: string; sku: string | null; image: string | null; unit_price: number; quantity: number; reward_points: number; is_gift?: boolean }>>([]);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [shippingFee, setShippingFee] = useState("0");
   const [discount, setDiscount] = useState("0");
@@ -1178,12 +1178,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       }
-      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1, reward_points: Number(p.reward_points ?? 0) }];
+      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1, reward_points: Number(p.reward_points ?? 0), is_gift: false }];
     });
     setProductPickerOpen(false);
   }
-  function updateItem(idx: number, patch: Partial<{ unit_price: number; quantity: number }>) {
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  function updateItem(idx: number, patch: Partial<{ unit_price: number; quantity: number; is_gift: boolean }>) {
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch, ...(patch.is_gift ? { unit_price: 0 } : {}) } : it)));
   }
   function removeItem(idx: number) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
@@ -1277,7 +1277,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     return null;
   }
   // 套用：VIP 升級套組 → 套組 bonus_points；其他 → 階梯獎勵點（依會員身分過濾可見階梯）
-  function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number }): number {
+  function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number; is_gift?: boolean }): number {
+    if (it.is_gift) return 0;
     const pkg = packagesQ.data?.[it.product_id];
     if (pkg) return pkg.bonus_points;
     const best = getBestTier(it.product_id, it.quantity);
@@ -1289,6 +1290,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setItems((prev) => {
       let changed = false;
       const next = prev.map((it) => {
+        if (it.is_gift) return it.unit_price === 0 ? it : ((changed = true), { ...it, unit_price: 0 });
         if (packagesQ.data?.[it.product_id]) return it;
         const best = getBestTier(it.product_id, it.quantity);
         if (!best) return it;
@@ -1471,12 +1473,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           },
           items: items.map((it) => ({
             product_id: it.product_id,
-            product_name: it.name,
+            product_name: it.is_gift ? `${it.name}（贈品）` : it.name,
             sku: it.sku,
             image: it.image,
-            unit_price: it.unit_price,
+            unit_price: it.is_gift ? 0 : it.unit_price,
             quantity: it.quantity,
-            subtotal: Number(it.unit_price) * Number(it.quantity),
+            subtotal: it.is_gift ? 0 : Number(it.unit_price) * Number(it.quantity),
+            is_gift: Boolean(it.is_gift),
           })),
           payments: paymentsPayload,
           pointPayments,
@@ -2039,6 +2042,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>商品</TableHead>
+                      <TableHead className="w-16 text-center">贈品</TableHead>
                       <TableHead className="w-28">單價</TableHead>
                       <TableHead className="w-24">數量</TableHead>
                       <TableHead className="w-28 text-right">小計</TableHead>
@@ -2051,18 +2055,30 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                     {items.map((it, i) => (
                       <TableRow key={it.product_id}>
                         <TableCell>
-                          <div className="text-sm font-medium">{it.name}</div>
+                          <div className="text-sm font-medium">
+                            {it.name}
+                            {it.is_gift && <Badge variant="outline" className="ml-1.5 border-emerald-500/40 text-emerald-700">贈品</Badge>}
+                          </div>
                           {it.sku && <div className="text-xs text-muted-foreground">{it.sku}</div>}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={Boolean(it.is_gift)}
+                            onCheckedChange={(v) => updateItem(i, { is_gift: Boolean(v) })}
+                            aria-label="標記為贈品"
+                          />
                         </TableCell>
                         <TableCell>
                           <Input
                             type="number"
                             min={0}
-                            value={it.unit_price}
+                            value={it.is_gift ? 0 : it.unit_price}
+                            disabled={Boolean(it.is_gift)}
                             onChange={(e) => updateItem(i, { unit_price: Number(e.target.value) })}
                             className="h-8"
                           />
                         </TableCell>
+
                         <TableCell>
                           <Input
                             type="number"
@@ -2090,6 +2106,9 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                     ))}
                   </TableBody>
                 </Table>
+                <div className="border-t px-3 py-2 text-xs text-muted-foreground">
+                  勾選「贈品」的品項會以 0 元計價，且不產生任何獎勵點與分紅基數。
+                </div>
               </div>
             )}
           </div>
