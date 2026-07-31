@@ -1178,7 +1178,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       }
-      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1, reward_points: Number(p.reward_points ?? 0), is_gift: false }];
+      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1, reward_points: Number(p.reward_points ?? 0), is_gift: false, base_price: Number(p.price ?? 0) }];
     });
     setProductPickerOpen(false);
   }
