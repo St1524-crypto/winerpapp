@@ -2042,6 +2042,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>商品</TableHead>
+                      <TableHead className="w-16 text-center">贈品</TableHead>
                       <TableHead className="w-28">單價</TableHead>
                       <TableHead className="w-24">數量</TableHead>
                       <TableHead className="w-28 text-right">小計</TableHead>
@@ -2054,18 +2055,30 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                     {items.map((it, i) => (
                       <TableRow key={it.product_id}>
                         <TableCell>
-                          <div className="text-sm font-medium">{it.name}</div>
+                          <div className="text-sm font-medium">
+                            {it.name}
+                            {it.is_gift && <Badge variant="outline" className="ml-1.5 border-emerald-500/40 text-emerald-700">贈品</Badge>}
+                          </div>
                           {it.sku && <div className="text-xs text-muted-foreground">{it.sku}</div>}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={Boolean(it.is_gift)}
+                            onCheckedChange={(v) => updateItem(i, { is_gift: Boolean(v) })}
+                            aria-label="標記為贈品"
+                          />
                         </TableCell>
                         <TableCell>
                           <Input
                             type="number"
                             min={0}
-                            value={it.unit_price}
+                            value={it.is_gift ? 0 : it.unit_price}
+                            disabled={Boolean(it.is_gift)}
                             onChange={(e) => updateItem(i, { unit_price: Number(e.target.value) })}
                             className="h-8"
                           />
                         </TableCell>
+
                         <TableCell>
                           <Input
                             type="number"
