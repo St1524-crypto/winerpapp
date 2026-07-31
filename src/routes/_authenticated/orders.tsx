@@ -2106,6 +2106,9 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                     ))}
                   </TableBody>
                 </Table>
+                <div className="border-t px-3 py-2 text-xs text-muted-foreground">
+                  勾選「贈品」的品項會以 0 元計價，且不產生任何獎勵點與分紅基數。
+                </div>
               </div>
             )}
           </div>
