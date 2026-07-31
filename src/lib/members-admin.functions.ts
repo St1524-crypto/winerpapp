@@ -108,20 +108,32 @@ export const adminCreateMember = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: data.password,
-      email_confirm: true,
-      user_metadata: { name: data.name, phone: phone ?? undefined },
-    });
-    if (error) {
-      if (/already|registered|exists/i.test(error.message)) {
+    let created: Awaited<ReturnType<typeof supabaseAdmin.auth.admin.createUser>>["data"] | null = null;
+    let lastError: { message: string } | null = null;
+    for (const candidate of candidateEmails) {
+      const res = await supabaseAdmin.auth.admin.createUser({
+        email: candidate,
+        password: data.password,
+        email_confirm: true,
+        user_metadata: { name: data.name, phone: phone ?? undefined },
+      });
+      if (!res.error) {
+        created = res.data;
+        break;
+      }
+      lastError = res.error;
+      // 佔位 Email 已被佔用時，改試下一個（同電話第 2 / 3 位會員）
+      if (!/already|registered|exists/i.test(res.error.message)) break;
+    }
+    if (!created) {
+      if (lastError && /already|registered|exists/i.test(lastError.message)) {
         throw new Error("此 Email 或電話已有帳號，請確認後再建立。");
       }
-      throw new Error(`建立會員失敗：${error.message}`);
+      throw new Error(`建立會員失敗：${lastError?.message ?? "未知錯誤"}`);
     }
     const uid = created.user?.id;
     if (!uid) throw new Error("建立會員失敗");
+
 
     // The handle_new_user trigger will create profile + member_no + 'member' role.
     // Ensure phone/name are set even if metadata path differs.
