@@ -58,9 +58,22 @@ export const adminCreateMember = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
 
     const phone = normalizePhone(data.phone);
-    const email = data.email?.trim() ||
-      (phone ? `${phone.replace(/^\+/, "")}@phone.local` : "");
-    if (!email) throw new Error("缺少有效識別資訊");
+    const explicitEmail = data.email?.trim() || "";
+    // 同一組電話最多可註冊 3 位會員：未填 Email 時，為第 2、3 位自動產生不重複的
+    // 佔位 Email（auth.users.email 全域唯一，否則第 2 位會被判定為重複註冊）。
+    const phoneLocal = phone ? phone.replace(/^\+/, "") : "";
+    const candidateEmails = explicitEmail
+      ? [explicitEmail]
+      : phoneLocal
+        ? [
+            `${phoneLocal}@phone.local`,
+            `${phoneLocal}.2@phone.local`,
+            `${phoneLocal}.3@phone.local`,
+            `${phoneLocal}.${Date.now().toString(36)}@phone.local`,
+          ]
+        : [];
+    if (candidateEmails.length === 0) throw new Error("缺少有效識別資訊");
+    const email = candidateEmails[0];
 
     // Pre-check duplicates so the user gets a clear message instead of a
     // generic "Database error creating new user" from the profile trigger.
@@ -95,20 +108,32 @@ export const adminCreateMember = createServerFn({ method: "POST" })
       }
     }
 
-    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: data.password,
-      email_confirm: true,
-      user_metadata: { name: data.name, phone: phone ?? undefined },
-    });
-    if (error) {
-      if (/already|registered|exists/i.test(error.message)) {
+    let created: Awaited<ReturnType<typeof supabaseAdmin.auth.admin.createUser>>["data"] | null = null;
+    let lastError: { message: string } | null = null;
+    for (const candidate of candidateEmails) {
+      const res = await supabaseAdmin.auth.admin.createUser({
+        email: candidate,
+        password: data.password,
+        email_confirm: true,
+        user_metadata: { name: data.name, phone: phone ?? undefined },
+      });
+      if (!res.error) {
+        created = res.data;
+        break;
+      }
+      lastError = res.error;
+      // 佔位 Email 已被佔用時，改試下一個（同電話第 2 / 3 位會員）
+      if (!/already|registered|exists/i.test(res.error.message)) break;
+    }
+    if (!created) {
+      if (lastError && /already|registered|exists/i.test(lastError.message)) {
         throw new Error("此 Email 或電話已有帳號，請確認後再建立。");
       }
-      throw new Error(`建立會員失敗：${error.message}`);
+      throw new Error(`建立會員失敗：${lastError?.message ?? "未知錯誤"}`);
     }
     const uid = created.user?.id;
     if (!uid) throw new Error("建立會員失敗");
+
 
     // The handle_new_user trigger will create profile + member_no + 'member' role.
     // Ensure phone/name are set even if metadata path differs.

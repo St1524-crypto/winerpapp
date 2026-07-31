@@ -916,7 +916,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [items, setItems] = useState<Array<{ product_id: string; name: string; sku: string | null; image: string | null; unit_price: number; quantity: number; reward_points: number; is_gift?: boolean }>>([]);
+  const [items, setItems] = useState<Array<{ product_id: string; name: string; sku: string | null; image: string | null; unit_price: number; quantity: number; reward_points: number; is_gift?: boolean; base_price?: number }>>([]);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [shippingFee, setShippingFee] = useState("0");
   const [discount, setDiscount] = useState("0");
@@ -1178,12 +1178,23 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
       }
-      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1, reward_points: Number(p.reward_points ?? 0), is_gift: false }];
+      return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1, reward_points: Number(p.reward_points ?? 0), is_gift: false, base_price: Number(p.price ?? 0) }];
     });
     setProductPickerOpen(false);
   }
   function updateItem(idx: number, patch: Partial<{ unit_price: number; quantity: number; is_gift: boolean }>) {
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch, ...(patch.is_gift ? { unit_price: 0 } : {}) } : it)));
+    setItems((prev) => prev.map((it, i) => {
+      if (i !== idx) return it;
+      const next = { ...it, ...patch };
+      if (patch.is_gift === true) next.unit_price = 0;
+      // 取消勾選贈品時還原單價（階梯價優先，其次原始定價）
+      if (patch.is_gift === false) {
+        const best = getBestTier(it.product_id, next.quantity);
+        const tierPrice = best ? Number(best.unit_price) : NaN;
+        next.unit_price = Number.isFinite(tierPrice) ? tierPrice : Number(it.base_price ?? 0);
+      }
+      return next;
+    }));
   }
   function removeItem(idx: number) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
@@ -1304,7 +1315,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       return changed ? next : prev;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tiersQ.data, packagesQ.data, customerStatus.is_vip, customerStatus.is_dealer, items.map((i) => `${i.product_id}:${i.quantity}`).join("|")]);
+  }, [tiersQ.data, packagesQ.data, customerStatus.is_vip, customerStatus.is_dealer, items.map((i) => `${i.product_id}:${i.quantity}:${i.is_gift ? 1 : 0}`).join("|")]);
 
   const totalRewardPoints = useMemo(
     () => items.reduce((s, it) => s + getEffectiveReward(it) * Number(it.quantity || 0), 0),
