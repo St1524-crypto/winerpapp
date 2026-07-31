@@ -1277,7 +1277,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     return null;
   }
   // 套用：VIP 升級套組 → 套組 bonus_points；其他 → 階梯獎勵點（依會員身分過濾可見階梯）
-  function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number }): number {
+  function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number; is_gift?: boolean }): number {
+    if (it.is_gift) return 0;
     const pkg = packagesQ.data?.[it.product_id];
     if (pkg) return pkg.bonus_points;
     const best = getBestTier(it.product_id, it.quantity);
@@ -1289,6 +1290,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setItems((prev) => {
       let changed = false;
       const next = prev.map((it) => {
+        if (it.is_gift) return it.unit_price === 0 ? it : ((changed = true), { ...it, unit_price: 0 });
         if (packagesQ.data?.[it.product_id]) return it;
         const best = getBestTier(it.product_id, it.quantity);
         if (!best) return it;
