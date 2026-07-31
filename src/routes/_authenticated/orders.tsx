@@ -1183,7 +1183,18 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setProductPickerOpen(false);
   }
   function updateItem(idx: number, patch: Partial<{ unit_price: number; quantity: number; is_gift: boolean }>) {
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch, ...(patch.is_gift ? { unit_price: 0 } : {}) } : it)));
+    setItems((prev) => prev.map((it, i) => {
+      if (i !== idx) return it;
+      const next = { ...it, ...patch };
+      if (patch.is_gift === true) next.unit_price = 0;
+      // 取消勾選贈品時還原單價（階梯價優先，其次原始定價）
+      if (patch.is_gift === false) {
+        const best = getBestTier(it.product_id, next.quantity);
+        const tierPrice = best ? Number(best.unit_price) : NaN;
+        next.unit_price = Number.isFinite(tierPrice) ? tierPrice : Number(it.base_price ?? 0);
+      }
+      return next;
+    }));
   }
   function removeItem(idx: number) {
     setItems((prev) => prev.filter((_, i) => i !== idx));
