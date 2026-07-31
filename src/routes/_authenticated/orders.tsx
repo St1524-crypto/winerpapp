@@ -1315,7 +1315,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       return changed ? next : prev;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tiersQ.data, packagesQ.data, customerStatus.is_vip, customerStatus.is_dealer, items.map((i) => `${i.product_id}:${i.quantity}`).join("|")]);
+  }, [tiersQ.data, packagesQ.data, customerStatus.is_vip, customerStatus.is_dealer, items.map((i) => `${i.product_id}:${i.quantity}:${i.is_gift ? 1 : 0}`).join("|")]);
 
   const totalRewardPoints = useMemo(
     () => items.reduce((s, it) => s + getEffectiveReward(it) * Number(it.quantity || 0), 0),
