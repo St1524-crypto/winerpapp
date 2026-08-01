@@ -94,7 +94,11 @@ function ProductDetail() {
   const baseReward = Number((product as any).reward_points ?? 0);
   // 拆分階梯：零售多件優惠（公開，所有人可見） vs VIP/dealer 批發階梯（僅合格身分）
   const retailTiers = tiers.filter((t) => (t.visibility ?? "all") === "all");
-  const vipTiers = tiers.filter((t) => t.visibility === "vip" || t.visibility === "dealer");
+  // VIP / 經銷批發階梯僅適用於「批發專區」商品；全部商品（零售）只顯示公開多件優惠
+  const isWholesaleProduct = Boolean((product as any).wholesale_only);
+  const vipTiers = isWholesaleProduct
+    ? tiers.filter((t) => t.visibility === "vip" || t.visibility === "dealer")
+    : [];
   // 套用順序：VIP 身分優先套 VIP 階梯，否則退回零售階梯
   const applicableTiers = canSeeWholesale && vipTiers.length > 0 ? vipTiers : retailTiers;
   const pricing = applyWholesalePricing(baseEff, baseReward, applicableTiers, qty);
