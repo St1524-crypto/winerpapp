@@ -259,7 +259,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return totalUnits > 0 ? Math.round(info.price / totalUnits) : 0;
     }
     const base = getEffectivePrice(i.product as any, isDealer);
-    const tiers = tiersMap[i.product_id] ?? [];
+    const tiers = tiersForItem(i);
     return applyWholesalePricing(base, 0, tiers, i.quantity).unitPrice;
   };
   const getItemUnitReward = (i: CartItem) => {
@@ -268,7 +268,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (bid) return 0;
     const baseReward = Number((i.product as any)?.reward_points ?? 0) || 0;
     const basePrice = Number(getEffectivePrice(i.product as any, isDealer)) || 0;
-    const tiers = tiersMap[i.product_id] ?? [];
+    const tiers = tiersForItem(i);
     return applyWholesalePricing(basePrice, baseReward, tiers, i.quantity).unitRewardPoints;
   };
 
