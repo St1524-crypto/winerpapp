@@ -592,11 +592,12 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
 
               <div className="flex items-center justify-between rounded-lg border border-border p-3 sm:col-span-2">
                 <div>
-                  <div className="font-medium text-sm">只在批發專區顯示</div>
-                  <div className="text-xs text-muted-foreground">開啟後，此商品不會出現在首頁與全部商品，只會出現在批發專區。</div>
+                  <div className="font-medium text-sm">同時顯示於一般賣場</div>
+                  <div className="text-xs text-muted-foreground">開啟後，此商品會出現在首頁、全部商品與批發專區；未開啟則只會出現在批發專區。</div>
                 </div>
-                <Switch checked={form.wholesale_only} onCheckedChange={(v) => setForm({ ...form, wholesale_only: v })} />
+                <Switch checked={!form.wholesale_only} onCheckedChange={(v) => setForm({ ...form, wholesale_only: !v })} />
               </div>
+
             </div>
           </TabsContent>
         </Tabs>

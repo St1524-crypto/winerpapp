@@ -61,14 +61,14 @@ function WholesaleArea() {
         setLoading(false);
         return;
       }
-      // 只有「批發專區商品」(wholesale_only = true) 才適用 VIP／經銷批發階梯，
-      // 與商品頁、購物車計價與獎勵點規則保持一致。
+      // 批發專區顯示所有有 VIP／經銷階梯的上架商品：
+      // 「同時顯示於一般賣場」關閉的商品只會出現在這裡，開啟的則兩邊都會出現。
       const { data: products } = await supabase
         .from("products")
         .select(PRODUCT_PUBLIC_COLUMNS)
         .in("id", ids)
-        .eq("status", "active")
-        .eq("wholesale_only", true);
+        .eq("status", "active");
+
       const result: WholesaleProduct[] = ((products ?? []) as Product[]).map((p) => ({
         ...p,
         tiers: tiersByProduct[p.id] ?? [],
