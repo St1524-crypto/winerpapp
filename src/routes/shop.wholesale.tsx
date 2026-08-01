@@ -61,11 +61,14 @@ function WholesaleArea() {
         setLoading(false);
         return;
       }
+      // 只有「批發專區商品」(wholesale_only = true) 才適用 VIP／經銷批發階梯，
+      // 與商品頁、購物車計價與獎勵點規則保持一致。
       const { data: products } = await supabase
         .from("products")
         .select(PRODUCT_PUBLIC_COLUMNS)
         .in("id", ids)
-        .eq("status", "active");
+        .eq("status", "active")
+        .eq("wholesale_only", true);
       const result: WholesaleProduct[] = ((products ?? []) as Product[]).map((p) => ({
         ...p,
         tiers: tiersByProduct[p.id] ?? [],
