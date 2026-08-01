@@ -21,6 +21,7 @@ import {
   runDailySettlement, runMonthlySettlement,
   releaseDueRewards, manualReleaseRewards,
   listSettlementBatches, listBonusRecords,
+  scanUnsettledMonths,
 } from "@/lib/bonus.functions";
 
 
@@ -580,5 +581,105 @@ function MonthlyTierRow({ row, isNew, onSaved }: { row: any; isNew?: boolean; on
         )}
       </TableCell>
     </TableRow>
+  );
+}
+
+/* ───────────── 未結算月份清單 ───────────── */
+function UnsettledMonthsCard({ busy, onSettled }: { busy: boolean; onSettled: () => void }) {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res: any = await scanUnsettledMonths({ data: { months: 12 } });
+      setRows(res.months ?? []);
+    } catch (e: any) {
+      toast.error(e?.message ?? "載入未結算月份失敗");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const settle = async (ym: string, label: string) => {
+    setRunning(ym);
+    try {
+      await runMonthlySettlement({ data: { yyyymm: ym } });
+      toast.success(`月結算完成（${label}）`);
+      await load();
+      onSettled();
+    } catch (e: any) {
+      toast.error(e?.message ?? "月結算失敗");
+    } finally {
+      setRunning(null);
+    }
+  };
+
+  const pending = rows.filter((r) => r.canSettle);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-base">
+          未結算月份
+          {!loading && (
+            <span className="ml-2 text-xs font-normal text-muted-foreground">
+              最近 12 個月，待結算 {pending.length} 個月
+            </span>
+          )}
+        </CardTitle>
+        <Button size="sm" variant="outline" onClick={load} disabled={loading}>重新掃描</Button>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>月份</TableHead>
+                <TableHead>期間</TableHead>
+                <TableHead>狀態</TableHead>
+                <TableHead className="text-right">有效筆數</TableHead>
+                <TableHead className="text-right">有效點數</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((r) => (
+                <TableRow key={r.ym} className={r.canSettle ? "bg-amber-50/60 dark:bg-amber-950/20" : undefined}>
+                  <TableCell className="font-medium">{r.label}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{r.periodStart} ~ {r.periodEnd}</TableCell>
+                  <TableCell>
+                    {r.settled ? (
+                      <Badge variant="secondary">已結算{r.batchStatus ? `（${r.batchStatus}）` : ""}</Badge>
+                    ) : r.monthEnded ? (
+                      <Badge variant="destructive">未結算</Badge>
+                    ) : (
+                      <Badge variant="outline">月份未結束</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">{r.recordsActive}</TableCell>
+                  <TableCell className="text-right">{r.recordsActivePoints}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" disabled={busy || !r.canSettle || running !== null}
+                      title={r.blockedReason ?? undefined}
+                      onClick={() => settle(r.ym, r.label)}>
+                      {running === r.ym ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" />執行結算</>}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+        <p className="text-xs text-muted-foreground mt-3">
+          * 只有「月份已結束且尚無月結批次／月結獎金紀錄」的月份可執行結算；已結算月份如需更正請走獎金重算流程。
+        </p>
+      </CardContent>
+    </Card>
   );
 }
