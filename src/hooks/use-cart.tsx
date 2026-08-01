@@ -245,6 +245,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await refresh();
   };
 
+  // 非批發專區商品（wholesale_only = false）只套用公開的零售多件優惠階梯，
+  // VIP / 經銷批發階梯僅適用於批發專區商品。
+  const tiersForItem = (i: CartItem) => {
+    const all = tiersMap[i.product_id] ?? [];
+    const isWholesaleOnly = Boolean((i.product as any)?.wholesale_only);
+    return isWholesaleOnly ? all : all.filter((t) => (t.visibility ?? "all") === "all");
+  };
+
   const getItemUnitPrice = (i: CartItem) => {
     // 套組列：以 bundle_price 依基礎單價比例分攤，忽略單品階梯
     const bid = (i as any).bundle_id as string | undefined;
