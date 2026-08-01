@@ -945,7 +945,7 @@ export const adminListBonusRecalculationRuns = createServerFn({ method: "POST" }
   });
 
 /* ───────────── 掃描：未結算月份清單（可進行月結算） ───────────── */
-const MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate", "rank_diff_rebate", "national_share"];
+const SCAN_MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate", "rank_diff_rebate", "national_share"];
 
 export const scanUnsettledMonths = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -993,7 +993,7 @@ export const scanUnsettledMonths = createServerFn({ method: "POST" })
       (supabaseAdmin as any)
         .from("bonus_records")
         .select("settlement_date, status, bonus_points, bonus_type")
-        .in("bonus_type", MONTHLY_BONUS_TYPES)
+        .in("bonus_type", SCAN_MONTHLY_BONUS_TYPES)
         .in("settlement_date", months.map((m) => m.end))
         .limit(50000),
     ]);
@@ -1037,7 +1037,7 @@ export const scanUnsettledMonths = createServerFn({ method: "POST" })
         settled,
         canSettle: m.monthEnded && !settled,
         blockedReason: !m.monthEnded
-          ? `需於 ${m.periodEndLabel ?? m.end} 當日結束後才可執行`
+          ? `需於 ${m.end} 當日結束後才可執行`
           : settled
             ? "已結算（如需重跑請使用獎金重算）"
             : null,
