@@ -944,6 +944,109 @@ export const adminListBonusRecalculationRuns = createServerFn({ method: "POST" }
     return { runs: runs ?? [] };
   });
 
+/* ───────────── 掃描：未結算月份清單（可進行月結算） ───────────── */
+const SCAN_MONTHLY_BONUS_TYPES = ["monthly_vip", "rank_rebate", "rank_diff_rebate", "national_share"];
+
+export const scanUnsettledMonths = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ months: z.number().int().min(1).max(24).optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+
+    const monthsBack = data.months ?? 12;
+    const nowTw = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+
+    type M = { ym: string; label: string; start: string; end: string; monthEnded: boolean };
+    const months: M[] = [];
+    for (let i = 0; i < monthsBack; i++) {
+      const y = nowTw.getFullYear();
+      const m = nowTw.getMonth() - i;
+      const d = new Date(y, m, 1);
+      const yy = d.getFullYear();
+      const mm = d.getMonth() + 1;
+      const lastDay = new Date(yy, mm, 0).getDate();
+      const start = `${yy}-${String(mm).padStart(2, "0")}-01`;
+      const end = `${yy}-${String(mm).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+      months.push({
+        ym: `${yy}${String(mm).padStart(2, "0")}`,
+        label: `${yy}/${String(mm).padStart(2, "0")}`,
+        start,
+        end,
+        monthEnded: nowTw > new Date(yy, mm - 1, lastDay, 23, 59, 59),
+      });
+    }
+
+    const rangeStart = months[months.length - 1].start;
+    const rangeEnd = months[0].end;
+
+    const [{ data: batches }, { data: recs }] = await Promise.all([
+      (supabaseAdmin as any)
+        .from("bonus_settlement_batches")
+        .select("id, settlement_type, settlement_period_start, settlement_period_end, status, total_bonus_points, created_at, completed_at")
+        .eq("settlement_type", "monthly")
+        .gte("settlement_period_start", rangeStart)
+        .lte("settlement_period_end", rangeEnd)
+        .order("created_at", { ascending: false })
+        .limit(200),
+      (supabaseAdmin as any)
+        .from("bonus_records")
+        .select("settlement_date, status, bonus_points, bonus_type")
+        .in("bonus_type", SCAN_MONTHLY_BONUS_TYPES)
+        .in("settlement_date", months.map((m) => m.end))
+        .limit(50000),
+    ]);
+
+    const batchByYm = new Map<string, any>();
+    for (const b of batches ?? []) {
+      const ym = String(b.settlement_period_start ?? "").slice(0, 7).replace("-", "");
+      if (!batchByYm.has(ym)) batchByYm.set(ym, b);
+    }
+
+    const recByDate = new Map<string, { total: number; active: number; activePoints: number; cancelled: number }>();
+    for (const r of recs ?? []) {
+      const cur = recByDate.get(r.settlement_date) ?? { total: 0, active: 0, activePoints: 0, cancelled: 0 };
+      cur.total += 1;
+      if (r.status === "cancelled") cur.cancelled += 1;
+      else if (r.status === "waiting_release" || r.status === "released") {
+        cur.active += 1;
+        cur.activePoints += Number(r.bonus_points ?? 0);
+      }
+      recByDate.set(r.settlement_date, cur);
+    }
+
+    const rows = months.map((m) => {
+      const batch = batchByYm.get(m.ym) ?? null;
+      const rec = recByDate.get(m.end) ?? { total: 0, active: 0, activePoints: 0, cancelled: 0 };
+      const settled = Boolean(batch) || rec.total > 0;
+      return {
+        ym: m.ym,
+        label: m.label,
+        periodStart: m.start,
+        periodEnd: m.end,
+        monthEnded: m.monthEnded,
+        batchId: batch?.id ?? null,
+        batchStatus: batch?.status ?? null,
+        batchPoints: batch ? Number(batch.total_bonus_points ?? 0) : null,
+        settledAt: batch?.completed_at ?? batch?.created_at ?? null,
+        recordsTotal: rec.total,
+        recordsActive: rec.active,
+        recordsActivePoints: rec.activePoints,
+        recordsCancelled: rec.cancelled,
+        settled,
+        canSettle: m.monthEnded && !settled,
+        blockedReason: !m.monthEnded
+          ? `需於 ${m.end} 當日結束後才可執行`
+          : settled
+            ? "已結算（如需重跑請使用獎金重算）"
+            : null,
+      };
+    });
+
+    return { months: rows, scannedFrom: rangeStart, scannedTo: rangeEnd };
+  });
+
 export const runMonthlySettlement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
