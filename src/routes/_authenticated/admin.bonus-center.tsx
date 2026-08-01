@@ -332,11 +332,14 @@ function Page() {
                 );
               })()}
               <p className="text-xs text-muted-foreground">
-                * 自動結算與發放透過 pg_cron 每日呼叫 `/api/public/hooks/bonus-daily-tick`。
+                * 自動結算與發放透過 pg_cron 每日呼叫 `/api/public/hooks/bonus-daily-tick`。月結算目前為手動模式。
               </p>
             </CardContent>
           </Card>
+
+          <UnsettledMonthsCard busy={busy} onSettled={loadAll} />
         </TabsContent>
+
 
 
         {/* 獎金明細 */}
