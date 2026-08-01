@@ -229,6 +229,7 @@ export type Database = {
       }
       annual_fee_upgrade_logs: {
         Row: {
+          company_id: string | null
           created_at: string
           gift_product_id: string | null
           gift_quantity: number | null
@@ -244,6 +245,7 @@ export type Database = {
           vip_expires_before: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           gift_product_id?: string | null
           gift_quantity?: number | null
@@ -259,6 +261,7 @@ export type Database = {
           vip_expires_before?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           gift_product_id?: string | null
           gift_quantity?: number | null
@@ -274,6 +277,13 @@ export type Database = {
           vip_expires_before?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "annual_fee_upgrade_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "annual_fee_upgrade_logs_rule_id_fkey"
             columns: ["rule_id"]
@@ -1526,6 +1536,7 @@ export type Database = {
       }
       dealer_metrics: {
         Row: {
+          company_id: string | null
           current_pv: number
           direct_vip_count: number
           maintenance_expires_at: string | null
@@ -1536,6 +1547,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           current_pv?: number
           direct_vip_count?: number
           maintenance_expires_at?: string | null
@@ -1546,6 +1558,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           current_pv?: number
           direct_vip_count?: number
           maintenance_expires_at?: string | null
@@ -1555,7 +1568,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dealer_metrics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dealer_program_settings: {
         Row: {
@@ -3246,6 +3267,7 @@ export type Database = {
           calculation_detail: Json
           cap_after: number | null
           cap_before: number | null
+          company_id: string | null
           created_at: string
           distributed_points: number
           id: string
@@ -3259,6 +3281,7 @@ export type Database = {
           calculation_detail?: Json
           cap_after?: number | null
           cap_before?: number | null
+          company_id?: string | null
           created_at?: string
           distributed_points?: number
           id?: string
@@ -3272,6 +3295,7 @@ export type Database = {
           calculation_detail?: Json
           cap_after?: number | null
           cap_before?: number | null
+          company_id?: string | null
           created_at?: string
           distributed_points?: number
           id?: string
@@ -3281,7 +3305,15 @@ export type Database = {
           source_total_points?: number
           tier_code?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "national_bonus_pool_ledger_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       national_bonus_pool_settings: {
         Row: {
