@@ -158,7 +158,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const db = getDb();
       const { data } = await db
         .from("cart_items")
-        .select("*, product:products(id, name, sku, price, image, stock, status)")
+        .select("*, product:products(id, name, sku, price, image, stock, status, wholesale_only, reward_points)")
         .eq("cart_id", id)
         .order("created_at", { ascending: false });
       const itemList = (data ?? []) as unknown as CartItem[];
@@ -245,6 +245,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await refresh();
   };
 
+  // 非批發專區商品（wholesale_only = false）只套用公開的零售多件優惠階梯，
+  // VIP / 經銷批發階梯僅適用於批發專區商品。
+  const tiersForItem = (i: CartItem) => {
+    const all = tiersMap[i.product_id] ?? [];
+    const isWholesaleOnly = Boolean((i.product as any)?.wholesale_only);
+    return isWholesaleOnly ? all : all.filter((t) => (t.visibility ?? "all") === "all");
+  };
+
   const getItemUnitPrice = (i: CartItem) => {
     // 套組列：以 bundle_price 依基礎單價比例分攤，忽略單品階梯
     const bid = (i as any).bundle_id as string | undefined;
@@ -259,7 +267,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return totalUnits > 0 ? Math.round(info.price / totalUnits) : 0;
     }
     const base = getEffectivePrice(i.product as any, isDealer);
-    const tiers = tiersMap[i.product_id] ?? [];
+    const tiers = tiersForItem(i);
     return applyWholesalePricing(base, 0, tiers, i.quantity).unitPrice;
   };
   const getItemUnitReward = (i: CartItem) => {
@@ -268,7 +276,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (bid) return 0;
     const baseReward = Number((i.product as any)?.reward_points ?? 0) || 0;
     const basePrice = Number(getEffectivePrice(i.product as any, isDealer)) || 0;
-    const tiers = tiersMap[i.product_id] ?? [];
+    const tiers = tiersForItem(i);
     return applyWholesalePricing(basePrice, baseReward, tiers, i.quantity).unitRewardPoints;
   };
 
