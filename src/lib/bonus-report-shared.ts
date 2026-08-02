@@ -36,15 +36,16 @@ export const DAILY_COLUMN_MAP: Record<string, string> = {
   repurchase: "消費回饋",
 };
 
-// 月報
+// 月報（對齊「月獎金總表」範本欄位）
 export const MONTHLY_COLUMN_MAP: Record<string, string> = {
-  monthly_vip: "重消獎金",
-  rank_rebate: "達成分紅",
+  repurchase: "重消獎金",
   rank_diff_rebate: "超額獎金",
+  referral: "推薦王獎金",
+  monthly_vip: "達成分紅",
   national_share: "全國分紅",
+  rank_rebate: "專員獎金",
   business_bonus: "營業分紅",
-  upgrade_bonus: "營業分紅",
-  repurchase: "重消回饋",
+  upgrade_bonus: "小組獎金",
 };
 
 export const DAILY_TEMPLATE_COLUMNS = [
@@ -58,13 +59,19 @@ export const DAILY_TEMPLATE_COLUMNS = [
 export const MONTHLY_TEMPLATE_COLUMNS = [
   "重消獎金",
   "超額獎金",
+  "超額對等",
+  "推薦王獎金",
   "重消回饋",
   "達成分紅",
   "全國分紅",
-  "分球分紅",
+  "全球分紅",
   "車馬津貼",
+  "專員獎金",
+  "營業分紅",
+  "小組獎金",
   "應付應扣",
 ];
+
 
 /* ─── 稅務估算（本國個人） ─── */
 // 逾 1,000 元 → 5% 稅；逾 20,000 元 → 加健保 2.11%。
@@ -211,4 +218,37 @@ export function exportSummaryXls(opts: {
 
 export function fmtN(v: any) {
   return Number(v ?? 0).toLocaleString();
+}
+
+/* ─── 月獎金總表（依「月獎金總表」範本欄位）─── */
+export const MONTHLY_GRAND_HEAD = ["會員編號", "會員姓名"];
+export const MONTHLY_GRAND_TAIL = ["獎金總額", "健保費", "5%稅", "10%稅", "購物錢包", "獎金淨額"];
+
+export function buildMonthlyGrandSummaryTable(rows: SummaryRow[]) {
+  const header = [...MONTHLY_GRAND_HEAD, ...MONTHLY_TEMPLATE_COLUMNS, ...MONTHLY_GRAND_TAIL];
+  const body: (string | number)[][] = rows.map((r) => {
+    const cols = MONTHLY_TEMPLATE_COLUMNS.map((c) => Number(r.columns[c] ?? 0));
+    const gross = cols.reduce((s, x) => s + x, 0);
+    const wallet = 0;
+    const net = gross - r.health - r.t5 - r.t10 - wallet;
+    return [r.member_no, r.name, ...cols, gross, r.health, r.t5, r.t10, wallet, net];
+  });
+  if (body.length) {
+    const totals: (string | number)[] = ["合計", ""];
+    for (let i = 2; i < header.length; i++) {
+      totals.push(body.reduce((s, r) => s + Number(r[i] ?? 0), 0));
+    }
+    body.push(totals);
+  }
+  return { header, body };
+}
+
+export async function exportMonthlyGrandSummary(
+  format: "csv" | "xlsx",
+  rows: SummaryRow[],
+  baseName: string,
+) {
+  const { header, body } = buildMonthlyGrandSummaryTable(rows);
+  const { exportTable } = await import("@/lib/table-export");
+  await exportTable(format, header, body, baseName, "月獎金總表");
 }

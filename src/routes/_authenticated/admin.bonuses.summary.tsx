@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Loader2, RefreshCw, Search } from "lucide-react";
+import { ArrowLeft, Loader2, RefreshCw, Search, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
@@ -12,9 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getBonusSummaryReport } from "@/lib/bonus.functions";
+import { getBonusSummaryReport, listMonthlyBonusDetails } from "@/lib/bonus.functions";
 import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, BONUS_TYPE_LABEL } from "@/lib/bonus-labels";
 import { PRESET_OPTIONS, computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
+import {
+  aggregateMerged, MONTHLY_COLUMN_MAP, MONTHLY_TEMPLATE_COLUMNS, exportMonthlyGrandSummary,
+} from "@/lib/bonus-report-shared";
+import { buildExportFileName } from "@/lib/table-export";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 const STATUS_OPTIONS = [
@@ -60,6 +64,21 @@ function Page() {
   }, [filters]);
 
   useEffect(() => { load(); }, []);
+
+  const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
+  async function exportMonthlyGrand(format: "csv" | "xlsx") {
+    setExporting(format);
+    try {
+      const p: any = { limit: 5000 };
+      Object.entries(filters).forEach(([k, v]) => { if (v) p[k] = v; });
+      const res: any = await listMonthlyBonusDetails({ data: p });
+      const rows = aggregateMerged(res?.rows ?? [], res?.members ?? {}, MONTHLY_COLUMN_MAP, MONTHLY_TEMPLATE_COLUMNS);
+      if (!rows.length) { toast.info("此期間無月獎金資料可匯出"); return; }
+      await exportMonthlyGrandSummary(format, rows, buildExportFileName("月獎金總表", filters.dateFrom, filters.dateTo, "month"));
+      toast.success(`已匯出 ${rows.length} 位會員`);
+    } catch (e: any) { toast.error(e?.message ?? "匯出失敗"); }
+    finally { setExporting(null); }
+  }
 
   function applyPreset(v: BonusDatePreset) {
     setPreset(v);
@@ -148,6 +167,12 @@ function Page() {
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}查詢
             </Button>
             <Button variant="outline" onClick={load} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" />重新整理</Button>
+            <Button variant="outline" onClick={() => exportMonthlyGrand("csv")} disabled={!!exporting}>
+              {exporting === "csv" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}匯出月獎金總表 CSV
+            </Button>
+            <Button variant="outline" onClick={() => exportMonthlyGrand("xlsx")} disabled={!!exporting}>
+              {exporting === "xlsx" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}匯出月獎金總表 Excel
+            </Button>
           </div>
         </CardContent>
       </Card>
