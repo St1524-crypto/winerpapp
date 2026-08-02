@@ -228,7 +228,7 @@ function Page() {
         setPreset={applyPreset}
         onLoad={load}
         loading={loading}
-        onExport={exportCsv}
+        onExport={exportData}
         typeOptions={MONTHLY_BONUS_TYPE_OPTIONS}
       />
 
