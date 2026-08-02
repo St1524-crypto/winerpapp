@@ -667,12 +667,20 @@ function UnsettledMonthsCard({ busy, onSettled }: { busy: boolean; onSettled: ()
                   <TableCell className="text-right">{r.recordsActive}</TableCell>
                   <TableCell className="text-right">{r.recordsActivePoints}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" disabled={busy || !r.canSettle || running !== null}
-                      title={r.blockedReason ?? undefined}
-                      onClick={() => settle(r.ym, r.label)}>
-                      {running === r.ym ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" />執行結算</>}
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" disabled={busy || !r.canSettle || running !== null}
+                        title={r.blockedReason ?? undefined}
+                        onClick={() => settle(r.ym, r.label)}>
+                        {running === r.ym ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" />執行結算</>}
+                      </Button>
+                      <Button size="sm" variant="outline" disabled={busy || !r.monthEnded}
+                        title={r.monthEnded ? "先 Dry-run 預覽差異，再一鍵補結" : "月份尚未結束"}
+                        onClick={() => setBackfill({ ym: r.ym, label: r.label })}>
+                        <RotateCcw className="h-4 w-4 mr-1" />補結
+                      </Button>
+                    </div>
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>
