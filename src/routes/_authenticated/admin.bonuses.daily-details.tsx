@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Info, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { exportTable } from "@/lib/table-export";
+import { exportTable, buildExportFileName } from "@/lib/table-export";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { Button } from "@/components/ui/button";
@@ -132,7 +132,7 @@ function Page() {
       ];
     });
     try {
-      await exportTable(format, header, data, `daily-bonus-${filters.dateFrom}_${filters.dateTo}`, "日獎金明細");
+      await exportTable(format, header, data, buildExportFileName("日獎金明細", filters.dateFrom, filters.dateTo), "日獎金明細");
       toast.success(format === "csv" ? "已匯出 CSV" : "已匯出 Excel");
     } catch (e: any) {
       toast.error(e?.message ?? "匯出失敗");
