@@ -65,6 +65,21 @@ function Page() {
 
   useEffect(() => { load(); }, []);
 
+  const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
+  async function exportMonthlyGrand(format: "csv" | "xlsx") {
+    setExporting(format);
+    try {
+      const p: any = { limit: 5000 };
+      Object.entries(filters).forEach(([k, v]) => { if (v) p[k] = v; });
+      const res: any = await listMonthlyBonusDetails({ data: p });
+      const rows = aggregateMerged(res?.rows ?? [], res?.members ?? {}, MONTHLY_COLUMN_MAP, MONTHLY_TEMPLATE_COLUMNS);
+      if (!rows.length) { toast.info("此期間無月獎金資料可匯出"); return; }
+      await exportMonthlyGrandSummary(format, rows, buildExportFileName("月獎金總表", filters.dateFrom, filters.dateTo, "month"));
+      toast.success(`已匯出 ${rows.length} 位會員`);
+    } catch (e: any) { toast.error(e?.message ?? "匯出失敗"); }
+    finally { setExporting(null); }
+  }
+
   function applyPreset(v: BonusDatePreset) {
     setPreset(v);
     const p = computePreset(v);
