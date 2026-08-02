@@ -33,7 +33,7 @@ export function BonusFiltersCard({
   setPreset: (p: BonusDatePreset) => void;
   onLoad: () => void;
   loading: boolean;
-  onExport?: () => void;
+  onExport?: (format: "csv" | "xlsx") => void;
   typeOptions: { value: string; label: string }[];
 }) {
   return (
