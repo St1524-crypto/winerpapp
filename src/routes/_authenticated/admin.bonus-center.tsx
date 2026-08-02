@@ -12,7 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Coins, Play, Send, Settings as SettingsIcon, History } from "lucide-react";
+import { Loader2, Coins, Play, Send, Settings as SettingsIcon, History, RotateCcw } from "lucide-react";
+import { MonthlyBackfillDialog } from "@/components/admin/MonthlyBackfillDialog";
+
 import { toast } from "sonner";
 import {
   getBonusSettings, updateBonusSettings,
@@ -589,6 +591,8 @@ function UnsettledMonthsCard({ busy, onSettled }: { busy: boolean; onSettled: ()
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
+  const [backfill, setBackfill] = useState<{ ym: string; label: string } | null>(null);
+
 
   const load = async () => {
     setLoading(true);
@@ -665,21 +669,37 @@ function UnsettledMonthsCard({ busy, onSettled }: { busy: boolean; onSettled: ()
                   <TableCell className="text-right">{r.recordsActive}</TableCell>
                   <TableCell className="text-right">{r.recordsActivePoints}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" disabled={busy || !r.canSettle || running !== null}
-                      title={r.blockedReason ?? undefined}
-                      onClick={() => settle(r.ym, r.label)}>
-                      {running === r.ym ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" />執行結算</>}
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" disabled={busy || !r.canSettle || running !== null}
+                        title={r.blockedReason ?? undefined}
+                        onClick={() => settle(r.ym, r.label)}>
+                        {running === r.ym ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Play className="h-4 w-4 mr-1" />執行結算</>}
+                      </Button>
+                      <Button size="sm" variant="outline" disabled={busy || !r.monthEnded}
+                        title={r.monthEnded ? "先 Dry-run 預覽差異，再一鍵補結" : "月份尚未結束"}
+                        onClick={() => setBackfill({ ym: r.ym, label: r.label })}>
+                        <RotateCcw className="h-4 w-4 mr-1" />補結
+                      </Button>
+                    </div>
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         )}
         <p className="text-xs text-muted-foreground mt-3">
-          * 只有「月份已結束且尚無月結批次／月結獎金紀錄」的月份可執行結算；已結算月份如需更正請走獎金重算流程。
+          * 只有「月份已結束且尚無月結批次／月結獎金紀錄」的月份可執行結算；已結算或結算不完整的月份，請用「補結」先 Dry-run 預覽差異再一鍵補結。
         </p>
+        <MonthlyBackfillDialog
+          open={Boolean(backfill)}
+          onOpenChange={(v) => { if (!v) setBackfill(null); }}
+          ym={backfill?.ym ?? ""}
+          label={backfill?.label ?? ""}
+          onDone={() => { load(); onSettled(); }}
+        />
       </CardContent>
     </Card>
+
   );
 }
