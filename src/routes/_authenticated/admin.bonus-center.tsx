@@ -589,6 +589,8 @@ function UnsettledMonthsCard({ busy, onSettled }: { busy: boolean; onSettled: ()
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
+  const [backfill, setBackfill] = useState<{ ym: string; label: string } | null>(null);
+
 
   const load = async () => {
     setLoading(true);
