@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Info, AlertTriangle, Printer } from "lucide-react";
 import { exportMonthlyBonusStatements } from "@/lib/bonus-monthly-statement";
+import { exportTable } from "@/lib/table-export";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
