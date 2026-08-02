@@ -17,6 +17,7 @@ import { BonusFiltersCard } from "@/components/admin/BonusFiltersCard";
 import { MONTHLY_RULE_INTRO, bonusRuleMeta, vipStatusLabel, calculationNote } from "@/lib/bonus-rules";
 import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
 import { BonusIncomeSummary, IncomeEmptyState } from "@/components/admin/BonusIncomeSummary";
+import { MonthlyBonusReconciliationCard } from "@/components/admin/MonthlyBonusReconciliationCard";
 import { filterIncome } from "@/lib/bonus-income";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
@@ -265,6 +266,8 @@ function Page() {
       )}
 
       <BonusIncomeSummary rows={allRows} title="月獎金收入總表" />
+
+      <MonthlyBonusReconciliationCard rows={allRows} />
 
       <Card>
         <CardHeader>
