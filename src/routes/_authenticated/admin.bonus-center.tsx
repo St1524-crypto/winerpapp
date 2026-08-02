@@ -689,9 +689,17 @@ function UnsettledMonthsCard({ busy, onSettled }: { busy: boolean; onSettled: ()
           </Table>
         )}
         <p className="text-xs text-muted-foreground mt-3">
-          * 只有「月份已結束且尚無月結批次／月結獎金紀錄」的月份可執行結算；已結算月份如需更正請走獎金重算流程。
+          * 只有「月份已結束且尚無月結批次／月結獎金紀錄」的月份可執行結算；已結算或結算不完整的月份，請用「補結」先 Dry-run 預覽差異再一鍵補結。
         </p>
+        <MonthlyBackfillDialog
+          open={Boolean(backfill)}
+          onOpenChange={(v) => { if (!v) setBackfill(null); }}
+          ym={backfill?.ym ?? ""}
+          label={backfill?.label ?? ""}
+          onDone={() => { load(); onSettled(); }}
+        />
       </CardContent>
     </Card>
+
   );
 }
