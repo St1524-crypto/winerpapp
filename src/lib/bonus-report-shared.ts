@@ -225,7 +225,13 @@ export function buildMonthlyGrandSummaryTable(rows: SummaryRow[]) {
   const header = [...MONTHLY_GRAND_HEAD, ...MONTHLY_TEMPLATE_COLUMNS, ...MONTHLY_GRAND_TAIL];
   const body: (string | number)[][] = rows.map((r) => {
     const cols = MONTHLY_TEMPLATE_COLUMNS.map((c) => Number(r.columns[c] ?? 0));
-    const gross = cols.reduce((s, x) => s + x, 0);
+    const payable = Number(r.columns["應付"] ?? 0);
+    const deduct = Number(r.columns["應扣"] ?? 0);
+    const bonusSum = MONTHLY_TEMPLATE_COLUMNS.reduce(
+      (s, c) => (c === "應付" || c === "應扣" ? s : s + Number(r.columns[c] ?? 0)),
+      0,
+    );
+    const gross = bonusSum + payable - deduct;
     const wallet = 0;
     const net = gross - r.health - r.t5 - r.t10 - wallet;
     return [r.member_no, r.name, ...cols, gross, r.health, r.t5, r.t10, wallet, net];
