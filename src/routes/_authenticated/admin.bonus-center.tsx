@@ -12,7 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Coins, Play, Send, Settings as SettingsIcon, History } from "lucide-react";
+import { Loader2, Coins, Play, Send, Settings as SettingsIcon, History, RotateCcw } from "lucide-react";
+import { MonthlyBackfillDialog } from "@/components/admin/MonthlyBackfillDialog";
+
 import { toast } from "sonner";
 import {
   getBonusSettings, updateBonusSettings,
