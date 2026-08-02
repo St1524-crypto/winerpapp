@@ -89,7 +89,12 @@ export function BonusFiltersCard({
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}查詢
           </Button>
           <Button variant="outline" onClick={() => onLoad()} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" />重新整理</Button>
-          {onExport && <Button variant="outline" onClick={() => onExport()}><Download className="mr-2 h-4 w-4" />匯出 CSV</Button>}
+          {onExport && (
+            <>
+              <Button variant="outline" onClick={() => onExport("csv")}><Download className="mr-2 h-4 w-4" />匯出 CSV</Button>
+              <Button variant="outline" onClick={() => onExport("xlsx")}><FileSpreadsheet className="mr-2 h-4 w-4" />匯出 Excel</Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
