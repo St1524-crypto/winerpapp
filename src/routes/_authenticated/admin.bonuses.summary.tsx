@@ -12,9 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getBonusSummaryReport } from "@/lib/bonus.functions";
+import { getBonusSummaryReport, listMonthlyBonusDetails } from "@/lib/bonus.functions";
 import { bonusStatusLabel, bonusTypeLabel, BONUS_STATUS_VARIANT, BONUS_TYPE_LABEL } from "@/lib/bonus-labels";
 import { PRESET_OPTIONS, computePreset, type BonusDatePreset } from "@/lib/bonus-date-presets";
+import {
+  aggregateMerged, MONTHLY_COLUMN_MAP, MONTHLY_TEMPLATE_COLUMNS, exportMonthlyGrandSummary,
+} from "@/lib/bonus-report-shared";
+import { buildExportFileName } from "@/lib/table-export";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 const STATUS_OPTIONS = [
