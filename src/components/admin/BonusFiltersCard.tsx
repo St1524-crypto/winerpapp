@@ -1,4 +1,4 @@
-import { Loader2, Search, RefreshCw, Download } from "lucide-react";
+import { Loader2, Search, RefreshCw, Download, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,7 @@ export function BonusFiltersCard({
   setPreset: (p: BonusDatePreset) => void;
   onLoad: () => void;
   loading: boolean;
-  onExport?: () => void;
+  onExport?: (format: "csv" | "xlsx") => void;
   typeOptions: { value: string; label: string }[];
 }) {
   return (
@@ -89,7 +89,12 @@ export function BonusFiltersCard({
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}查詢
           </Button>
           <Button variant="outline" onClick={() => onLoad()} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" />重新整理</Button>
-          {onExport && <Button variant="outline" onClick={() => onExport()}><Download className="mr-2 h-4 w-4" />匯出 CSV</Button>}
+          {onExport && (
+            <>
+              <Button variant="outline" onClick={() => onExport("csv")}><Download className="mr-2 h-4 w-4" />匯出 CSV</Button>
+              <Button variant="outline" onClick={() => onExport("xlsx")}><FileSpreadsheet className="mr-2 h-4 w-4" />匯出 Excel</Button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Info, AlertTriangle, Printer } from "lucide-react";
 import { exportMonthlyBonusStatements } from "@/lib/bonus-monthly-statement";
+import { exportTable } from "@/lib/table-export";
 import { toast } from "sonner";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
@@ -105,7 +106,7 @@ function Page() {
     if (next) setFilters((current) => ({ ...current, ...next }));
   }
 
-  function exportCsv() {
+  async function exportData(format: "csv" | "xlsx" = "csv") {
     const source = payload?.rows ?? [];
     const rows = showAll ? source : filterIncome(source);
     if (!rows.length) {
@@ -135,7 +136,7 @@ function Page() {
       "失敗原因",
       "批次ID",
     ];
-    const csv = rows.map((r: any) => {
+    const data = rows.map((r: any) => {
       const m = members[r.member_id] ?? {};
       const b = batches[r.settlement_batch_id];
       const released = r.status === "released" ? r.bonus_points : 0;
@@ -160,15 +161,14 @@ function Page() {
         bonusStatusLabel(r.status),
         r.fail_reason ?? "",
         r.settlement_batch_id ?? "",
-      ].map((x) => `"${String(x).replace(/"/g, '""')}"`).join(",");
+      ];
     });
-    const blob = new Blob(["\uFEFF" + [header.join(","), ...csv].join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `monthly-bonus-${filters.dateFrom}_${filters.dateTo}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      await exportTable(format, header, data, `monthly-bonus-${filters.dateFrom}_${filters.dateTo}`, "月獎金明細");
+      toast.success(format === "csv" ? "已匯出 CSV" : "已匯出 Excel");
+    } catch (e: any) {
+      toast.error(e?.message ?? "匯出失敗");
+    }
   }
 
   async function exportStatements() {
@@ -228,7 +228,7 @@ function Page() {
         setPreset={applyPreset}
         onLoad={load}
         loading={loading}
-        onExport={exportCsv}
+        onExport={exportData}
         typeOptions={MONTHLY_BONUS_TYPE_OPTIONS}
       />
 

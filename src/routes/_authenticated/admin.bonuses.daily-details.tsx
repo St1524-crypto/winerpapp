@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Info, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { exportTable } from "@/lib/table-export";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { Button } from "@/components/ui/button";
@@ -92,7 +93,7 @@ function Page() {
     if (p) setFilters((f) => ({ ...f, ...p }));
   }
 
-  function exportCsv() {
+  async function exportData(format: "csv" | "xlsx" = "csv") {
     const source = payload?.rows ?? [];
     const rows = showAll ? source : filterIncome(source);
     if (!rows.length) { toast.info("無資料可匯出"); return; }
@@ -104,7 +105,7 @@ function Page() {
       "來源會員","來源訂單","訂單類型","獎金類型","規則版本","適用制度","獎勵點來源","原始訂單獎勵點","代數","適用比例%",
       "責任額","是否完成責任額","應發貢獻點","實際發放貢獻點","實際領取人","改發原因","停發原因","狀態","計算說明","批次ID",
     ];
-    const csvRows = rows.map((r: any) => {
+    const data = rows.map((r: any) => {
       const m = members[r.member_id] ?? {};
       const src = members[r.source_member_id] ?? {};
       const rec = members[r.released_member_id] ?? {};
@@ -128,13 +129,14 @@ function Page() {
         r.release_redirect_reason ?? "", r.fail_reason ?? "",
         bonusStatusLabel(r.status), calculationNote(r),
         r.settlement_batch_id ?? "",
-      ].map((x) => `"${String(x).replace(/"/g, '""')}"`).join(",");
+      ];
     });
-    const blob = new Blob(["\uFEFF" + [header.join(","), ...csvRows].join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `daily-bonus-${filters.dateFrom}_${filters.dateTo}.csv`; a.click();
-    URL.revokeObjectURL(url);
+    try {
+      await exportTable(format, header, data, `daily-bonus-${filters.dateFrom}_${filters.dateTo}`, "日獎金明細");
+      toast.success(format === "csv" ? "已匯出 CSV" : "已匯出 Excel");
+    } catch (e: any) {
+      toast.error(e?.message ?? "匯出失敗");
+    }
   }
 
   // 依「實際領取人」聚合，只計入已成功發放（released）
@@ -252,7 +254,7 @@ function Page() {
 
       <BonusFiltersCard
         filters={filters} setFilters={setFilters} preset={preset} setPreset={applyPreset}
-        onLoad={load} loading={loading} onExport={exportCsv}
+        onLoad={load} loading={loading} onExport={exportData}
         typeOptions={DAILY_BONUS_TYPE_OPTIONS}
       />
 
