@@ -254,7 +254,7 @@ function Page() {
 
       <BonusFiltersCard
         filters={filters} setFilters={setFilters} preset={preset} setPreset={applyPreset}
-        onLoad={load} loading={loading} onExport={exportCsv}
+        onLoad={load} loading={loading} onExport={exportData}
         typeOptions={DAILY_BONUS_TYPE_OPTIONS}
       />
 
