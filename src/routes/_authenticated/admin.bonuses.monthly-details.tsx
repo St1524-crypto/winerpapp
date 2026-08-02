@@ -92,7 +92,11 @@ function Page() {
     }
   }, [filters]);
 
-  useEffect(() => { load(); }, []);
+  // 條件變更後自動重查，避免報表沿用舊查詢結果而顯示「無資料」
+  useEffect(() => {
+    const t = setTimeout(() => { load(); }, 400);
+    return () => clearTimeout(t);
+  }, [load]);
 
   function applyPreset(value: BonusDatePreset) {
     setPreset(value);
