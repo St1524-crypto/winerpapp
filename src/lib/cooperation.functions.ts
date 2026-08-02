@@ -41,11 +41,33 @@ export const submitCooperationApplication = createServerFn({ method: "POST" })
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { website_url: _hp, ...payload } = data;
+    const { website_url: _hp, company_slug, ...payload } = data;
+
+    // Bind the application to a tenant so company-scoped RLS can expose it
+    // to that company's super admins only.
+    let companyId: string | null = null;
+    if (company_slug) {
+      const { data: bySlug } = await supabaseAdmin
+        .from("companies")
+        .select("id")
+        .eq("slug", company_slug)
+        .maybeSingle();
+      companyId = (bySlug as any)?.id ?? null;
+    }
+    if (!companyId) {
+      const { data: fallback } = await supabaseAdmin
+        .from("companies")
+        .select("id")
+        .eq("status", "active")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      companyId = (fallback as any)?.id ?? null;
+    }
 
     const { data: inserted, error } = await supabaseAdmin
       .from("cooperation_applications")
-      .insert(payload as any)
+      .insert({ ...payload, company_id: companyId } as any)
       .select("id, application_type, company_name, contact_name, owner_name, phone, email, sales_channels, note")
       .single();
 
