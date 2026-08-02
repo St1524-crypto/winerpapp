@@ -167,6 +167,12 @@ function Page() {
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}查詢
             </Button>
             <Button variant="outline" onClick={load} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" />重新整理</Button>
+            <Button variant="outline" onClick={() => exportMonthlyGrand("csv")} disabled={!!exporting}>
+              {exporting === "csv" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}匯出月獎金總表 CSV
+            </Button>
+            <Button variant="outline" onClick={() => exportMonthlyGrand("xlsx")} disabled={!!exporting}>
+              {exporting === "xlsx" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4" />}匯出月獎金總表 Excel
+            </Button>
           </div>
         </CardContent>
       </Card>
