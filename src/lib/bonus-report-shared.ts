@@ -39,12 +39,12 @@ export const DAILY_COLUMN_MAP: Record<string, string> = {
 // 月報（對齊「月獎金總表」範本欄位）
 export const MONTHLY_COLUMN_MAP: Record<string, string> = {
   repurchase: "重消獎金",
-  rank_diff_rebate: "超額獎金",
-  referral: "推薦王獎金",
+  referral: "代數獎金",
+  rank_diff_rebate: "級差獎金",
   monthly_vip: "達成分紅",
-  national_share: "全國分紅",
-  rank_rebate: "專員獎金",
+  rank_rebate: "消費分紅",
   business_bonus: "營業分紅",
+  national_share: "全國分紅",
   upgrade_bonus: "小組獎金",
 };
 
@@ -58,18 +58,15 @@ export const DAILY_TEMPLATE_COLUMNS = [
 
 export const MONTHLY_TEMPLATE_COLUMNS = [
   "重消獎金",
-  "超額獎金",
-  "超額對等",
-  "推薦王獎金",
-  "重消回饋",
+  "代數獎金",
+  "級差獎金",
   "達成分紅",
-  "全國分紅",
-  "全球分紅",
-  "車馬津貼",
-  "專員獎金",
+  "消費分紅",
   "營業分紅",
+  "全國分紅",
   "小組獎金",
-  "應付應扣",
+  "應付",
+  "應扣",
 ];
 
 
