@@ -245,12 +245,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await refresh();
   };
 
-  // 非批發專區商品（wholesale_only = false）只套用公開的零售多件優惠階梯，
-  // VIP / 經銷批發階梯僅適用於批發專區商品。
+  // 合格 VIP / 經銷商可套用 VIP 批發階梯（RLS 已限制非合格身分讀不到），
+  // 其他人只套用公開的零售多件優惠階梯。
   const tiersForItem = (i: CartItem) => {
     const all = tiersMap[i.product_id] ?? [];
-    const isWholesaleOnly = Boolean((i.product as any)?.wholesale_only);
-    return isWholesaleOnly ? all : all.filter((t) => (t.visibility ?? "all") === "all");
+    const vip = all.filter((t) => t.visibility === "vip" || t.visibility === "dealer");
+    return vip.length > 0 ? vip : all.filter((t) => (t.visibility ?? "all") === "all");
   };
 
   const getItemUnitPrice = (i: CartItem) => {
