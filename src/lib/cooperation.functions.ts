@@ -28,6 +28,8 @@ const submitSchema = z.object({
   referrer_info: optStr(200),
   interested_topics: z.array(z.string().max(50)).max(20).optional().nullable(),
   note: optStr(1000),
+  company_slug: optStr(100),
+
   // honeypot — must be empty
   website_url: z.string().max(0).optional().or(z.literal("").optional()),
 });
