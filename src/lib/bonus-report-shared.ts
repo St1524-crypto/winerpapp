@@ -36,15 +36,16 @@ export const DAILY_COLUMN_MAP: Record<string, string> = {
   repurchase: "消費回饋",
 };
 
-// 月報
+// 月報（對齊「月獎金總表」範本欄位）
 export const MONTHLY_COLUMN_MAP: Record<string, string> = {
-  monthly_vip: "重消獎金",
-  rank_rebate: "達成分紅",
+  repurchase: "重消獎金",
   rank_diff_rebate: "超額獎金",
+  referral: "推薦王獎金",
+  monthly_vip: "達成分紅",
   national_share: "全國分紅",
+  rank_rebate: "專員獎金",
   business_bonus: "營業分紅",
-  upgrade_bonus: "營業分紅",
-  repurchase: "重消回饋",
+  upgrade_bonus: "小組獎金",
 };
 
 export const DAILY_TEMPLATE_COLUMNS = [
