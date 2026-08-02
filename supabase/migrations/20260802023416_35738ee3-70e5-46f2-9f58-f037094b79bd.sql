@@ -1,0 +1,1 @@
+ALTER TABLE public.gift_rules ALTER COLUMN company_id SET DEFAULT private.current_company_id();
