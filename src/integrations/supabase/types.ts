@@ -1312,6 +1312,7 @@ export type Database = {
           application_type: string
           audience_size: string | null
           city: string | null
+          company_id: string | null
           company_name: string | null
           contact_name: string | null
           created_at: string
@@ -1338,6 +1339,7 @@ export type Database = {
           application_type: string
           audience_size?: string | null
           city?: string | null
+          company_id?: string | null
           company_name?: string | null
           contact_name?: string | null
           created_at?: string
@@ -1364,6 +1366,7 @@ export type Database = {
           application_type?: string
           audience_size?: string | null
           city?: string | null
+          company_id?: string | null
           company_name?: string | null
           contact_name?: string | null
           created_at?: string
@@ -1384,7 +1387,15 @@ export type Database = {
           tax_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cooperation_applications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coupons: {
         Row: {
