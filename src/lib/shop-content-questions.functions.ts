@@ -1,33 +1,36 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-function publicDb() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
-  ) as any;
-}
 
 export const listShopContentQuestions = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({ page_id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data }) => {
-    const { data: rows, error } = await publicDb()
+    // Anonymous visitors have no direct table access. Reads go through this
+    // server function, which only ever returns non-identifying columns.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: page } = await supabaseAdmin
+      .from("shop_content_pages")
+      .select("id, is_published")
+      .eq("id", data.page_id)
+      .maybeSingle();
+    if (!page || !(page as any).is_published) return { questions: [] };
+
+    const { data: rows, error } = await supabaseAdmin
       .from("shop_content_questions")
       .select("id, content, reply, replied_at, created_at")
       .eq("page_id", data.page_id)
       .eq("is_hidden", false)
       .order("created_at", { ascending: false })
       .limit(50);
-    if (error) throw new Error(error.message);
-    // Do not expose author_name publicly — return a generic label only.
+    if (error) throw new Error("無法載入留言");
+    // Never expose author_name or user_id publicly — generic label only.
     const masked = (rows ?? []).map((r: any) => ({ ...r, author_name: "會員" }));
     return { questions: masked };
   });
+
 
 export const submitShopContentQuestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
