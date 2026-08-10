@@ -129,16 +129,37 @@ export const listQuotes = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+// Never include public_token here: the share token is a bearer credential and is
+// only handed out through getQuoteShareToken after an explicit ownership check.
+const QUOTE_SAFE_COLUMNS =
+  "id, company_id, quote_no, customer_name, customer_phone, customer_email, customer_address, quote_date, valid_until, salesperson_id, salesperson_name, status, bank_account_id, company_snapshot, bank_snapshot, subtotal, discount_amount, tax_amount, total_amount, notes, payment_terms, converted_order_id, converted_at, created_by, created_at, updated_at";
+
 export const getQuote = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ data, context }) => {
     const { data: quote, error } = await context.supabase
-      .from("quotes").select("*").eq("id", data.id).single();
+      .from("quotes").select(QUOTE_SAFE_COLUMNS).eq("id", data.id).single();
     if (error) throw error;
     const { data: items } = await context.supabase
       .from("quote_items").select("*").eq("quote_id", data.id).order("sort_order");
     return { quote, items: items ?? [] };
+  });
+
+// Share token is issued only to a caller whose RLS-scoped read of the quote succeeds.
+export const getQuoteShareToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { data: own, error: ownErr } = await context.supabase
+      .from("quotes").select("id").eq("id", data.id).maybeSingle();
+    if (ownErr) throw ownErr;
+    if (!own) throw new Error("找不到報價單");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await (supabaseAdmin as never as typeof context.supabase)
+      .from("quotes").select("public_token").eq("id", data.id).single();
+    if (error) throw error;
+    return { token: (row as { public_token: string | null }).public_token ?? null };
   });
 
 function genQuoteNo(): string {
@@ -185,7 +206,7 @@ export const saveQuote = createServerFn({ method: "POST" })
     if (data.id) {
       // update
       const { data: existing } = await context.supabase
-        .from("quotes").select("status, public_token").eq("id", data.id).single();
+        .from("quotes").select("status").eq("id", data.id).single();
       if (existing?.status === "converted") throw new Error("quote already converted");
       const { error: uerr } = await context.supabase.from("quotes").update({
         customer_name: data.customer_name,
