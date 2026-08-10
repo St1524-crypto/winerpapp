@@ -2343,6 +2343,53 @@ function OrderDetailDialog({
     },
   });
 
+  // 客戶對應的會員資料（會員編號 / 位階）
+  const orderForMember = detailQ.data?.order as any;
+  const memberInfoQ = useQuery({
+    queryKey: [
+      "order-customer-member",
+      orderForMember?.user_id ?? null,
+      orderForMember?.customer_phone ?? null,
+      orderForMember?.customer_email ?? null,
+    ],
+    enabled: !!orderForMember,
+    queryFn: async () => {
+      const cols = "id,member_no,is_vip,is_dealer,vip_tier,legacy_rank,vip_expires_at";
+      let row: any = null;
+      if (orderForMember?.user_id) {
+        const { data } = await supabase.from("profiles").select(cols).eq("id", orderForMember.user_id).maybeSingle();
+        row = data ?? null;
+      }
+      if (!row) {
+        const filters: string[] = [];
+        if (orderForMember?.customer_phone) filters.push(`phone.eq.${orderForMember.customer_phone}`);
+        if (orderForMember?.customer_email) filters.push(`email.eq.${orderForMember.customer_email}`);
+        if (filters.length > 0) {
+          const { data } = await supabase.from("profiles").select(cols).or(filters.join(",")).limit(1).maybeSingle();
+          row = data ?? null;
+        }
+      }
+      if (!row) return null;
+      const { data: tier } = await supabase
+        .from("dealer_tier_status")
+        .select("current_tier")
+        .eq("user_id", row.id)
+        .maybeSingle();
+      return { ...row, current_tier: (tier as any)?.current_tier ?? null };
+    },
+  });
+  const memberInfo = memberInfoQ.data ?? null;
+  const memberTierCode = memberInfo ? resolveVipTierCode(memberInfo) : null;
+  const memberStatus = memberInfo
+    ? vipStatusText({
+        is_vip: memberInfo.is_vip,
+        is_dealer: memberInfo.is_dealer,
+        tierCode: memberTierCode,
+        vip_expires_at: memberInfo.vip_expires_at,
+      })
+    : null;
+
+
   const order = detailQ.data?.order;
   const items = detailQ.data?.items ?? [];
   const payments = detailQ.data?.payments ?? [];
@@ -2576,7 +2623,23 @@ function OrderDetailDialog({
                 <CardHeader className="pb-2"><CardTitle className="text-sm">客戶資料</CardTitle></CardHeader>
                 <CardContent className="text-sm space-y-1">
                   <div><span className="text-muted-foreground">姓名：</span>{order.customer_name}</div>
+                  <div>
+                    <span className="text-muted-foreground">會員編號：</span>
+                    <span className="font-mono">{memberInfo?.member_no ?? "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">位階：</span>
+                    {memberTierCode ? (
+                      <Badge variant="outline">{vipTierLabel(memberTierCode)}</Badge>
+                    ) : (
+                      <span>—</span>
+                    )}
+                    {memberStatus && (
+                      <span className="text-xs text-muted-foreground">{memberStatus.text}</span>
+                    )}
+                  </div>
                   <div><span className="text-muted-foreground">電話：</span>{order.customer_phone ?? order.receiver_phone}</div>
+
                   <div><span className="text-muted-foreground">Email：</span>{order.customer_email ?? "—"}</div>
                   <div><span className="text-muted-foreground">地址：</span>{order.shipping_address}</div>
                 </CardContent>
