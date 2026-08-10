@@ -28,6 +28,7 @@ function QuoteDetailPage() {
   const qc = useQueryClient();
   const fn = useServerFn(getQuote);
   const delFn = useServerFn(deleteQuote);
+  const shareFn = useServerFn(getQuoteShareToken);
   const { data, isLoading } = useQuery({ queryKey: ["quote", quoteId], queryFn: () => fn({ data: { id: quoteId } }) });
   const printRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
@@ -36,17 +37,23 @@ function QuoteDetailPage() {
   if (isLoading) return <div className="p-6">載入中…</div>;
   if (!data) return <div className="p-6">找不到報價單</div>;
 
-  const q = data.quote as Record<string, unknown> & { quote_no: string; status: string; public_token?: string };
+  const q = data.quote as Record<string, unknown> & { quote_no: string; status: string };
   const items = data.items as Array<Record<string, unknown> & { item_name: string; quantity: number; unit_price: number; discount: number; subtotal: number; spec?: string }>;
   const comp = (q.company_snapshot ?? {}) as CompanySnap;
   const bank = (q.bank_snapshot ?? {}) as BankSnap;
   const canEdit = q.status !== "converted";
 
-  function copyShare() {
-    const url = `${window.location.origin}/quote/${q.public_token}`;
-    navigator.clipboard.writeText(url);
-    toast.success("已複製公開分享連結");
+  async function copyShare() {
+    try {
+      const r = await shareFn({ data: { id: quoteId } });
+      if (!r?.token) { toast.error("此報價單尚無分享連結"); return; }
+      await navigator.clipboard.writeText(`${window.location.origin}/quote/${r.token}`);
+      toast.success("已複製公開分享連結");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "取得分享連結失敗");
+    }
   }
+
 
   async function onDelete() {
     if (!confirm(`確定刪除報價單 ${q.quote_no}？此動作無法復原。`)) return;
