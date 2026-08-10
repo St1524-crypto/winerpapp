@@ -2623,7 +2623,23 @@ function OrderDetailDialog({
                 <CardHeader className="pb-2"><CardTitle className="text-sm">客戶資料</CardTitle></CardHeader>
                 <CardContent className="text-sm space-y-1">
                   <div><span className="text-muted-foreground">姓名：</span>{order.customer_name}</div>
+                  <div>
+                    <span className="text-muted-foreground">會員編號：</span>
+                    <span className="font-mono">{memberInfo?.member_no ?? "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">位階：</span>
+                    {memberTierCode ? (
+                      <Badge variant="outline">{vipTierLabel(memberTierCode)}</Badge>
+                    ) : (
+                      <span>—</span>
+                    )}
+                    {memberStatus && (
+                      <span className="text-xs text-muted-foreground">{memberStatus.text}</span>
+                    )}
+                  </div>
                   <div><span className="text-muted-foreground">電話：</span>{order.customer_phone ?? order.receiver_phone}</div>
+
                   <div><span className="text-muted-foreground">Email：</span>{order.customer_email ?? "—"}</div>
                   <div><span className="text-muted-foreground">地址：</span>{order.shipping_address}</div>
                 </CardContent>
