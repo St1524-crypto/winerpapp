@@ -206,7 +206,7 @@ export const saveQuote = createServerFn({ method: "POST" })
     if (data.id) {
       // update
       const { data: existing } = await context.supabase
-        .from("quotes").select("status, public_token").eq("id", data.id).single();
+        .from("quotes").select("status").eq("id", data.id).single();
       if (existing?.status === "converted") throw new Error("quote already converted");
       const { error: uerr } = await context.supabase.from("quotes").update({
         customer_name: data.customer_name,
