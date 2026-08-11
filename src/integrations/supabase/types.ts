@@ -2820,6 +2820,42 @@ export type Database = {
         }
         Relationships: []
       }
+      member_bonus_eligibility_grants: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ends_on: string
+          id: string
+          pool_kind: string
+          reason: string | null
+          starts_on: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ends_on: string
+          id?: string
+          pool_kind: string
+          reason?: string | null
+          starts_on?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string
+          id?: string
+          pool_kind?: string
+          reason?: string | null
+          starts_on?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       member_custom_products: {
         Row: {
           created_at: string
