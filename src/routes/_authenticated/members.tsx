@@ -595,6 +595,13 @@ function Page() {
                     ) : m.legacy_rank ? (
                       <span className="text-xs text-muted-foreground">{m.legacy_rank}</span>
                     ) : <span className="text-xs text-muted-foreground">—</span>}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {activeGrants.filter((g) => g.user_id === m.id).map((g) => (
+                        <Badge key={g.id} variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-[10px]">
+                          {GRANT_LABELS[g.pool_kind]}授權至 {g.ends_on}
+                        </Badge>
+                      ))}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {m.is_dealer
