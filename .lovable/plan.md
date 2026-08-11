@@ -1,67 +1,47 @@
-## 目標
+# 會員分紅資格「手動授權」功能
 
-後台可建立「多件可加贈品」規則，官網商城與批發/B2B 下單時自動依倍數累加贈品，贈品 0 元且不計入獎勵點與分紅基數。
+在後台會員管理中，管理員可直接勾選讓某位會員「可參與消費回饋」與「可參與營業分紅」，
+授權期間預設 3 個月（可自行調整起訖日），期間內不需符合任何原本的資格條件。
 
-## 一、資料表
+## 使用情境
 
-**gift_rules（贈品規則）**
-- 名稱、啟用狀態、生效起訖日
-- 觸發類型：單一商品件數 / 訂單總件數 / 訂單金額 / 指定商品群組件數
-- 門檻值（threshold）
-- 適用通路：商城、批發B2B（可複選）
-- 每張訂單贈品上限（max_gift_qty，0 = 不限）
-- 優先順序、company_id（多租戶）
+1. 進入會員管理 → 編輯會員。
+2. 新增「分紅資格授權」區塊：
+   - 勾選「可參與消費回饋（V/S/T/E/A 池）」
+   - 勾選「可參與營業分紅（星級／董事池）」
+   - 授權起日（預設今天）、授權迄日（預設今天 +3 個月，可改）
+   - 備註（授權原因）
+3. 儲存後，列表可看到授權標記與到期日；到期自動失效，不需人工取消。
 
-**gift_rule_conditions（觸發商品範圍）**
-- 規則 id、product_id（單一商品或群組成員清單）
+## 規則
 
-**gift_rule_gifts（贈品內容）**
-- 規則 id、贈品 product_id、每次達標贈送數量
+- 授權期間內：該會員在對應分紅池的每日結算中一律視為合格，跳過 90 天推薦 1 名 VIP、
+  星級推薦 1 名 E-VIP 等所有條件。
+- 位階仍沿用會員現有位階（授權只解除「條件」，不改變位階與分配比例）。
+- 授權過期或取消勾選後，回復原本條件判定。
+- 每筆授權變更都寫入稽核紀錄（誰、何時、對誰、哪個池、期間）。
 
-**sales_order_items 既有欄位加註**
-- 新增 `is_gift boolean default false`、`gift_rule_id`
-- 贈品列：unit_price = 0、reward_points = 0
+## 技術細節
 
-RLS：管理/業務角色可維護；商城前台以 anon/authenticated 唯讀啟用中的規則。
+資料庫：
+- 新增 `public.member_bonus_eligibility_grants`：`user_id`、`pool_kind`（`consumption` / `business`）、
+  `starts_on`、`ends_on`、`reason`、`created_by`、時間戳；同一會員同一 pool_kind 僅一筆有效授權。
+- GRANT + RLS：管理員／財務可讀寫，會員可讀自己的；service_role 全權。
+- 新增 `private.has_bonus_grant(_user_id, _pool_code, _on)`，依 pool code 對應 pool_kind
+  （`POOL_VSTEA` → consumption；`POOL_123` / `POOL_67D` → business）判斷日期是否落在授權區間。
+- 修改 `private.list_pool_eligible_members`：在既有條件判定外，`OR has_bonus_grant(...)`，
+  被授權者一併納入合格名單，`tier_mapping_source` 標記為 `manual_grant` 方便對帳。
 
-## 二、計算邏輯（共用模組）
+後端：
+- `src/lib/members-admin.functions.ts` 新增 `adminSetBonusEligibilityGrant`（admin/super_admin 檢查、
+  寫入或撤銷授權、寫 audit_logs）與 `adminListBonusEligibilityGrants`。
 
-`src/lib/gift-rules.ts`：輸入購物車明細 → 輸出應贈清單。
-- 倍數累加：`floor(符合數量 / threshold) × 贈送數量`，再套 max_gift_qty 上限
-- 金額型：以未含贈品的小計計算
-- 多規則可同時成立，各自累加；同贈品合併數量
-- 贈品本身不參與任何規則的門檻計算
+前端：
+- 會員編輯對話框（`src/routes/_authenticated/members.tsx`）新增「分紅資格授權」區塊：兩個 checkbox
+  ＋ 起訖日期欄位（勾選時自動帶入今天與 +3 個月）＋ 備註。
+- 會員列表加上小徽章顯示目前有效授權與到期日。
 
-## 三、串接點
+## 不在此次範圍
 
-- 購物車 / 結帳頁（`use-cart.tsx`、`shop.checkout.tsx`）：即時顯示「已達標，加贈 X」與「再買 N 件可再加贈」提示
-- 建單（`create_sales_order_with_items`）：伺服器端重算贈品，不信任前端；贈品列以 0 元 0 獎勵點寫入
-- 批發/B2B 下單流程共用同一模組
-
-## 四、獎勵點與分紅
-
-贈品列 `reward_points = 0`，因此：
-- 不進日結消費／營業分紅池基數
-- 不影響責任額、級差獎金計算
-- 訂單詳情的「獎勵點明細」會標示贈品列為 0 並註明來源規則
-
-## 五、後台頁面
-
-`/admin/gift-rules`
-- 規則列表（名稱、觸發條件摘要、贈品、通路、啟用狀態、期間）
-- 新增/編輯彈窗：條件設定 + 商品搜尋選擇（沿用既有 SearchSelect）+ 贈品清單
-- 規則試算器：輸入品項與數量，預覽會贈出什麼
-
-## 六、實作順序
-
-1. Migration：三張表 + GRANT + RLS + sales_order_items 欄位
-2. `gift-rules.ts` 計算模組 + 單元測試（含倍數、上限、多規則）
-3. 後台 CRUD 頁面
-4. 購物車/結帳提示
-5. 建單伺服器端重算與寫入
-6. 只讀驗證：測試單確認贈品 0 元、獎勵點與池基數不受影響
-
-## 技術備註
-
-- 建單重算放在 `create_sales_order_with_items`（或其前置 server fn），避免前端竄改
-- 訂單編輯／退貨時贈品需連動處理：主商品數量減少低於門檻時，同步移除對應贈品
+- 不調整分紅比例、上限或位階邏輯。
+- 不做批次授權（先以單一會員操作為主，後續可再加）。
