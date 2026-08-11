@@ -18,6 +18,24 @@ import type { AppRole } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
+import { listMemberBonusGrants, listActiveBonusGrants, setMemberBonusGrant, type BonusEligibilityGrant, type BonusPoolKind } from "@/lib/bonus-grants.functions";
+
+const GRANT_LABELS: Record<BonusPoolKind, string> = {
+  consumption: "消費回饋",
+  business: "營業分紅",
+};
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function plusMonths(d: string, m: number) {
+  const base = new Date(d);
+  base.setMonth(base.getMonth() + m);
+  return base.toISOString().slice(0, 10);
+}
+type GrantDraft = { enabled: boolean; startsOn: string; endsOn: string; reason: string };
+function emptyGrantDraft(): GrantDraft {
+  const s = todayStr();
+  return { enabled: false, startsOn: s, endsOn: plusMonths(s, 3), reason: "" };
+}
 
 interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; id_no?: string | null; apply_date?: string | null; sex?: string | null; addr_mail?: string | null; addr_home?: string | null; birthday?: string | null; vip_expires_at?: string | null; is_vip?: boolean | null; legacy_bonus_total?: number | null; }
 interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; referrer_tier?: string | null; current_tier?: string | null; }
