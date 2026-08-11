@@ -75,6 +75,17 @@ function Page() {
   const [showFormPassword, setShowFormPassword] = useState(false);
   const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; tier: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, tier: null, status: "idle" });
   const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null; tier: string | null }[]>([]);
+  const [grants, setGrants] = useState<Record<BonusPoolKind, GrantDraft>>({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
+  const [activeGrants, setActiveGrants] = useState<BonusEligibilityGrant[]>([]);
+
+  function setGrant(kind: BonusPoolKind, patch: Partial<GrantDraft>) {
+    setGrants((g) => ({ ...g, [kind]: { ...g[kind], ...patch } }));
+  }
+
+  async function loadActiveGrants() {
+    try { setActiveGrants(await listActiveBonusGrants()); } catch { /* 無權限時忽略 */ }
+  }
+  useEffect(() => { loadActiveGrants(); }, []);
 
   useEffect(() => {
     const code = form.referrerMemberNo.trim();
