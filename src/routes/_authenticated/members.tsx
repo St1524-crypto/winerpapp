@@ -792,6 +792,49 @@ function Page() {
                 </div>
               )}
               <div className="pt-2 border-t border-border" />
+              <div className="space-y-3">
+                <div>
+                  <Label>分紅資格授權</Label>
+                  <p className="text-[11px] text-muted-foreground">勾選後，授權期間內該會員參與對應分紅池不受原本資格條件限制（預設 3 個月，可調整）。</p>
+                </div>
+                {(["consumption", "business"] as BonusPoolKind[]).map((kind) => (
+                  <div key={kind} className="rounded-md border border-border p-3 space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <Checkbox
+                        checked={grants[kind].enabled}
+                        onCheckedChange={(v) => {
+                          const enabled = !!v;
+                          const s = grants[kind].startsOn || todayStr();
+                          setGrant(kind, enabled
+                            ? { enabled, startsOn: s, endsOn: grants[kind].endsOn || plusMonths(s, 3) }
+                            : { enabled });
+                        }}
+                      />
+                      可參與{GRANT_LABELS[kind]}
+                      <span className="text-[11px] font-normal text-muted-foreground">
+                        {kind === "consumption" ? "（V/S/T/E/A 池）" : "（星級／董事池）"}
+                      </span>
+                    </label>
+                    {grants[kind].enabled && (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">授權起日</Label>
+                          <Input type="date" value={grants[kind].startsOn} onChange={(e) => setGrant(kind, { startsOn: e.target.value })} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">授權迄日</Label>
+                          <Input type="date" value={grants[kind].endsOn} onChange={(e) => setGrant(kind, { endsOn: e.target.value })} />
+                        </div>
+                        <div className="space-y-1 sm:col-span-2">
+                          <Label className="text-xs">備註（授權原因）</Label>
+                          <Input value={grants[kind].reason} onChange={(e) => setGrant(kind, { reason: e.target.value })} placeholder="選填" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="pt-2 border-t border-border" />
               <div className="space-y-1">
                 <Label>重設密碼 (留空則不變更)</Label>
                 <Input type={showFormPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="輸入新密碼；留空則不變更" />
