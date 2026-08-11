@@ -247,6 +247,23 @@ function Page() {
       addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday), vip_expires_at: fmtDate(m.vip_expires_at),
       legacy_bonus_total: m.legacy_bonus_total != null ? String(m.legacy_bonus_total) : "",
     });
+    setGrants({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
+    listMemberBonusGrants({ data: { userId: m.id } })
+      .then((rows) => {
+        setGrants((prev) => {
+          const next = { ...prev };
+          for (const r of rows) {
+            next[r.pool_kind] = {
+              enabled: true,
+              startsOn: r.starts_on,
+              endsOn: r.ends_on,
+              reason: r.reason ?? "",
+            };
+          }
+          return next;
+        });
+      })
+      .catch(() => {});
   }
 
   async function submitCreate() {
