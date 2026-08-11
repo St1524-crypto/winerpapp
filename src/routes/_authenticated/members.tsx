@@ -18,6 +18,24 @@ import type { AppRole } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
+import { listMemberBonusGrants, listActiveBonusGrants, setMemberBonusGrant, type BonusEligibilityGrant, type BonusPoolKind } from "@/lib/bonus-grants.functions";
+
+const GRANT_LABELS: Record<BonusPoolKind, string> = {
+  consumption: "消費回饋",
+  business: "營業分紅",
+};
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function plusMonths(d: string, m: number) {
+  const base = new Date(d);
+  base.setMonth(base.getMonth() + m);
+  return base.toISOString().slice(0, 10);
+}
+type GrantDraft = { enabled: boolean; startsOn: string; endsOn: string; reason: string };
+function emptyGrantDraft(): GrantDraft {
+  const s = todayStr();
+  return { enabled: false, startsOn: s, endsOn: plusMonths(s, 3), reason: "" };
+}
 
 interface Profile { id: string; name: string | null; email: string | null; phone: string | null; member_no: string | null; avatar_url: string | null; created_at: string; is_dealer?: boolean; referred_by?: string | null; marketing_slug?: string | null; legacy_rank?: string | null; id_no?: string | null; apply_date?: string | null; sex?: string | null; addr_mail?: string | null; addr_home?: string | null; birthday?: string | null; vip_expires_at?: string | null; is_vip?: boolean | null; legacy_bonus_total?: number | null; }
 interface Member extends Profile { roles: AppRole[]; referrer_member_no?: string | null; referrer_name?: string | null; referrer_tier?: string | null; current_tier?: string | null; }
@@ -57,6 +75,17 @@ function Page() {
   const [showFormPassword, setShowFormPassword] = useState(false);
   const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; tier: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, tier: null, status: "idle" });
   const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null; tier: string | null }[]>([]);
+  const [grants, setGrants] = useState<Record<BonusPoolKind, GrantDraft>>({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
+  const [activeGrants, setActiveGrants] = useState<BonusEligibilityGrant[]>([]);
+
+  function setGrant(kind: BonusPoolKind, patch: Partial<GrantDraft>) {
+    setGrants((g) => ({ ...g, [kind]: { ...g[kind], ...patch } }));
+  }
+
+  async function loadActiveGrants() {
+    try { setActiveGrants(await listActiveBonusGrants()); } catch { /* 無權限時忽略 */ }
+  }
+  useEffect(() => { loadActiveGrants(); }, []);
 
   useEffect(() => {
     const code = form.referrerMemberNo.trim();
@@ -218,6 +247,23 @@ function Page() {
       addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday), vip_expires_at: fmtDate(m.vip_expires_at),
       legacy_bonus_total: m.legacy_bonus_total != null ? String(m.legacy_bonus_total) : "",
     });
+    setGrants({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
+    listMemberBonusGrants({ data: { userId: m.id } })
+      .then((rows) => {
+        setGrants((prev) => {
+          const next = { ...prev };
+          for (const r of rows) {
+            next[r.pool_kind] = {
+              enabled: true,
+              startsOn: r.starts_on,
+              endsOn: r.ends_on,
+              reason: r.reason ?? "",
+            };
+          }
+          return next;
+        });
+      })
+      .catch(() => {});
   }
 
   async function submitCreate() {
@@ -259,9 +305,23 @@ function Page() {
             : {}),
         },
       });
+      for (const kind of ["consumption", "business"] as BonusPoolKind[]) {
+        const g = grants[kind];
+        await setMemberBonusGrant({
+          data: {
+            userId: editProfile.id,
+            poolKind: kind,
+            enabled: g.enabled,
+            startsOn: g.startsOn || undefined,
+            endsOn: g.endsOn || undefined,
+            reason: g.reason || "",
+          },
+        });
+      }
       toast.success("資料已更新");
       setEditProfile(null);
       load();
+      loadActiveGrants();
     } catch (e: any) { toast.error(e.message ?? "更新失敗"); }
     finally { setSaving(false); }
   }
@@ -535,6 +595,13 @@ function Page() {
                     ) : m.legacy_rank ? (
                       <span className="text-xs text-muted-foreground">{m.legacy_rank}</span>
                     ) : <span className="text-xs text-muted-foreground">—</span>}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {activeGrants.filter((g) => g.user_id === m.id).map((g) => (
+                        <Badge key={g.id} variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-[10px]">
+                          {GRANT_LABELS[g.pool_kind]}授權至 {g.ends_on}
+                        </Badge>
+                      ))}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {m.is_dealer
@@ -731,6 +798,49 @@ function Page() {
                   <p className="text-[11px] text-muted-foreground">系統上線前歷史累計獎金，僅超級管理員可手動填入；會計入會員「累計總收益」。</p>
                 </div>
               )}
+              <div className="pt-2 border-t border-border" />
+              <div className="space-y-3">
+                <div>
+                  <Label>分紅資格授權</Label>
+                  <p className="text-[11px] text-muted-foreground">勾選後，授權期間內該會員參與對應分紅池不受原本資格條件限制（預設 3 個月，可調整）。</p>
+                </div>
+                {(["consumption", "business"] as BonusPoolKind[]).map((kind) => (
+                  <div key={kind} className="rounded-md border border-border p-3 space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <Checkbox
+                        checked={grants[kind].enabled}
+                        onCheckedChange={(v) => {
+                          const enabled = !!v;
+                          const s = grants[kind].startsOn || todayStr();
+                          setGrant(kind, enabled
+                            ? { enabled, startsOn: s, endsOn: grants[kind].endsOn || plusMonths(s, 3) }
+                            : { enabled });
+                        }}
+                      />
+                      可參與{GRANT_LABELS[kind]}
+                      <span className="text-[11px] font-normal text-muted-foreground">
+                        {kind === "consumption" ? "（V/S/T/E/A 池）" : "（星級／董事池）"}
+                      </span>
+                    </label>
+                    {grants[kind].enabled && (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">授權起日</Label>
+                          <Input type="date" value={grants[kind].startsOn} onChange={(e) => setGrant(kind, { startsOn: e.target.value })} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">授權迄日</Label>
+                          <Input type="date" value={grants[kind].endsOn} onChange={(e) => setGrant(kind, { endsOn: e.target.value })} />
+                        </div>
+                        <div className="space-y-1 sm:col-span-2">
+                          <Label className="text-xs">備註（授權原因）</Label>
+                          <Input value={grants[kind].reason} onChange={(e) => setGrant(kind, { reason: e.target.value })} placeholder="選填" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
               <div className="pt-2 border-t border-border" />
               <div className="space-y-1">
                 <Label>重設密碼 (留空則不變更)</Label>
