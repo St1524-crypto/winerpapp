@@ -305,9 +305,23 @@ function Page() {
             : {}),
         },
       });
+      for (const kind of ["consumption", "business"] as BonusPoolKind[]) {
+        const g = grants[kind];
+        await setMemberBonusGrant({
+          data: {
+            userId: editProfile.id,
+            poolKind: kind,
+            enabled: g.enabled,
+            startsOn: g.startsOn || undefined,
+            endsOn: g.endsOn || undefined,
+            reason: g.reason || "",
+          },
+        });
+      }
       toast.success("資料已更新");
       setEditProfile(null);
       load();
+      loadActiveGrants();
     } catch (e: any) { toast.error(e.message ?? "更新失敗"); }
     finally { setSaving(false); }
   }
