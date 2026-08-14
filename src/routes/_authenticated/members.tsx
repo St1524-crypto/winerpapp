@@ -319,18 +319,26 @@ function Page() {
             : {}),
         },
       });
-      for (const kind of ["consumption", "business"] as BonusPoolKind[]) {
-        const g = grants[kind];
-        await setMemberBonusGrant({
-          data: {
-            userId: editProfile.id,
-            poolKind: kind,
-            enabled: g.enabled,
-            startsOn: g.startsOn || undefined,
-            endsOn: g.endsOn || undefined,
-            reason: g.reason || "",
-          },
-        });
+      // 只有在授權資料成功載入後才寫入，且僅送出實際被修改的項目，
+      // 避免載入失敗/尚未載入時誤刪既有授權。
+      if (grantsStatus === "ready") {
+        for (const kind of ["consumption", "business"] as BonusPoolKind[]) {
+          const g = grants[kind];
+          const o = grantsInitial[kind];
+          const unchanged = g.enabled === o.enabled
+            && (!g.enabled || (g.startsOn === o.startsOn && g.endsOn === o.endsOn && g.reason === o.reason));
+          if (unchanged) continue;
+          await setMemberBonusGrant({
+            data: {
+              userId: editProfile.id,
+              poolKind: kind,
+              enabled: g.enabled,
+              startsOn: g.startsOn || undefined,
+              endsOn: g.endsOn || undefined,
+              reason: g.reason || "",
+            },
+          });
+        }
       }
       toast.success("資料已更新");
       setEditProfile(null);
