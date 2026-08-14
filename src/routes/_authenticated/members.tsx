@@ -249,23 +249,34 @@ function Page() {
       addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday), vip_expires_at: fmtDate(m.vip_expires_at),
       legacy_bonus_total: m.legacy_bonus_total != null ? String(m.legacy_bonus_total) : "",
     });
-    setGrants({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
+    const base = { consumption: emptyGrantDraft(), business: emptyGrantDraft() };
+    setGrants(base);
+    setGrantsInitial(base);
+    setGrantsStatus("loading");
+    const token = ++grantsReqRef.current;
     listMemberBonusGrants({ data: { userId: m.id } })
       .then((rows) => {
-        setGrants((prev) => {
-          const next = { ...prev };
-          for (const r of rows) {
-            next[r.pool_kind] = {
-              enabled: true,
-              startsOn: r.starts_on,
-              endsOn: r.ends_on,
-              reason: r.reason ?? "",
-            };
-          }
-          return next;
-        });
+        if (token !== grantsReqRef.current) return;
+        const next: Record<BonusPoolKind, GrantDraft> = {
+          consumption: emptyGrantDraft(),
+          business: emptyGrantDraft(),
+        };
+        for (const r of rows) {
+          next[r.pool_kind] = {
+            enabled: true,
+            startsOn: r.starts_on,
+            endsOn: r.ends_on,
+            reason: r.reason ?? "",
+          };
+        }
+        setGrants(next);
+        setGrantsInitial(next);
+        setGrantsStatus("ready");
       })
-      .catch(() => {});
+      .catch(() => {
+        if (token !== grantsReqRef.current) return;
+        setGrantsStatus("error");
+      });
   }
 
   async function submitCreate() {
