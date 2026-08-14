@@ -417,3 +417,24 @@ export const adminListCashTx = createServerFn({ method: "GET" })
     const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
     return (rows ?? []).map((r: any) => ({ ...r, member: map.get(r.user_id) ?? null }));
   });
+
+// ============ 管理員：查詢單一會員錢包餘額 ============
+export const adminGetMemberWallet = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    if (!(await isFinanceAdmin(context.userId))) throw new Error("沒有權限");
+    const { data: row, error } = await supabaseAdmin
+      .from("member_points_wallet")
+      .select("cash_balance, shopping_points, reward_points, discount_points, updated_at")
+      .eq("user_id", data.userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return {
+      cash_balance: Number((row as any)?.cash_balance ?? 0),
+      shopping_points: Number((row as any)?.shopping_points ?? 0),
+      reward_points: Number((row as any)?.reward_points ?? 0),
+      discount_points: Number((row as any)?.discount_points ?? 0),
+      updated_at: (row as any)?.updated_at ?? null,
+    };
+  });
