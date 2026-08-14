@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,9 @@ function Page() {
   const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; tier: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, tier: null, status: "idle" });
   const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null; tier: string | null }[]>([]);
   const [grants, setGrants] = useState<Record<BonusPoolKind, GrantDraft>>({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
+  const [grantsStatus, setGrantsStatus] = useState<"loading" | "ready" | "error">("loading");
+  const grantsReqRef = useRef(0);
+  const [grantsInitial, setGrantsInitial] = useState<Record<BonusPoolKind, GrantDraft>>({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
   const [activeGrants, setActiveGrants] = useState<BonusEligibilityGrant[]>([]);
 
   function setGrant(kind: BonusPoolKind, patch: Partial<GrantDraft>) {
@@ -247,23 +250,34 @@ function Page() {
       addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday), vip_expires_at: fmtDate(m.vip_expires_at),
       legacy_bonus_total: m.legacy_bonus_total != null ? String(m.legacy_bonus_total) : "",
     });
-    setGrants({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
+    const base = { consumption: emptyGrantDraft(), business: emptyGrantDraft() };
+    setGrants(base);
+    setGrantsInitial(base);
+    setGrantsStatus("loading");
+    const token = ++grantsReqRef.current;
     listMemberBonusGrants({ data: { userId: m.id } })
       .then((rows) => {
-        setGrants((prev) => {
-          const next = { ...prev };
-          for (const r of rows) {
-            next[r.pool_kind] = {
-              enabled: true,
-              startsOn: r.starts_on,
-              endsOn: r.ends_on,
-              reason: r.reason ?? "",
-            };
-          }
-          return next;
-        });
+        if (token !== grantsReqRef.current) return;
+        const next: Record<BonusPoolKind, GrantDraft> = {
+          consumption: emptyGrantDraft(),
+          business: emptyGrantDraft(),
+        };
+        for (const r of rows) {
+          next[r.pool_kind] = {
+            enabled: true,
+            startsOn: r.starts_on,
+            endsOn: r.ends_on,
+            reason: r.reason ?? "",
+          };
+        }
+        setGrants(next);
+        setGrantsInitial(next);
+        setGrantsStatus("ready");
       })
-      .catch(() => {});
+      .catch(() => {
+        if (token !== grantsReqRef.current) return;
+        setGrantsStatus("error");
+      });
   }
 
   async function submitCreate() {
@@ -305,18 +319,26 @@ function Page() {
             : {}),
         },
       });
-      for (const kind of ["consumption", "business"] as BonusPoolKind[]) {
-        const g = grants[kind];
-        await setMemberBonusGrant({
-          data: {
-            userId: editProfile.id,
-            poolKind: kind,
-            enabled: g.enabled,
-            startsOn: g.startsOn || undefined,
-            endsOn: g.endsOn || undefined,
-            reason: g.reason || "",
-          },
-        });
+      // 只有在授權資料成功載入後才寫入，且僅送出實際被修改的項目，
+      // 避免載入失敗/尚未載入時誤刪既有授權。
+      if (grantsStatus === "ready") {
+        for (const kind of ["consumption", "business"] as BonusPoolKind[]) {
+          const g = grants[kind];
+          const o = grantsInitial[kind];
+          const unchanged = g.enabled === o.enabled
+            && (!g.enabled || (g.startsOn === o.startsOn && g.endsOn === o.endsOn && g.reason === o.reason));
+          if (unchanged) continue;
+          await setMemberBonusGrant({
+            data: {
+              userId: editProfile.id,
+              poolKind: kind,
+              enabled: g.enabled,
+              startsOn: g.startsOn || undefined,
+              endsOn: g.endsOn || undefined,
+              reason: g.reason || "",
+            },
+          });
+        }
       }
       toast.success("資料已更新");
       setEditProfile(null);
@@ -804,10 +826,17 @@ function Page() {
                   <Label>分紅資格授權</Label>
                   <p className="text-[11px] text-muted-foreground">勾選後，授權期間內該會員參與對應分紅池不受原本資格條件限制（預設 3 個月，可調整）。</p>
                 </div>
+                {grantsStatus === "loading" && (
+                  <p className="text-[11px] text-muted-foreground">授權資料載入中…（載入完成前不會變更授權）</p>
+                )}
+                {grantsStatus === "error" && (
+                  <p className="text-[11px] text-destructive">授權資料載入失敗，本次儲存將不會變更既有授權；請重新開啟此對話框再試。</p>
+                )}
                 {(["consumption", "business"] as BonusPoolKind[]).map((kind) => (
                   <div key={kind} className="rounded-md border border-border p-3 space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium">
                       <Checkbox
+                        disabled={grantsStatus !== "ready"}
                         checked={grants[kind].enabled}
                         onCheckedChange={(v) => {
                           const enabled = !!v;
