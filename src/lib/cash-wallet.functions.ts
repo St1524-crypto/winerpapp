@@ -438,3 +438,71 @@ export const adminGetMemberWallet = createServerFn({ method: "GET" })
       updated_at: (row as any)?.updated_at ?? null,
     };
   });
+
+// ============ 訂單：以現金餘額付款 ============
+const PayOrderSchema = z.object({
+  orderId: z.string().uuid(),
+  userId: z.string().uuid(),
+  companyId: z.string().uuid(),
+  amount: z.number().positive().max(10_000_000),
+  orderNo: z.string().trim().max(60).optional(),
+});
+
+async function canOperateOrders(userId: string) {
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", ["super_admin", "admin", "finance", "sales"]);
+  return (data ?? []).length > 0;
+}
+
+export const payOrderWithCashBalance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => PayOrderSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    if (!(await canOperateOrders(context.userId))) throw new Error("沒有權限");
+
+    const { data: newCash, error: spendErr } = await (supabaseAdmin as any).rpc(
+      "spend_cash_balance",
+      { _user_id: data.userId, _amount: data.amount },
+    );
+    if (spendErr) {
+      if (String(spendErr.message).includes("insufficient cash balance")) {
+        throw new Error("現金餘額不足");
+      }
+      throw new Error(spendErr.message);
+    }
+
+    const note = `訂單付款${data.orderNo ? ` ${data.orderNo}` : ""}`;
+    const { error: txErr } = await supabaseAdmin.from("cash_transactions").insert({
+      user_id: data.userId,
+      tx_type: "adjust",
+      amount: -data.amount,
+      balance_after: newCash,
+      status: "completed",
+      note,
+      created_by: context.userId,
+      processed_by: context.userId,
+      processed_at: new Date().toISOString(),
+    });
+    if (txErr) {
+      await (supabaseAdmin as any).rpc("adjust_cash_balance", {
+        _user_id: data.userId,
+        _delta: data.amount,
+      });
+      throw new Error(txErr.message);
+    }
+
+    const { error: payErr } = await supabaseAdmin.from("payments").insert({
+      sales_order_id: data.orderId,
+      company_id: data.companyId,
+      payment_method: "cash_wallet",
+      payment_status: "paid",
+      amount: data.amount,
+      paid_at: new Date().toISOString(),
+    });
+    if (payErr) throw new Error(payErr.message);
+
+    return { cash_balance: newCash };
+  });
