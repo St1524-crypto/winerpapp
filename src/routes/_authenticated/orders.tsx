@@ -2175,11 +2175,17 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-md border border-amber-300/50 p-3 bg-amber-50/40">
-            <span className="text-sm text-muted-foreground">本訂單獎勵點（付款完成後發放）</span>
-            <span className="text-base font-semibold tabular-nums text-amber-600">
-              {totalRewardPoints.toLocaleString()} 點
-            </span>
+          <div className="rounded-md border border-amber-300/50 p-3 bg-amber-50/40 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">本訂單獎勵點（付款完成後發放）</span>
+              <span className="text-base font-semibold tabular-nums text-amber-600">
+                {totalRewardPoints.toLocaleString()} 點
+              </span>
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={noRewardPoints} onCheckedChange={(v) => setNoRewardPoints(v === true)} />
+              <span>本訂單不發獎勵點（不列入分紅基數）</span>
+            </label>
           </div>
 
 
