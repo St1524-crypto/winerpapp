@@ -1294,7 +1294,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   }
   // 套用：VIP 升級套組 → 套組 bonus_points；其他 → 階梯獎勵點（依會員身分過濾可見階梯）
   function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number; is_gift?: boolean }): number {
-    if (it.is_gift) return 0;
+    if (it.is_gift || noRewardPoints) return 0;
     const pkg = packagesQ.data?.[it.product_id];
     if (pkg) return pkg.bonus_points;
     const best = getBestTier(it.product_id, it.quantity);
