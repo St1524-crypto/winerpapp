@@ -18,6 +18,7 @@ import { processOrderPaymentBonus } from "@/lib/bonus.functions";
 import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 import { processOrderVipPackageUpgrade, listVipUpgradeBonusMap, listVipUpgradeGiftsForProducts } from "@/lib/vip-tiers.functions";
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
+import { payOrderWithCashBalance } from "@/lib/cash-wallet.functions";
 import { computeOrderPaymentTotals } from "@/lib/order-payment-totals";
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
 import { useOrderRewardPreview } from "@/hooks/use-order-reward-preview";
@@ -166,6 +167,7 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   credit_card: "信用卡",
   cash: "現金",
   cod: "貨到付款",
+  cash_wallet: "現金餘額",
   other: "其他",
 };
 
@@ -923,6 +925,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [discountPoints, setDiscountPoints] = useState("0");
   const [shoppingPoints, setShoppingPoints] = useState("0");
   const [rewardPoints, setRewardPoints] = useState("0");
+  const [cashWalletPay, setCashWalletPay] = useState("0");
   const [deposit, setDeposit] = useState("0");
   const [balance, setBalance] = useState("0");
   const [depositMethod, setDepositMethod] = useState("bank_transfer");
@@ -1158,7 +1161,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("member_points_wallet")
-        .select("discount_points,shopping_points,reward_points")
+        .select("discount_points,shopping_points,reward_points,cash_balance")
         .eq("user_id", customerStatus.user_id!)
         .maybeSingle();
       if (error) throw new Error(error.message);
@@ -1166,6 +1169,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         discount_points: Number((data as any)?.discount_points ?? 0),
         shopping_points: Number((data as any)?.shopping_points ?? 0),
         reward_points: Number((data as any)?.reward_points ?? 0),
+        cash_balance: Number((data as any)?.cash_balance ?? 0),
       };
     },
   });
@@ -1330,12 +1334,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     () => Math.max(0, subtotalNum + taxAmount + Number(shippingFee || 0) - Number(discount || 0)),
     [subtotalNum, taxAmount, shippingFee, discount],
   );
-  const walletBalances = memberWalletQ.data ?? { discount_points: 0, shopping_points: 0, reward_points: 0 };
+  const walletBalances = memberWalletQ.data ?? { discount_points: 0, shopping_points: 0, reward_points: 0, cash_balance: 0 };
   const discountPointNum = Number(discountPoints || 0);
   const shoppingPointNum = Number(shoppingPoints || 0);
   const rewardPointNum = Number(rewardPoints || 0);
   const pointOffsetTotal = discountPointNum + shoppingPointNum + rewardPointNum;
-  const cashDue = Math.max(0, total - pointOffsetTotal);
+  const cashWalletNum = Number(cashWalletPay || 0);
+  const cashDue = Math.max(0, total - pointOffsetTotal - cashWalletNum);
   const depositNum = Number(deposit || 0);
   const balanceNum = Number(balance || 0);
   const paymentsTotal = depositNum + balanceNum;
@@ -1376,6 +1381,18 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (pointOffsetTotal > total) {
         throw new Error("點數付款不可超過訂單總額");
       }
+      if (cashWalletNum < 0) {
+        throw new Error("現金餘額付款不可為負");
+      }
+      if (cashWalletNum > 0 && !customerStatus.user_id) {
+        throw new Error("現金餘額付款需先選擇可對應會員帳號的客戶");
+      }
+      if (cashWalletNum > walletBalances.cash_balance) {
+        throw new Error("現金餘額不足");
+      }
+      if (pointOffsetTotal + cashWalletNum > total) {
+        throw new Error("點數 + 現金餘額付款不可超過訂單總額");
+      }
       if (depositNum + balanceNum > cashDue) {
         throw new Error("訂金 + 尾款不可超過扣除點數後的現金應付");
       }
@@ -1402,7 +1419,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       // 依訂金決定付款狀態
       let paymentStatus: "pending" | "partial" | "paid" = "pending";
       if (cashDue === 0 || (depositNum >= cashDue && cashDue > 0)) paymentStatus = "paid";
-      else if (depositNum > 0 || pointOffsetTotal > 0) paymentStatus = "partial";
+      else if (depositNum > 0 || pointOffsetTotal > 0 || cashWalletNum > 0) paymentStatus = "partial";
 
       // 組合付款紀錄（訂金已收、尾款待收）
       const paymentsPayload: Array<{
@@ -1499,6 +1516,19 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
       });
 
+      // 以會員現金餘額付款（扣款 + 建立付款紀錄）
+      if (cashWalletNum > 0 && customerStatus.user_id && (orderRow as any)?.id) {
+        await payOrderWithCashBalance({
+          data: {
+            orderId: (orderRow as any).id,
+            userId: customerStatus.user_id,
+            companyId: currentCompanyId!,
+            amount: cashWalletNum,
+            orderNo: (orderRow as any).order_no ?? undefined,
+          },
+        });
+      }
+
       // 寫入訂單來源 / 業務人員 / 會員關聯（RPC 不包含這些欄位，建立後補上；建檔人員由 DB trigger 自動寫入）
       const patch: { order_source?: string; salesperson_id?: string; user_id?: string } = {};
       if (orderSource.trim()) patch.order_source = orderSource.trim();
@@ -1522,7 +1552,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
       setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource("");
-      setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
+      setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0"); setCashWalletPay("0");
       setDeposit("0"); setBalance("0");
       setCustomerId(null); setSalespersonId("");
       onCreated();
@@ -1550,7 +1580,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
     if (c.address) setAddress(c.address);
-    setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0");
+    setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0"); setCashWalletPay("0");
     setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null, vip_expires_at: null });
     setPickerOpen(false);
     toast.success(`已套用客戶資料：${c.name}`);
@@ -2211,6 +2241,48 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             </div>
           </div>
 
+          {/* ===== 現金餘額付款 ===== */}
+          <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+            <div className="text-sm font-medium flex items-center gap-1.5">
+              <Wallet className="h-3.5 w-3.5" /> 現金餘額付款
+            </div>
+            {!customerStatus.user_id ? (
+              <div className="text-xs text-muted-foreground">
+                請先選擇可對應會員帳號的客戶，才能查看與使用現金餘額。
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 items-end">
+                <div>
+                  <Label className="text-xs">使用現金餘額</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={Math.min(walletBalances.cash_balance, Math.max(0, total - pointOffsetTotal))}
+                    value={cashWalletPay}
+                    onChange={(e) =>
+                      setCashWalletPay(
+                        String(
+                          Math.max(
+                            0,
+                            Math.min(
+                              walletBalances.cash_balance,
+                              Math.max(0, total - pointOffsetTotal),
+                              Math.floor(Number(e.target.value || 0)),
+                            ),
+                          ),
+                        ),
+                      )
+                    }
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground pb-2">
+                  會員現金餘額：<span className="tabular-nums font-medium text-foreground">{fmt(walletBalances.cash_balance)}</span>
+                  <div className="mt-1">付款後剩餘：<span className="tabular-nums">{fmt(walletBalances.cash_balance - cashWalletNum)}</span></div>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="rounded-md border p-3 space-y-2 bg-muted/20">
             <div className="text-sm font-medium flex items-center gap-1.5">
               <CreditCard className="h-3.5 w-3.5" /> 付款設定（現金訂金 / 尾款）
@@ -2246,7 +2318,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
 
           <div className="flex items-center justify-between border-t pt-3">
             <div className="text-xs text-muted-foreground">
-              小計 {fmt(subtotalNum)}{taxAdded ? ` ＋ 稅 ${fmt(taxAmount)}` : ""} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)} － 點數 {fmt(pointOffsetTotal)}
+              小計 {fmt(subtotalNum)}{taxAdded ? ` ＋ 稅 ${fmt(taxAmount)}` : ""} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)} － 點數 {fmt(pointOffsetTotal)} － 現金餘額 {fmt(cashWalletNum)}
             </div>
             <div className="text-sm">
               現金應付：<span className="text-lg font-bold text-primary ml-1">{fmt(cashDue)}</span>
