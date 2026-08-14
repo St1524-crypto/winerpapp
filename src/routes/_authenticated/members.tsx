@@ -76,6 +76,8 @@ function Page() {
   const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; tier: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, tier: null, status: "idle" });
   const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null; tier: string | null }[]>([]);
   const [grants, setGrants] = useState<Record<BonusPoolKind, GrantDraft>>({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
+  const [grantsStatus, setGrantsStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [grantsInitial, setGrantsInitial] = useState<Record<BonusPoolKind, GrantDraft>>({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
   const [activeGrants, setActiveGrants] = useState<BonusEligibilityGrant[]>([]);
 
   function setGrant(kind: BonusPoolKind, patch: Partial<GrantDraft>) {
