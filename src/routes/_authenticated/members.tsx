@@ -745,6 +745,26 @@ function Page() {
           {editProfile && (
             <div className="space-y-3 py-2">
               <div className="text-xs text-muted-foreground">會員編號：<span className="font-mono">{editProfile.member_no ?? "—"}</span></div>
+              <div className="rounded-md border border-border bg-muted/30 p-3">
+                <div className="text-xs font-medium text-muted-foreground mb-2">錢包餘額（唯讀）</div>
+                {walletStatus === "loading" && <p className="text-[11px] text-muted-foreground">載入中…</p>}
+                {walletStatus === "error" && <p className="text-[11px] text-destructive">錢包餘額載入失敗</p>}
+                {walletStatus === "ready" && wallet && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {([
+                      ["現金餘額", wallet.cash_balance],
+                      ["購物點", wallet.shopping_points],
+                      ["貢獻點", wallet.reward_points],
+                      ["折扣點", wallet.discount_points],
+                    ] as const).map(([label, value]) => (
+                      <div key={label}>
+                        <div className="text-[11px] text-muted-foreground">{label}</div>
+                        <div className="text-sm font-semibold font-mono">{Number(value).toLocaleString("zh-TW")}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="space-y-1"><Label>姓名</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
               <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
               <div className="space-y-1"><Label>電話號碼</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
