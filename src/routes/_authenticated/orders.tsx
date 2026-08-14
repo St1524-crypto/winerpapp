@@ -1509,6 +1509,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             quantity: it.quantity,
             subtotal: it.is_gift ? 0 : Number(it.unit_price) * Number(it.quantity),
             is_gift: Boolean(it.is_gift),
+            ...(noRewardPoints ? { tier_reward_points: 0 } : {}),
           })),
           payments: paymentsPayload,
           pointPayments,
