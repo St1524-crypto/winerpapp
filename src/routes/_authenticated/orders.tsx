@@ -1553,7 +1553,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       toast.success(res?.createdNewCustomer ? "訂單已建立，並同步新增客戶" : "訂單已建立");
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
-      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource("");
+      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource(""); setNoRewardPoints(false);
       setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0"); setCashWalletPay("0");
       setDeposit("0"); setBalance("0");
       setCustomerId(null); setSalespersonId("");
