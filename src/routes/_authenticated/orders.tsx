@@ -1325,7 +1325,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const totalRewardPoints = useMemo(
     () => items.reduce((s, it) => s + getEffectiveReward(it) * Number(it.quantity || 0), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [items, packagesQ.data, tiersQ.data, customerStatus.is_vip, customerStatus.is_dealer],
+    [items, packagesQ.data, tiersQ.data, customerStatus.is_vip, customerStatus.is_dealer, noRewardPoints],
   );
   const taxAmount = useMemo(
     () => (taxAdded ? Math.round(subtotalNum * 0.05) : 0),
