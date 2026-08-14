@@ -930,6 +930,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [balance, setBalance] = useState("0");
   const [depositMethod, setDepositMethod] = useState("bank_transfer");
   const [taxAdded, setTaxAdded] = useState(false);
+  const [noRewardPoints, setNoRewardPoints] = useState(false);
   const [notes, setNotes] = useState("");
   const [orderSource, setOrderSource] = useState("");
   const [salespersonId, setSalespersonId] = useState<string>("");
@@ -1293,7 +1294,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   }
   // 套用：VIP 升級套組 → 套組 bonus_points；其他 → 階梯獎勵點（依會員身分過濾可見階梯）
   function getEffectiveReward(it: { product_id: string; quantity: number; reward_points: number; is_gift?: boolean }): number {
-    if (it.is_gift) return 0;
+    if (it.is_gift || noRewardPoints) return 0;
     const pkg = packagesQ.data?.[it.product_id];
     if (pkg) return pkg.bonus_points;
     const best = getBestTier(it.product_id, it.quantity);
@@ -1324,7 +1325,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const totalRewardPoints = useMemo(
     () => items.reduce((s, it) => s + getEffectiveReward(it) * Number(it.quantity || 0), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [items, packagesQ.data, tiersQ.data, customerStatus.is_vip, customerStatus.is_dealer],
+    [items, packagesQ.data, tiersQ.data, customerStatus.is_vip, customerStatus.is_dealer, noRewardPoints],
   );
   const taxAmount = useMemo(
     () => (taxAdded ? Math.round(subtotalNum * 0.05) : 0),
@@ -1508,6 +1509,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             quantity: it.quantity,
             subtotal: it.is_gift ? 0 : Number(it.unit_price) * Number(it.quantity),
             is_gift: Boolean(it.is_gift),
+            ...(noRewardPoints ? { tier_reward_points: 0 } : {}),
           })),
           payments: paymentsPayload,
           pointPayments,
@@ -1551,7 +1553,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       toast.success(res?.createdNewCustomer ? "訂單已建立，並同步新增客戶" : "訂單已建立");
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress("");
-      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource("");
+      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource(""); setNoRewardPoints(false);
       setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0"); setCashWalletPay("0");
       setDeposit("0"); setBalance("0");
       setCustomerId(null); setSalespersonId("");
@@ -2173,11 +2175,17 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-md border border-amber-300/50 p-3 bg-amber-50/40">
-            <span className="text-sm text-muted-foreground">本訂單獎勵點（付款完成後發放）</span>
-            <span className="text-base font-semibold tabular-nums text-amber-600">
-              {totalRewardPoints.toLocaleString()} 點
-            </span>
+          <div className="rounded-md border border-amber-300/50 p-3 bg-amber-50/40 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">本訂單獎勵點（付款完成後發放）</span>
+              <span className="text-base font-semibold tabular-nums text-amber-600">
+                {totalRewardPoints.toLocaleString()} 點
+              </span>
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={noRewardPoints} onCheckedChange={(v) => setNoRewardPoints(v === true)} />
+              <span>本訂單不發獎勵點（不列入分紅基數）</span>
+            </label>
           </div>
 
 
