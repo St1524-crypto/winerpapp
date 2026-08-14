@@ -826,10 +826,17 @@ function Page() {
                   <Label>分紅資格授權</Label>
                   <p className="text-[11px] text-muted-foreground">勾選後，授權期間內該會員參與對應分紅池不受原本資格條件限制（預設 3 個月，可調整）。</p>
                 </div>
+                {grantsStatus === "loading" && (
+                  <p className="text-[11px] text-muted-foreground">授權資料載入中…（載入完成前不會變更授權）</p>
+                )}
+                {grantsStatus === "error" && (
+                  <p className="text-[11px] text-destructive">授權資料載入失敗，本次儲存將不會變更既有授權；請重新開啟此對話框再試。</p>
+                )}
                 {(["consumption", "business"] as BonusPoolKind[]).map((kind) => (
                   <div key={kind} className="rounded-md border border-border p-3 space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium">
                       <Checkbox
+                        disabled={grantsStatus !== "ready"}
                         checked={grants[kind].enabled}
                         onCheckedChange={(v) => {
                           const enabled = !!v;
