@@ -930,6 +930,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [balance, setBalance] = useState("0");
   const [depositMethod, setDepositMethod] = useState("bank_transfer");
   const [taxAdded, setTaxAdded] = useState(false);
+  const [noRewardPoints, setNoRewardPoints] = useState(false);
   const [notes, setNotes] = useState("");
   const [orderSource, setOrderSource] = useState("");
   const [salespersonId, setSalespersonId] = useState<string>("");
