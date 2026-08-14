@@ -2301,7 +2301,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                 <Select value={depositMethod} onValueChange={setDepositMethod}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(PAYMENT_METHOD_LABEL).map(([v, l]) => (
+                    {Object.entries(PAYMENT_METHOD_LABEL).filter(([v]) => v !== "cash_wallet").map(([v, l]) => (
                       <SelectItem key={v} value={v}>{l}</SelectItem>
                     ))}
                   </SelectContent>
