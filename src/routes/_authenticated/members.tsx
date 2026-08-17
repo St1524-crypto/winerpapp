@@ -74,7 +74,7 @@ function Page() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "", current_tier: "" });
   const [showFormPassword, setShowFormPassword] = useState(false);
   const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; tier: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, tier: null, status: "idle" });
   const [referrerCandidates, setReferrerCandidates] = useState<{ id: string; member_no: string | null; name: string | null; phone: string | null; tier: string | null }[]>([]);
@@ -241,7 +241,7 @@ function Page() {
 
   function openEditRoles(m: Member) { setEditingRoles(m); setSelectedRoles([...m.roles]); }
   function openCreate() {
-    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "" });
+    setForm({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "", current_tier: "" });
     setShowFormPassword(false);
     setCreateOpen(true);
   }
@@ -255,6 +255,7 @@ function Page() {
       id_no: m.id_no ?? "", apply_date: fmtDate(m.apply_date), sex: m.sex ?? "",
       addr_mail: m.addr_mail ?? "", addr_home: m.addr_home ?? "", birthday: fmtDate(m.birthday), vip_expires_at: fmtDate(m.vip_expires_at),
       legacy_bonus_total: m.legacy_bonus_total != null ? String(m.legacy_bonus_total) : "",
+      current_tier: m.current_tier ?? "",
     });
     setWallet(null);
     setWalletStatus("loading");
@@ -326,6 +327,9 @@ function Page() {
           addr_home: form.addr_home,
           birthday: form.birthday,
           vip_expires_at: form.vip_expires_at,
+          ...(isSuperAdmin && (form.current_tier || "") !== (editProfile.current_tier ?? "")
+            ? { vipTier: form.current_tier }
+            : {}),
           ...(isSuperAdmin && form.legacy_bonus_total !== (editProfile.legacy_bonus_total != null ? String(editProfile.legacy_bonus_total) : "")
             ? { legacyBonusTotal: form.legacy_bonus_total === "" ? 0 : Number(form.legacy_bonus_total) }
             : {}),
@@ -836,6 +840,22 @@ function Page() {
                 <Input type="date" value={form.vip_expires_at} onChange={(e) => setForm({ ...form, vip_expires_at: e.target.value })} />
                 <p className="text-[11px] text-muted-foreground">留空＝非 VIP；到期後將無法領取獎勵點。</p>
               </div>
+              {isSuperAdmin && (
+                <div className="space-y-1">
+                  <Label>會員位階（僅超級管理員可調整）</Label>
+                  <select
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    value={form.current_tier}
+                    onChange={(e) => setForm({ ...form, current_tier: e.target.value })}
+                  >
+                    <option value="">未設定（無位階）</option>
+                    {dealerTierOptions.map((t) => (
+                      <option key={t.code} value={t.code}>{t.code} · {t.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-muted-foreground">手動調整會同步更新會員位階與升降階紀錄。</p>
+                </div>
+              )}
               {isSuperAdmin && (
                 <div className="space-y-1">
                   <Label>歷史累計獎金（匯入）NT$</Label>
