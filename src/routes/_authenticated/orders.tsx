@@ -1499,6 +1499,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           order_status: "pending",
           shipping_status: "pending",
           payment_status: paymentStatus,
+          no_reward_points: noRewardPoints,
           },
           items: items.map((it) => ({
             product_id: it.product_id,
