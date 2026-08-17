@@ -15,6 +15,7 @@ import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 import { applyOrderPoints } from "@/lib/points.functions";
 import { toast } from "sonner";
+import { ShipmentsCard } from "@/components/orders/ShipmentsCard";
 
 export const Route = createFileRoute("/shop/account/orders/$id")({ component: OrderDetail });
 
