@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 import { listMemberBonusGrants, listActiveBonusGrants, setMemberBonusGrant, type BonusEligibilityGrant, type BonusPoolKind } from "@/lib/bonus-grants.functions";
 import { adminGetMemberWallet } from "@/lib/cash-wallet.functions";
+import { resolveVipTierCode, vipTierLabel } from "@/lib/vip-tier-label";
 
 type MemberWallet = { cash_balance: number; shopping_points: number; reward_points: number; discount_points: number; updated_at: string | null };
 
