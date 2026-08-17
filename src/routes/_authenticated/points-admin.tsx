@@ -21,7 +21,7 @@ function PointsAdminPage() {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<any[]>([]);
   const [editUser, setEditUser] = useState<any | null>(null);
-  const [form, setForm] = useState({ pointType: "shopping", amount: 0, note: "", source: "topup" });
+  const [form, setForm] = useState({ pointType: "shopping", amount: "0", note: "", source: "topup" });
   const [saving, setSaving] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -60,20 +60,25 @@ function PointsAdminPage() {
 
   async function submit() {
     if (!editUser) return;
+    const amt = Math.trunc(Number(String(form.amount).replace(/[\s,]/g, "")));
+    if (!Number.isFinite(amt) || amt === 0) {
+      toast.error("請輸入有效的變動數量（可用 + / - 開頭）");
+      return;
+    }
     setSaving(true);
     try {
       await adminAdjustPoints({
         data: {
           userId: editUser.id,
           pointType: form.pointType as any,
-          amount: Math.floor(Number(form.amount) || 0),
+          amount: amt,
           note: form.note || undefined,
           source: form.source,
         },
       });
       toast.success("點數調整完成");
       setEditUser(null);
-      setForm({ pointType: "shopping", amount: 0, note: "", source: "topup" });
+      setForm({ pointType: "shopping", amount: "0", note: "", source: "topup" });
       load();
     } catch (e: any) {
       toast.error(e.message ?? "失敗");
