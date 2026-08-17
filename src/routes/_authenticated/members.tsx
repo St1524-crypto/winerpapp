@@ -276,8 +276,31 @@ function Page() {
     adminGetMemberWallet({ data: { userId: m.id } })
       .then((w) => { if (wToken === walletReqRef.current) { setWallet(w as MemberWallet); setWalletStatus("ready"); } })
       .catch(() => { if (wToken === walletReqRef.current) setWalletStatus("error"); });
-    const base = { consumption: emptyGrantDraft(), business: emptyGrantDraft() };
-    setGrants(base);
+    setRewardPts({ status: "loading", pkg: 0, order: 0 });
+    const rToken = ++rewardPtsReqRef.current;
+    (async () => {
+      try {
+        const [{ data: logs, error: e1 }, { data: items, error: e2 }] = await Promise.all([
+          supabase.from("vip_package_upgrade_logs").select("bonus_points, status").eq("user_id", m.id),
+          supabase
+            .from("sales_order_items")
+            .select("tier_reward_points, quantity, sales_orders!inner(user_id, no_reward_points)")
+            .eq("sales_orders.user_id", m.id),
+        ]);
+        if (e1 || e2) throw e1 ?? e2;
+        if (rToken !== rewardPtsReqRef.current) return;
+        const pkg = (logs ?? [])
+          .filter((l: any) => l.status === "applied")
+          .reduce((s: number, l: any) => s + Number(l.bonus_points ?? 0), 0);
+        const order = (items ?? [])
+          .filter((i: any) => !i.sales_orders?.no_reward_points)
+          .reduce((s: number, i: any) => s + Number(i.tier_reward_points ?? 0) * Number(i.quantity ?? 0), 0);
+        setRewardPts({ status: "ready", pkg, order });
+      } catch {
+        if (rToken === rewardPtsReqRef.current) setRewardPts({ status: "error", pkg: 0, order: 0 });
+      }
+    })();
+
     setGrantsInitial(base);
     setGrantsStatus("loading");
     const token = ++grantsReqRef.current;
