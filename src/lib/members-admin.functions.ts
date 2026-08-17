@@ -359,6 +359,7 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
       metadata: {
         fields: Object.keys(profileUpdate),
         password_changed: !!data.password,
+        tier_change: tierChange,
       },
     });
 
