@@ -2698,6 +2698,21 @@ function OrderDetailDialog({
               )}
             </Card>
 
+            <ShipmentsCard
+              orderId={order.id}
+              items={items.map((it: any) => ({
+                id: it.id,
+                product_name: it.product_name,
+                quantity: Number(it.quantity ?? 0),
+              }))}
+              onChanged={() => {
+                qc.invalidateQueries({ queryKey: ["sales-order-detail", orderId] });
+                onChanged();
+              }}
+            />
+
+
+
 
             {/* Customer & summary */}
             <div className="grid md:grid-cols-2 gap-3">
