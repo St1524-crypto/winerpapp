@@ -109,6 +109,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { z } from "zod";
 import { resolveVipTierCode, vipStatusText, vipTierLabel } from "@/lib/vip-tier-label";
+import { ShipmentsCard } from "@/components/orders/ShipmentsCard";
 
 // =================== Quick-add customer schema ===================
 const quickAddCustomerSchema = z.object({
