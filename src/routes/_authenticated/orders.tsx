@@ -2712,6 +2712,15 @@ function OrderDetailDialog({
               }}
             />
 
+            <MemberOrdersUpgradesCard
+              memberId={memberInfo?.id ?? (order as any).user_id ?? null}
+              customerPhone={order.customer_phone}
+              customerEmail={order.customer_email}
+              currentOrderId={order.id}
+            />
+
+
+
 
 
 
