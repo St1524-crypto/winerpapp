@@ -93,6 +93,9 @@ function Page() {
   const [wallet, setWallet] = useState<MemberWallet | null>(null);
   const [walletStatus, setWalletStatus] = useState<"loading" | "ready" | "error">("loading");
   const walletReqRef = useRef(0);
+  const [rewardPts, setRewardPts] = useState<{ status: "loading" | "ready" | "error"; pkg: number; order: number }>({ status: "loading", pkg: 0, order: 0 });
+  const rewardPtsReqRef = useRef(0);
+
   const grantsReqRef = useRef(0);
   const [grantsInitial, setGrantsInitial] = useState<Record<BonusPoolKind, GrantDraft>>({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
   const [activeGrants, setActiveGrants] = useState<BonusEligibilityGrant[]>([]);
