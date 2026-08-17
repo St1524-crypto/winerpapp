@@ -124,7 +124,9 @@ function PointsAdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.length === 0 ? (
+                  {loading ? (
+                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">搜尋中…</TableCell></TableRow>
+                  ) : rows.length === 0 ? (
                     <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">無資料</TableCell></TableRow>
                   ) : rows.map((r) => (
                     <TableRow key={r.id}>
