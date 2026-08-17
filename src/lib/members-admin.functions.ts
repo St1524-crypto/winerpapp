@@ -266,13 +266,21 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
         throw new Error("Forbidden: 僅超級管理員可修改會員位階");
       }
       const nextTier = data.vipTier ? data.vipTier.trim().toUpperCase() : null;
+      let mappedVipTier: string | null = null;
       if (nextTier) {
         const { data: tierRow } = await supabaseAdmin
-          .from("vip_tiers")
+          .from("dealer_tiers")
           .select("code")
           .eq("code", nextTier)
           .maybeSingle();
         if (!tierRow) throw new Error(`無效的位階代碼：${nextTier}`);
+        const { data: mapRow } = await supabaseAdmin
+          .from("tier_code_mapping")
+          .select("vip_tier_code")
+          .eq("legacy_code", nextTier)
+          .eq("is_active", true)
+          .maybeSingle();
+        mappedVipTier = (mapRow as any)?.vip_tier_code ?? nextTier;
       }
       const { data: currentStatus } = await supabaseAdmin
         .from("dealer_tier_status")
@@ -296,7 +304,8 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
         } as any);
         tierChange = { from: fromTier, to: nextTier };
       }
-      profileUpdate.vip_tier = nextTier;
+      profileUpdate.vip_tier = mappedVipTier;
+
     }
 
 
