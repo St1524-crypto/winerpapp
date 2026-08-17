@@ -184,6 +184,7 @@ const UpdateSchema = z.object({
   birthday: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
   vip_expires_at: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/u, "日期格式需為 YYYY-MM-DD").optional().or(z.literal("")),
   legacyBonusTotal: z.number().int().min(0).max(2147483647).optional(),
+  vipTier: z.string().trim().max(32).optional().or(z.literal("")),
 });
 
 export const adminUpdateMember = createServerFn({ method: "POST" })
@@ -252,6 +253,63 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
       profileUpdate.legacy_bonus_total = data.legacyBonusTotal;
     }
 
+    // 位階變更（僅超級管理員）
+    let tierChange: { from: string | null; to: string | null } | null = null;
+    if (data.vipTier !== undefined) {
+      const { data: isSuper } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", context.userId)
+        .eq("role", "super_admin")
+        .limit(1);
+      if (!isSuper || isSuper.length === 0) {
+        throw new Error("Forbidden: 僅超級管理員可修改會員位階");
+      }
+      const nextTier = data.vipTier ? data.vipTier.trim().toUpperCase() : null;
+      let mappedVipTier: string | null = null;
+      if (nextTier) {
+        const { data: tierRow } = await supabaseAdmin
+          .from("dealer_tiers")
+          .select("code")
+          .eq("code", nextTier)
+          .maybeSingle();
+        if (!tierRow) throw new Error(`無效的位階代碼：${nextTier}`);
+        const { data: mapRow } = await supabaseAdmin
+          .from("tier_code_mapping")
+          .select("vip_tier_code")
+          .eq("legacy_code", nextTier)
+          .eq("is_active", true)
+          .maybeSingle();
+        mappedVipTier = (mapRow as any)?.vip_tier_code ?? nextTier;
+      }
+      const { data: currentStatus } = await supabaseAdmin
+        .from("dealer_tier_status")
+        .select("current_tier")
+        .eq("user_id", data.userId)
+        .maybeSingle();
+      const fromTier = (currentStatus as any)?.current_tier ?? null;
+      if (fromTier !== nextTier) {
+        await supabaseAdmin.from("dealer_tier_status").upsert({
+          user_id: data.userId,
+          current_tier: nextTier,
+          updated_at: new Date().toISOString(),
+        } as any);
+        await supabaseAdmin.from("dealer_tier_history").insert({
+          user_id: data.userId,
+          from_tier: fromTier,
+          to_tier: nextTier,
+          change_type: "manual",
+          reason: "超級管理員手動調整位階",
+          triggered_by: context.userId,
+        } as any);
+        tierChange = { from: fromTier, to: nextTier };
+      }
+      profileUpdate.vip_tier = mappedVipTier;
+
+    }
+
+
+
     if (data.clearReferrer) {
       profileUpdate.referred_by = null;
     } else if (data.referrerMemberNo && data.referrerMemberNo.trim()) {
@@ -301,6 +359,7 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
       metadata: {
         fields: Object.keys(profileUpdate),
         password_changed: !!data.password,
+        tier_change: tierChange,
       },
     });
 
