@@ -5348,6 +5348,7 @@ export type Database = {
           id: string
           invoice_tax_id: string | null
           invoice_type: string | null
+          no_reward_points: boolean
           notes: string | null
           order_no: string
           order_source: string | null
@@ -5382,6 +5383,7 @@ export type Database = {
           id?: string
           invoice_tax_id?: string | null
           invoice_type?: string | null
+          no_reward_points?: boolean
           notes?: string | null
           order_no: string
           order_source?: string | null
@@ -5416,6 +5418,7 @@ export type Database = {
           id?: string
           invoice_tax_id?: string | null
           invoice_type?: string | null
+          no_reward_points?: boolean
           notes?: string | null
           order_no?: string
           order_source?: string | null
@@ -7569,6 +7572,7 @@ export type Database = {
           id: string
           invoice_tax_id: string | null
           invoice_type: string | null
+          no_reward_points: boolean
           notes: string | null
           order_no: string
           order_source: string | null
@@ -7617,6 +7621,7 @@ export type Database = {
           id: string
           invoice_tax_id: string | null
           invoice_type: string | null
+          no_reward_points: boolean
           notes: string | null
           order_no: string
           order_source: string | null
