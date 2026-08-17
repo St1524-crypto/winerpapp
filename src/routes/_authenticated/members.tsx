@@ -74,6 +74,16 @@ function Page() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editProfile, setEditProfile] = useState<Member | null>(null);
+  const [dealerTierOptions, setDealerTierOptions] = useState<{ code: string; name: string }[]>([]);
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    supabase
+      .from("dealer_tiers")
+      .select("code,name,sort_order")
+      .eq("status", "active")
+      .order("sort_order")
+      .then(({ data }) => setDealerTierOptions(((data ?? []) as any[]).map((t) => ({ code: t.code, name: t.name }))));
+  }, [isSuperAdmin]);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "", current_tier: "" });
   const [showFormPassword, setShowFormPassword] = useState(false);
   const [referrerLookup, setReferrerLookup] = useState<{ code: string; name: string | null; tier: string | null; status: "idle" | "loading" | "found" | "notfound" }>({ code: "", name: null, tier: null, status: "idle" });
