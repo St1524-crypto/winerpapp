@@ -2825,6 +2825,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           ends_on: string
+          exclusive: boolean
           id: string
           pool_kind: string
           reason: string | null
@@ -2836,6 +2837,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           ends_on: string
+          exclusive?: boolean
           id?: string
           pool_kind: string
           reason?: string | null
@@ -2847,6 +2849,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           ends_on?: string
+          exclusive?: boolean
           id?: string
           pool_kind?: string
           reason?: string | null
