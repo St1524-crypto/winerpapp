@@ -21,7 +21,7 @@ function PointsAdminPage() {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<any[]>([]);
   const [editUser, setEditUser] = useState<any | null>(null);
-  const [form, setForm] = useState({ pointType: "shopping", amount: 0, note: "", source: "topup" });
+  const [form, setForm] = useState({ pointType: "shopping", amount: "0", note: "", source: "topup" });
   const [saving, setSaving] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -60,20 +60,25 @@ function PointsAdminPage() {
 
   async function submit() {
     if (!editUser) return;
+    const amt = Math.trunc(Number(String(form.amount).replace(/[\s,]/g, "")));
+    if (!Number.isFinite(amt) || amt === 0) {
+      toast.error("請輸入有效的變動數量（可用 + / - 開頭）");
+      return;
+    }
     setSaving(true);
     try {
       await adminAdjustPoints({
         data: {
           userId: editUser.id,
           pointType: form.pointType as any,
-          amount: Math.floor(Number(form.amount) || 0),
+          amount: amt,
           note: form.note || undefined,
           source: form.source,
         },
       });
       toast.success("點數調整完成");
       setEditUser(null);
-      setForm({ pointType: "shopping", amount: 0, note: "", source: "topup" });
+      setForm({ pointType: "shopping", amount: "0", note: "", source: "topup" });
       load();
     } catch (e: any) {
       toast.error(e.message ?? "失敗");
@@ -160,6 +165,18 @@ function PointsAdminPage() {
             <DialogTitle>調整點數 — {editUser?.name ?? editUser?.email}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-2 rounded-lg border bg-muted/30 p-3 text-center">
+              {([
+                ["shopping", "購物點", editUser?.wallet?.shopping_points ?? 0],
+                ["reward", "貢獻點", editUser?.wallet?.reward_points ?? 0],
+                ["discount", "折扣點", editUser?.wallet?.discount_points ?? 0],
+              ] as const).map(([key, label, val]) => (
+                <div key={key} className={form.pointType === key ? "rounded-md bg-primary/10 py-1" : "py-1"}>
+                  <div className="text-xs text-muted-foreground">{label}</div>
+                  <div className="text-lg font-semibold tabular-nums">{Number(val).toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
             <div className="space-y-2">
               <Label>點數類型</Label>
               <Select value={form.pointType} onValueChange={(v) => setForm({ ...form, pointType: v })}>
@@ -172,8 +189,33 @@ function PointsAdminPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>變動數量（正數=增加，負數=扣除）</Label>
-              <Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: +e.target.value })} />
+              <Label>變動數量（可直接輸入 +100 或 -100）</Label>
+              <div className="flex gap-2">
+                <Input
+                  inputMode="text"
+                  placeholder="例：+1000 或 -500"
+                  value={form.amount}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9+\-]/g, "").replace(/(?!^)[+\-]/g, "");
+                    setForm({ ...form, amount: v });
+                  }}
+                />
+                <Button type="button" variant="outline" size="icon" onClick={() => setForm({ ...form, amount: String(Math.abs(Math.trunc(Number(form.amount) || 0))) })}>+</Button>
+                <Button type="button" variant="outline" size="icon" onClick={() => setForm({ ...form, amount: String(-Math.abs(Math.trunc(Number(form.amount) || 0))) })}>−</Button>
+              </div>
+              {(() => {
+                const cur = Number(
+                  form.pointType === "shopping" ? editUser?.wallet?.shopping_points ?? 0
+                  : form.pointType === "reward" ? editUser?.wallet?.reward_points ?? 0
+                  : editUser?.wallet?.discount_points ?? 0
+                );
+                const delta = Math.trunc(Number(form.amount) || 0);
+                return (
+                  <p className="text-xs text-muted-foreground">
+                    調整後：<span className="font-mono font-semibold text-foreground">{(cur + delta).toLocaleString()}</span>（目前 {cur.toLocaleString()}）
+                  </p>
+                );
+              })()}
             </div>
             <div className="space-y-2">
               <Label>來源</Label>
