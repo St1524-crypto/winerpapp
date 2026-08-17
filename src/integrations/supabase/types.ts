@@ -5729,42 +5729,102 @@ export type Database = {
           },
         ]
       }
+      shipment_items: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          id: string
+          product_id: string | null
+          product_name: string | null
+          quantity: number
+          sales_order_item_id: string
+          shipment_id: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name?: string | null
+          quantity: number
+          sales_order_item_id: string
+          shipment_id: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name?: string | null
+          quantity?: number
+          sales_order_item_id?: string
+          shipment_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_items_sales_order_item_id_fkey"
+            columns: ["sales_order_item_id"]
+            isOneToOne: false
+            referencedRelation: "sales_order_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_items_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipments: {
         Row: {
           company_id: string
           created_at: string
           delivered_at: string | null
           id: string
+          note: string | null
           sales_order_id: string
           shipped_at: string | null
+          shipped_by: string | null
           shipping_company: string
           status: string
           tracking_no: string | null
           updated_at: string
+          voided_at: string | null
         }
         Insert: {
           company_id?: string
           created_at?: string
           delivered_at?: string | null
           id?: string
+          note?: string | null
           sales_order_id: string
           shipped_at?: string | null
+          shipped_by?: string | null
           shipping_company: string
           status?: string
           tracking_no?: string | null
           updated_at?: string
+          voided_at?: string | null
         }
         Update: {
           company_id?: string
           created_at?: string
           delivered_at?: string | null
           id?: string
+          note?: string | null
           sales_order_id?: string
           shipped_at?: string | null
+          shipped_by?: string | null
           shipping_company?: string
           status?: string
           tracking_no?: string | null
           updated_at?: string
+          voided_at?: string | null
         }
         Relationships: [
           {
@@ -7556,6 +7616,17 @@ export type Database = {
         Args: { _ip: string; _phone: string }
         Returns: undefined
       }
+      create_order_shipment: {
+        Args: {
+          _items: Json
+          _note?: string
+          _order_id: string
+          _shipped_at?: string
+          _shipping_company?: string
+          _tracking_no?: string
+        }
+        Returns: Json
+      }
       create_sales_order_with_items: {
         Args: { _items: Json; _order: Json; _payments?: Json }
         Returns: {
@@ -7871,6 +7942,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      recalc_order_shipping_status: {
+        Args: { _order_id: string }
+        Returns: string
+      }
       recalculate_daily_bonus_for_date: {
         Args: {
           _created_by?: string
@@ -8026,6 +8101,7 @@ export type Database = {
         Args: { _code_hash: string; _email: string; _phone: string }
         Returns: boolean
       }
+      void_order_shipment: { Args: { _shipment_id: string }; Returns: Json }
     }
     Enums: {
       app_role:

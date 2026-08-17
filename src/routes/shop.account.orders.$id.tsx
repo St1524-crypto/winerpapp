@@ -15,6 +15,7 @@ import { processOrderAnnualFeeUpgrade } from "@/lib/annual-fee-vip.functions";
 import { processOrderVipPackageUpgrade } from "@/lib/vip-tiers.functions";
 import { applyOrderPoints } from "@/lib/points.functions";
 import { toast } from "sonner";
+import { ShipmentsCard } from "@/components/orders/ShipmentsCard";
 
 export const Route = createFileRoute("/shop/account/orders/$id")({ component: OrderDetail });
 
@@ -263,6 +264,18 @@ function OrderDetail() {
       <Button asChild variant="ghost" size="sm" className="-ml-2">
         <Link to="/shop/account/orders"><ArrowLeft className="h-4 w-4 mr-1" />返回訂單列表</Link>
       </Button>
+
+      <ShipmentsCard
+        orderId={order.id}
+        readOnly
+        items={items.map((it) => ({
+          id: it.id,
+          product_name: it.product_name,
+          quantity: Number(it.quantity ?? 0),
+        }))}
+      />
+
+
 
       <Card>
         <CardHeader>

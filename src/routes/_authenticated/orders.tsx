@@ -109,6 +109,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { z } from "zod";
 import { resolveVipTierCode, vipStatusText, vipTierLabel } from "@/lib/vip-tier-label";
+import { ShipmentsCard } from "@/components/orders/ShipmentsCard";
 
 // =================== Quick-add customer schema ===================
 const quickAddCustomerSchema = z.object({
@@ -150,6 +151,7 @@ const ORDER_STATUS = {
 
 const SHIPPING_STATUS = {
   pending:   { label: "待出貨", tone: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+  partial:   { label: "部分出貨", tone: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
   shipped:   { label: "已出貨", tone: "bg-sky-500/15 text-sky-400 border-sky-500/30" },
   delivered: { label: "已送達", tone: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
   returned:  { label: "已退貨", tone: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
@@ -2696,6 +2698,21 @@ function OrderDetailDialog({
                 </div>
               )}
             </Card>
+
+            <ShipmentsCard
+              orderId={order.id}
+              items={items.map((it: any) => ({
+                id: it.id,
+                product_name: it.product_name,
+                quantity: Number(it.quantity ?? 0),
+              }))}
+              onChanged={() => {
+                qc.invalidateQueries({ queryKey: ["sales-order-detail", orderId] });
+                onChanged();
+              }}
+            />
+
+
 
 
             {/* Customer & summary */}
