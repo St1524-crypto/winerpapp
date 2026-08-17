@@ -110,6 +110,7 @@ import {
 import { z } from "zod";
 import { resolveVipTierCode, vipStatusText, vipTierLabel } from "@/lib/vip-tier-label";
 import { ShipmentsCard } from "@/components/orders/ShipmentsCard";
+import { MemberOrdersUpgradesCard } from "@/components/orders/MemberOrdersUpgradesCard";
 
 // =================== Quick-add customer schema ===================
 const quickAddCustomerSchema = z.object({
@@ -390,7 +391,9 @@ function OrdersPage() {
       if (tab !== "all") q = q.eq("order_status", tab);
       if (search.trim()) {
         const s = search.trim();
-        q = q.or(`order_no.ilike.%${s}%,customer_name.ilike.%${s}%,customer_email.ilike.%${s}%`);
+        q = q.or(
+          `order_no.ilike.%${s}%,customer_name.ilike.%${s}%,customer_email.ilike.%${s}%,customer_phone.ilike.%${s}%`,
+        );
       }
       const { data, error } = await q;
       if (error) throw new Error(error.message);
@@ -2711,6 +2714,15 @@ function OrderDetailDialog({
                 onChanged();
               }}
             />
+
+            <MemberOrdersUpgradesCard
+              memberId={memberInfo?.id ?? (order as any).user_id ?? null}
+              customerPhone={order.customer_phone}
+              customerEmail={order.customer_email}
+              currentOrderId={order.id}
+            />
+
+
 
 
 
