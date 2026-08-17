@@ -391,7 +391,9 @@ function OrdersPage() {
       if (tab !== "all") q = q.eq("order_status", tab);
       if (search.trim()) {
         const s = search.trim();
-        q = q.or(`order_no.ilike.%${s}%,customer_name.ilike.%${s}%,customer_email.ilike.%${s}%`);
+        q = q.or(
+          `order_no.ilike.%${s}%,customer_name.ilike.%${s}%,customer_email.ilike.%${s}%,customer_phone.ilike.%${s}%`,
+        );
       }
       const { data, error } = await q;
       if (error) throw new Error(error.message);
