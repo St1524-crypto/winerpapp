@@ -109,6 +109,7 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
 export const SHIPPING_STATUS_LABELS: Record<string, string> = {
   pending: "待出貨",
   preparing: "撿貨中",
+  partial: "部分出貨",
   shipped: "已出貨",
   delivered: "已送達",
   returned: "已退貨",
