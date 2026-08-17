@@ -265,6 +265,18 @@ function OrderDetail() {
         <Link to="/shop/account/orders"><ArrowLeft className="h-4 w-4 mr-1" />返回訂單列表</Link>
       </Button>
 
+      <ShipmentsCard
+        orderId={order.id}
+        readOnly
+        items={items.map((it) => ({
+          id: it.id,
+          product_name: it.product_name,
+          quantity: Number(it.quantity ?? 0),
+        }))}
+      />
+
+
+
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
