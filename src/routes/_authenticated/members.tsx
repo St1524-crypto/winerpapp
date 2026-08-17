@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 import { listMemberBonusGrants, listActiveBonusGrants, setMemberBonusGrant, type BonusEligibilityGrant, type BonusPoolKind } from "@/lib/bonus-grants.functions";
 import { adminGetMemberWallet } from "@/lib/cash-wallet.functions";
+import { resolveVipTierCode, vipTierLabel } from "@/lib/vip-tier-label";
 
 type MemberWallet = { cash_balance: number; shopping_points: number; reward_points: number; discount_points: number; updated_at: string | null };
 
@@ -93,6 +94,9 @@ function Page() {
   const [wallet, setWallet] = useState<MemberWallet | null>(null);
   const [walletStatus, setWalletStatus] = useState<"loading" | "ready" | "error">("loading");
   const walletReqRef = useRef(0);
+  const [rewardPts, setRewardPts] = useState<{ status: "loading" | "ready" | "error"; pkg: number; order: number }>({ status: "loading", pkg: 0, order: 0 });
+  const rewardPtsReqRef = useRef(0);
+
   const grantsReqRef = useRef(0);
   const [grantsInitial, setGrantsInitial] = useState<Record<BonusPoolKind, GrantDraft>>({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
   const [activeGrants, setActiveGrants] = useState<BonusEligibilityGrant[]>([]);
@@ -273,9 +277,35 @@ function Page() {
     adminGetMemberWallet({ data: { userId: m.id } })
       .then((w) => { if (wToken === walletReqRef.current) { setWallet(w as MemberWallet); setWalletStatus("ready"); } })
       .catch(() => { if (wToken === walletReqRef.current) setWalletStatus("error"); });
+    setRewardPts({ status: "loading", pkg: 0, order: 0 });
+    const rToken = ++rewardPtsReqRef.current;
+    (async () => {
+      try {
+        const [{ data: logs, error: e1 }, { data: items, error: e2 }] = await Promise.all([
+          supabase.from("vip_package_upgrade_logs").select("bonus_points, status").eq("user_id", m.id),
+          supabase
+            .from("sales_order_items")
+            .select("tier_reward_points, quantity, sales_orders!inner(user_id, no_reward_points)")
+            .eq("sales_orders.user_id", m.id),
+        ]);
+        if (e1 || e2) throw e1 ?? e2;
+        if (rToken !== rewardPtsReqRef.current) return;
+        const pkg = (logs ?? [])
+          .filter((l: any) => l.status === "applied")
+          .reduce((s: number, l: any) => s + Number(l.bonus_points ?? 0), 0);
+        const order = (items ?? [])
+          .filter((i: any) => !i.sales_orders?.no_reward_points)
+          .reduce((s: number, i: any) => s + Number(i.tier_reward_points ?? 0) * Number(i.quantity ?? 0), 0);
+        setRewardPts({ status: "ready", pkg, order });
+      } catch {
+        if (rToken === rewardPtsReqRef.current) setRewardPts({ status: "error", pkg: 0, order: 0 });
+      }
+    })();
+
     const base = { consumption: emptyGrantDraft(), business: emptyGrantDraft() };
     setGrants(base);
     setGrantsInitial(base);
+
     setGrantsStatus("loading");
     const token = ++grantsReqRef.current;
     listMemberBonusGrants({ data: { userId: m.id } })
@@ -758,7 +788,23 @@ function Page() {
           <DialogHeader><DialogTitle>編輯會員資料</DialogTitle></DialogHeader>
           {editProfile && (
             <div className="space-y-3 py-2">
-              <div className="text-xs text-muted-foreground">會員編號：<span className="font-mono">{editProfile.member_no ?? "—"}</span></div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>會員編號：<span className="font-mono">{editProfile.member_no ?? "—"}</span></span>
+                <Badge variant="outline" className="text-[11px]">
+                  位階：{vipTierLabel(resolveVipTierCode(editProfile as any)) || "—"}
+                </Badge>
+                <Badge variant="outline" className="text-[11px]">
+                  累積升級獎勵點：
+                  {rewardPts.status === "loading" ? "載入中…" : rewardPts.status === "error" ? "載入失敗" : (
+                    <span className="font-mono ml-1">{(rewardPts.pkg + rewardPts.order).toLocaleString("zh-TW")}</span>
+                  )}
+                </Badge>
+                {rewardPts.status === "ready" && (
+                  <span className="text-[11px]">
+                    （升級套組 {rewardPts.pkg.toLocaleString("zh-TW")} + 訂單品項 {rewardPts.order.toLocaleString("zh-TW")}）
+                  </span>
+                )}
+              </div>
               <div className="rounded-md border border-border bg-muted/30 p-3">
                 <div className="text-xs font-medium text-muted-foreground mb-2">錢包餘額（唯讀）</div>
                 {walletStatus === "loading" && <p className="text-[11px] text-muted-foreground">載入中…</p>}
