@@ -213,6 +213,14 @@ async function getMonthlyResponsibilitySnapshot(memberId: string, orderDate?: st
 }
 
 async function getOrderGeneratedRewardPoints(orderId: string) {
+  // 訂單標記「不發獎勵點」時，直接視為 0（不列入分紅基數）
+  const { data: orderFlag } = await supabaseAdmin
+    .from("sales_orders")
+    .select("no_reward_points")
+    .eq("id", orderId)
+    .maybeSingle();
+  if ((orderFlag as any)?.no_reward_points === true) return 0;
+
   const { data: items, error } = await supabaseAdmin
     .from("sales_order_items")
     .select("product_id, quantity, tier_reward_points, bundle_id")
