@@ -110,6 +110,7 @@ import {
 import { z } from "zod";
 import { resolveVipTierCode, vipStatusText, vipTierLabel } from "@/lib/vip-tier-label";
 import { ShipmentsCard } from "@/components/orders/ShipmentsCard";
+import { MemberOrdersUpgradesCard } from "@/components/orders/MemberOrdersUpgradesCard";
 
 // =================== Quick-add customer schema ===================
 const quickAddCustomerSchema = z.object({
