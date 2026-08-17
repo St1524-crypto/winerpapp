@@ -301,7 +301,10 @@ function Page() {
       }
     })();
 
+    const base = { consumption: emptyGrantDraft(), business: emptyGrantDraft() };
+    setGrants(base);
     setGrantsInitial(base);
+
     setGrantsStatus("loading");
     const token = ++grantsReqRef.current;
     listMemberBonusGrants({ data: { userId: m.id } })
