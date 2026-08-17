@@ -24,24 +24,39 @@ function PointsAdminPage() {
   const [form, setForm] = useState({ pointType: "shopping", amount: 0, note: "", source: "topup" });
   const [saving, setSaving] = useState(false);
 
-  async function load() {
-    let query = supabase.from("profiles").select("id, name, email, phone, member_no, is_vip, vip_expires_at").limit(100);
-    if (q.trim()) query = query.or(`name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%,member_no.ilike.%${q}%`);
-    const { data } = await query;
-    // 帶上錢包
-    const ids = (data ?? []).map((p: any) => p.id);
-    let wallets: any[] = [];
-    if (ids.length) {
-      const { data: w } = await supabase.from("member_points_wallet" as any).select("*").in("user_id", ids);
-      wallets = w ?? [];
+  const [loading, setLoading] = useState(false);
+
+  async function load(keyword = q) {
+    setLoading(true);
+    try {
+      const term = keyword.trim().replace(/[%,()]/g, "");
+      let query = supabase.from("profiles").select("id, name, email, phone, member_no, is_vip, vip_expires_at").limit(100);
+      if (term) query = query.or(`name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%,member_no.ilike.%${term}%`);
+      const { data, error } = await query;
+      if (error) throw error;
+      // 帶上錢包
+      const ids = (data ?? []).map((p: any) => p.id);
+      let wallets: any[] = [];
+      if (ids.length) {
+        const { data: w } = await supabase.from("member_points_wallet" as any).select("*").in("user_id", ids);
+        wallets = w ?? [];
+      }
+      const wMap = new Map(wallets.map((w: any) => [w.user_id, w]));
+      setRows((data ?? []).map((p: any) => ({ ...p, wallet: wMap.get(p.id) })));
+    } catch (e: any) {
+      toast.error(e.message ?? "載入失敗");
+      setRows([]);
+    } finally {
+      setLoading(false);
     }
-    const wMap = new Map(wallets.map((w: any) => [w.user_id, w]));
-    setRows((data ?? []).map((p: any) => ({ ...p, wallet: wMap.get(p.id) })));
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    const t = setTimeout(() => load(q), 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
+
 
   async function submit() {
     if (!editUser) return;
