@@ -70,40 +70,64 @@ function QuoteDetailPage() {
   async function onExportPdf() {
     if (!printRef.current) return;
     setExporting(true);
+    let holder: HTMLDivElement | null = null;
     try {
       const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
         import("html2canvas-pro"),
         import("jspdf"),
       ]);
-      const canvas = await html2canvas(printRef.current, {
+
+      // 以固定 A4 內容寬度離線複製一份，避免視窗寬度造成內容被裁切
+      const CONTENT_W = 794; // 96dpi 下的 A4 寬
+      holder = document.createElement("div");
+      holder.style.cssText = `position:fixed;left:-10000px;top:0;width:${CONTENT_W}px;background:#ffffff;z-index:-1`;
+      const clone = printRef.current.cloneNode(true) as HTMLElement;
+      clone.style.width = `${CONTENT_W}px`;
+      clone.style.maxWidth = "none";
+      clone.style.margin = "0";
+      clone.style.boxShadow = "none";
+      holder.appendChild(clone);
+      document.body.appendChild(holder);
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+
+      const canvas = await html2canvas(clone, {
         scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
+        width: CONTENT_W,
+        windowWidth: CONTENT_W,
+        logging: false,
       });
+
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
-      const imgW = pageW;
+      const margin = 8; // mm，避免內容貼齊紙張邊緣
+      const imgW = pageW - margin * 2;
       const imgH = (canvas.height * imgW) / canvas.width;
+      const usableH = pageH - margin * 2;
+
       let heightLeft = imgH;
-      let position = 0;
-      pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
-      heightLeft -= pageH;
+      let position = margin;
+      pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+      heightLeft -= usableH;
       while (heightLeft > 0) {
-        position -= pageH;
+        position -= usableH;
         pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
-        heightLeft -= pageH;
+        pdf.addImage(imgData, "JPEG", margin, position, imgW, imgH);
+        heightLeft -= usableH;
       }
       pdf.save(`${q.quote_no}.pdf`);
       toast.success("PDF 已下載");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "PDF 匯出失敗");
     } finally {
+      if (holder) document.body.removeChild(holder);
       setExporting(false);
     }
   }
+
 
   return (
     <div className="container mx-auto p-6 space-y-4 max-w-4xl">
