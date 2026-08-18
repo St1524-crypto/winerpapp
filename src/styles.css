@@ -215,3 +215,43 @@
 
 
 
+
+/* ---------- Quotation document (screen + print) ---------- */
+.quote-doc {
+  color: #111;
+  background: #fff;
+}
+.quote-doc table { width: 100%; border-collapse: collapse; }
+.quote-doc th,
+.quote-doc td {
+  border: 1px solid #94a3b8;
+  padding: 6px 8px;
+  vertical-align: top;
+  line-height: 1.5;
+}
+.quote-doc thead th { background: #e2e8f0; font-weight: 700; }
+.quote-doc tfoot td { border-color: #94a3b8; }
+.quote-doc tr { break-inside: avoid; page-break-inside: avoid; }
+
+@media print {
+  @page { size: A4 portrait; margin: 12mm; }
+  html, body { background: #fff !important; }
+  body * { visibility: hidden !important; }
+  .quote-print-area, .quote-print-area * { visibility: visible !important; }
+  .quote-print-area {
+    position: absolute !important;
+    inset: 0 auto auto 0;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+  .quote-doc {
+    font-size: 12pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print\:hidden { display: none !important; }
+}
