@@ -131,7 +131,7 @@ function QuoteDetailPage() {
         </div>
       </div>
 
-      <Card ref={printRef} className="p-8 space-y-6 bg-white text-black print:shadow-none print:border-0">
+      <Card ref={printRef} className="quote-doc quote-print-area p-8 space-y-6 bg-white text-black text-[15px] leading-relaxed print:shadow-none print:border-0">
 
         <div className="flex justify-between items-start border-b pb-4">
           <div className="flex items-center gap-4">
