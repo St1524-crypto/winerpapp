@@ -131,7 +131,7 @@ function QuoteDetailPage() {
         </div>
       </div>
 
-      <Card ref={printRef} className="p-8 space-y-6 bg-white text-black print:shadow-none print:border-0">
+      <Card ref={printRef} className="quote-doc quote-print-area p-8 space-y-6 bg-white text-black text-[15px] leading-relaxed print:shadow-none print:border-0">
 
         <div className="flex justify-between items-start border-b pb-4">
           <div className="flex items-center gap-4">
@@ -172,36 +172,46 @@ function QuoteDetailPage() {
           </div>
         </div>
 
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="border-y bg-gray-100">
-              <th className="p-2 text-left">品名</th>
-              <th className="p-2 text-left">規格</th>
-              <th className="p-2 text-right">數量</th>
-              <th className="p-2 text-right">單價</th>
-              <th className="p-2 text-right">折扣</th>
-              <th className="p-2 text-right">小計</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((it, i) => (
-              <tr key={i} className="border-b">
-                <td className="p-2">{it.item_name}</td>
-                <td className="p-2">{it.spec ?? ""}</td>
-                <td className="p-2 text-right">{Number(it.quantity)}</td>
-                <td className="p-2 text-right">${Number(it.unit_price).toLocaleString()}</td>
-                <td className="p-2 text-right">${Number(it.discount).toLocaleString()}</td>
-                <td className="p-2 text-right">${Number(it.subtotal).toLocaleString()}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <colgroup>
+              <col style={{ width: "34%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "15%" }} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th className="text-left">品名</th>
+                <th className="text-left">規格</th>
+                <th className="text-right">數量</th>
+                <th className="text-right">單價</th>
+                <th className="text-right">折扣</th>
+                <th className="text-right">小計</th>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr><td colSpan={5} className="p-2 text-right">小計</td><td className="p-2 text-right">${Number(q.subtotal).toLocaleString()}</td></tr>
-            <tr><td colSpan={5} className="p-2 text-right">折扣</td><td className="p-2 text-right">-${Number(q.discount_amount).toLocaleString()}</td></tr>
-            <tr><td colSpan={5} className="p-2 text-right">稅額</td><td className="p-2 text-right">${Number(q.tax_amount).toLocaleString()}</td></tr>
-            <tr className="font-bold text-lg"><td colSpan={5} className="p-2 text-right">總計</td><td className="p-2 text-right">${Number(q.total_amount).toLocaleString()}</td></tr>
-          </tfoot>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((it, i) => (
+                <tr key={i}>
+                  <td className="whitespace-pre-line break-words">{it.item_name}</td>
+                  <td className="break-words">{it.spec ?? ""}</td>
+                  <td className="text-right tabular-nums">{Number(it.quantity).toLocaleString()}</td>
+                  <td className="text-right tabular-nums">${Number(it.unit_price).toLocaleString()}</td>
+                  <td className="text-right tabular-nums">${Number(it.discount).toLocaleString()}</td>
+                  <td className="text-right tabular-nums">${Number(it.subtotal).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr><td colSpan={5} className="text-right">小計</td><td className="text-right tabular-nums">${Number(q.subtotal).toLocaleString()}</td></tr>
+              <tr><td colSpan={5} className="text-right">折扣</td><td className="text-right tabular-nums">-${Number(q.discount_amount).toLocaleString()}</td></tr>
+              <tr><td colSpan={5} className="text-right">稅額</td><td className="text-right tabular-nums">${Number(q.tax_amount).toLocaleString()}</td></tr>
+              <tr className="font-bold text-lg"><td colSpan={5} className="text-right">總計</td><td className="text-right tabular-nums">${Number(q.total_amount).toLocaleString()}</td></tr>
+            </tfoot>
+          </table>
+        </div>
 
         {(bank.bank_name || q.payment_terms) ? (
           <div className="border-t pt-4 text-sm space-y-2">
