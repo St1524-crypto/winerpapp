@@ -967,7 +967,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     queryFn: async () => {
       let q = supabase
         .from("customers")
-        .select("id,name,email,phone,company")
+        .select("id,name,email,phone,company,shipping_address")
         .eq("company_id", currentCompanyId!);
       const s = escLike(debouncedSearch);
       if (s) {
@@ -1250,7 +1250,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           company: parsed.data.company?.trim() || null,
           company_id: currentCompanyId,
         })
-        .select("id,name,email,phone,company")
+        .select("id,name,email,phone,company,shipping_address")
         .single();
       if (error) throw new Error(error.message);
       return data;
@@ -1413,6 +1413,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             name: customer,
             email: email || null,
             phone: phone || null,
+            shipping_address: address || null,
             company_id: currentCompanyId!,
           })
           .select("id")
@@ -1582,12 +1583,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     } catch { return null; }
   }
 
-  async function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null }) {
+  async function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null; shipping_address?: string | null }) {
+    const custAddr = c.address ?? c.shipping_address ?? null;
     setCustomerId(c.id);
     setCustomer(c.name);
     setEmail(c.email ?? "");
     setPhone(c.phone ?? "");
-    if (c.address) setAddress(c.address);
+    if (custAddr) setAddress(custAddr);
     setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0"); setCashWalletPay("0");
     setCustomerStatus({ is_vip: false, is_dealer: false, vip_tier: null, member_no: null, user_id: null, vip_expires_at: null });
     setPickerOpen(false);
@@ -1615,7 +1617,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           user_id: uid,
           vip_expires_at: ((data as any).vip_expires_at as string | null) ?? null,
         });
-        if (!c.address) {
+        if (!custAddr) {
           const memberAddr = (data as any).addr_mail ?? (data as any).addr_home ?? null;
           const fallback = memberAddr ?? (uid ? await fetchDefaultShippingAddress(uid) : null);
           if (fallback) setAddress(fallback);

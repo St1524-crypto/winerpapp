@@ -217,6 +217,7 @@ function ShipmentDialog({
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [shippedAt, setShippedAt] = useState(localNowInput());
   const [company, setCompany] = useState("");
+  const [pickup, setPickup] = useState(false);
   const [tracking, setTracking] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
@@ -250,13 +251,14 @@ function ShipmentDialog({
     try {
       await onSubmit({
         shippedAt,
-        shippingCompany: company || undefined,
-        trackingNo: tracking || undefined,
+        shippingCompany: pickup ? "自取" : company || undefined,
+        trackingNo: pickup ? undefined : tracking || undefined,
         note: note || undefined,
         items: selected,
       });
       setCompany("");
       setTracking("");
+      setPickup(false);
       setNote("");
       setInitKey("");
     } catch (e: any) {
@@ -301,6 +303,13 @@ function ShipmentDialog({
             })}
           </div>
 
+          <div className="flex items-center gap-2 rounded-md border p-2">
+            <Checkbox id="pickup" checked={pickup} onCheckedChange={(v) => setPickup(!!v)} />
+            <Label htmlFor="pickup" className="text-sm cursor-pointer">
+              自取（現場取貨，免物流）
+            </Label>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">出貨時間</Label>
@@ -308,11 +317,16 @@ function ShipmentDialog({
             </div>
             <div className="space-y-1">
               <Label className="text-xs">物流公司</Label>
-              <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="黑貓 / 郵局..." />
+              <Input
+                value={pickup ? "自取" : company}
+                disabled={pickup}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="黑貓 / 郵局..."
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">物流單號</Label>
-              <Input value={tracking} onChange={(e) => setTracking(e.target.value)} />
+              <Input value={pickup ? "" : tracking} disabled={pickup} onChange={(e) => setTracking(e.target.value)} />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">備註</Label>
