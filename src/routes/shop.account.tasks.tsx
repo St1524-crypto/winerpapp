@@ -43,7 +43,10 @@ function MyTasksPage() {
         <Card key={t.id}>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center justify-between">
-              <span>{t.title}</span>
+              <span>
+                {t.task_no && <span className="font-mono text-xs text-muted-foreground mr-2">{t.task_no}</span>}
+                {t.title}
+              </span>
               <Badge variant={t.status === "completed" ? "default" : "secondary"}>{t.status}</Badge>
             </CardTitle>
           </CardHeader>
