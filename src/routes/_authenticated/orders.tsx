@@ -2191,10 +2191,18 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
               </span>
             </div>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox checked={noRewardPoints} onCheckedChange={(v) => setNoRewardPoints(v === true)} />
+              <Checkbox
+                checked={noRewardPoints}
+                disabled={!!autoNoRewardReason}
+                onCheckedChange={(v) => setNoRewardPoints(v === true)}
+              />
               <span>本訂單不發獎勵點（不列入分紅基數）</span>
             </label>
+            {autoNoRewardReason && (
+              <div className="text-xs text-amber-700">系統自動設定：{autoNoRewardReason}</div>
+            )}
           </div>
+
 
 
           {/* ===== 訂金 / 尾款 ===== */}
