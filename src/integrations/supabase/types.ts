@@ -3624,6 +3624,7 @@ export type Database = {
           metadata: Json
           priority: Database["public"]["Enums"]["operation_task_priority"]
           status: Database["public"]["Enums"]["operation_task_status"]
+          task_no: string | null
           title: string
           updated_at: string
         }
@@ -3640,6 +3641,7 @@ export type Database = {
           metadata?: Json
           priority?: Database["public"]["Enums"]["operation_task_priority"]
           status?: Database["public"]["Enums"]["operation_task_status"]
+          task_no?: string | null
           title: string
           updated_at?: string
         }
@@ -3656,6 +3658,7 @@ export type Database = {
           metadata?: Json
           priority?: Database["public"]["Enums"]["operation_task_priority"]
           status?: Database["public"]["Enums"]["operation_task_status"]
+          task_no?: string | null
           title?: string
           updated_at?: string
         }

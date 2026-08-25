@@ -107,12 +107,14 @@ function TasksAdminPage() {
         <CardContent>
           <Table>
             <TableHeader><TableRow>
+              <TableHead>任務編號</TableHead>
               <TableHead>標題</TableHead><TableHead>狀態</TableHead><TableHead>優先級</TableHead>
               <TableHead>指派</TableHead><TableHead>到期</TableHead><TableHead>操作</TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {data.map((t: any) => (
                 <TableRow key={t.id}>
+                  <TableCell className="font-mono text-xs whitespace-nowrap">{t.task_no ?? "—"}</TableCell>
                   <TableCell className="max-w-xs"><div className="font-medium">{t.title}</div><div className="text-xs text-muted-foreground line-clamp-2">{t.description}</div></TableCell>
                   <TableCell><Badge variant={t.status === "completed" ? "default" : "secondary"}>{t.status}</Badge></TableCell>
                   <TableCell>{t.priority}</TableCell>
@@ -149,7 +151,7 @@ function TasksAdminPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {data.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">尚無任務</TableCell></TableRow>}
+              {data.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">尚無任務</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>
