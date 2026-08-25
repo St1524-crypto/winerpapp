@@ -107,6 +107,7 @@ function TasksAdminPage() {
         <CardContent>
           <Table>
             <TableHeader><TableRow>
+              <TableHead>任務編號</TableHead>
               <TableHead>標題</TableHead><TableHead>狀態</TableHead><TableHead>優先級</TableHead>
               <TableHead>指派</TableHead><TableHead>到期</TableHead><TableHead>操作</TableHead>
             </TableRow></TableHeader>
