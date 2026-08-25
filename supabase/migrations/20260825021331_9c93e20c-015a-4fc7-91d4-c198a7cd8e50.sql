@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.generate_operation_task_no() FROM PUBLIC, anon, authenticated;
