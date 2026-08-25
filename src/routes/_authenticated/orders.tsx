@@ -1643,6 +1643,23 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     toast.success(`已帶入${e.label}：${e.name}`);
   }
 
+  // 客戶（非會員）或會員年費／VIP 已到期 → 自動以「不發獎勵點」結算
+  const autoNoRewardReason = useMemo(() => {
+    if (!customer.trim() && !customerStatus.user_id) return null;
+    if (!customerStatus.user_id) return "此對象為一般客戶（非會員），不列入分紅基數";
+    const exp = customerStatus.vip_expires_at ? Date.parse(customerStatus.vip_expires_at) : null;
+    if (!customerStatus.is_vip) return "此會員非有效 VIP（未繳年費），不列入分紅基數";
+    if (exp !== null && !Number.isNaN(exp) && exp < Date.now())
+      return "此會員年費／VIP 已到期，不列入分紅基數";
+    return null;
+  }, [customer, customerStatus]);
+
+  useEffect(() => {
+    if (autoNoRewardReason) setNoRewardPoints(true);
+  }, [autoNoRewardReason]);
+
+
+
 
 
   return (
