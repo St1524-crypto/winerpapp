@@ -1654,9 +1654,18 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     return null;
   }, [customer, customerStatus]);
 
+  const autoNoRewardApplied = useRef(false);
   useEffect(() => {
-    if (autoNoRewardReason) setNoRewardPoints(true);
+    if (autoNoRewardReason) {
+      autoNoRewardApplied.current = true;
+      setNoRewardPoints(true);
+    } else if (autoNoRewardApplied.current) {
+      // 改選為有效 VIP 後，取消先前自動勾選的「不發獎勵點」
+      autoNoRewardApplied.current = false;
+      setNoRewardPoints(false);
+    }
   }, [autoNoRewardReason]);
+
 
 
 
