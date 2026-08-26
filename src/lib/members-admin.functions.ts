@@ -269,9 +269,9 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
       let mappedVipTier: string | null = null;
       if (nextTier) {
         const { data: tierRow } = await supabaseAdmin
-          .from("dealer_tiers")
-          .select("code")
-          .eq("code", nextTier)
+          .from("vip_tiers")
+          .select("legacy_code")
+          .eq("legacy_code", nextTier)
           .maybeSingle();
         if (!tierRow) throw new Error(`無效的位階代碼：${nextTier}`);
         const { data: mapRow } = await supabaseAdmin

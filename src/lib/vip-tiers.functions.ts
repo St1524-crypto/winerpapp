@@ -99,7 +99,6 @@ const tierSchema = z.object({
   required_direct_vip: z.number().int().default(0),
   required_mentor_tier: z.string().nullable().optional(),
   required_mentor_count: z.number().int().default(0),
-  cashback_rate: z.number().default(0),
   revenue_share_rate: z.number().default(0),
   business_bonus_rate: z.number().default(0),
   upgrade_bonus_cap: z.number().default(0),

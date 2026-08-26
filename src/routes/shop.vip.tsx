@@ -85,7 +85,6 @@ function VipPage() {
           <div key={g.tier.code}>
             <div className="flex items-baseline gap-3 mb-3">
               <h2 className="text-xl font-bold">{g.tier.code} 級 — {g.tier.name}</h2>
-              <Badge>回饋 {g.tier.cashback_rate}%</Badge>
               {g.tier.revenue_share_rate > 0 && <Badge variant="secondary">消費回饋 {g.tier.revenue_share_rate}%</Badge>}
             </div>
             {g.items.length === 0 ? (
@@ -112,7 +111,6 @@ function VipPage() {
                       <ul className="space-y-1 text-sm">
                         <li className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />升級至 {p.tier_code} 級 VIP</li>
                         {p.bonus_points > 0 && <li className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />贈送 {p.bonus_points} 獎勵點（整組僅 1 次）</li>}
-                        <li className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />享 {g.tier.cashback_rate}% 回饋</li>
                         {hasProducts && (
                           <li className="flex items-start gap-2">
                             <Gift className="h-4 w-4 text-success mt-0.5" />

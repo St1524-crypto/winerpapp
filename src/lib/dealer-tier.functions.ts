@@ -18,8 +18,9 @@ type Tier = {
 
 async function loadTiers(): Promise<Tier[]> {
   const { data } = await supabaseAdmin
-    .from("dealer_tiers")
-    .select("code,name,sort_order,required_pv,required_direct_vip,required_mentor_tier,required_mentor_count,condition_logic,maintenance_window_days,maintenance_required_vip")
+    .from("vip_tiers")
+    .select("code:legacy_code,name,sort_order,required_pv,required_direct_vip,required_mentor_tier,required_mentor_count,condition_logic,maintenance_window_days,maintenance_required_vip")
+    .not("legacy_code", "is", null)
     .eq("status", "active")
     .order("sort_order");
   return (data ?? []) as any;

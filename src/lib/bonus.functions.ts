@@ -399,11 +399,13 @@ async function processRepurchase(orderId: string, buyerId: string, base: number,
 async function processUpgrade(orderId: string, buyerId: string, base: number) {
   if (base <= 0) return { inserted: 0 };
   const { data: tiers } = await supabaseAdmin
-    .from("dealer_tiers")
-    .select("code, daily_referral_rate")
+    .from("vip_tiers")
+    .select("legacy_code, daily_referral_rate")
     .gt("daily_referral_rate", 0);
   const tierMap = new Map<string, number>(
-    (tiers ?? []).map((t: any) => [t.code, Number(t.daily_referral_rate)]),
+    (tiers ?? [])
+      .filter((t: any) => t.legacy_code)
+      .map((t: any) => [t.legacy_code as string, Number(t.daily_referral_rate)]),
   );
   const { data: statuses } = await supabaseAdmin
     .from("dealer_tier_status").select("user_id, current_tier");
