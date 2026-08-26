@@ -99,6 +99,7 @@ import { Route as AuthenticatedAdminVipUpgradeBonusCapRouteImport } from './rout
 import { Route as AuthenticatedAdminVipTiersRouteImport } from './routes/_authenticated/admin.vip-tiers'
 import { Route as AuthenticatedAdminVipBusinessBonusCapRouteImport } from './routes/_authenticated/admin.vip-business-bonus-cap'
 import { Route as AuthenticatedAdminVipBonusPoolsRouteImport } from './routes/_authenticated/admin.vip-bonus-pools'
+import { Route as AuthenticatedAdminSystemRulesRouteImport } from './routes/_authenticated/admin.system-rules'
 import { Route as AuthenticatedAdminStorefrontTemplatesRouteImport } from './routes/_authenticated/admin.storefront-templates'
 import { Route as AuthenticatedAdminShopContentRouteImport } from './routes/_authenticated/admin.shop-content'
 import { Route as AuthenticatedAdminSecurityRouteImport } from './routes/_authenticated/admin.security'
@@ -632,6 +633,12 @@ const AuthenticatedAdminVipBonusPoolsRoute =
     path: '/admin/vip-bonus-pools',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminSystemRulesRoute =
+  AuthenticatedAdminSystemRulesRouteImport.update({
+    id: '/admin/system-rules',
+    path: '/admin/system-rules',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminStorefrontTemplatesRoute =
   AuthenticatedAdminStorefrontTemplatesRouteImport.update({
     id: '/admin/storefront-templates',
@@ -1068,6 +1075,7 @@ export interface FileRoutesByFullPath {
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
+  '/admin/system-rules': typeof AuthenticatedAdminSystemRulesRoute
   '/admin/vip-bonus-pools': typeof AuthenticatedAdminVipBonusPoolsRoute
   '/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
   '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
@@ -1215,6 +1223,7 @@ export interface FileRoutesByTo {
   '/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
   '/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
+  '/admin/system-rules': typeof AuthenticatedAdminSystemRulesRoute
   '/admin/vip-bonus-pools': typeof AuthenticatedAdminVipBonusPoolsRoute
   '/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
   '/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
@@ -1367,6 +1376,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/security': typeof AuthenticatedAdminSecurityRoute
   '/_authenticated/admin/shop-content': typeof AuthenticatedAdminShopContentRoute
   '/_authenticated/admin/storefront-templates': typeof AuthenticatedAdminStorefrontTemplatesRoute
+  '/_authenticated/admin/system-rules': typeof AuthenticatedAdminSystemRulesRoute
   '/_authenticated/admin/vip-bonus-pools': typeof AuthenticatedAdminVipBonusPoolsRoute
   '/_authenticated/admin/vip-business-bonus-cap': typeof AuthenticatedAdminVipBusinessBonusCapRoute
   '/_authenticated/admin/vip-tiers': typeof AuthenticatedAdminVipTiersRoute
@@ -1520,6 +1530,7 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/admin/shop-content'
     | '/admin/storefront-templates'
+    | '/admin/system-rules'
     | '/admin/vip-bonus-pools'
     | '/admin/vip-business-bonus-cap'
     | '/admin/vip-tiers'
@@ -1667,6 +1678,7 @@ export interface FileRouteTypes {
     | '/admin/security'
     | '/admin/shop-content'
     | '/admin/storefront-templates'
+    | '/admin/system-rules'
     | '/admin/vip-bonus-pools'
     | '/admin/vip-business-bonus-cap'
     | '/admin/vip-tiers'
@@ -1818,6 +1830,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/security'
     | '/_authenticated/admin/shop-content'
     | '/_authenticated/admin/storefront-templates'
+    | '/_authenticated/admin/system-rules'
     | '/_authenticated/admin/vip-bonus-pools'
     | '/_authenticated/admin/vip-business-bonus-cap'
     | '/_authenticated/admin/vip-tiers'
@@ -2553,6 +2566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminVipBonusPoolsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/system-rules': {
+      id: '/_authenticated/admin/system-rules'
+      path: '/admin/system-rules'
+      fullPath: '/admin/system-rules'
+      preLoaderRoute: typeof AuthenticatedAdminSystemRulesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/storefront-templates': {
       id: '/_authenticated/admin/storefront-templates'
       path: '/admin/storefront-templates'
@@ -3172,6 +3192,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminSecurityRoute: typeof AuthenticatedAdminSecurityRoute
   AuthenticatedAdminShopContentRoute: typeof AuthenticatedAdminShopContentRoute
   AuthenticatedAdminStorefrontTemplatesRoute: typeof AuthenticatedAdminStorefrontTemplatesRoute
+  AuthenticatedAdminSystemRulesRoute: typeof AuthenticatedAdminSystemRulesRoute
   AuthenticatedAdminVipBonusPoolsRoute: typeof AuthenticatedAdminVipBonusPoolsRoute
   AuthenticatedAdminVipBusinessBonusCapRoute: typeof AuthenticatedAdminVipBusinessBonusCapRoute
   AuthenticatedAdminVipTiersRoute: typeof AuthenticatedAdminVipTiersRoute
@@ -3245,6 +3266,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminShopContentRoute: AuthenticatedAdminShopContentRoute,
   AuthenticatedAdminStorefrontTemplatesRoute:
     AuthenticatedAdminStorefrontTemplatesRoute,
+  AuthenticatedAdminSystemRulesRoute: AuthenticatedAdminSystemRulesRoute,
   AuthenticatedAdminVipBonusPoolsRoute: AuthenticatedAdminVipBonusPoolsRoute,
   AuthenticatedAdminVipBusinessBonusCapRoute:
     AuthenticatedAdminVipBusinessBonusCapRoute,
