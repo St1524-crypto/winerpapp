@@ -79,11 +79,12 @@ function Page() {
   useEffect(() => {
     if (!isSuperAdmin) return;
     supabase
-      .from("dealer_tiers")
-      .select("code,name,sort_order")
+      .from("vip_tiers")
+      .select("legacy_code,name,sort_order")
+      .not("legacy_code", "is", null)
       .eq("status", "active")
       .order("sort_order")
-      .then(({ data }) => setDealerTierOptions(((data ?? []) as any[]).map((t) => ({ code: t.code, name: t.name }))));
+      .then(({ data }) => setDealerTierOptions(((data ?? []) as any[]).map((t) => ({ code: t.legacy_code, name: t.name }))));
   }, [isSuperAdmin]);
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", referrerMemberNo: "", marketingSlug: "", id_no: "", apply_date: "", sex: "", addr_mail: "", addr_home: "", birthday: "", vip_expires_at: "", legacy_bonus_total: "", current_tier: "" });
   const [showFormPassword, setShowFormPassword] = useState(false);

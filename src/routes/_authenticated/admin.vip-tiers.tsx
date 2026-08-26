@@ -32,7 +32,6 @@ const emptyTier = {
   required_direct_vip: 0,
   required_mentor_tier: "",
   required_mentor_count: 0,
-  cashback_rate: 0,
   revenue_share_rate: 0,
   business_bonus_rate: 0,
   upgrade_bonus_cap: 0,
@@ -62,11 +61,11 @@ function isBusinessDividendTier(tier: { code?: string | null }) {
 }
 
 function dividendRate(tier: {
-  cashback_rate?: number | string | null;
   revenue_share_rate?: number | string | null;
+  business_bonus_rate?: number | string | null;
   code?: string | null;
 }) {
-  return Number(isBusinessDividendTier(tier) ? tier.revenue_share_rate : tier.cashback_rate) || 0;
+  return Number(isBusinessDividendTier(tier) ? tier.revenue_share_rate : tier.business_bonus_rate) || 0;
 }
 
 function capLabel(tier: { code?: string | null }) {
@@ -116,7 +115,6 @@ function VipTiersAdmin() {
         required_reward_points: Number(form.required_reward_points) || 0,
         required_direct_vip: Number(form.required_direct_vip) || 0,
         required_mentor_count: Number(form.required_mentor_count) || 0,
-        cashback_rate: Number(form.cashback_rate) || 0,
         revenue_share_rate: Number(form.revenue_share_rate) || 0,
         business_bonus_rate: Number(form.business_bonus_rate) || 0,
         upgrade_bonus_cap: Number(form.upgrade_bonus_cap) || 0,
@@ -161,7 +159,7 @@ function VipTiersAdmin() {
               {isBusinessDividendTier(r) ? (
                 <div>營業分紅：{dividendRate(r)}%</div>
               ) : (
-                <div>回饋率：{r.cashback_rate}%　消費分紅：{Number(r.business_bonus_rate ?? 0)}%</div>
+                <div>消費分紅：{Number(r.business_bonus_rate ?? 0)}%</div>
               )}
               <div>{capLabel(r)}：{capValue(r).toLocaleString()}</div>
               {r.renewal_window_days > 0 && <div>續領：每 {r.renewal_window_days} 天需新增 {r.renewal_required_new_vip} VIP</div>}
@@ -181,7 +179,6 @@ function VipTiersAdmin() {
             <div><Label>直推 VIP 數</Label><Input type="number" value={form.required_direct_vip} onChange={(e) => setForm({ ...form, required_direct_vip: e.target.value })} /></div>
             <div><Label>輔導下線階級</Label><Input value={form.required_mentor_tier} onChange={(e) => setForm({ ...form, required_mentor_tier: e.target.value })} /></div>
             <div><Label>輔導人數</Label><Input type="number" value={form.required_mentor_count} onChange={(e) => setForm({ ...form, required_mentor_count: e.target.value })} /></div>
-            <div><Label>回饋率 %</Label><Input type="number" step="0.01" value={form.cashback_rate} onChange={(e) => setForm({ ...form, cashback_rate: e.target.value })} /></div>
             <div>
               <Label>{formIsBusinessDividendTier ? "營業分紅 %" : "營業分紅 %（V/S/T/E/A 不適用）"}</Label>
               <Input

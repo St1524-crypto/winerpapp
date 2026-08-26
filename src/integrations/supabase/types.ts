@@ -1711,113 +1711,10 @@ export type Database = {
             foreignKeyName: "dealer_tier_status_current_tier_fkey"
             columns: ["current_tier"]
             isOneToOne: false
-            referencedRelation: "dealer_tiers"
-            referencedColumns: ["code"]
-          },
-          {
-            foreignKeyName: "dealer_tier_status_current_tier_fkey"
-            columns: ["current_tier"]
-            isOneToOne: false
-            referencedRelation: "dealer_tiers_public_summary"
-            referencedColumns: ["code"]
+            referencedRelation: "vip_tiers"
+            referencedColumns: ["legacy_code"]
           },
         ]
-      }
-      dealer_tiers: {
-        Row: {
-          code: string
-          condition_logic: string
-          daily_referral_rate: number
-          description: string | null
-          freeze_when_points_below: boolean
-          global_bonus_income_threshold: number
-          global_bonus_rate: number
-          maintenance_required_new_e_store: number
-          maintenance_required_vip: number
-          maintenance_window_days: number
-          monthly_points_required: number
-          name: string
-          operating_bonus_rate: number
-          rebate_rate: number
-          required_direct_vip: number
-          required_mentor_count: number
-          required_mentor_count_secondary: number
-          required_mentor_tier: string | null
-          required_mentor_tier_secondary: string | null
-          required_pv: number
-          sort_order: number
-          special_bonus_label: string | null
-          special_bonus_rate: number
-          special_bonus_trigger_count: number
-          status: string
-          tier_type: string
-          updated_at: string
-          upgrade_bonus_cap: number
-          upgrade_referral_rate: number
-        }
-        Insert: {
-          code: string
-          condition_logic?: string
-          daily_referral_rate?: number
-          description?: string | null
-          freeze_when_points_below?: boolean
-          global_bonus_income_threshold?: number
-          global_bonus_rate?: number
-          maintenance_required_new_e_store?: number
-          maintenance_required_vip?: number
-          maintenance_window_days?: number
-          monthly_points_required?: number
-          name: string
-          operating_bonus_rate?: number
-          rebate_rate?: number
-          required_direct_vip?: number
-          required_mentor_count?: number
-          required_mentor_count_secondary?: number
-          required_mentor_tier?: string | null
-          required_mentor_tier_secondary?: string | null
-          required_pv?: number
-          sort_order?: number
-          special_bonus_label?: string | null
-          special_bonus_rate?: number
-          special_bonus_trigger_count?: number
-          status?: string
-          tier_type?: string
-          updated_at?: string
-          upgrade_bonus_cap?: number
-          upgrade_referral_rate?: number
-        }
-        Update: {
-          code?: string
-          condition_logic?: string
-          daily_referral_rate?: number
-          description?: string | null
-          freeze_when_points_below?: boolean
-          global_bonus_income_threshold?: number
-          global_bonus_rate?: number
-          maintenance_required_new_e_store?: number
-          maintenance_required_vip?: number
-          maintenance_window_days?: number
-          monthly_points_required?: number
-          name?: string
-          operating_bonus_rate?: number
-          rebate_rate?: number
-          required_direct_vip?: number
-          required_mentor_count?: number
-          required_mentor_count_secondary?: number
-          required_mentor_tier?: string | null
-          required_mentor_tier_secondary?: string | null
-          required_pv?: number
-          sort_order?: number
-          special_bonus_label?: string | null
-          special_bonus_rate?: number
-          special_bonus_trigger_count?: number
-          status?: string
-          tier_type?: string
-          updated_at?: string
-          upgrade_bonus_cap?: number
-          upgrade_referral_rate?: number
-        }
-        Relationships: []
       }
       dealers: {
         Row: {
@@ -6728,19 +6625,29 @@ export type Database = {
         Row: {
           business_bonus_cap_amount: number
           business_bonus_rate: number
-          cashback_rate: number
           code: string
+          condition_logic: string
           created_at: string
+          daily_referral_rate: number
           description: string | null
           extra_config: Json
+          global_bonus_rate: number
           id: string
+          legacy_code: string | null
+          maintenance_required_new_e_store: number
+          maintenance_required_vip: number
+          maintenance_window_days: number
+          monthly_points_required: number
           name: string
+          operating_bonus_rate: number
+          rebate_rate: number
           renewal_required_new_vip: number
           renewal_window_days: number
           required_direct_vip: number
           required_direct_vip_alt: number | null
           required_mentor_count: number
           required_mentor_tier: string | null
+          required_pv: number
           required_reward_points: number
           revenue_share_rate: number
           sort_order: number
@@ -6749,24 +6656,35 @@ export type Database = {
           upgrade_bonus_cap: number
           upgrade_bonus_cap_amount: number | null
           upgrade_bonus_cap_basis: string
+          upgrade_referral_rate: number
           upgrade_total_earnings_cap_amount: number
         }
         Insert: {
           business_bonus_cap_amount?: number
           business_bonus_rate?: number
-          cashback_rate?: number
           code: string
+          condition_logic?: string
           created_at?: string
+          daily_referral_rate?: number
           description?: string | null
           extra_config?: Json
+          global_bonus_rate?: number
           id?: string
+          legacy_code?: string | null
+          maintenance_required_new_e_store?: number
+          maintenance_required_vip?: number
+          maintenance_window_days?: number
+          monthly_points_required?: number
           name: string
+          operating_bonus_rate?: number
+          rebate_rate?: number
           renewal_required_new_vip?: number
           renewal_window_days?: number
           required_direct_vip?: number
           required_direct_vip_alt?: number | null
           required_mentor_count?: number
           required_mentor_tier?: string | null
+          required_pv?: number
           required_reward_points?: number
           revenue_share_rate?: number
           sort_order?: number
@@ -6775,24 +6693,35 @@ export type Database = {
           upgrade_bonus_cap?: number
           upgrade_bonus_cap_amount?: number | null
           upgrade_bonus_cap_basis?: string
+          upgrade_referral_rate?: number
           upgrade_total_earnings_cap_amount?: number
         }
         Update: {
           business_bonus_cap_amount?: number
           business_bonus_rate?: number
-          cashback_rate?: number
           code?: string
+          condition_logic?: string
           created_at?: string
+          daily_referral_rate?: number
           description?: string | null
           extra_config?: Json
+          global_bonus_rate?: number
           id?: string
+          legacy_code?: string | null
+          maintenance_required_new_e_store?: number
+          maintenance_required_vip?: number
+          maintenance_window_days?: number
+          monthly_points_required?: number
           name?: string
+          operating_bonus_rate?: number
+          rebate_rate?: number
           renewal_required_new_vip?: number
           renewal_window_days?: number
           required_direct_vip?: number
           required_direct_vip_alt?: number | null
           required_mentor_count?: number
           required_mentor_tier?: string | null
+          required_pv?: number
           required_reward_points?: number
           revenue_share_rate?: number
           sort_order?: number
@@ -6801,6 +6730,7 @@ export type Database = {
           upgrade_bonus_cap?: number
           upgrade_bonus_cap_amount?: number | null
           upgrade_bonus_cap_basis?: string
+          upgrade_referral_rate?: number
           upgrade_total_earnings_cap_amount?: number
         }
         Relationships: []
@@ -7322,33 +7252,6 @@ export type Database = {
       }
     }
     Views: {
-      dealer_tiers_public_summary: {
-        Row: {
-          code: string | null
-          description: string | null
-          name: string | null
-          sort_order: number | null
-          status: string | null
-          tier_type: string | null
-        }
-        Insert: {
-          code?: string | null
-          description?: string | null
-          name?: string | null
-          sort_order?: number | null
-          status?: string | null
-          tier_type?: string | null
-        }
-        Update: {
-          code?: string | null
-          description?: string | null
-          name?: string | null
-          sort_order?: number | null
-          status?: string | null
-          tier_type?: string | null
-        }
-        Relationships: []
-      }
       profiles_public_safe: {
         Row: {
           brand_intro: string | null
@@ -7512,7 +7415,6 @@ export type Database = {
         Row: {
           business_bonus_cap_amount: number | null
           business_bonus_rate: number | null
-          cashback_rate: number | null
           code: string | null
           id: string | null
           name: string | null
@@ -7527,7 +7429,6 @@ export type Database = {
         Insert: {
           business_bonus_cap_amount?: number | null
           business_bonus_rate?: number | null
-          cashback_rate?: number | null
           code?: string | null
           id?: string | null
           name?: string | null
@@ -7542,7 +7443,6 @@ export type Database = {
         Update: {
           business_bonus_cap_amount?: number | null
           business_bonus_rate?: number | null
-          cashback_rate?: number | null
           code?: string | null
           id?: string | null
           name?: string | null
@@ -8091,6 +7991,15 @@ export type Database = {
           _dry_run?: boolean
           _source?: string
           _yyyymm: string
+        }
+        Returns: Json
+      }
+      settle_monthly_repurchase: {
+        Args: {
+          _batch_id: string
+          _release_date: string
+          _settle_date: string
+          _ym: string
         }
         Returns: Json
       }
