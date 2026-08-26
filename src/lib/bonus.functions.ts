@@ -145,7 +145,7 @@ export const deleteMonthlyTier = createServerFn({ method: "POST" })
 /* ───────────── 訂單付款 → 自動產生獎金 + 累計責任額 ─────────────
  * 依 sales_orders.order_type 判斷：
  *   - repurchase：上線 1/2 代復購獎金 + 買家月度責任額累計
- *   - upgrade   ：依 dealer_tiers.daily_referral_rate 差額制往上各階分潤（日獎金推薦）
+ *   - upgrade   ：依 vip_tiers.daily_referral_rate 差額制往上各階分潤（日獎金推薦）
  *   - normal    ：不處理
  */
 async function addMonthlyResponsibility(memberId: string, points: number, orderId: string) {
@@ -458,7 +458,7 @@ async function processUpgrade(orderId: string, buyerId: string, base: number) {
               bonus_rate: diff,
               calculated_points_before_eligibility: pts,
               bonus_points: pts,
-              rule_table: "dealer_tiers",
+              rule_table: "vip_tiers",
               rule_id: tierCode ?? null,
               tier_snapshot: {
                 recipient_tier_code: tierCode ?? null,

@@ -5,7 +5,7 @@ export const DAILY_RULE_INTRO = [
   "1. 僅『合格 VIP』（is_vip = true 且 vip_expires_at 未過期）於每日結算時可領取。",
   "2. 首購 / 復購獎勵點來源：買家訂單 sales_order_items.tier_reward_points 或 products.reward_points；套組依 repurchase_bundles.bundle_reward_points 折算。",
   "3. 首購 / 復購獎勵點總點依 VIP獎金參數管理設定計算（repurchase_bonus_settings 各代比例）。",
-  "4. 推薦獎金為升級訂單，依 dealer_tiers.daily_referral_rate 差額制往上分潤。",
+  "4. 推薦獎金為升級訂單，依 vip_tiers.daily_referral_rate 差額制往上分潤。",
   "5. 若上線 VIP 已到期或未設定到期日，會顯示『非有效 VIP，不發放』並取消該筆。",
   "6. 若獎勵改往上發給有效推薦人，會於 release_redirect_reason 顯示原因；實際領取人為 released_member_id。",
 ];
@@ -22,7 +22,7 @@ export const MONTHLY_RULE_INTRO = [
 // 各 bonus_type 的『適用制度』與『獎勵點來源』說明
 export const BONUS_RULE_META: Record<string, { rule: string; source: string }> = {
   referral: {
-    rule: "VIP獎金參數管理：dealer_tiers.daily_referral_rate（升級訂單差額制）",
+    rule: "VIP獎金參數管理：vip_tiers.daily_referral_rate（升級訂單差額制）",
     source: "升級訂單 sales_orders.subtotal → 依訂單獎勵點推算",
   },
   repurchase: {
