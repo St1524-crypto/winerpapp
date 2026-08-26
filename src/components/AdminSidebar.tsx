@@ -54,6 +54,7 @@ const GROUPS: AdminNavGroup[] = [
   {
     label: "VIP 行銷推薦",
     items: [
+      { title: "制度表（日／月／升級）", url: "/admin/system-rules", icon: Crown, roles: ["super_admin", "admin", "finance"] },
       { title: "VIP 方案管理", url: "/vip-plans", icon: Crown },
       { title: "VIP 階級設定", url: "/admin/vip-tiers", icon: Crown },
       { title: "VIP 升級套組", url: "/admin/vip-upgrade-packages", icon: Crown },
