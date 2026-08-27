@@ -57,6 +57,7 @@ const GROUPS: AdminNavGroup[] = [
       { title: "制度表（日／月／升級）", url: "/admin/system-rules", icon: Crown, roles: ["super_admin", "admin", "finance"] },
       { title: "VIP 方案管理", url: "/vip-plans", icon: Crown },
       { title: "VIP 階級設定", url: "/admin/vip-tiers", icon: Crown },
+      { title: "新VIP制度升級條件", url: "/admin/vip-upgrade-rules", icon: Crown, roles: ["super_admin", "admin", "finance"] },
       { title: "VIP 升級套組", url: "/admin/vip-upgrade-packages", icon: Crown },
       { title: BONUS_PAGE_LABELS.vipUpgradeBonusCap, url: "/admin/vip-upgrade-bonus-cap", icon: Crown },
       { title: "VIP 消費回饋上限", url: "/admin/vip-business-bonus-cap", icon: Crown },
