@@ -137,9 +137,6 @@ function DealerTiersAdmin() {
                   : <li>• 消費分紅 {t.rebate_rate}%（V/S/T/E/A，非營業分紅）</li>}
                 {isBusinessDividendTier(t) && t.upgrade_bonus_cap > 0 && <li>• 營業分紅上限 NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
                 {!isBusinessDividendTier(t) && <li className="text-muted-foreground">• 消費回饋上限請於「VIP 階級設定」調整（business_bonus_cap_amount）</li>}
-                {t.special_bonus_rate > 0 && (
-                  <li className="text-primary">★ 當月新增 {t.special_bonus_trigger_count} VIP → {t.special_bonus_label} {t.special_bonus_rate}%</li>
-                )}
               </ul>
               {t.maintenance_window_days > 0 && (
                 <>
