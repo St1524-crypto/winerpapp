@@ -27,7 +27,6 @@ export const Route = createFileRoute("/_authenticated/dealer-tiers")({
 type Tier = {
   code: string;
   name: string;
-  tier_type: string;
   sort_order: number;
   required_pv: number;
   required_direct_vip: number;
@@ -37,23 +36,28 @@ type Tier = {
   rebate_rate: number;
   operating_bonus_rate: number;
   upgrade_bonus_cap: number;
-  special_bonus_rate: number;
-  special_bonus_trigger_count: number;
-  special_bonus_label: string | null;
   maintenance_window_days: number;
   maintenance_required_vip: number;
   description: string | null;
   status: string;
   monthly_points_required: number;
-  freeze_when_points_below: boolean;
   global_bonus_rate: number;
-  global_bonus_income_threshold: number;
   maintenance_required_new_e_store: number;
   daily_referral_rate: number;
 };
 
-function isBusinessDividendTier(tier: Pick<Tier, "tier_type">) {
-  return tier.tier_type === "star" || tier.tier_type === "director";
+const TIER_FIELDS =
+  "code:legacy_code,name,sort_order,required_pv,required_direct_vip,required_mentor_tier,required_mentor_count,condition_logic,rebate_rate,operating_bonus_rate,upgrade_bonus_cap,maintenance_window_days,maintenance_required_vip,maintenance_required_new_e_store,monthly_points_required,global_bonus_rate,daily_referral_rate,description,status";
+
+function tierType(code: string): "agent" | "star" | "director" {
+  const c = String(code ?? "").toUpperCase();
+  if (c === "DIRECTOR") return "director";
+  if (/^(STAR[1-7]|V[1-8])$/.test(c)) return "star";
+  return "agent";
+}
+
+function isBusinessDividendTier(tier: Pick<Tier, "code">) {
+  return tierType(tier.code) !== "agent";
 }
 
 function DealerTiersAdmin() {
@@ -62,8 +66,9 @@ function DealerTiersAdmin() {
 
   async function load() {
     const { data, error } = await supabase
-      .from("dealer_tiers" as any)
-      .select("*")
+      .from("vip_tiers")
+      .select(TIER_FIELDS)
+      .not("legacy_code", "is", null)
       .order("sort_order");
     if (error) { toast.error(error.message); return; }
     setTiers((data ?? []) as any);
@@ -74,9 +79,9 @@ function DealerTiersAdmin() {
     if (!editing) return;
     const { code, ...payload } = editing;
     const { error } = await supabase
-      .from("dealer_tiers" as any)
-      .update({ ...payload, updated_at: new Date().toISOString() })
-      .eq("code", code);
+      .from("vip_tiers")
+      .update({ ...payload, updated_at: new Date().toISOString() } as any)
+      .eq("legacy_code", code);
     if (error) { toast.error(error.message); return; }
     toast.success(`已更新 ${editing.name}`);
     setEditing(null);
