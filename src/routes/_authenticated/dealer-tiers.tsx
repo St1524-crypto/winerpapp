@@ -27,7 +27,6 @@ export const Route = createFileRoute("/_authenticated/dealer-tiers")({
 type Tier = {
   code: string;
   name: string;
-  tier_type: string;
   sort_order: number;
   required_pv: number;
   required_direct_vip: number;
@@ -37,23 +36,28 @@ type Tier = {
   rebate_rate: number;
   operating_bonus_rate: number;
   upgrade_bonus_cap: number;
-  special_bonus_rate: number;
-  special_bonus_trigger_count: number;
-  special_bonus_label: string | null;
   maintenance_window_days: number;
   maintenance_required_vip: number;
   description: string | null;
   status: string;
   monthly_points_required: number;
-  freeze_when_points_below: boolean;
   global_bonus_rate: number;
-  global_bonus_income_threshold: number;
   maintenance_required_new_e_store: number;
   daily_referral_rate: number;
 };
 
-function isBusinessDividendTier(tier: Pick<Tier, "tier_type">) {
-  return tier.tier_type === "star" || tier.tier_type === "director";
+const TIER_FIELDS =
+  "code:legacy_code,name,sort_order,required_pv,required_direct_vip,required_mentor_tier,required_mentor_count,condition_logic,rebate_rate,operating_bonus_rate,upgrade_bonus_cap,maintenance_window_days,maintenance_required_vip,maintenance_required_new_e_store,monthly_points_required,global_bonus_rate,daily_referral_rate,description,status";
+
+function tierType(code: string): "agent" | "star" | "director" {
+  const c = String(code ?? "").toUpperCase();
+  if (c === "DIRECTOR") return "director";
+  if (/^(STAR[1-7]|V[1-8])$/.test(c)) return "star";
+  return "agent";
+}
+
+function isBusinessDividendTier(tier: Pick<Tier, "code">) {
+  return tierType(tier.code) !== "agent";
 }
 
 function DealerTiersAdmin() {
@@ -62,8 +66,9 @@ function DealerTiersAdmin() {
 
   async function load() {
     const { data, error } = await supabase
-      .from("dealer_tiers" as any)
-      .select("*")
+      .from("vip_tiers")
+      .select(TIER_FIELDS)
+      .not("legacy_code", "is", null)
       .order("sort_order");
     if (error) { toast.error(error.message); return; }
     setTiers((data ?? []) as any);
@@ -74,9 +79,9 @@ function DealerTiersAdmin() {
     if (!editing) return;
     const { code, ...payload } = editing;
     const { error } = await supabase
-      .from("dealer_tiers" as any)
-      .update({ ...payload, updated_at: new Date().toISOString() })
-      .eq("code", code);
+      .from("vip_tiers")
+      .update({ ...payload, updated_at: new Date().toISOString() } as any)
+      .eq("legacy_code", code);
     if (error) { toast.error(error.message); return; }
     toast.success(`已更新 ${editing.name}`);
     setEditing(null);
@@ -104,7 +109,7 @@ function DealerTiersAdmin() {
             <CardHeader className="flex flex-row justify-between items-start pb-2">
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Badge variant={t.tier_type === "agent" ? "default" : t.tier_type === "star" ? "outline" : t.tier_type === "director" ? "destructive" : "secondary"}>{t.code}</Badge>
+                  <Badge variant={tierType(t.code) === "agent" ? "default" : tierType(t.code) === "star" ? "outline" : "destructive"}>{t.code}</Badge>
                   {t.name}
                 </CardTitle>
 
@@ -132,9 +137,6 @@ function DealerTiersAdmin() {
                   : <li>• 消費分紅 {t.rebate_rate}%（V/S/T/E/A，非營業分紅）</li>}
                 {isBusinessDividendTier(t) && t.upgrade_bonus_cap > 0 && <li>• 營業分紅上限 NT$ {t.upgrade_bonus_cap.toLocaleString()}</li>}
                 {!isBusinessDividendTier(t) && <li className="text-muted-foreground">• 消費回饋上限請於「VIP 階級設定」調整（business_bonus_cap_amount）</li>}
-                {t.special_bonus_rate > 0 && (
-                  <li className="text-primary">★ 當月新增 {t.special_bonus_trigger_count} VIP → {t.special_bonus_label} {t.special_bonus_rate}%</li>
-                )}
               </ul>
               {t.maintenance_window_days > 0 && (
                 <>
@@ -149,11 +151,11 @@ function DealerTiersAdmin() {
                 <>
                   <div className="text-xs font-semibold text-muted-foreground pt-2">月度規則</div>
                   <ul className="text-xs space-y-1 ml-1">
-                    {t.freeze_when_points_below && t.monthly_points_required > 0 && (
-                      <li>• 月個人點數 &lt; {t.monthly_points_required} → 凍結領取</li>
+                    {t.monthly_points_required > 0 && (
+                      <li>• 月個人責任額點數 ≥ {t.monthly_points_required}</li>
                     )}
                     {t.global_bonus_rate > 0 && (
-                      <li className="text-primary">★ 月收 &lt; NT$ {t.global_bonus_income_threshold.toLocaleString()} → 全球分紅 {t.global_bonus_rate}%</li>
+                      <li className="text-primary">★ 全球分紅 {t.global_bonus_rate}%</li>
                     )}
                   </ul>
                 </>
@@ -222,9 +224,6 @@ function DealerTiersAdmin() {
                     onChange={(e) => setEditing({ ...editing, upgrade_bonus_cap: +e.target.value })}
                   />
                 </Field>
-                <Field label="特別獎勵名稱"><Input value={editing.special_bonus_label ?? ""} onChange={(e) => setEditing({ ...editing, special_bonus_label: e.target.value || null })} /></Field>
-                <Field label="特別獎勵 %"><Input type="number" step="0.01" value={editing.special_bonus_rate} onChange={(e) => setEditing({ ...editing, special_bonus_rate: +e.target.value })} /></Field>
-                <Field label="特別獎勵觸發人數"><Input type="number" value={editing.special_bonus_trigger_count} onChange={(e) => setEditing({ ...editing, special_bonus_trigger_count: +e.target.value })} /></Field>
               </div>
 
               <div className="text-sm font-semibold pt-2">續領條件</div>
@@ -237,17 +236,7 @@ function DealerTiersAdmin() {
               <div className="text-sm font-semibold pt-2">月度規則（星級代理店）</div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="月個人責任額點數門檻"><Input type="number" value={editing.monthly_points_required} onChange={(e) => setEditing({ ...editing, monthly_points_required: +e.target.value })} /></Field>
-                <Field label="低於門檻凍結領取">
-                  <Select value={editing.freeze_when_points_below ? "yes" : "no"} onValueChange={(v) => setEditing({ ...editing, freeze_when_points_below: v === "yes" })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="yes">是</SelectItem>
-                      <SelectItem value="no">否</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Field>
                 <Field label="全球分紅 %"><Input type="number" step="0.01" value={editing.global_bonus_rate} onChange={(e) => setEditing({ ...editing, global_bonus_rate: +e.target.value })} /></Field>
-                <Field label="全球分紅月收入門檻"><Input type="number" value={editing.global_bonus_income_threshold} onChange={(e) => setEditing({ ...editing, global_bonus_income_threshold: +e.target.value })} /></Field>
               </div>
 
             </div>
