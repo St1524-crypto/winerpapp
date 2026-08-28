@@ -224,9 +224,6 @@ function DealerTiersAdmin() {
                     onChange={(e) => setEditing({ ...editing, upgrade_bonus_cap: +e.target.value })}
                   />
                 </Field>
-                <Field label="特別獎勵名稱"><Input value={editing.special_bonus_label ?? ""} onChange={(e) => setEditing({ ...editing, special_bonus_label: e.target.value || null })} /></Field>
-                <Field label="特別獎勵 %"><Input type="number" step="0.01" value={editing.special_bonus_rate} onChange={(e) => setEditing({ ...editing, special_bonus_rate: +e.target.value })} /></Field>
-                <Field label="特別獎勵觸發人數"><Input type="number" value={editing.special_bonus_trigger_count} onChange={(e) => setEditing({ ...editing, special_bonus_trigger_count: +e.target.value })} /></Field>
               </div>
 
               <div className="text-sm font-semibold pt-2">續領條件</div>
