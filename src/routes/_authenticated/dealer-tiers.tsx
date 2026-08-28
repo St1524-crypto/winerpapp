@@ -151,11 +151,11 @@ function DealerTiersAdmin() {
                 <>
                   <div className="text-xs font-semibold text-muted-foreground pt-2">月度規則</div>
                   <ul className="text-xs space-y-1 ml-1">
-                    {t.freeze_when_points_below && t.monthly_points_required > 0 && (
-                      <li>• 月個人點數 &lt; {t.monthly_points_required} → 凍結領取</li>
+                    {t.monthly_points_required > 0 && (
+                      <li>• 月個人責任額點數 ≥ {t.monthly_points_required}</li>
                     )}
                     {t.global_bonus_rate > 0 && (
-                      <li className="text-primary">★ 月收 &lt; NT$ {t.global_bonus_income_threshold.toLocaleString()} → 全球分紅 {t.global_bonus_rate}%</li>
+                      <li className="text-primary">★ 全球分紅 {t.global_bonus_rate}%</li>
                     )}
                   </ul>
                 </>
