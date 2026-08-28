@@ -109,7 +109,7 @@ function DealerTiersAdmin() {
             <CardHeader className="flex flex-row justify-between items-start pb-2">
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Badge variant={t.tier_type === "agent" ? "default" : t.tier_type === "star" ? "outline" : t.tier_type === "director" ? "destructive" : "secondary"}>{t.code}</Badge>
+                  <Badge variant={tierType(t.code) === "agent" ? "default" : tierType(t.code) === "star" ? "outline" : "destructive"}>{t.code}</Badge>
                   {t.name}
                 </CardTitle>
 
