@@ -1533,7 +1533,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           notes: notes || null,
           order_status: "pending",
           shipping_status: "pending",
-          payment_status: paymentStatus,
+          payment_status: createPaymentStatus,
           no_reward_points: noRewardPoints,
           },
           items: items.map((it) => ({
@@ -1568,10 +1568,17 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       }
 
       // 寫入訂單來源 / 業務人員 / 會員關聯（RPC 不包含這些欄位，建立後補上；建檔人員由 DB trigger 自動寫入）
-      const patch: { order_source?: string; salesperson_id?: string; user_id?: string } = {};
+      const patch: {
+        order_source?: string;
+        salesperson_id?: string;
+        user_id?: string;
+        payment_status?: string;
+      } = {};
       if (orderSource.trim()) patch.order_source = orderSource.trim();
       if (salespersonId) patch.salesperson_id = salespersonId;
       if (customerStatus.user_id) patch.user_id = customerStatus.user_id;
+      // 現金餘額付款寫入後，補正為最終付款狀態
+      if (paymentStatus !== createPaymentStatus) patch.payment_status = paymentStatus;
       if (Object.keys(patch).length > 0 && (orderRow as any)?.id) {
         await supabase.from("sales_orders").update(patch).eq("id", (orderRow as any).id);
       }
