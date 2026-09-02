@@ -7,6 +7,7 @@ import { Coins, Gift, Percent, History, Copy, TrendingUp, CalendarDays, Calendar
 import { toast } from "sonner";
 import { useWallet, useVipStatus } from "@/hooks/use-wallet";
 import { getMyPointTx, getMyReferralStats, getMyLegacyBonus } from "@/lib/points.functions";
+import { getMyCashWallet, getMyCashLedger } from "@/lib/cash-wallet.functions";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
