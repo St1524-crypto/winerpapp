@@ -146,6 +146,7 @@ import { Route as AuthenticatedAdminBonusesVipDetailRouteImport } from './routes
 import { Route as AuthenticatedAdminBonusesSummaryRouteImport } from './routes/_authenticated/admin.bonuses.summary'
 import { Route as AuthenticatedAdminBonusesReconciliationRouteImport } from './routes/_authenticated/admin.bonuses.reconciliation'
 import { Route as AuthenticatedAdminBonusesRecalculationRouteImport } from './routes/_authenticated/admin.bonuses.recalculation'
+import { Route as AuthenticatedAdminBonusesPayoutRouteImport } from './routes/_authenticated/admin.bonuses.payout'
 import { Route as AuthenticatedAdminBonusesNationalShareSettingsRouteImport } from './routes/_authenticated/admin.bonuses.national-share-settings'
 import { Route as AuthenticatedAdminBonusesNationalShareRouteImport } from './routes/_authenticated/admin.bonuses.national-share'
 import { Route as AuthenticatedAdminBonusesMonthlySummaryRouteImport } from './routes/_authenticated/admin.bonuses.monthly-summary'
@@ -911,6 +912,12 @@ const AuthenticatedAdminBonusesRecalculationRoute =
     path: '/recalculation',
     getParentRoute: () => AuthenticatedAdminBonusesRoute,
   } as any)
+const AuthenticatedAdminBonusesPayoutRoute =
+  AuthenticatedAdminBonusesPayoutRouteImport.update({
+    id: '/payout',
+    path: '/payout',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
 const AuthenticatedAdminBonusesNationalShareSettingsRoute =
   AuthenticatedAdminBonusesNationalShareSettingsRouteImport.update({
     id: '/national-share-settings',
@@ -1126,6 +1133,7 @@ export interface FileRoutesByFullPath {
   '/admin/bonuses/monthly-summary': typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   '/admin/bonuses/national-share': typeof AuthenticatedAdminBonusesNationalShareRoute
   '/admin/bonuses/national-share-settings': typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
+  '/admin/bonuses/payout': typeof AuthenticatedAdminBonusesPayoutRoute
   '/admin/bonuses/recalculation': typeof AuthenticatedAdminBonusesRecalculationRoute
   '/admin/bonuses/reconciliation': typeof AuthenticatedAdminBonusesReconciliationRoute
   '/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
@@ -1274,6 +1282,7 @@ export interface FileRoutesByTo {
   '/admin/bonuses/monthly-summary': typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   '/admin/bonuses/national-share': typeof AuthenticatedAdminBonusesNationalShareRoute
   '/admin/bonuses/national-share-settings': typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
+  '/admin/bonuses/payout': typeof AuthenticatedAdminBonusesPayoutRoute
   '/admin/bonuses/recalculation': typeof AuthenticatedAdminBonusesRecalculationRoute
   '/admin/bonuses/reconciliation': typeof AuthenticatedAdminBonusesReconciliationRoute
   '/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
@@ -1429,6 +1438,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bonuses/monthly-summary': typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   '/_authenticated/admin/bonuses/national-share': typeof AuthenticatedAdminBonusesNationalShareRoute
   '/_authenticated/admin/bonuses/national-share-settings': typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
+  '/_authenticated/admin/bonuses/payout': typeof AuthenticatedAdminBonusesPayoutRoute
   '/_authenticated/admin/bonuses/recalculation': typeof AuthenticatedAdminBonusesRecalculationRoute
   '/_authenticated/admin/bonuses/reconciliation': typeof AuthenticatedAdminBonusesReconciliationRoute
   '/_authenticated/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
@@ -1584,6 +1594,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses/monthly-summary'
     | '/admin/bonuses/national-share'
     | '/admin/bonuses/national-share-settings'
+    | '/admin/bonuses/payout'
     | '/admin/bonuses/recalculation'
     | '/admin/bonuses/reconciliation'
     | '/admin/bonuses/summary'
@@ -1732,6 +1743,7 @@ export interface FileRouteTypes {
     | '/admin/bonuses/monthly-summary'
     | '/admin/bonuses/national-share'
     | '/admin/bonuses/national-share-settings'
+    | '/admin/bonuses/payout'
     | '/admin/bonuses/recalculation'
     | '/admin/bonuses/reconciliation'
     | '/admin/bonuses/summary'
@@ -1886,6 +1898,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bonuses/monthly-summary'
     | '/_authenticated/admin/bonuses/national-share'
     | '/_authenticated/admin/bonuses/national-share-settings'
+    | '/_authenticated/admin/bonuses/payout'
     | '/_authenticated/admin/bonuses/recalculation'
     | '/_authenticated/admin/bonuses/reconciliation'
     | '/_authenticated/admin/bonuses/summary'
@@ -2908,6 +2921,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBonusesRecalculationRouteImport
       parentRoute: typeof AuthenticatedAdminBonusesRoute
     }
+    '/_authenticated/admin/bonuses/payout': {
+      id: '/_authenticated/admin/bonuses/payout'
+      path: '/payout'
+      fullPath: '/admin/bonuses/payout'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesPayoutRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
     '/_authenticated/admin/bonuses/national-share-settings': {
       id: '/_authenticated/admin/bonuses/national-share-settings'
       path: '/national-share-settings'
@@ -3061,6 +3081,7 @@ interface AuthenticatedAdminBonusesRouteChildren {
   AuthenticatedAdminBonusesMonthlySummaryRoute: typeof AuthenticatedAdminBonusesMonthlySummaryRoute
   AuthenticatedAdminBonusesNationalShareRoute: typeof AuthenticatedAdminBonusesNationalShareRoute
   AuthenticatedAdminBonusesNationalShareSettingsRoute: typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
+  AuthenticatedAdminBonusesPayoutRoute: typeof AuthenticatedAdminBonusesPayoutRoute
   AuthenticatedAdminBonusesRecalculationRoute: typeof AuthenticatedAdminBonusesRecalculationRoute
   AuthenticatedAdminBonusesReconciliationRoute: typeof AuthenticatedAdminBonusesReconciliationRoute
   AuthenticatedAdminBonusesSummaryRoute: typeof AuthenticatedAdminBonusesSummaryRoute
@@ -3094,6 +3115,7 @@ const AuthenticatedAdminBonusesRouteChildren: AuthenticatedAdminBonusesRouteChil
       AuthenticatedAdminBonusesNationalShareRoute,
     AuthenticatedAdminBonusesNationalShareSettingsRoute:
       AuthenticatedAdminBonusesNationalShareSettingsRoute,
+    AuthenticatedAdminBonusesPayoutRoute: AuthenticatedAdminBonusesPayoutRoute,
     AuthenticatedAdminBonusesRecalculationRoute:
       AuthenticatedAdminBonusesRecalculationRoute,
     AuthenticatedAdminBonusesReconciliationRoute:
