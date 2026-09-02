@@ -619,7 +619,14 @@ function OrdersPage() {
                         className="flex-1 text-left"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-xs text-muted-foreground">{o.order_no}</span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {o.order_no}
+                            {o.no_reward_points && (
+                              <Badge variant="outline" className="ml-1.5 border-amber-500/50 bg-amber-500/10 text-amber-700 text-[10px] px-1.5 py-0">
+                                不列入業績
+                              </Badge>
+                            )}
+                          </span>
                           <span className="text-base font-semibold">{fmt(o.total_amount)}</span>
                         </div>
                         <div className="mt-1 font-medium text-sm truncate">{o.customer_name}</div>
