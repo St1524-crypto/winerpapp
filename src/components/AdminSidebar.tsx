@@ -68,6 +68,8 @@ const GROUPS: AdminNavGroup[] = [
       { title: "獎金營運中心", url: "/admin/bonuses", icon: Coins, roles: ["super_admin", "admin"] },
       { title: "獎金管理中心", url: "/admin/bonus-center", icon: Coins, roles: ["super_admin", "admin", "finance"] },
       { title: "獎金發放中心（80/20）", url: "/admin/bonuses/payout", icon: Coins, roles: ["super_admin", "admin", "finance"] },
+      { title: "VIP 發放報表（80/20）", url: "/admin/bonuses/payout-report", icon: Coins, roles: ["super_admin", "admin", "finance"] },
+      { title: "分紅名單管理（POOL_VSTEA）", url: "/admin/bonuses/pool-members", icon: Users, roles: ["super_admin", "admin", "finance"] },
       { title: "每日獎金明細表", url: "/admin/bonuses/daily-details", icon: Coins, roles: ["super_admin", "admin", "finance"] },
       { title: "月獎金明細表", url: "/admin/bonuses/monthly-details", icon: Coins, roles: ["super_admin", "admin", "finance"] },
       { title: "獎金總表", url: "/admin/bonuses/summary", icon: Coins, roles: ["super_admin", "admin", "finance"] },
