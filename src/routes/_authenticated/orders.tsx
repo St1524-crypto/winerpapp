@@ -2691,6 +2691,11 @@ function OrderDetailDialog({
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5 text-primary" />
             訂單詳情 {order && <span className="font-mono text-sm text-muted-foreground">{order.order_no}</span>}
+            {(order as any)?.no_reward_points && (
+              <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-700">
+                不列入業績（不發獎勵點）
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 
