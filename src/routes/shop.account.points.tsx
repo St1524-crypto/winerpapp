@@ -211,7 +211,7 @@ function PointsPage() {
   return (
     <div className="space-y-6">
       {/* 收益總覽 */}
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
@@ -223,34 +223,45 @@ function PointsPage() {
               <div className="text-3xl font-bold tabular-nums text-primary">{totalEarnings.toLocaleString()}</div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              匯入累計獎金 {(legacy.legacy_bonus_total ?? 0).toLocaleString()} + 新增貢獻點 {rewardEarningsSum.toLocaleString()}
+              匯入累計獎金 {(legacy.legacy_bonus_total ?? 0).toLocaleString()} + 新增獎金 {earningsSum.toLocaleString()}
             </p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-info/10 to-transparent">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
+              <Wallet className="h-4 w-4 text-primary" />現金餘額
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold tabular-nums">NT$ {cash.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">獎金 80% 撥入現金錢包</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-success/10 to-transparent border-success/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
-              <Sparkles className="h-4 w-4 text-success" />今日收益
+              <Sparkles className="h-4 w-4 text-success" />本日收益
             </CardTitle>
           </CardHeader>
           <CardContent>
             {txLoading ? <Skeleton className="h-8 w-24" /> : (
-              <div className="text-3xl font-bold tabular-nums text-success">+{todayEarnings.toLocaleString()}</div>
+              <div className="text-3xl font-bold tabular-nums text-success">+{yesterdayEarnings.toLocaleString()}</div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">{todayKey}</p>
+            <p className="text-xs text-muted-foreground mt-1">{yesterdayKey}（昨日產生之獎金）</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-warning/10 to-transparent border-warning/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
-              <CalendarRange className="h-4 w-4 text-warning" />本月收益
+              <CalendarRange className="h-4 w-4 text-warning" />前月收入
             </CardTitle>
           </CardHeader>
           <CardContent>
             {txLoading ? <Skeleton className="h-8 w-24" /> : (
-              <div className="text-3xl font-bold tabular-nums text-warning">+{monthEarnings.toLocaleString()}</div>
+              <div className="text-3xl font-bold tabular-nums text-warning">+{prevMonthEarnings.toLocaleString()}</div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">{monthKey}</p>
+            <p className="text-xs text-muted-foreground mt-1">{prevMonthKey}</p>
           </CardContent>
         </Card>
       </div>
