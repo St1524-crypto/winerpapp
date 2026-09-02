@@ -697,7 +697,9 @@ function OrdersPage() {
                       <TableHead>來源</TableHead>
                       <TableHead>業務</TableHead>
                       <TableHead>建檔人員</TableHead>
+                      <TableHead>備註</TableHead>
                       <TableHead className="text-right">總金額</TableHead>
+
                       <TableHead>訂單狀態</TableHead>
                       <TableHead>出貨</TableHead>
                       <TableHead>金流</TableHead>
