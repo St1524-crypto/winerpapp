@@ -199,6 +199,7 @@ type OrderRow = {
   created_by_name: string | null;
   created_at: string;
   company_id: string;
+  no_reward_points?: boolean | null;
 };
 
 const ORDER_SOURCES = ["蝦皮1", "蝦皮2", "LINE", "其他", "官網", "雅虎1", "雅虎2", "露天1", "露天2"];
@@ -618,7 +619,14 @@ function OrdersPage() {
                         className="flex-1 text-left"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-xs text-muted-foreground">{o.order_no}</span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {o.order_no}
+                            {o.no_reward_points && (
+                              <Badge variant="outline" className="ml-1.5 border-amber-500/50 bg-amber-500/10 text-amber-700 text-[10px] px-1.5 py-0">
+                                不列入業績
+                              </Badge>
+                            )}
+                          </span>
                           <span className="text-base font-semibold">{fmt(o.total_amount)}</span>
                         </div>
                         <div className="mt-1 font-medium text-sm truncate">{o.customer_name}</div>
@@ -706,7 +714,14 @@ function OrdersPage() {
                             aria-label={`選取 ${o.order_no}`}
                           />
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{o.order_no}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {o.order_no}
+                          {o.no_reward_points && (
+                            <Badge variant="outline" className="ml-1.5 border-amber-500/50 bg-amber-500/10 text-amber-700 text-[10px] px-1.5 py-0">
+                              不列入業績
+                            </Badge>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="font-medium text-sm">{o.customer_name}</div>
                           <div className="text-xs text-muted-foreground truncate max-w-[180px]">
@@ -2222,7 +2237,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                 disabled={!!autoNoRewardReason}
                 onCheckedChange={(v) => setNoRewardPoints(v === true)}
               />
-              <span>本訂單不發獎勵點（不列入分紅基數）</span>
+              <span>本訂單不列入業績（不發獎勵點、不列入分紅基數）</span>
             </label>
             {autoNoRewardReason && (
               <div className="text-xs text-amber-700">系統自動設定：{autoNoRewardReason}</div>
@@ -2691,6 +2706,11 @@ function OrderDetailDialog({
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5 text-primary" />
             訂單詳情 {order && <span className="font-mono text-sm text-muted-foreground">{order.order_no}</span>}
+            {(order as any)?.no_reward_points && (
+              <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-700">
+                不列入業績（不發獎勵點）
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 
