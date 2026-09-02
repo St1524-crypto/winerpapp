@@ -1579,12 +1579,21 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (customerStatus.user_id) patch.user_id = customerStatus.user_id;
       // 現金餘額付款寫入後，補正為最終付款狀態
       if (paymentStatus !== createPaymentStatus) patch.payment_status = paymentStatus;
+      let finalPaymentStatus = createPaymentStatus as string;
       if (Object.keys(patch).length > 0 && (orderRow as any)?.id) {
-        await supabase.from("sales_orders").update(patch).eq("id", (orderRow as any).id);
+        const { error: patchErr } = await supabase
+          .from("sales_orders")
+          .update(patch)
+          .eq("id", (orderRow as any).id);
+        if (patchErr) {
+          toast.warning("訂單補充資料更新失敗", { description: patchErr.message });
+        } else if (patch.payment_status) {
+          finalPaymentStatus = patch.payment_status;
+        }
       }
 
-      // 若訂單建立時即標記為已付款 → 自動觸發後續結算（佣金 / 復購 / VIP 升級 / 套組）
-      if (paymentStatus === "paid" && (orderRow as any)?.id) {
+      // 若訂單最終確實為已付款 → 自動觸發後續結算（佣金 / 復購 / VIP 升級 / 套組）
+      if (finalPaymentStatus === "paid" && (orderRow as any)?.id) {
         autoSettleCommission((orderRow as any).id, "paid").catch(() => {});
       }
 

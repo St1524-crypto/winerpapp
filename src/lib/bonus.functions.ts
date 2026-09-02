@@ -485,7 +485,7 @@ async function processOrderPaymentBonusInternal(orderId: string) {
     .select("id, order_no, user_id, subtotal, payment_status, order_type, created_at")
     .eq("id", orderId).maybeSingle();
   if (!order) throw new Error("訂單不存在");
-  if ((order as any).payment_status !== "paid") throw new Error("訂單未付款");
+  if ((order as any).payment_status !== "paid") return { ok: true, skipped: "訂單未付款" };
   const buyerId = (order as any).user_id as string | null;
   if (!buyerId) return { ok: true, skipped: "無買家" };
   const base = await getOrderGeneratedRewardPoints(orderId);
