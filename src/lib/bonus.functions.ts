@@ -2717,3 +2717,117 @@ export const adminUpdateNationalBonusPoolSetting = createServerFn({ method: "POS
 
     return updated;
   });
+
+/* ───────────── 發放中心（日結／月結 + 80/20 拆分發放） ───────────── */
+const SPLIT_CASH_RATE = 0.8;
+
+function splitPayout(points: number) {
+  const p = Math.max(Math.floor(Number(points ?? 0)), 0);
+  const cash = Math.round(p * SPLIT_CASH_RATE);
+  return { total: p, cash, point: p - cash };
+}
+
+export const getBonusPayoutOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const settings = await getSettings();
+    const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Taipei" }))
+      .toISOString()
+      .slice(0, 10);
+
+    const { data: waiting, error } = await supabaseAdmin
+      .from("bonus_records")
+      .select("id, bonus_points, release_date, settlement_date, bonus_type")
+      .eq("status", "waiting_release")
+      .limit(5000);
+    if (error) throw new Error(error.message);
+
+    let duePoints = 0;
+    let dueCount = 0;
+    let pendingPoints = 0;
+    const rows = (waiting ?? []) as any[];
+    for (const r of rows) {
+      const pts = Math.max(Number(r.bonus_points ?? 0), 0);
+      pendingPoints += pts;
+      if (!r.release_date || String(r.release_date) <= today) {
+        duePoints += pts;
+        dueCount += 1;
+      }
+    }
+
+    const { data: recent } = await supabaseAdmin
+      .from("bonus_records")
+      .select("id, member_id, bonus_type, bonus_points, settlement_date, released_at, released_member_id")
+      .eq("status", "released")
+      .order("released_at", { ascending: false })
+      .limit(30);
+
+    const memberIds = Array.from(
+      new Set((recent ?? []).map((r: any) => r.released_member_id ?? r.member_id).filter(Boolean)),
+    );
+    let profiles: any[] = [];
+    if (memberIds.length) {
+      const { data: p } = await supabaseAdmin
+        .from("profiles")
+        .select("id, name, member_no")
+        .in("id", memberIds as string[]);
+      profiles = p ?? [];
+    }
+    const pMap = new Map(profiles.map((p) => [p.id, p]));
+
+    return {
+      today,
+      settings: {
+        daily_bonus_auto_enabled: settings.daily_bonus_auto_enabled,
+        daily_next_settlement_at: settings.daily_next_settlement_at,
+        monthly_bonus_mode: settings.monthly_bonus_mode,
+        monthly_bonus_settlement_day: settings.monthly_bonus_settlement_day,
+        reward_release_mode: settings.reward_release_mode,
+        reward_release_days: settings.reward_release_days,
+      },
+      split: { cashRate: SPLIT_CASH_RATE, pointRate: 1 - SPLIT_CASH_RATE },
+      waiting: {
+        count: rows.length,
+        points: pendingPoints,
+        ...splitPayout(pendingPoints),
+      },
+      due: { count: dueCount, ...splitPayout(duePoints) },
+      recent: (recent ?? []).map((r: any) => {
+        const mid = r.released_member_id ?? r.member_id;
+        const s = splitPayout(r.bonus_points);
+        return {
+          id: r.id,
+          memberId: mid,
+          memberNo: pMap.get(mid)?.member_no ?? null,
+          name: pMap.get(mid)?.name ?? null,
+          bonusType: r.bonus_type,
+          points: s.total,
+          cash: s.cash,
+          point: s.point,
+          settlementDate: r.settlement_date,
+          releasedAt: r.released_at,
+        };
+      }),
+    };
+  });
+
+/** 手動：立即發放所有 waiting_release（忽略到期日），依 80/20 拆分寫入錢包 */
+export const releaseAllWaitingRewards = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ limit: z.number().int().min(1).max(2000).optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertRoles(context.userId, ADMIN_ROLES);
+    const { data: rows, error } = await supabaseAdmin
+      .from("bonus_records")
+      .select("id")
+      .eq("status", "waiting_release")
+      .order("release_date", { ascending: true })
+      .limit(data.limit ?? 500);
+    if (error) throw new Error(error.message);
+    const ids = (rows ?? []).map((r: any) => r.id);
+    if (!ids.length) return { released: 0, points: 0, failed: 0, redirected: 0 };
+    return releaseRecords(ids);
+  });
