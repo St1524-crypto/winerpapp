@@ -421,23 +421,22 @@ function PointsPage() {
             <TabsContent value="all" className="mt-4">
               {txLoading ? (
                 <Skeleton className="h-40 w-full" />
-              ) : tx.length === 0 ? (
+              ) : allEntries.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">尚無紀錄</p>
               ) : (
                 <div className="space-y-2 text-sm">
-                  {tx.map((t) => (
+                  {allEntries.map((t) => (
                     <div key={t.id} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
                       <div className="min-w-0">
                         <div className="font-medium text-xs">
-                          {SOURCE_LABELS[t.source] ?? t.source} ·{" "}
-                          {t.point_type === "shopping" ? "購物點" : t.point_type === "reward" ? "貢獻點" : "折扣點"}
+                          {SOURCE_LABELS[t.source] ?? t.source} · {WALLET_LABELS[t.wallet] ?? t.wallet}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           {new Date(t.created_at).toLocaleString()} {t.note ? `· ${t.note}` : ""}
                         </div>
                       </div>
                       <div className={`tabular-nums font-semibold ${t.amount > 0 ? "text-success" : "text-destructive"}`}>
-                        {t.amount > 0 ? "+" : ""}{t.amount}
+                        {t.amount > 0 ? "+" : ""}{t.wallet === "cash" ? `NT$ ${t.amount.toLocaleString()}` : t.amount.toLocaleString()}
                       </div>
                     </div>
                   ))}
