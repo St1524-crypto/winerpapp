@@ -27,12 +27,35 @@ const SOURCE_LABELS: Record<string, string> = {
   vip_bonus: "VIP 開通",
   admin_adjust: "管理員調整",
   expire: "點數過期",
+  bonus_release: "獎金發放",
+  cash_topup: "現金儲值",
+  cash_withdraw: "現金提領",
+  cash_buy_points: "現金購買購物點",
+  cash_refund: "現金退款",
+  cash_adjust: "現金調整",
+};
+
+const WALLET_LABELS: Record<string, string> = {
+  cash: "現金餘額",
+  shopping: "購物點",
+  reward: "貢獻點",
+  discount: "折扣點",
 };
 
 type Tx = {
   id: string;
   amount: number;
   point_type: "shopping" | "reward" | "discount" | string;
+  source: string;
+  note?: string | null;
+  created_at: string;
+};
+
+// 統一化的「獎金/收益」條目（現金餘額 + 購物點 + 貢獻點）
+type Entry = {
+  id: string;
+  wallet: "cash" | "shopping" | "reward" | "discount";
+  amount: number;
   source: string;
   note?: string | null;
   created_at: string;
