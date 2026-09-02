@@ -504,5 +504,28 @@ export const payOrderWithCashBalance = createServerFn({ method: "POST" })
     });
     if (payErr) throw new Error(payErr.message);
 
+    // 同步訂單付款狀態（依已付款金額合計 vs 訂單總額）
+    const { data: order } = await supabaseAdmin
+      .from("sales_orders")
+      .select("total_amount")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    const { data: paidRows } = await supabaseAdmin
+      .from("payments")
+      .select("amount, payment_status")
+      .eq("sales_order_id", data.orderId);
+    const paidSum = (paidRows ?? [])
+      .filter((p: any) => p.payment_status === "paid" || p.payment_status === "completed")
+      .reduce((s: number, p: any) => s + Number(p.amount ?? 0), 0);
+    const totalAmount = Number((order as any)?.total_amount ?? 0);
+    if (totalAmount > 0) {
+      const nextStatus =
+        paidSum + 0.5 >= totalAmount ? "paid" : paidSum > 0 ? "partial" : "pending";
+      await supabaseAdmin
+        .from("sales_orders")
+        .update({ payment_status: nextStatus })
+        .eq("id", data.orderId);
+    }
+
     return { cash_balance: newCash };
   });
