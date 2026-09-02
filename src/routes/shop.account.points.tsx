@@ -88,12 +88,16 @@ function PointsPage() {
     imported_at: null,
   });
 
+  const [cash, setCash] = useState(0);
+  const [cashTx, setCashTx] = useState<any[]>([]);
+
   useEffect(() => {
     setTxLoading(true);
-    getMyPointTx()
-      .then((d) => setTx(d as Tx[]))
-      .catch(() => {})
-      .finally(() => setTxLoading(false));
+    Promise.all([
+      getMyPointTx().then((d) => setTx(d as Tx[])).catch(() => {}),
+      getMyCashLedger().then((d) => setCashTx((d as any[]) ?? [])).catch(() => {}),
+    ]).finally(() => setTxLoading(false));
+    getMyCashWallet().then((d: any) => setCash(Number(d?.cash_balance ?? 0))).catch(() => {});
     getMyReferralStats().then((d) => setRef(d as any)).catch(() => {});
     getMyLegacyBonus().then((d) => setLegacy(d as any)).catch(() => {});
   }, []);
@@ -102,38 +106,81 @@ function PointsPage() {
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/login?ref=${ref.referral_code}`
     : "";
 
-  // 收益 = 獎勵點正向異動
-  const rewardEarnings = useMemo(() => tx.filter((t) => t.point_type === "reward" && t.amount > 0), [tx]);
+  // 全部異動（現金 + 點數）
+  const allEntries = useMemo<Entry[]>(() => {
+    const pointRows: Entry[] = tx.map((t) => ({
+      id: t.id,
+      wallet: (t.point_type as Entry["wallet"]) ?? "reward",
+      amount: Number(t.amount ?? 0),
+      source: t.source,
+      note: t.note,
+      created_at: t.created_at,
+    }));
+    const cashRows: Entry[] = (cashTx ?? [])
+      .filter((c) => ["completed", "approved"].includes(String(c.status)))
+      .map((c) => {
+        const raw = Number(c.amount ?? 0);
+        const outflow = ["withdraw", "buy_points"].includes(String(c.tx_type));
+        return {
+          id: `cash-${c.id}`,
+          wallet: "cash" as const,
+          amount: outflow ? -Math.abs(raw) : raw,
+          source: `cash_${c.tx_type}`,
+          note: c.note,
+          created_at: c.created_at,
+        };
+      });
+    return [...pointRows, ...cashRows].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  }, [tx, cashTx]);
 
-  const rewardEarningsSum = useMemo(() => rewardEarnings.reduce((s, t) => s + t.amount, 0), [rewardEarnings]);
-  const totalEarnings = rewardEarningsSum + (legacy.legacy_bonus_total ?? 0);
-
-  const todayKey = ymd(new Date());
-  const monthKey = ym(new Date());
-
-  const todayEarnings = useMemo(
-    () => rewardEarnings.filter((t) => ymd(new Date(t.created_at)) === todayKey).reduce((s, t) => s + t.amount, 0),
-    [rewardEarnings, todayKey],
+  // 獎金/收益 = 現金餘額、購物點、貢獻點的正向異動
+  const earnings = useMemo(
+    () => allEntries.filter((e) => e.amount > 0 && ["cash", "shopping", "reward"].includes(e.wallet)),
+    [allEntries],
   );
 
-  const monthEarnings = useMemo(
-    () => rewardEarnings.filter((t) => ym(new Date(t.created_at)) === monthKey).reduce((s, t) => s + t.amount, 0),
-    [rewardEarnings, monthKey],
+  const earningsSum = useMemo(() => earnings.reduce((s, t) => s + t.amount, 0), [earnings]);
+  const totalEarnings = earningsSum + (legacy.legacy_bonus_total ?? 0);
+
+  // 本日收益：顯示「昨日」產生的獎金（日結於隔日入帳）
+  const yesterday = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d;
+  }, []);
+  const prevMonthDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - 1);
+    return d;
+  }, []);
+  const yesterdayKey = ymd(yesterday);
+  const prevMonthKey = ym(prevMonthDate);
+
+  const yesterdayEarnings = useMemo(
+    () => earnings.filter((t) => ymd(new Date(t.created_at)) === yesterdayKey).reduce((s, t) => s + t.amount, 0),
+    [earnings, yesterdayKey],
+  );
+
+  const prevMonthEarnings = useMemo(
+    () => earnings.filter((t) => ym(new Date(t.created_at)) === prevMonthKey).reduce((s, t) => s + t.amount, 0),
+    [earnings, prevMonthKey],
   );
 
   // 日明細：近 60 天，附各獎金來源明細
   const dailyDetail = useMemo(() => {
     const map = new Map<string, { date: string; amount: number; count: number; bySource: Map<string, { amount: number; count: number; notes: string[] }> }>();
-    for (const t of rewardEarnings) {
+    for (const t of earnings) {
       const k = ymd(new Date(t.created_at));
       const cur = map.get(k) ?? { date: k, amount: 0, count: 0, bySource: new Map() };
       cur.amount += t.amount;
       cur.count += 1;
-      const src = cur.bySource.get(t.source) ?? { amount: 0, count: 0, notes: [] };
+      const key = `${t.wallet}:${t.source}`;
+      const src = cur.bySource.get(key) ?? { amount: 0, count: 0, notes: [] };
       src.amount += t.amount;
       src.count += 1;
       if (t.note) src.notes.push(t.note);
-      cur.bySource.set(t.source, src);
+      cur.bySource.set(key, src);
       map.set(k, cur);
     }
     return [...map.values()]
@@ -142,16 +189,16 @@ function PointsPage() {
       .map((d) => ({
         ...d,
         sources: [...d.bySource.entries()]
-          .map(([source, v]) => ({ source, ...v }))
+          .map(([key, v]) => ({ key, ...v }))
           .sort((a, b) => b.amount - a.amount),
       }));
-  }, [rewardEarnings]);
+  }, [earnings]);
 
 
   // 月明細：近 12 個月
   const monthlyDetail = useMemo(() => {
     const map = new Map<string, { month: string; amount: number; count: number }>();
-    for (const t of rewardEarnings) {
+    for (const t of earnings) {
       const k = ym(new Date(t.created_at));
       const cur = map.get(k) ?? { month: k, amount: 0, count: 0 };
       cur.amount += t.amount;
@@ -159,7 +206,7 @@ function PointsPage() {
       map.set(k, cur);
     }
     return [...map.values()].sort((a, b) => (a.month < b.month ? 1 : -1)).slice(0, 24);
-  }, [rewardEarnings]);
+  }, [earnings]);
 
   return (
     <div className="space-y-6">
