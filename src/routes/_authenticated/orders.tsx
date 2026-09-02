@@ -1441,10 +1441,21 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         createdNewCustomer = true;
       }
 
-      // 依訂金決定付款狀態
+      // 依訂金決定「最終」付款狀態（含現金餘額付款）
       let paymentStatus: "pending" | "partial" | "paid" = "pending";
       if (cashDue === 0 || (depositNum >= cashDue && cashDue > 0)) paymentStatus = "paid";
       else if (depositNum > 0 || pointOffsetTotal > 0 || cashWalletNum > 0) paymentStatus = "partial";
+
+      // 建立當下尚未寫入現金餘額付款紀錄，因此送出的狀態只能反映
+      // 訂金 + 點數折抵，否則後端「已付款需收款合計＝訂單總額」的檢核會失敗。
+      const coveredAtCreate = depositNum + pointOffsetTotal;
+      const createPaymentStatus: "pending" | "partial" | "paid" =
+        Math.abs(coveredAtCreate - total) <= 0.5
+          ? "paid"
+          : coveredAtCreate > 0
+            ? "partial"
+            : "pending";
+
 
       // 組合付款紀錄（訂金已收、尾款待收）
       const paymentsPayload: Array<{
@@ -1522,7 +1533,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           notes: notes || null,
           order_status: "pending",
           shipping_status: "pending",
-          payment_status: paymentStatus,
+          payment_status: createPaymentStatus,
           no_reward_points: noRewardPoints,
           },
           items: items.map((it) => ({
@@ -1557,10 +1568,17 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       }
 
       // 寫入訂單來源 / 業務人員 / 會員關聯（RPC 不包含這些欄位，建立後補上；建檔人員由 DB trigger 自動寫入）
-      const patch: { order_source?: string; salesperson_id?: string; user_id?: string } = {};
+      const patch: {
+        order_source?: string;
+        salesperson_id?: string;
+        user_id?: string;
+        payment_status?: string;
+      } = {};
       if (orderSource.trim()) patch.order_source = orderSource.trim();
       if (salespersonId) patch.salesperson_id = salespersonId;
       if (customerStatus.user_id) patch.user_id = customerStatus.user_id;
+      // 現金餘額付款寫入後，補正為最終付款狀態
+      if (paymentStatus !== createPaymentStatus) patch.payment_status = paymentStatus;
       if (Object.keys(patch).length > 0 && (orderRow as any)?.id) {
         await supabase.from("sales_orders").update(patch).eq("id", (orderRow as any).id);
       }
