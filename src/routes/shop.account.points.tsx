@@ -365,9 +365,13 @@ function PointsPage() {
                           <TableCell className="text-right tabular-nums font-semibold text-success">+{d.amount.toLocaleString()}</TableCell>
                         </TableRow>
                         {d.sources.map((s) => (
-                          <TableRow key={`${d.date}-${s.source}`}>
+                          <TableRow key={`${d.date}-${s.key}`}>
                             <TableCell className="pl-8 text-xs text-muted-foreground">
-                              <div>{SOURCE_LABELS[s.source] ?? s.source}</div>
+                              <div>
+                                {WALLET_LABELS[s.key.split(":")[0]] ?? s.key.split(":")[0]}
+                                {" · "}
+                                {SOURCE_LABELS[s.key.split(":").slice(1).join(":")] ?? s.key.split(":").slice(1).join(":")}
+                              </div>
                               {s.notes.length > 0 && (
                                 <div className="text-[11px] text-muted-foreground/80 mt-0.5 line-clamp-2">
                                   {[...new Set(s.notes)].slice(0, 3).join("；")}
