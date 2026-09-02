@@ -326,11 +326,12 @@ function PointsPage() {
         </CardContent>
       </Card>
 
-      {/* 貢獻點明細：日 / 月 / 全部 */}
+      {/* 獎金明細：日 / 月 / 全部（現金餘額 + 購物點 + 貢獻點） */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Gift className="h-4 w-4 text-warning" />貢獻點明細
+            <Gift className="h-4 w-4 text-warning" />獎金明細
+            <span className="text-xs font-normal text-muted-foreground">現金餘額 / 購物點 / 貢獻點</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
