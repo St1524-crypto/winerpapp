@@ -2237,7 +2237,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                 disabled={!!autoNoRewardReason}
                 onCheckedChange={(v) => setNoRewardPoints(v === true)}
               />
-              <span>本訂單不發獎勵點（不列入分紅基數）</span>
+              <span>本訂單不列入業績（不發獎勵點、不列入分紅基數）</span>
             </label>
             {autoNoRewardReason && (
               <div className="text-xs text-amber-700">系統自動設定：{autoNoRewardReason}</div>
