@@ -1441,10 +1441,21 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         createdNewCustomer = true;
       }
 
-      // 依訂金決定付款狀態
+      // 依訂金決定「最終」付款狀態（含現金餘額付款）
       let paymentStatus: "pending" | "partial" | "paid" = "pending";
       if (cashDue === 0 || (depositNum >= cashDue && cashDue > 0)) paymentStatus = "paid";
       else if (depositNum > 0 || pointOffsetTotal > 0 || cashWalletNum > 0) paymentStatus = "partial";
+
+      // 建立當下尚未寫入現金餘額付款紀錄，因此送出的狀態只能反映
+      // 訂金 + 點數折抵，否則後端「已付款需收款合計＝訂單總額」的檢核會失敗。
+      const coveredAtCreate = depositNum + pointOffsetTotal;
+      const createPaymentStatus: "pending" | "partial" | "paid" =
+        Math.abs(coveredAtCreate - total) <= 0.5
+          ? "paid"
+          : coveredAtCreate > 0
+            ? "partial"
+            : "pending";
+
 
       // 組合付款紀錄（訂金已收、尾款待收）
       const paymentsPayload: Array<{
