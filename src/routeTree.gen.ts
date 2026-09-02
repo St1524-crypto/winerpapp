@@ -146,6 +146,8 @@ import { Route as AuthenticatedAdminBonusesVipDetailRouteImport } from './routes
 import { Route as AuthenticatedAdminBonusesSummaryRouteImport } from './routes/_authenticated/admin.bonuses.summary'
 import { Route as AuthenticatedAdminBonusesReconciliationRouteImport } from './routes/_authenticated/admin.bonuses.reconciliation'
 import { Route as AuthenticatedAdminBonusesRecalculationRouteImport } from './routes/_authenticated/admin.bonuses.recalculation'
+import { Route as AuthenticatedAdminBonusesPoolMembersRouteImport } from './routes/_authenticated/admin.bonuses.pool-members'
+import { Route as AuthenticatedAdminBonusesPayoutReportRouteImport } from './routes/_authenticated/admin.bonuses.payout-report'
 import { Route as AuthenticatedAdminBonusesPayoutRouteImport } from './routes/_authenticated/admin.bonuses.payout'
 import { Route as AuthenticatedAdminBonusesNationalShareSettingsRouteImport } from './routes/_authenticated/admin.bonuses.national-share-settings'
 import { Route as AuthenticatedAdminBonusesNationalShareRouteImport } from './routes/_authenticated/admin.bonuses.national-share'
@@ -912,6 +914,18 @@ const AuthenticatedAdminBonusesRecalculationRoute =
     path: '/recalculation',
     getParentRoute: () => AuthenticatedAdminBonusesRoute,
   } as any)
+const AuthenticatedAdminBonusesPoolMembersRoute =
+  AuthenticatedAdminBonusesPoolMembersRouteImport.update({
+    id: '/pool-members',
+    path: '/pool-members',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
+const AuthenticatedAdminBonusesPayoutReportRoute =
+  AuthenticatedAdminBonusesPayoutReportRouteImport.update({
+    id: '/payout-report',
+    path: '/payout-report',
+    getParentRoute: () => AuthenticatedAdminBonusesRoute,
+  } as any)
 const AuthenticatedAdminBonusesPayoutRoute =
   AuthenticatedAdminBonusesPayoutRouteImport.update({
     id: '/payout',
@@ -1134,6 +1148,8 @@ export interface FileRoutesByFullPath {
   '/admin/bonuses/national-share': typeof AuthenticatedAdminBonusesNationalShareRoute
   '/admin/bonuses/national-share-settings': typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
   '/admin/bonuses/payout': typeof AuthenticatedAdminBonusesPayoutRoute
+  '/admin/bonuses/payout-report': typeof AuthenticatedAdminBonusesPayoutReportRoute
+  '/admin/bonuses/pool-members': typeof AuthenticatedAdminBonusesPoolMembersRoute
   '/admin/bonuses/recalculation': typeof AuthenticatedAdminBonusesRecalculationRoute
   '/admin/bonuses/reconciliation': typeof AuthenticatedAdminBonusesReconciliationRoute
   '/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
@@ -1283,6 +1299,8 @@ export interface FileRoutesByTo {
   '/admin/bonuses/national-share': typeof AuthenticatedAdminBonusesNationalShareRoute
   '/admin/bonuses/national-share-settings': typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
   '/admin/bonuses/payout': typeof AuthenticatedAdminBonusesPayoutRoute
+  '/admin/bonuses/payout-report': typeof AuthenticatedAdminBonusesPayoutReportRoute
+  '/admin/bonuses/pool-members': typeof AuthenticatedAdminBonusesPoolMembersRoute
   '/admin/bonuses/recalculation': typeof AuthenticatedAdminBonusesRecalculationRoute
   '/admin/bonuses/reconciliation': typeof AuthenticatedAdminBonusesReconciliationRoute
   '/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
@@ -1439,6 +1457,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/bonuses/national-share': typeof AuthenticatedAdminBonusesNationalShareRoute
   '/_authenticated/admin/bonuses/national-share-settings': typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
   '/_authenticated/admin/bonuses/payout': typeof AuthenticatedAdminBonusesPayoutRoute
+  '/_authenticated/admin/bonuses/payout-report': typeof AuthenticatedAdminBonusesPayoutReportRoute
+  '/_authenticated/admin/bonuses/pool-members': typeof AuthenticatedAdminBonusesPoolMembersRoute
   '/_authenticated/admin/bonuses/recalculation': typeof AuthenticatedAdminBonusesRecalculationRoute
   '/_authenticated/admin/bonuses/reconciliation': typeof AuthenticatedAdminBonusesReconciliationRoute
   '/_authenticated/admin/bonuses/summary': typeof AuthenticatedAdminBonusesSummaryRoute
@@ -1595,6 +1615,8 @@ export interface FileRouteTypes {
     | '/admin/bonuses/national-share'
     | '/admin/bonuses/national-share-settings'
     | '/admin/bonuses/payout'
+    | '/admin/bonuses/payout-report'
+    | '/admin/bonuses/pool-members'
     | '/admin/bonuses/recalculation'
     | '/admin/bonuses/reconciliation'
     | '/admin/bonuses/summary'
@@ -1744,6 +1766,8 @@ export interface FileRouteTypes {
     | '/admin/bonuses/national-share'
     | '/admin/bonuses/national-share-settings'
     | '/admin/bonuses/payout'
+    | '/admin/bonuses/payout-report'
+    | '/admin/bonuses/pool-members'
     | '/admin/bonuses/recalculation'
     | '/admin/bonuses/reconciliation'
     | '/admin/bonuses/summary'
@@ -1899,6 +1923,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bonuses/national-share'
     | '/_authenticated/admin/bonuses/national-share-settings'
     | '/_authenticated/admin/bonuses/payout'
+    | '/_authenticated/admin/bonuses/payout-report'
+    | '/_authenticated/admin/bonuses/pool-members'
     | '/_authenticated/admin/bonuses/recalculation'
     | '/_authenticated/admin/bonuses/reconciliation'
     | '/_authenticated/admin/bonuses/summary'
@@ -2921,6 +2947,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBonusesRecalculationRouteImport
       parentRoute: typeof AuthenticatedAdminBonusesRoute
     }
+    '/_authenticated/admin/bonuses/pool-members': {
+      id: '/_authenticated/admin/bonuses/pool-members'
+      path: '/pool-members'
+      fullPath: '/admin/bonuses/pool-members'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesPoolMembersRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
+    '/_authenticated/admin/bonuses/payout-report': {
+      id: '/_authenticated/admin/bonuses/payout-report'
+      path: '/payout-report'
+      fullPath: '/admin/bonuses/payout-report'
+      preLoaderRoute: typeof AuthenticatedAdminBonusesPayoutReportRouteImport
+      parentRoute: typeof AuthenticatedAdminBonusesRoute
+    }
     '/_authenticated/admin/bonuses/payout': {
       id: '/_authenticated/admin/bonuses/payout'
       path: '/payout'
@@ -3082,6 +3122,8 @@ interface AuthenticatedAdminBonusesRouteChildren {
   AuthenticatedAdminBonusesNationalShareRoute: typeof AuthenticatedAdminBonusesNationalShareRoute
   AuthenticatedAdminBonusesNationalShareSettingsRoute: typeof AuthenticatedAdminBonusesNationalShareSettingsRoute
   AuthenticatedAdminBonusesPayoutRoute: typeof AuthenticatedAdminBonusesPayoutRoute
+  AuthenticatedAdminBonusesPayoutReportRoute: typeof AuthenticatedAdminBonusesPayoutReportRoute
+  AuthenticatedAdminBonusesPoolMembersRoute: typeof AuthenticatedAdminBonusesPoolMembersRoute
   AuthenticatedAdminBonusesRecalculationRoute: typeof AuthenticatedAdminBonusesRecalculationRoute
   AuthenticatedAdminBonusesReconciliationRoute: typeof AuthenticatedAdminBonusesReconciliationRoute
   AuthenticatedAdminBonusesSummaryRoute: typeof AuthenticatedAdminBonusesSummaryRoute
@@ -3116,6 +3158,10 @@ const AuthenticatedAdminBonusesRouteChildren: AuthenticatedAdminBonusesRouteChil
     AuthenticatedAdminBonusesNationalShareSettingsRoute:
       AuthenticatedAdminBonusesNationalShareSettingsRoute,
     AuthenticatedAdminBonusesPayoutRoute: AuthenticatedAdminBonusesPayoutRoute,
+    AuthenticatedAdminBonusesPayoutReportRoute:
+      AuthenticatedAdminBonusesPayoutReportRoute,
+    AuthenticatedAdminBonusesPoolMembersRoute:
+      AuthenticatedAdminBonusesPoolMembersRoute,
     AuthenticatedAdminBonusesRecalculationRoute:
       AuthenticatedAdminBonusesRecalculationRoute,
     AuthenticatedAdminBonusesReconciliationRoute:

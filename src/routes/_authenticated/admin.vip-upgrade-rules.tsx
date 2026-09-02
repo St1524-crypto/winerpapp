@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link as RouterLink } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
   previewVipUpgradeRuleChanges,
   applyVipUpgradeRuleChanges,
 } from "@/lib/vip-upgrade-rules.functions";
+import { getPayoutSummaryForRules } from "@/lib/bonus-payout-report.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-rules")({
   component: VipUpgradeRulesPage,
@@ -90,6 +91,14 @@ function VipUpgradeRulesPage() {
   const [diffs, setDiffs] = useState<Diff[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [summary, setSummary] = useState<any>(null);
+  const summaryFn = useServerFn(getPayoutSummaryForRules);
+
+  useEffect(() => {
+    summaryFn()
+      .then((r: any) => setSummary(r))
+      .catch(() => setSummary(null));
+  }, []);
 
   async function load() {
     setLoading(true);
@@ -201,6 +210,66 @@ function VipUpgradeRulesPage() {
           目前為唯讀模式，只有超級管理員可以修改制度升級條件。
         </div>
       )}
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-base">制度同步對照：分紅名單與 80/20 發放</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              與獎金發放中心、分紅名單管理即時同步（現金錢包 80%／貢獻點 20%）。
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <RouterLink to="/admin/bonuses/pool-members">
+              <Button variant="outline" size="sm">分紅名單管理</Button>
+            </RouterLink>
+            <RouterLink to="/admin/bonuses/payout-report">
+              <Button variant="outline" size="sm">發放報表</Button>
+            </RouterLink>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!summary ? (
+            <div className="text-sm text-muted-foreground">載入中…</div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+              <div className="rounded-md border p-3">
+                <div className="text-muted-foreground">POOL_VSTEA</div>
+                <div className="font-semibold">
+                  {summary.pool
+                    ? `${summary.pool.status}／${(Number(summary.pool.bonus_rate ?? 0) * 100).toFixed(2)}%`
+                    : "未設定"}
+                </div>
+                <div className="text-muted-foreground">
+                  適用 {(summary.pool?.tier_codes ?? []).join("、") || "—"}／有效名單 {summary.poolActiveMembers} 位
+                </div>
+              </div>
+              <div className="rounded-md border p-3">
+                <div className="text-muted-foreground">已發放（80/20）</div>
+                <div className="font-semibold tabular-nums">{summary.released.points.toLocaleString()} 點</div>
+                <div className="text-muted-foreground tabular-nums">
+                  現金 {summary.released.cash.toLocaleString()}／貢獻點 {summary.released.point.toLocaleString()}
+                </div>
+              </div>
+              <div className="rounded-md border p-3">
+                <div className="text-muted-foreground">待發放預估</div>
+                <div className="font-semibold tabular-nums">{summary.waiting.points.toLocaleString()} 點</div>
+                <div className="text-muted-foreground tabular-nums">
+                  現金 {summary.waiting.cash.toLocaleString()}／貢獻點 {summary.waiting.point.toLocaleString()}
+                </div>
+              </div>
+              <div className="rounded-md border p-3">
+                <div className="text-muted-foreground">今日到期可發</div>
+                <div className="font-semibold tabular-nums">{summary.due.points.toLocaleString()} 點</div>
+                <div className="text-muted-foreground tabular-nums">
+                  現金 {summary.due.cash.toLocaleString()}／貢獻點 {summary.due.point.toLocaleString()}
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader>
