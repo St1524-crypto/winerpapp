@@ -707,7 +707,14 @@ function OrdersPage() {
                             aria-label={`選取 ${o.order_no}`}
                           />
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{o.order_no}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {o.order_no}
+                          {o.no_reward_points && (
+                            <Badge variant="outline" className="ml-1.5 border-amber-500/50 bg-amber-500/10 text-amber-700 text-[10px] px-1.5 py-0">
+                              不列入業績
+                            </Badge>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="font-medium text-sm">{o.customer_name}</div>
                           <div className="text-xs text-muted-foreground truncate max-w-[180px]">
