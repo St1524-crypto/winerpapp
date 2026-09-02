@@ -7,6 +7,7 @@ import { Coins, Gift, Percent, History, Copy, TrendingUp, CalendarDays, Calendar
 import { toast } from "sonner";
 import { useWallet, useVipStatus } from "@/hooks/use-wallet";
 import { getMyPointTx, getMyReferralStats, getMyLegacyBonus } from "@/lib/points.functions";
+import { getMyCashWallet, getMyCashLedger } from "@/lib/cash-wallet.functions";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,12 +27,35 @@ const SOURCE_LABELS: Record<string, string> = {
   vip_bonus: "VIP 開通",
   admin_adjust: "管理員調整",
   expire: "點數過期",
+  bonus_release: "獎金發放",
+  cash_topup: "現金儲值",
+  cash_withdraw: "現金提領",
+  cash_buy_points: "現金購買購物點",
+  cash_refund: "現金退款",
+  cash_adjust: "現金調整",
+};
+
+const WALLET_LABELS: Record<string, string> = {
+  cash: "現金餘額",
+  shopping: "購物點",
+  reward: "貢獻點",
+  discount: "折扣點",
 };
 
 type Tx = {
   id: string;
   amount: number;
   point_type: "shopping" | "reward" | "discount" | string;
+  source: string;
+  note?: string | null;
+  created_at: string;
+};
+
+// 統一化的「獎金/收益」條目（現金餘額 + 購物點 + 貢獻點）
+type Entry = {
+  id: string;
+  wallet: "cash" | "shopping" | "reward" | "discount";
+  amount: number;
   source: string;
   note?: string | null;
   created_at: string;
@@ -64,12 +88,16 @@ function PointsPage() {
     imported_at: null,
   });
 
+  const [cash, setCash] = useState(0);
+  const [cashTx, setCashTx] = useState<any[]>([]);
+
   useEffect(() => {
     setTxLoading(true);
-    getMyPointTx()
-      .then((d) => setTx(d as Tx[]))
-      .catch(() => {})
-      .finally(() => setTxLoading(false));
+    Promise.all([
+      getMyPointTx().then((d) => setTx(d as Tx[])).catch(() => {}),
+      getMyCashLedger().then((d) => setCashTx((d as any[]) ?? [])).catch(() => {}),
+    ]).finally(() => setTxLoading(false));
+    getMyCashWallet().then((d: any) => setCash(Number(d?.cash_balance ?? 0))).catch(() => {});
     getMyReferralStats().then((d) => setRef(d as any)).catch(() => {});
     getMyLegacyBonus().then((d) => setLegacy(d as any)).catch(() => {});
   }, []);
@@ -78,38 +106,81 @@ function PointsPage() {
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/login?ref=${ref.referral_code}`
     : "";
 
-  // 收益 = 獎勵點正向異動
-  const rewardEarnings = useMemo(() => tx.filter((t) => t.point_type === "reward" && t.amount > 0), [tx]);
+  // 全部異動（現金 + 點數）
+  const allEntries = useMemo<Entry[]>(() => {
+    const pointRows: Entry[] = tx.map((t) => ({
+      id: t.id,
+      wallet: (t.point_type as Entry["wallet"]) ?? "reward",
+      amount: Number(t.amount ?? 0),
+      source: t.source,
+      note: t.note,
+      created_at: t.created_at,
+    }));
+    const cashRows: Entry[] = (cashTx ?? [])
+      .filter((c) => ["completed", "approved"].includes(String(c.status)))
+      .map((c) => {
+        const raw = Number(c.amount ?? 0);
+        const outflow = ["withdraw", "buy_points"].includes(String(c.tx_type));
+        return {
+          id: `cash-${c.id}`,
+          wallet: "cash" as const,
+          amount: outflow ? -Math.abs(raw) : raw,
+          source: `cash_${c.tx_type}`,
+          note: c.note,
+          created_at: c.created_at,
+        };
+      });
+    return [...pointRows, ...cashRows].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  }, [tx, cashTx]);
 
-  const rewardEarningsSum = useMemo(() => rewardEarnings.reduce((s, t) => s + t.amount, 0), [rewardEarnings]);
-  const totalEarnings = rewardEarningsSum + (legacy.legacy_bonus_total ?? 0);
-
-  const todayKey = ymd(new Date());
-  const monthKey = ym(new Date());
-
-  const todayEarnings = useMemo(
-    () => rewardEarnings.filter((t) => ymd(new Date(t.created_at)) === todayKey).reduce((s, t) => s + t.amount, 0),
-    [rewardEarnings, todayKey],
+  // 獎金/收益 = 現金餘額、購物點、貢獻點的正向異動
+  const earnings = useMemo(
+    () => allEntries.filter((e) => e.amount > 0 && ["cash", "shopping", "reward"].includes(e.wallet)),
+    [allEntries],
   );
 
-  const monthEarnings = useMemo(
-    () => rewardEarnings.filter((t) => ym(new Date(t.created_at)) === monthKey).reduce((s, t) => s + t.amount, 0),
-    [rewardEarnings, monthKey],
+  const earningsSum = useMemo(() => earnings.reduce((s, t) => s + t.amount, 0), [earnings]);
+  const totalEarnings = earningsSum + (legacy.legacy_bonus_total ?? 0);
+
+  // 本日收益：顯示「昨日」產生的獎金（日結於隔日入帳）
+  const yesterday = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d;
+  }, []);
+  const prevMonthDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - 1);
+    return d;
+  }, []);
+  const yesterdayKey = ymd(yesterday);
+  const prevMonthKey = ym(prevMonthDate);
+
+  const yesterdayEarnings = useMemo(
+    () => earnings.filter((t) => ymd(new Date(t.created_at)) === yesterdayKey).reduce((s, t) => s + t.amount, 0),
+    [earnings, yesterdayKey],
+  );
+
+  const prevMonthEarnings = useMemo(
+    () => earnings.filter((t) => ym(new Date(t.created_at)) === prevMonthKey).reduce((s, t) => s + t.amount, 0),
+    [earnings, prevMonthKey],
   );
 
   // 日明細：近 60 天，附各獎金來源明細
   const dailyDetail = useMemo(() => {
     const map = new Map<string, { date: string; amount: number; count: number; bySource: Map<string, { amount: number; count: number; notes: string[] }> }>();
-    for (const t of rewardEarnings) {
+    for (const t of earnings) {
       const k = ymd(new Date(t.created_at));
       const cur = map.get(k) ?? { date: k, amount: 0, count: 0, bySource: new Map() };
       cur.amount += t.amount;
       cur.count += 1;
-      const src = cur.bySource.get(t.source) ?? { amount: 0, count: 0, notes: [] };
+      const key = `${t.wallet}:${t.source}`;
+      const src = cur.bySource.get(key) ?? { amount: 0, count: 0, notes: [] };
       src.amount += t.amount;
       src.count += 1;
       if (t.note) src.notes.push(t.note);
-      cur.bySource.set(t.source, src);
+      cur.bySource.set(key, src);
       map.set(k, cur);
     }
     return [...map.values()]
@@ -118,16 +189,16 @@ function PointsPage() {
       .map((d) => ({
         ...d,
         sources: [...d.bySource.entries()]
-          .map(([source, v]) => ({ source, ...v }))
+          .map(([key, v]) => ({ key, ...v }))
           .sort((a, b) => b.amount - a.amount),
       }));
-  }, [rewardEarnings]);
+  }, [earnings]);
 
 
   // 月明細：近 12 個月
   const monthlyDetail = useMemo(() => {
     const map = new Map<string, { month: string; amount: number; count: number }>();
-    for (const t of rewardEarnings) {
+    for (const t of earnings) {
       const k = ym(new Date(t.created_at));
       const cur = map.get(k) ?? { month: k, amount: 0, count: 0 };
       cur.amount += t.amount;
@@ -135,12 +206,12 @@ function PointsPage() {
       map.set(k, cur);
     }
     return [...map.values()].sort((a, b) => (a.month < b.month ? 1 : -1)).slice(0, 24);
-  }, [rewardEarnings]);
+  }, [earnings]);
 
   return (
     <div className="space-y-6">
       {/* 收益總覽 */}
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
@@ -152,34 +223,45 @@ function PointsPage() {
               <div className="text-3xl font-bold tabular-nums text-primary">{totalEarnings.toLocaleString()}</div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              匯入累計獎金 {(legacy.legacy_bonus_total ?? 0).toLocaleString()} + 新增貢獻點 {rewardEarningsSum.toLocaleString()}
+              匯入累計獎金 {(legacy.legacy_bonus_total ?? 0).toLocaleString()} + 新增獎金 {earningsSum.toLocaleString()}
             </p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-info/10 to-transparent">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
+              <Wallet className="h-4 w-4 text-primary" />現金餘額
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold tabular-nums">NT$ {cash.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground mt-1">獎金 80% 撥入現金錢包</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-success/10 to-transparent border-success/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
-              <Sparkles className="h-4 w-4 text-success" />今日收益
+              <Sparkles className="h-4 w-4 text-success" />本日收益
             </CardTitle>
           </CardHeader>
           <CardContent>
             {txLoading ? <Skeleton className="h-8 w-24" /> : (
-              <div className="text-3xl font-bold tabular-nums text-success">+{todayEarnings.toLocaleString()}</div>
+              <div className="text-3xl font-bold tabular-nums text-success">+{yesterdayEarnings.toLocaleString()}</div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">{todayKey}</p>
+            <p className="text-xs text-muted-foreground mt-1">{yesterdayKey}（昨日產生之獎金）</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-to-br from-warning/10 to-transparent border-warning/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground">
-              <CalendarRange className="h-4 w-4 text-warning" />本月收益
+              <CalendarRange className="h-4 w-4 text-warning" />前月收入
             </CardTitle>
           </CardHeader>
           <CardContent>
             {txLoading ? <Skeleton className="h-8 w-24" /> : (
-              <div className="text-3xl font-bold tabular-nums text-warning">+{monthEarnings.toLocaleString()}</div>
+              <div className="text-3xl font-bold tabular-nums text-warning">+{prevMonthEarnings.toLocaleString()}</div>
             )}
-            <p className="text-xs text-muted-foreground mt-1">{monthKey}</p>
+            <p className="text-xs text-muted-foreground mt-1">{prevMonthKey}</p>
           </CardContent>
         </Card>
       </div>
@@ -244,11 +326,12 @@ function PointsPage() {
         </CardContent>
       </Card>
 
-      {/* 貢獻點明細：日 / 月 / 全部 */}
+      {/* 獎金明細：日 / 月 / 全部（現金餘額 + 購物點 + 貢獻點） */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Gift className="h-4 w-4 text-warning" />貢獻點明細
+            <Gift className="h-4 w-4 text-warning" />獎金明細
+            <span className="text-xs font-normal text-muted-foreground">現金餘額 / 購物點 / 貢獻點</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -268,9 +351,9 @@ function PointsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>日期 / 來源</TableHead>
+                      <TableHead>日期 / 錢包來源</TableHead>
                       <TableHead className="text-right">筆數</TableHead>
-                      <TableHead className="text-right">獲得貢獻點</TableHead>
+                      <TableHead className="text-right">獲得金額 / 點數</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -282,9 +365,13 @@ function PointsPage() {
                           <TableCell className="text-right tabular-nums font-semibold text-success">+{d.amount.toLocaleString()}</TableCell>
                         </TableRow>
                         {d.sources.map((s) => (
-                          <TableRow key={`${d.date}-${s.source}`}>
+                          <TableRow key={`${d.date}-${s.key}`}>
                             <TableCell className="pl-8 text-xs text-muted-foreground">
-                              <div>{SOURCE_LABELS[s.source] ?? s.source}</div>
+                              <div>
+                                {WALLET_LABELS[s.key.split(":")[0]] ?? s.key.split(":")[0]}
+                                {" · "}
+                                {SOURCE_LABELS[s.key.split(":").slice(1).join(":")] ?? s.key.split(":").slice(1).join(":")}
+                              </div>
                               {s.notes.length > 0 && (
                                 <div className="text-[11px] text-muted-foreground/80 mt-0.5 line-clamp-2">
                                   {[...new Set(s.notes)].slice(0, 3).join("；")}
@@ -315,7 +402,7 @@ function PointsPage() {
                     <TableRow>
                       <TableHead>月份</TableHead>
                       <TableHead className="text-right">筆數</TableHead>
-                      <TableHead className="text-right">獲得貢獻點</TableHead>
+                      <TableHead className="text-right">獲得金額 / 點數</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -334,23 +421,22 @@ function PointsPage() {
             <TabsContent value="all" className="mt-4">
               {txLoading ? (
                 <Skeleton className="h-40 w-full" />
-              ) : tx.length === 0 ? (
+              ) : allEntries.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">尚無紀錄</p>
               ) : (
                 <div className="space-y-2 text-sm">
-                  {tx.map((t) => (
+                  {allEntries.map((t) => (
                     <div key={t.id} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
                       <div className="min-w-0">
                         <div className="font-medium text-xs">
-                          {SOURCE_LABELS[t.source] ?? t.source} ·{" "}
-                          {t.point_type === "shopping" ? "購物點" : t.point_type === "reward" ? "貢獻點" : "折扣點"}
+                          {SOURCE_LABELS[t.source] ?? t.source} · {WALLET_LABELS[t.wallet] ?? t.wallet}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           {new Date(t.created_at).toLocaleString()} {t.note ? `· ${t.note}` : ""}
                         </div>
                       </div>
                       <div className={`tabular-nums font-semibold ${t.amount > 0 ? "text-success" : "text-destructive"}`}>
-                        {t.amount > 0 ? "+" : ""}{t.amount}
+                        {t.amount > 0 ? "+" : ""}{t.wallet === "cash" ? `NT$ ${t.amount.toLocaleString()}` : t.amount.toLocaleString()}
                       </div>
                     </div>
                   ))}
