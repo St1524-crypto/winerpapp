@@ -199,6 +199,7 @@ type OrderRow = {
   created_by_name: string | null;
   created_at: string;
   company_id: string;
+  no_reward_points?: boolean | null;
 };
 
 const ORDER_SOURCES = ["蝦皮1", "蝦皮2", "LINE", "其他", "官網", "雅虎1", "雅虎2", "露天1", "露天2"];
