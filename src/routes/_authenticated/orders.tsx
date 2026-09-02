@@ -744,7 +744,20 @@ function OrdersPage() {
                         <TableCell className="text-xs text-muted-foreground">
                           {o.created_by_name ?? "—"}
                         </TableCell>
+                        <TableCell className="text-xs">
+                          {o.notes
+                            ? (
+                              <span
+                                className="block max-w-[180px] truncate text-muted-foreground"
+                                title={o.notes}
+                              >
+                                {o.notes}
+                              </span>
+                            )
+                            : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
+
                         <TableCell>
                           <OrderStatusCell orderId={o.id} value={o.order_status} onChanged={refresh} />
                         </TableCell>
