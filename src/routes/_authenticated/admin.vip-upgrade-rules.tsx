@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link as RouterLink } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
   previewVipUpgradeRuleChanges,
   applyVipUpgradeRuleChanges,
 } from "@/lib/vip-upgrade-rules.functions";
+import { getPayoutSummaryForRules } from "@/lib/bonus-payout-report.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-rules")({
   component: VipUpgradeRulesPage,
@@ -90,6 +91,14 @@ function VipUpgradeRulesPage() {
   const [diffs, setDiffs] = useState<Diff[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [summary, setSummary] = useState<any>(null);
+  const summaryFn = useServerFn(getPayoutSummaryForRules);
+
+  useEffect(() => {
+    summaryFn()
+      .then((r: any) => setSummary(r))
+      .catch(() => setSummary(null));
+  }, []);
 
   async function load() {
     setLoading(true);
