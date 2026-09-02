@@ -1128,7 +1128,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       const data = await loadBonusMap();
       const map: Record<string, { bonus_points: number; name: string }> = {};
       for (const r of (data ?? []) as any[]) {
-        if (r.product_id) map[r.product_id] = { bonus_points: Number(r.bonus_points || 0), name: r.name };
+        // 只以「套組專屬商品」為準；舊資料的 product_id 可能指向一般商品，
+        // 若直接採用會讓一般商品套用套組獎勵點並略過階梯價。
+        const anchorId = r.package_product_id ?? null;
+        if (anchorId) map[anchorId] = { bonus_points: Number(r.bonus_points || 0), name: r.name };
       }
       return map;
     },
