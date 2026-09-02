@@ -697,7 +697,9 @@ function OrdersPage() {
                       <TableHead>來源</TableHead>
                       <TableHead>業務</TableHead>
                       <TableHead>建檔人員</TableHead>
+                      <TableHead>備註</TableHead>
                       <TableHead className="text-right">總金額</TableHead>
+
                       <TableHead>訂單狀態</TableHead>
                       <TableHead>出貨</TableHead>
                       <TableHead>金流</TableHead>
@@ -742,7 +744,20 @@ function OrdersPage() {
                         <TableCell className="text-xs text-muted-foreground">
                           {o.created_by_name ?? "—"}
                         </TableCell>
+                        <TableCell className="text-xs">
+                          {o.notes
+                            ? (
+                              <span
+                                className="block max-w-[180px] truncate text-muted-foreground"
+                                title={o.notes}
+                              >
+                                {o.notes}
+                              </span>
+                            )
+                            : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
+
                         <TableCell>
                           <OrderStatusCell orderId={o.id} value={o.order_status} onChanged={refresh} />
                         </TableCell>
