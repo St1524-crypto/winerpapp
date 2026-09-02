@@ -402,7 +402,7 @@ function PointsPage() {
                     <TableRow>
                       <TableHead>月份</TableHead>
                       <TableHead className="text-right">筆數</TableHead>
-                      <TableHead className="text-right">獲得貢獻點</TableHead>
+                      <TableHead className="text-right">獲得金額 / 點數</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
