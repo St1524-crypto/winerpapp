@@ -60,7 +60,7 @@ export const listBonusPoolMembers = createServerFn({ method: "POST" })
     if (ids.length) {
       const { data: p } = await (supabaseAdmin as any)
         .from("profiles")
-        .select("id, name, member_no, phone, vip_tier_code")
+        .select("id, name, member_no, phone, vip_tier")
         .in("id", ids);
       profiles = p ?? [];
     }
@@ -72,7 +72,7 @@ export const listBonusPoolMembers = createServerFn({ method: "POST" })
       name: map.get(g.user_id)?.name ?? null,
       memberNo: map.get(g.user_id)?.member_no ?? null,
       phone: map.get(g.user_id)?.phone ?? null,
-      tierCode: map.get(g.user_id)?.vip_tier_code ?? null,
+      tierCode: map.get(g.user_id)?.vip_tier ?? null,
     }));
 
     return {
@@ -94,7 +94,7 @@ export const searchMembersForPool = createServerFn({ method: "POST" })
     const q = data.q.replace(/[%,()]/gu, "");
     const { data: rows, error } = await (supabaseAdmin as any)
       .from("profiles")
-      .select("id, name, member_no, phone, vip_tier_code")
+      .select("id, name, member_no, phone, vip_tier")
       .or(`name.ilike.%${q}%,member_no.ilike.%${q}%,phone.ilike.%${q}%`)
       .limit(20);
     if (error) throw new Error(error.message);

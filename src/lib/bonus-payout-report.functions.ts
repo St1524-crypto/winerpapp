@@ -69,11 +69,21 @@ export const getVipPayoutReport = createServerFn({ method: "POST" })
     if (memberIds.length) {
       const { data: p } = await (supabaseAdmin as any)
         .from("profiles")
-        .select("id, name, member_no, vip_tier_code, cash_balance, reward_points")
+        .select("id, name, member_no, vip_tier")
         .in("id", memberIds);
       profiles = p ?? [];
     }
     const pMap = new Map(profiles.map((p) => [p.id, p]));
+
+    let wallets: any[] = [];
+    if (memberIds.length) {
+      const { data: w } = await (supabaseAdmin as any)
+        .from("member_points_wallet")
+        .select("user_id, cash_balance, reward_points")
+        .in("user_id", memberIds);
+      wallets = w ?? [];
+    }
+    const wMap = new Map(wallets.map((w) => [w.user_id, w]));
 
     const byMember = new Map<string, any>();
     const totals = {
@@ -96,9 +106,9 @@ export const getVipPayoutReport = createServerFn({ method: "POST" })
           memberId: mid,
           name: p?.name ?? null,
           memberNo: p?.member_no ?? null,
-          tierCode: p?.vip_tier_code ?? null,
-          cashBalance: Number(p?.cash_balance ?? 0),
-          rewardPoints: Number(p?.reward_points ?? 0),
+          tierCode: p?.vip_tier ?? null,
+          cashBalance: Number(wMap.get(mid)?.cash_balance ?? 0),
+          contributionPoints: Number(wMap.get(mid)?.reward_points ?? 0),
           waitingDaily: empty(),
           waitingMonthly: empty(),
           releasedDaily: empty(),
