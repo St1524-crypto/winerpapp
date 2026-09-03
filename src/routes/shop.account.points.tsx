@@ -71,6 +71,21 @@ function ym(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
+/**
+ * 只認列「獎金發放」產生的異動：
+ * - 點數：bonus_* / vip_bonus / referral_commission
+ * - 現金：日月結發放寫入 cash_transactions(tx_type='adjust')，note 以「獎金發放」開頭
+ * 儲值、退款、購點、管理員手動調整一律不算收益。
+ */
+function isBonusEntry(e: Entry) {
+  if (e.wallet === "cash") {
+    return String(e.note ?? "").startsWith("獎金發放");
+  }
+  const src = String(e.source ?? "");
+  return src.startsWith("bonus") || ["vip_bonus", "referral_commission"].includes(src);
+}
+
+
 function PointsPage() {
   const { wallet, loading } = useWallet();
   const { is_vip, vip_expires_at } = useVipStatus();
@@ -133,11 +148,12 @@ function PointsPage() {
     return [...pointRows, ...cashRows].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
   }, [tx, cashTx]);
 
-  // 獎金/收益 = 現金餘額、購物點、貢獻點的正向異動
+  // 獎金/收益 = 只計「獎金發放」產生的正向異動（排除儲值、退款、購點、管理員調整）
   const earnings = useMemo(
-    () => allEntries.filter((e) => e.amount > 0 && ["cash", "shopping", "reward"].includes(e.wallet)),
+    () => allEntries.filter((e) => e.amount > 0 && isBonusEntry(e)),
     [allEntries],
   );
+
 
   const earningsSum = useMemo(() => earnings.reduce((s, t) => s + t.amount, 0), [earnings]);
   const totalEarnings = earningsSum + (legacy.legacy_bonus_total ?? 0);
