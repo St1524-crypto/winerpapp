@@ -71,6 +71,21 @@ function ym(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
+/**
+ * 只認列「獎金發放」產生的異動：
+ * - 點數：bonus_* / vip_bonus / referral_commission
+ * - 現金：日月結發放寫入 cash_transactions(tx_type='adjust')，note 以「獎金發放」開頭
+ * 儲值、退款、購點、管理員手動調整一律不算收益。
+ */
+function isBonusEntry(e: Entry) {
+  if (e.wallet === "cash") {
+    return String(e.note ?? "").startsWith("獎金發放");
+  }
+  const src = String(e.source ?? "");
+  return src.startsWith("bonus") || ["vip_bonus", "referral_commission"].includes(src);
+}
+
+
 function PointsPage() {
   const { wallet, loading } = useWallet();
   const { is_vip, vip_expires_at } = useVipStatus();
