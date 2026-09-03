@@ -133,11 +133,12 @@ function PointsPage() {
     return [...pointRows, ...cashRows].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
   }, [tx, cashTx]);
 
-  // 獎金/收益 = 現金餘額、購物點、貢獻點的正向異動
+  // 獎金/收益 = 只計「獎金發放」產生的正向異動（排除儲值、退款、購點、管理員調整）
   const earnings = useMemo(
-    () => allEntries.filter((e) => e.amount > 0 && ["cash", "shopping", "reward"].includes(e.wallet)),
+    () => allEntries.filter((e) => e.amount > 0 && isBonusEntry(e)),
     [allEntries],
   );
+
 
   const earningsSum = useMemo(() => earnings.reduce((s, t) => s + t.amount, 0), [earnings]);
   const totalEarnings = earningsSum + (legacy.legacy_bonus_total ?? 0);
