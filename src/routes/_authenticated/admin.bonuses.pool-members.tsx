@@ -35,6 +35,14 @@ export const Route = createFileRoute("/_authenticated/admin/bonuses/pool-members
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number | null | undefined) => Number(n ?? 0).toLocaleString("zh-TW", { maximumFractionDigits: 2 });
+/** 發放拆分：現金錢包 80%、貢獻點 20% */
+const CASH_RATE = 0.8;
+const round2 = (n: number) => Math.round(n * 100) / 100;
+function splitPoints(points: number) {
+  const total = round2(Math.max(0, points));
+  const cash = round2(total * CASH_RATE);
+  return { total, cash, point: round2(total - cash) };
+}
 function plusMonths(d: string, m: number) {
   const base = new Date(d);
   base.setMonth(base.getMonth() + m);
