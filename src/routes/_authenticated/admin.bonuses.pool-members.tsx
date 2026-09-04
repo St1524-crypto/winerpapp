@@ -212,7 +212,12 @@ function PoolMembersPage() {
               {data.activeCount} / {data.rows.length}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">今日：{data.today}</CardContent>
+          <CardContent className="text-sm text-muted-foreground">
+            今日：{data.today}
+            <div>
+              領獎上限合計：{fmt(data.capTotal)}／目前總收入合計：{fmt(data.earningsTotal)}
+            </div>
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
