@@ -130,6 +130,9 @@ const quickAddCustomerSchema = z.object({
     .optional()
     .or(z.literal("")),
   company: z.string().trim().max(100, "公司名稱最多 100 字").optional().or(z.literal("")),
+  shipping_address: z.string().trim().max(255, "地址最多 255 字").optional().or(z.literal("")),
+  pickup_store: z.string().trim().max(100, "取件門市最多 100 字").optional().or(z.literal("")),
+  source: z.string().trim().max(50, "客戶來源最多 50 字").optional().or(z.literal("")),
 });
 
 export const Route = createFileRoute("/_authenticated/orders")({
@@ -977,6 +980,9 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [qaEmail, setQaEmail] = useState("");
   const [qaPhone, setQaPhone] = useState("");
   const [qaCompany, setQaCompany] = useState("");
+  const [qaAddress, setQaAddress] = useState("");
+  const [qaPickupStore, setQaPickupStore] = useState("");
+  const [qaSource, setQaSource] = useState("");
   const qc = useQueryClient();
   const { currentCompanyId } = useCurrentCompany();
 
@@ -1254,6 +1260,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const qaValidation = useMemo(() => {
     const result = quickAddCustomerSchema.safeParse({
       name: qaName, email: qaEmail, phone: qaPhone, company: qaCompany,
+      shipping_address: qaAddress, pickup_store: qaPickupStore, source: qaSource,
     });
     if (result.success) return { ok: true as const, errors: {} as Record<string, string> };
     const errors: Record<string, string> = {};
@@ -1262,12 +1269,13 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (!errors[key]) errors[key] = issue.message;
     }
     return { ok: false as const, errors };
-  }, [qaName, qaEmail, qaPhone, qaCompany]);
+  }, [qaName, qaEmail, qaPhone, qaCompany, qaAddress, qaPickupStore, qaSource]);
 
   const quickAddMut = useMutation({
     mutationFn: async () => {
       const parsed = quickAddCustomerSchema.safeParse({
         name: qaName, email: qaEmail, phone: qaPhone, company: qaCompany,
+        shipping_address: qaAddress, pickup_store: qaPickupStore, source: qaSource,
       });
       if (!parsed.success) {
         setQaTouched({ name: true, email: true, phone: true, company: true });
@@ -1281,9 +1289,12 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           email: parsed.data.email?.trim() || null,
           phone: parsed.data.phone?.trim() || null,
           company: parsed.data.company?.trim() || null,
+          shipping_address: parsed.data.shipping_address?.trim() || null,
+          pickup_store: parsed.data.pickup_store?.trim() || null,
+          source: parsed.data.source?.trim() || null,
           company_id: currentCompanyId,
         })
-        .select("id,name,email,phone,company,shipping_address")
+        .select("id,name,email,phone,company,shipping_address,pickup_store,source")
         .single();
       if (error) throw new Error(error.message);
       return data;
@@ -1294,6 +1305,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       pickCustomer(created);
       setQuickAddOpen(false);
       setQaName(""); setQaEmail(""); setQaPhone(""); setQaCompany("");
+      setQaAddress(""); setQaPickupStore(""); setQaSource("");
       setQaTouched({});
     },
     onError: (e: any) => toast.error(e?.message ?? "新增客戶失敗"),
@@ -1447,6 +1459,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             email: email || null,
             phone: phone || null,
             shipping_address: address || null,
+            pickup_store: pickupStore.trim() || null,
             company_id: currentCompanyId!,
           })
           .select("id")
@@ -1588,7 +1601,9 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         salesperson_id?: string;
         user_id?: string;
         payment_status?: string;
+        pickup_store?: string;
       } = {};
+      if (pickupStore.trim()) patch.pickup_store = pickupStore.trim();
       if (orderSource.trim()) patch.order_source = orderSource.trim();
       if (salespersonId) patch.salesperson_id = salespersonId;
       if (customerStatus.user_id) patch.user_id = customerStatus.user_id;
@@ -1643,8 +1658,9 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     } catch { return null; }
   }
 
-  async function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null; shipping_address?: string | null }) {
+  async function pickCustomer(c: { id: string; name: string; email: string | null; phone: string | null; address?: string | null; shipping_address?: string | null; pickup_store?: string | null }) {
     const custAddr = c.address ?? c.shipping_address ?? null;
+    setPickupStore(c.pickup_store ?? "");
     setCustomerId(c.id);
     setCustomer(c.name);
     setEmail(c.email ?? "");
@@ -2118,7 +2134,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           </div>
 
           <div><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-          <div><Label>收件地址 *</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>收件地址 *</Label><Input value={address} onChange={(e) => setAddress(e.target.value)} /></div>
+            <div><Label>取件門市</Label><Input value={pickupStore} onChange={(e) => setPickupStore(e.target.value)} placeholder="超商／自取門市（可留空）" /></div>
+          </div>
 
           {/* ===== 商品明細 ===== */}
           <div className="space-y-2">
