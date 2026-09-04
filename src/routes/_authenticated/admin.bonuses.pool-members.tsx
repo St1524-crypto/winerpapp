@@ -264,6 +264,53 @@ function PoolMembersPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">分紅均分試算（現金 80%／貢獻點 20%）</CardTitle>
+          <CardDescription>
+            輸入本期分紅總點數，系統依「有效且未達上限」人數平均分配，再拆分 80% 現金錢包、20% 貢獻點。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <Label>本期分紅總點數</Label>
+              <Input
+                className="w-48"
+                type="number"
+                min={0}
+                step="0.01"
+                value={poolPoints}
+                onChange={(e) => setPoolPoints(e.target.value)}
+                placeholder="例：1000"
+              />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              可分配人數 <span className="font-semibold text-foreground">{payableRows.length}</span> 人（有效
+              {data.activeCount} 人，扣除已達上限）
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">每人均分點數</div>
+              <div className="text-2xl font-bold tabular-nums">{fmt(perPerson)}</div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">每人現金錢包 80%</div>
+              <div className="text-2xl font-bold tabular-nums">NT$ {fmt(splitPoints(perPerson).cash)}</div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">每人貢獻點 20%</div>
+              <div className="text-2xl font-bold tabular-nums">{fmt(splitPoints(perPerson).point)}</div>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            實際發放合計：{fmt(shareTotals.total)} 點＝現金 {fmt(shareTotals.cash)}＋貢獻點 {fmt(shareTotals.point)}
+            （超過剩餘額度者以剩餘額度為上限）。
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">加入名單</CardTitle>
           <CardDescription>搜尋姓名／會員編號／電話後選擇會員，設定授權期間。</CardDescription>
         </CardHeader>
