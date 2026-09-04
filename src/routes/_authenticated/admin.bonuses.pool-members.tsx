@@ -312,7 +312,7 @@ function PoolMembersPage() {
             <TableBody>
               {data.rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground">
                     尚無名單
                   </TableCell>
                 </TableRow>
