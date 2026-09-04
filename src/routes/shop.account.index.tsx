@@ -111,7 +111,7 @@ function Overview() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">尚可領取</span>
                     <span className={`tabular-nums ${p.capReached ? "text-destructive" : ""}`}>
-                      {p.capReached ? `已領完上限 ${p.cap.toLocaleString()}` : Number(p.remaining ?? 0).toLocaleString()}
+                      {p.capReached ? `已超過上限 ${p.cap.toLocaleString()}` : Number(p.remaining ?? 0).toLocaleString()}
                     </span>
                   </div>
                 )}
