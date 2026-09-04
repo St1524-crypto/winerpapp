@@ -68,6 +68,76 @@ function Overview() {
         ))}
       </div>
 
+      {pools.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {pools.map((p: any) => (
+            <Card key={p.kind}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center justify-between gap-2">
+                  <span>{p.label}</span>
+                  {p.status === "active" ? (
+                    <Badge>{p.statusLabel}</Badge>
+                  ) : (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button size="sm" variant="destructive" className="h-7 gap-1">
+                          停止分紅 <Info className="h-3.5 w-3.5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-72 text-sm">
+                        <div className="font-medium mb-1">停止分紅原因</div>
+                        {p.reasons.length === 0 ? (
+                          <p className="text-muted-foreground">未達成續領條件</p>
+                        ) : (
+                          <ul className="list-disc pl-4 space-y-1 text-muted-foreground">
+                            {p.reasons.map((r: string, i: number) => <li key={i}>{r}</li>)}
+                          </ul>
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">領獎上限</span>
+                  <span className="tabular-nums">{p.cap > 0 ? p.cap.toLocaleString() : "不適用"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">目前總收入</span>
+                  <span className="tabular-nums">{Number(p.totalEarnings).toLocaleString()}</span>
+                </div>
+                {p.cap > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">尚可領取</span>
+                    <span className={`tabular-nums ${p.capReached ? "text-destructive" : ""}`}>
+                      {p.capReached ? `已領完上限 ${p.cap.toLocaleString()}` : Number(p.remaining ?? 0).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {p.startsOn && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">合格期間</span>
+                    <span className="tabular-nums text-xs">{p.startsOn} ~ {p.endsOn}</span>
+                  </div>
+                )}
+                {p.task && (
+                  <div className="rounded-md border p-2 mt-2">
+                    <div className="flex items-center gap-1.5 font-medium">
+                      <ListChecks className="h-4 w-4 text-primary" /> 續領任務
+                    </div>
+                    <p className="mt-1">{p.task.text}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{p.task.progress}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">最近訂單</CardTitle>
