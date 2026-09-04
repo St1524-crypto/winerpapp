@@ -102,7 +102,7 @@ export const getMyDividendStatus = createServerFn({ method: "GET" })
             : `合格期間自 ${grant.starts_on} 起生效`,
         );
       }
-      if (capReached) reasons.push(`已領完上限 ${cap.toLocaleString()}`);
+      if (capReached) reasons.push(`已超過領獎上限 ${cap.toLocaleString()}，領獎完成`);
       if (vipExpired) reasons.push("VIP 年費已到期，續約後才可繼續領取");
 
       const vipRefCount = refs.filter((r) => r.is_vip).length;
