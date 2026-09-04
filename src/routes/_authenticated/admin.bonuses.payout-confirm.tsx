@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/admin/bonuses/payout-confi
 function Guard() {
   const { roles, loading } = useAuth();
   if (loading) return <div className="p-6 text-sm text-muted-foreground">載入中…</div>;
-  if (!roles.some((r) => ALLOWED.includes(r))) return <ForbiddenScreen />;
+  if (!roles.some((r) => ALLOWED.includes(r))) return <ForbiddenScreen requiredRoles={ALLOWED} />;
   return <PayoutConfirmPage />;
 }
 
