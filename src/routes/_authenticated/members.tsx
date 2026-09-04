@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 import { listMemberBonusGrants, listActiveBonusGrants, setMemberBonusGrant, type BonusEligibilityGrant, type BonusPoolKind } from "@/lib/bonus-grants.functions";
 import { adminGetMemberWallet } from "@/lib/cash-wallet.functions";
+import { adminGetMemberEarnings } from "@/lib/members-admin.functions";
 import { resolveVipTierCode, vipTierLabel } from "@/lib/vip-tier-label";
 
 type MemberWallet = { cash_balance: number; shopping_points: number; reward_points: number; discount_points: number; updated_at: string | null };
@@ -93,6 +94,7 @@ function Page() {
   const [grants, setGrants] = useState<Record<BonusPoolKind, GrantDraft>>({ consumption: emptyGrantDraft(), business: emptyGrantDraft() });
   const [grantsStatus, setGrantsStatus] = useState<"loading" | "ready" | "error">("loading");
   const [wallet, setWallet] = useState<MemberWallet | null>(null);
+  const [earnings, setEarnings] = useState<{ status: "loading" | "ready" | "error"; legacy: number; bonus: number; total: number }>({ status: "loading", legacy: 0, bonus: 0, total: 0 });
   const [walletStatus, setWalletStatus] = useState<"loading" | "ready" | "error">("loading");
   const walletReqRef = useRef(0);
   const [rewardPts, setRewardPts] = useState<{ status: "loading" | "ready" | "error"; pkg: number; order: number }>({ status: "loading", pkg: 0, order: 0 });
@@ -285,6 +287,10 @@ function Page() {
     adminGetMemberWallet({ data: { userId: m.id } })
       .then((w) => { if (wToken === walletReqRef.current) { setWallet(w as MemberWallet); setWalletStatus("ready"); } })
       .catch(() => { if (wToken === walletReqRef.current) setWalletStatus("error"); });
+    setEarnings({ status: "loading", legacy: 0, bonus: 0, total: 0 });
+    adminGetMemberEarnings({ data: { userId: m.id } })
+      .then((e: any) => { if (wToken === walletReqRef.current) setEarnings({ status: "ready", legacy: Number(e?.legacy ?? 0), bonus: Number(e?.bonus ?? 0), total: Number(e?.total ?? 0) }); })
+      .catch(() => { if (wToken === walletReqRef.current) setEarnings((p) => ({ ...p, status: "error" })); });
     setRewardPts({ status: "loading", pkg: 0, order: 0 });
     const rToken = ++rewardPtsReqRef.current;
     (async () => {
@@ -837,7 +843,18 @@ function Page() {
                 )}
               </div>
               <div className="rounded-md border border-border bg-muted/30 p-3">
-                <div className="text-xs font-medium text-muted-foreground mb-2">錢包餘額（唯讀）</div>
+                <div className="text-xs font-medium text-muted-foreground mb-2">會員收益與錢包餘額（唯讀）</div>
+                <div className="mb-3 rounded-md border border-primary/30 bg-primary/5 p-2">
+                  <div className="text-[11px] text-muted-foreground">累計總收益</div>
+                  <div className="text-lg font-bold font-mono text-primary">
+                    {earnings.status === "loading" ? "載入中…" : earnings.status === "error" ? "載入失敗" : earnings.total.toLocaleString("zh-TW")}
+                  </div>
+                  {earnings.status === "ready" && (
+                    <div className="text-[11px] text-muted-foreground">
+                      匯入累計獎金 {earnings.legacy.toLocaleString("zh-TW")} + 新增獎金 {earnings.bonus.toLocaleString("zh-TW")}
+                    </div>
+                  )}
+                </div>
                 {walletStatus === "loading" && <p className="text-[11px] text-muted-foreground">載入中…</p>}
                 {walletStatus === "error" && <p className="text-[11px] text-destructive">錢包餘額載入失敗</p>}
                 {walletStatus === "ready" && wallet && (

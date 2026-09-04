@@ -566,3 +566,14 @@ export const adminImpersonateMember = createServerFn({ method: "POST" })
     };
   });
 
+
+/** 管理員：查詢會員累計總收益（與會員中心「獎金明細」同定義） */
+export const adminGetMemberEarnings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { computeMemberEarnings } = await import("@/lib/member-earnings.server");
+    const map = await computeMemberEarnings(supabaseAdmin, [data.userId]);
+    return map.get(data.userId) ?? { legacy: 0, bonus: 0, total: 0 };
+  });
