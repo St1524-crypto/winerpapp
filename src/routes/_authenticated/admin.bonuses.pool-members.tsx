@@ -412,6 +412,11 @@ function PoolMembersPage() {
                       "—"
                     )}
                   </TableCell>
+                  <TableCell className="text-right text-xs font-semibold tabular-nums">
+                    {fmt(shareOf(r).total)}
+                  </TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">NT$ {fmt(shareOf(r).cash)}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">{fmt(shareOf(r).point)}</TableCell>
                   <TableCell>
                     <Input
                       type="date"
