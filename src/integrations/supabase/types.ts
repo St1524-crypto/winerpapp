@@ -1503,6 +1503,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          pickup_store: string | null
           shipping_address: string | null
           source: string | null
           updated_at: string
@@ -1517,6 +1518,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          pickup_store?: string | null
           shipping_address?: string | null
           source?: string | null
           updated_at?: string
@@ -1531,6 +1533,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          pickup_store?: string | null
           shipping_address?: string | null
           source?: string | null
           updated_at?: string
@@ -5258,6 +5261,7 @@ export type Database = {
           order_status: string
           order_type: string
           payment_status: string
+          pickup_store: string | null
           receiver_name: string
           receiver_phone: string
           referrer_id: string | null
@@ -5293,6 +5297,7 @@ export type Database = {
           order_status?: string
           order_type?: string
           payment_status?: string
+          pickup_store?: string | null
           receiver_name: string
           receiver_phone: string
           referrer_id?: string | null
@@ -5328,6 +5333,7 @@ export type Database = {
           order_status?: string
           order_type?: string
           payment_status?: string
+          pickup_store?: string | null
           receiver_name?: string
           receiver_phone?: string
           referrer_id?: string | null
@@ -7556,6 +7562,7 @@ export type Database = {
           order_status: string
           order_type: string
           payment_status: string
+          pickup_store: string | null
           receiver_name: string
           receiver_phone: string
           referrer_id: string | null
@@ -7605,6 +7612,7 @@ export type Database = {
           order_status: string
           order_type: string
           payment_status: string
+          pickup_store: string | null
           receiver_name: string
           receiver_phone: string
           referrer_id: string | null
