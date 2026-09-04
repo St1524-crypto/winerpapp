@@ -299,6 +299,9 @@ function PoolMembersPage() {
               <TableRow>
                 <TableHead>會員</TableHead>
                 <TableHead>階級</TableHead>
+                <TableHead className="text-right">領獎上限</TableHead>
+                <TableHead className="text-right">目前總收入</TableHead>
+                <TableHead className="text-right">剩餘額度</TableHead>
                 <TableHead>起日</TableHead>
                 <TableHead>迄日</TableHead>
                 <TableHead>狀態</TableHead>
