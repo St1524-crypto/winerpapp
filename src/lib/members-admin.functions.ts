@@ -167,7 +167,8 @@ const UpdateSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   email: z.string().trim().email().max(255).optional().or(z.literal("")),
   phone: z.string().trim().max(32).optional().or(z.literal("")),
-  password: z.string().min(6).max(72).optional().or(z.literal("")),
+  // 密碼一律改用「密碼工具」(adminResetMemberPassword) 單一流程處理，
+  // 避免兩條重設路徑行為不一致造成改完無法登入。
   referrerMemberNo: z.string().trim().max(32).optional().or(z.literal("")),
   clearReferrer: z.boolean().optional(),
   marketingSlug: z
