@@ -7,9 +7,9 @@ const toDateOnly = (date: Date) => date.toISOString().slice(0, 10);
 /**
  * 每日獎金排程入口。
  *
- * pg_cron 在台灣時間 03:00 呼叫，執行的是前一個營業日的池分紅。
+ * pg_cron 於每日 UTC 05:00（台灣時間 13:00）呼叫，執行的是前一個營業日的池分紅。
  * 因此營業分紅與消費分紅都必須用「來源訂單的台灣日期」作為日基準，
- * 不可直接使用凌晨執行當天的 settlement_date。
+ * 不可直接使用執行當天的 settlement_date。
  */
 export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
   server: {
