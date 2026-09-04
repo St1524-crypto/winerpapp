@@ -66,20 +66,52 @@ export const listBonusPoolMembers = createServerFn({ method: "POST" })
     }
     const map = new Map(profiles.map((p) => [p.id, p]));
 
-    const rows = (grants ?? []).map((g: any) => ({
-      ...g,
-      active: String(g.starts_on) <= today && String(g.ends_on) >= today,
-      name: map.get(g.user_id)?.name ?? null,
-      memberNo: map.get(g.user_id)?.member_no ?? null,
-      phone: map.get(g.user_id)?.phone ?? null,
-      tierCode: map.get(g.user_id)?.vip_tier ?? null,
-    }));
+    // 領獎上限：消費分紅取 business_bonus_cap_amount（E/A 消費回饋上限）；營業分紅取 upgrade_bonus_cap_amount（星級上限）
+    const { data: tiers } = await (supabaseAdmin as any)
+      .from("vip_tiers")
+      .select("code, name, business_bonus_cap_amount, upgrade_bonus_cap_amount");
+    const capOf = (tierCode: string | null) => {
+      const t = (tiers ?? []).find((x: any) => x.code === tierCode);
+      if (!t) return 0;
+      return Number(
+        (data.poolKind === "consumption" ? t.business_bonus_cap_amount : t.upgrade_bonus_cap_amount) ?? 0,
+      );
+    };
+
+    // 目前總收入（制度累計總收入，用於上限判定）
+    const earnings = new Map<string, number>();
+    await Promise.all(
+      ids.map(async (uid: string) => {
+        const { data: v } = await (supabaseAdmin as any).rpc("get_member_total_earnings", { _member_id: uid });
+        earnings.set(uid, Number(v ?? 0));
+      }),
+    );
+
+    const rows = (grants ?? []).map((g: any) => {
+      const tierCode = map.get(g.user_id)?.vip_tier ?? null;
+      const cap = capOf(tierCode);
+      const total = earnings.get(g.user_id) ?? 0;
+      return {
+        ...g,
+        active: String(g.starts_on) <= today && String(g.ends_on) >= today,
+        name: map.get(g.user_id)?.name ?? null,
+        memberNo: map.get(g.user_id)?.member_no ?? null,
+        phone: map.get(g.user_id)?.phone ?? null,
+        tierCode,
+        cap,
+        totalEarnings: total,
+        remaining: cap > 0 ? Math.max(0, cap - total) : null,
+        capReached: cap > 0 && total >= cap,
+      };
+    });
 
     return {
       today,
       pool: pool ?? null,
       rows,
       activeCount: rows.filter((r: any) => r.active).length,
+      capTotal: rows.reduce((s: number, r: any) => s + (r.cap ?? 0), 0),
+      earningsTotal: rows.reduce((s: number, r: any) => s + (r.totalEarnings ?? 0), 0),
       canEdit: list.includes("super_admin"),
     };
   });

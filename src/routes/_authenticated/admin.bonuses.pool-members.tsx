@@ -34,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/admin/bonuses/pool-members
 });
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
+const fmt = (n: number | null | undefined) => Number(n ?? 0).toLocaleString("zh-TW", { maximumFractionDigits: 2 });
 function plusMonths(d: string, m: number) {
   const base = new Date(d);
   base.setMonth(base.getMonth() + m);
@@ -212,7 +213,12 @@ function PoolMembersPage() {
               {data.activeCount} / {data.rows.length}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">今日：{data.today}</CardContent>
+          <CardContent className="text-sm text-muted-foreground">
+            今日：{data.today}
+            <div>
+              領獎上限合計：{fmt(data.capTotal)}／目前總收入合計：{fmt(data.earningsTotal)}
+            </div>
+          </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
@@ -293,6 +299,9 @@ function PoolMembersPage() {
               <TableRow>
                 <TableHead>會員</TableHead>
                 <TableHead>階級</TableHead>
+                <TableHead className="text-right">領獎上限</TableHead>
+                <TableHead className="text-right">目前總收入</TableHead>
+                <TableHead className="text-right">剩餘額度</TableHead>
                 <TableHead>起日</TableHead>
                 <TableHead>迄日</TableHead>
                 <TableHead>狀態</TableHead>
@@ -303,7 +312,7 @@ function PoolMembersPage() {
             <TableBody>
               {data.rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground">
                     尚無名單
                   </TableCell>
                 </TableRow>
@@ -314,6 +323,19 @@ function PoolMembersPage() {
                     {r.name ?? "—"} <Badge variant="outline">{r.memberNo ?? "—"}</Badge>
                   </TableCell>
                   <TableCell className="text-xs">{r.tierCode ?? "—"}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">
+                    {r.cap > 0 ? fmt(r.cap) : "無上限／未設定"}
+                  </TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">{fmt(r.totalEarnings)}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">
+                    {r.cap > 0 ? (
+                      <Badge variant={r.capReached ? "destructive" : "outline"}>
+                        {r.capReached ? "已達上限" : fmt(r.remaining)}
+                      </Badge>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Input
                       type="date"
