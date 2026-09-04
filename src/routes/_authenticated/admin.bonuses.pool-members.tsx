@@ -34,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/admin/bonuses/pool-members
 });
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
+const fmt = (n: number | null | undefined) => Number(n ?? 0).toLocaleString("zh-TW", { maximumFractionDigits: 2 });
 function plusMonths(d: string, m: number) {
   const base = new Date(d);
   base.setMonth(base.getMonth() + m);
