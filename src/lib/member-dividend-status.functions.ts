@@ -75,15 +75,26 @@ export const getMyDividendStatus = createServerFn({ method: "GET" })
       const tierOk = tierCode ? (isConsumption ? CONSUMPTION_TIERS : BUSINESS_TIERS).has(tierCode) : false;
       const inPeriod = !!grant && String(grant.starts_on) <= today && String(grant.ends_on) >= today;
 
+      const isStarTier = tierCode ? BUSINESS_TIERS.has(tierCode) : false;
       const reasons: string[] = [];
       if (!tierOk) {
+        if (isConsumption) {
+          reasons.push(
+            isStarTier
+              ? `消費分紅已領完成（目前位階 ${tierCode}），星級改領營業分紅`
+              : `目前位階 ${tierCode ?? "未設定"} 不符合消費分紅資格（限 E／A 級）`,
+          );
+        } else {
+          reasons.push(`目前位階 ${tierCode ?? "未設定"} 不符合營業分紅資格（限一星以上）`);
+        }
+      }
+      if (tierOk && !grant) {
         reasons.push(
           isConsumption
-            ? `目前位階 ${tierCode ?? "未設定"} 不符合消費分紅資格（限 E／A 級）`
-            : `目前位階 ${tierCode ?? "未設定"} 不符合營業分紅資格（限一星以上）`,
+            ? "未列入消費分紅合格名單，須推薦 1 位 VIP 才可續領"
+            : "須培育 1 名 E 級 VIP 才可續領營業分紅",
         );
       }
-      if (tierOk && !grant) reasons.push(`未列入${label}合格名單`);
       if (tierOk && grant && !inPeriod) {
         reasons.push(
           String(grant.ends_on) < today
