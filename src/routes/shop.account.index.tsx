@@ -1,13 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingBag, MapPin, Wallet, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ShoppingBag, MapPin, Wallet, Package, Info, ListChecks } from "lucide-react";
 import { ORDER_STATUS_LABELS } from "@/types/shop";
+import { getMyDividendStatus } from "@/lib/member-dividend-status.functions";
 
 export const Route = createFileRoute("/shop/account/")({ component: Overview });
+
 
 function Overview() {
   const { user } = useAuth();
