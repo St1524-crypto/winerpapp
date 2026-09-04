@@ -60,7 +60,7 @@ export const listBonusPoolMembers = createServerFn({ method: "POST" })
     if (ids.length) {
       const { data: p } = await (supabaseAdmin as any)
         .from("profiles")
-        .select("id, name, member_no, phone, vip_tier")
+        .select("id, name, member_no, phone, vip_tier, legacy_rank")
         .in("id", ids);
       profiles = p ?? [];
     }
@@ -78,28 +78,28 @@ export const listBonusPoolMembers = createServerFn({ method: "POST" })
       );
     };
 
-    // 目前總收入（制度累計總收入，用於上限判定）
-    const earnings = new Map<string, number>();
-    await Promise.all(
-      ids.map(async (uid: string) => {
-        const { data: v } = await (supabaseAdmin as any).rpc("get_member_total_earnings", { _member_id: uid });
-        earnings.set(uid, Number(v ?? 0));
-      }),
-    );
+    // 目前總收入：與會員中心「累計總收益」同定義（匯入累計獎金 + 新增獎金）
+    const { computeMemberEarnings, resolveTierCode } = await import("@/lib/member-earnings.server");
+    const earnings = await computeMemberEarnings(supabaseAdmin, ids);
 
     const rows = (grants ?? []).map((g: any) => {
-      const tierCode = map.get(g.user_id)?.vip_tier ?? null;
+      const profile = map.get(g.user_id) ?? null;
+      const tierCode = resolveTierCode(profile);
       const cap = capOf(tierCode);
-      const total = earnings.get(g.user_id) ?? 0;
+      const e = earnings.get(g.user_id) ?? { legacy: 0, bonus: 0, total: 0 };
+      const total = e.total;
       return {
         ...g,
         active: String(g.starts_on) <= today && String(g.ends_on) >= today,
-        name: map.get(g.user_id)?.name ?? null,
-        memberNo: map.get(g.user_id)?.member_no ?? null,
-        phone: map.get(g.user_id)?.phone ?? null,
+        name: profile?.name ?? null,
+        memberNo: profile?.member_no ?? null,
+        phone: profile?.phone ?? null,
         tierCode,
+        tierLabel: profile?.legacy_rank ?? tierCode,
         cap,
         totalEarnings: total,
+        legacyEarnings: e.legacy,
+        newEarnings: e.bonus,
         remaining: cap > 0 ? Math.max(0, cap - total) : null,
         capReached: cap > 0 && total >= cap,
       };
