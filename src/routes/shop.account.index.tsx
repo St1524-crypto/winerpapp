@@ -38,6 +38,14 @@ function Overview() {
     })();
   }, [user]);
 
+  const dividendFn = useServerFn(getMyDividendStatus);
+  const { data: dividend } = useQuery({
+    queryKey: ["my-dividend-status", user?.id],
+    queryFn: () => dividendFn(),
+    enabled: !!user,
+  });
+  const pools = (dividend as any)?.pools ?? [];
+
   const cards = [
     { label: "總訂單", value: stats.orders, icon: ShoppingBag, color: "text-blue-400" },
     { label: "處理中", value: stats.pending, icon: Package, color: "text-amber-400" },
@@ -48,6 +56,7 @@ function Overview() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
         {cards.map((c) => (
           <Card key={c.label}>
             <CardContent className="pt-6">
