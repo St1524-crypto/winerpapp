@@ -151,9 +151,16 @@ function Page() {
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
   const [pwNew, setPwNew] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
   const [showPwNew, setShowPwNew] = useState(false);
   const [pwForceChange, setPwForceChange] = useState(true);
-  const [pwResult, setPwResult] = useState<{ password?: string; email?: string | null; actionLink?: string | null } | null>(null);
+  const [pwResult, setPwResult] = useState<{
+    password?: string;
+    email?: string | null;
+    actionLink?: string | null;
+    loginVerified?: boolean;
+    company?: { slug: string; name: string } | null;
+  } | null>(null);
   const [pwBusy, setPwBusy] = useState<null | "reset" | "temp" | "impersonate">(null);
 
   // Debounce search input -> committed search; reset to page 1
@@ -363,7 +370,6 @@ function Page() {
           name: form.name,
           email: form.email,
           phone: form.phone,
-          password: form.password || undefined,
           referrerMemberNo: trimmedRef || undefined,
           clearReferrer: !trimmedRef && !!originalRef,
           marketingSlug: form.marketingSlug.trim() || "",
@@ -449,6 +455,7 @@ function Page() {
   function openPasswordTools(m: Member) {
     setPwTarget(m);
     setPwNew("");
+    setPwConfirm("");
     setShowPwNew(false);
     setPwForceChange(true);
     setPwResult(null);
@@ -456,6 +463,16 @@ function Page() {
 
   async function doResetPassword(useTemp: boolean) {
     if (!pwTarget) return;
+    if (!useTemp) {
+      if (pwNew !== pwNew.trim()) {
+        toast.error("密碼前後不可包含空白");
+        return;
+      }
+      if (pwNew !== pwConfirm) {
+        toast.error("兩次輸入的密碼不一致");
+        return;
+      }
+    }
     setPwBusy(useTemp ? "temp" : "reset");
     setPwResult(null);
     try {
@@ -467,8 +484,15 @@ function Page() {
           forceChangeOnNextLogin: pwForceChange,
         },
       });
-      setPwResult({ password: res.password, email: res.email });
-      toast.success(useTemp ? "已產生臨時密碼" : "密碼已重設");
+      setPwResult({
+        password: res.password,
+        email: res.email,
+        loginVerified: res.loginVerified,
+        company: res.company,
+      });
+      setPwNew("");
+      setPwConfirm("");
+      toast.success(useTemp ? "已產生臨時密碼並驗證登入" : "密碼已重設並驗證登入");
     } catch (e: any) { toast.error(e.message ?? "操作失敗"); }
     finally { setPwBusy(null); }
   }
@@ -986,15 +1010,7 @@ function Page() {
                 ))}
               </div>
               <div className="pt-2 border-t border-border" />
-              <div className="space-y-1">
-                <Label>重設密碼 (留空則不變更)</Label>
-                <Input type={showFormPassword ? "text" : "password"} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="輸入新密碼；留空則不變更" />
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Checkbox checked={showFormPassword} onCheckedChange={(value) => setShowFormPassword(!!value)} />
-                  顯示密碼
-                </label>
-                <p className="text-[11px] text-muted-foreground">只能顯示正在輸入的新密碼；系統無法查看會員既有原始密碼。</p>
-              </div>
+              <p className="text-xs text-muted-foreground">密碼請從會員清單的「密碼」工具重設；系統會確認輸入並立即驗證能否登入。</p>
             </div>
           )}
           <DialogFooter>
@@ -1054,8 +1070,20 @@ function Page() {
                 <Label>方式一：直接指定新密碼</Label>
                 <div className="flex gap-2">
                   <Input type={showPwNew ? "text" : "password"} value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder="至少 6 碼" />
-                  <Button onClick={() => doResetPassword(false)} disabled={pwBusy !== null || pwNew.length < 6} className="bg-gradient-primary shrink-0">重設</Button>
                 </div>
+                <Input
+                  type={showPwNew ? "text" : "password"}
+                  value={pwConfirm}
+                  onChange={(e) => setPwConfirm(e.target.value)}
+                  placeholder="再次輸入新密碼"
+                />
+                <Button
+                  onClick={() => doResetPassword(false)}
+                  disabled={pwBusy !== null || pwNew.length < 6 || pwNew !== pwConfirm}
+                  className="bg-gradient-primary w-full"
+                >
+                  重設並驗證登入
+                </Button>
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Checkbox checked={showPwNew} onCheckedChange={(value) => setShowPwNew(!!value)} />
                   顯示密碼
@@ -1083,12 +1111,20 @@ function Page() {
 
               {pwResult?.password && (
                 <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <div className="text-xs font-medium text-primary">
+                    {pwResult.loginVerified ? "登入驗證成功" : "新密碼已產生"}
+                  </div>
                   <div className="text-xs text-muted-foreground">新密碼（請立即複製並交付會員，僅顯示一次）</div>
                   <div className="flex gap-2 items-center">
                     <code className="flex-1 font-mono text-sm bg-background rounded px-2 py-1 border">{pwResult.password}</code>
-                    <Button size="sm" variant="ghost" onClick={() => copyText(pwResult.password!, "密碼")}><Copy className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => copyText(pwResult.password ?? "", "密碼")}><Copy className="h-4 w-4" /></Button>
                   </div>
                   {pwResult.email && <div className="text-[11px] text-muted-foreground">帳號：{pwResult.email}</div>}
+                  {pwResult.company && (
+                    <div className="text-[11px] text-muted-foreground">
+                      正確官網ID：<strong>{pwResult.company.slug}</strong>（{pwResult.company.name}）
+                    </div>
+                  )}
                 </div>
               )}
 

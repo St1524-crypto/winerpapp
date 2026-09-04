@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { randomInt } from "node:crypto";
+import { createClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -408,7 +409,10 @@ function generateTempPassword(len = 14): string {
 
 const ResetSchema = z.object({
   userId: z.string().uuid(),
-  password: z.string().min(6).max(72).optional(),
+  password: z.string().min(6).max(72).optional().refine(
+    (value) => value === undefined || value === value.trim(),
+    "密碼前後不可包含空白",
+  ),
   generateTemp: z.boolean().optional(),
   forceChangeOnNextLogin: z.boolean().optional(),
 });
@@ -430,12 +434,44 @@ export const adminResetMemberPassword = createServerFn({ method: "POST" })
       data.userId,
       {
         password,
-        user_metadata: data.forceChangeOnNextLogin
-          ? { must_change_password: true, password_reset_at: new Date().toISOString() }
-          : { password_reset_at: new Date().toISOString() },
+        user_metadata: {
+          must_change_password: !!data.forceChangeOnNextLogin,
+          password_reset_at: new Date().toISOString(),
+        },
       },
     );
     if (error) throw new Error(error.message);
+
+    const email = updated.user?.email ?? null;
+    if (!email) throw new Error("密碼已更新，但會員缺少登入 Email，請先補齊會員資料");
+
+    // Verify the exact password immediately with an isolated auth client. This
+    // catches malformed input or an auth update that did not become usable.
+    const verifyClient = createClient(
+      process.env['SUPABASE_URL']!,
+      process.env['SUPABASE_PUBLISHABLE_KEY']!,
+      { auth: { persistSession: false, autoRefreshToken: false, storage: undefined } },
+    );
+    const { data: verification, error: verificationError } = await verifyClient.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (verificationError || verification.user?.id !== data.userId) {
+      throw new Error("密碼已更新但登入驗證失敗，請勿交付此密碼並重新重設");
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("current_company_id")
+      .eq("id", data.userId)
+      .maybeSingle();
+    const { data: company } = profile?.current_company_id
+      ? await supabaseAdmin
+          .from("companies")
+          .select("slug, company_name")
+          .eq("id", profile.current_company_id)
+          .maybeSingle()
+      : { data: null };
 
     await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,
@@ -445,11 +481,21 @@ export const adminResetMemberPassword = createServerFn({ method: "POST" })
       metadata: {
         temp: !!data.generateTemp,
         force_change: !!data.forceChangeOnNextLogin,
-        target_email: updated.user?.email,
+        target_email: email,
+        login_verified: true,
+        company_id: profile?.current_company_id ?? null,
       },
     });
 
-    return { ok: true, password, email: updated.user?.email ?? null };
+    return {
+      ok: true,
+      password,
+      email,
+      loginVerified: true,
+      company: company
+        ? { slug: company.slug, name: company.company_name }
+        : null,
+    };
   });
 
 const ImpersonateSchema = z.object({ userId: z.string().uuid() });

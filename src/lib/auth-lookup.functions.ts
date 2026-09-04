@@ -29,7 +29,6 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
     } else {
       const phone = id.replace(/[\s-]/g, "");
       const upper = id.toUpperCase();
-      const isMemberNo = /^M\d{6}$/i.test(id);
       const isMarketingSlug = /^[A-Za-z0-9_-]{3,32}$/.test(id);
       const isPhone = /^\+?\d{8,15}$/.test(phone);
 
@@ -40,7 +39,9 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
 
       let row: { email: string | null } | null = null;
 
-      if (isMemberNo) {
+      // Member numbers are not limited to the legacy M123456 shape (for
+      // example TW17H00032), so always try an exact member-number lookup.
+      {
         const { data: byMemberNo } = await withCompanyScope(
           supabaseAdmin.from("profiles").select("email, current_company_id").eq("member_no", upper).limit(1),
         ).maybeSingle();
@@ -63,6 +64,37 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
         row = byPhone ?? null;
       }
       email = row?.email ?? null;
+
+      // A company-scoped miss may simply mean the visitor used the wrong
+      // portal. Resolve globally only when the identifier is unambiguous;
+      // the password is still verified below before any company is revealed.
+      if (!email && data.companyId) {
+        let globalRows: Array<{ email: string | null }> = [];
+        const { data: byMemberNo } = await supabaseAdmin
+          .from("profiles")
+          .select("email")
+          .eq("member_no", upper)
+          .limit(2);
+        globalRows = byMemberNo ?? [];
+
+        if (globalRows.length === 0 && isMarketingSlug) {
+          const { data: bySlug } = await supabaseAdmin
+            .from("profiles")
+            .select("email")
+            .ilike("marketing_slug", id)
+            .limit(2);
+          globalRows = bySlug ?? [];
+        }
+        if (globalRows.length === 0 && isPhone) {
+          const { data: byPhone } = await supabaseAdmin
+            .from("profiles")
+            .select("email")
+            .in("phone", [phone, `+${phone.replace(/^\+/, "")}`])
+            .limit(2);
+          globalRows = byPhone ?? [];
+        }
+        if (globalRows.length === 1) email = globalRows[0]?.email ?? null;
+      }
     }
 
     if (!email) {
@@ -81,6 +113,29 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
     if (error || !signIn.session || !signIn.user) {
       return { ok: false as const, error: "invalid_credentials" };
     }
+
+    if (data.companyId) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("current_company_id")
+        .eq("id", signIn.user.id)
+        .maybeSingle();
+      if (profile?.current_company_id && profile.current_company_id !== data.companyId) {
+        const { data: company } = await supabaseAdmin
+          .from("companies")
+          .select("slug, company_name")
+          .eq("id", profile.current_company_id)
+          .maybeSingle();
+        return {
+          ok: false as const,
+          error: "company_mismatch" as const,
+          company: company
+            ? { slug: company.slug, name: company.company_name }
+            : null,
+        };
+      }
+    }
+
     return {
       ok: true as const,
       session: {

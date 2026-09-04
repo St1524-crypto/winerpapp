@@ -11,7 +11,19 @@ import { recordLoginAttempt, recordSession, getTwoFactorStatus } from "@/lib/sec
 import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
 import { getPortalRouteForRoles, isAdminPortalRole } from "@/lib/roles";
 
-export const Route = createFileRoute("/admin/login")({ component: AdminLoginPage });
+export const Route = createFileRoute("/admin/login")({
+  component: AdminLoginPage,
+  head: () => ({
+    meta: [
+      { title: "管理員登入 — WinERP" },
+      { name: "description", content: "WinERP 授權管理人員登入入口。" },
+      { property: "og:title", content: "管理員登入 — WinERP" },
+      { property: "og:description", content: "WinERP 授權管理人員登入入口。" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+});
 
 type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
 
@@ -79,6 +91,11 @@ function AdminLoginPage() {
       }).catch(() => ({ ok: false as const, error: "invalid_credentials" }));
       if (!signInRes.ok) {
         await recordLoginAttempt({ data: { email: rawIdentifier, success: false, failureReason: signInRes.error } }).catch(() => {});
+        if (signInRes.error === "company_mismatch" && signInRes.company) {
+          throw new Error(
+            `帳號與密碼正確，但所屬官網是 ${signInRes.company.slug}（${signInRes.company.name}）。請更正官網ID後再登入。`,
+          );
+        }
         throw new Error("登入失敗，請確認帳號與密碼。");
       }
       const { data, error } = await supabase.auth.setSession(signInRes.session);
