@@ -86,7 +86,23 @@ export const createOrderShipment = createServerFn({ method: "POST" })
       },
     );
     if (error) throw new Error(error.message);
-    return result as { ok: boolean; shipment_id: string; items: number; shipping_status: string };
+    const shipment = result as { ok: boolean; shipment_id: string; items: number; shipping_status: string };
+
+    // 出貨完成後自動寄送通知信給客戶（失敗不影響出貨結果）
+    try {
+      const { notifyCustomerOrderShipped } = await import("@/lib/order-shipped-email.server");
+      await notifyCustomerOrderShipped({
+        orderId: data.orderId,
+        shipmentId: shipment.shipment_id,
+        shippingCompany: data.shippingCompany ?? null,
+        trackingNo: data.trackingNo ?? null,
+        shippedAt: data.shippedAt,
+      });
+    } catch (e) {
+      console.error("[shipments] order shipped email failed", e);
+    }
+
+    return shipment;
   });
 
 export const voidOrderShipment = createServerFn({ method: "POST" })
