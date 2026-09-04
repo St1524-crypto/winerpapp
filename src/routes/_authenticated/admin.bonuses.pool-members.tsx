@@ -323,6 +323,19 @@ function PoolMembersPage() {
                     {r.name ?? "—"} <Badge variant="outline">{r.memberNo ?? "—"}</Badge>
                   </TableCell>
                   <TableCell className="text-xs">{r.tierCode ?? "—"}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">
+                    {r.cap > 0 ? fmt(r.cap) : "無上限／未設定"}
+                  </TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">{fmt(r.totalEarnings)}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">
+                    {r.cap > 0 ? (
+                      <Badge variant={r.capReached ? "destructive" : "outline"}>
+                        {r.capReached ? "已達上限" : fmt(r.remaining)}
+                      </Badge>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Input
                       type="date"
