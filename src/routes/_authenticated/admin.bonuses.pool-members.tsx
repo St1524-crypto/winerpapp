@@ -35,6 +35,14 @@ export const Route = createFileRoute("/_authenticated/admin/bonuses/pool-members
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const fmt = (n: number | null | undefined) => Number(n ?? 0).toLocaleString("zh-TW", { maximumFractionDigits: 2 });
+/** 發放拆分：現金錢包 80%、貢獻點 20% */
+const CASH_RATE = 0.8;
+const round2 = (n: number) => Math.round(n * 100) / 100;
+function splitPoints(points: number) {
+  const total = round2(Math.max(0, points));
+  const cash = round2(total * CASH_RATE);
+  return { total, cash, point: round2(total - cash) };
+}
 function plusMonths(d: string, m: number) {
   const base = new Date(d);
   base.setMonth(base.getMonth() + m);
@@ -59,6 +67,7 @@ function PoolMembersPage() {
   const [reason, setReason] = useState("");
   const [bulkStart, setBulkStart] = useState(todayStr());
   const [bulkEnd, setBulkEnd] = useState(plusMonths(todayStr(), 3));
+  const [poolPoints, setPoolPoints] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -162,6 +171,23 @@ function PoolMembersPage() {
 
   const canEdit = !!data.canEdit;
 
+  // 均分試算：有效且未達上限者平均分配，再依 80% 現金 / 20% 貢獻點拆分
+  const payableRows = (data.rows as any[]).filter((r) => r.active && !r.capReached);
+  const totalPoints = Number(poolPoints) > 0 ? Number(poolPoints) : 0;
+  const perPerson = payableRows.length > 0 ? round2(totalPoints / payableRows.length) : 0;
+  const shareOf = (row: any) => {
+    if (!row.active || row.capReached || perPerson <= 0) return splitPoints(0);
+    const limited = row.cap > 0 && row.remaining != null ? Math.min(perPerson, Number(row.remaining)) : perPerson;
+    return splitPoints(limited);
+  };
+  const shareTotals = (data.rows as any[]).reduce(
+    (acc, r) => {
+      const s = shareOf(r);
+      return { total: acc.total + s.total, cash: acc.cash + s.cash, point: acc.point + s.point };
+    },
+    { total: 0, cash: 0, point: 0 },
+  );
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -238,6 +264,53 @@ function PoolMembersPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">分紅均分試算（現金 80%／貢獻點 20%）</CardTitle>
+          <CardDescription>
+            輸入本期分紅總點數，系統依「有效且未達上限」人數平均分配，再拆分 80% 現金錢包、20% 貢獻點。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <Label>本期分紅總點數</Label>
+              <Input
+                className="w-48"
+                type="number"
+                min={0}
+                step="0.01"
+                value={poolPoints}
+                onChange={(e) => setPoolPoints(e.target.value)}
+                placeholder="例：1000"
+              />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              可分配人數 <span className="font-semibold text-foreground">{payableRows.length}</span> 人（有效
+              {data.activeCount} 人，扣除已達上限）
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">每人均分點數</div>
+              <div className="text-2xl font-bold tabular-nums">{fmt(perPerson)}</div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">每人現金錢包 80%</div>
+              <div className="text-2xl font-bold tabular-nums">NT$ {fmt(splitPoints(perPerson).cash)}</div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">每人貢獻點 20%</div>
+              <div className="text-2xl font-bold tabular-nums">{fmt(splitPoints(perPerson).point)}</div>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            實際發放合計：{fmt(shareTotals.total)} 點＝現金 {fmt(shareTotals.cash)}＋貢獻點 {fmt(shareTotals.point)}
+            （超過剩餘額度者以剩餘額度為上限）。
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">加入名單</CardTitle>
           <CardDescription>搜尋姓名／會員編號／電話後選擇會員，設定授權期間。</CardDescription>
         </CardHeader>
@@ -302,6 +375,9 @@ function PoolMembersPage() {
                 <TableHead className="text-right">領獎上限</TableHead>
                 <TableHead className="text-right">目前總收入</TableHead>
                 <TableHead className="text-right">剩餘額度</TableHead>
+                <TableHead className="text-right">本期應發</TableHead>
+                <TableHead className="text-right">現金 80%</TableHead>
+                <TableHead className="text-right">貢獻點 20%</TableHead>
                 <TableHead>起日</TableHead>
                 <TableHead>迄日</TableHead>
                 <TableHead>狀態</TableHead>
@@ -312,7 +388,7 @@ function PoolMembersPage() {
             <TableBody>
               {data.rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center text-muted-foreground">
                     尚無名單
                   </TableCell>
                 </TableRow>
@@ -336,6 +412,11 @@ function PoolMembersPage() {
                       "—"
                     )}
                   </TableCell>
+                  <TableCell className="text-right text-xs font-semibold tabular-nums">
+                    {fmt(shareOf(r).total)}
+                  </TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">NT$ {fmt(shareOf(r).cash)}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">{fmt(shareOf(r).point)}</TableCell>
                   <TableCell>
                     <Input
                       type="date"
