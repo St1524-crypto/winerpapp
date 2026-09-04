@@ -956,6 +956,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [pickupStore, setPickupStore] = useState("");
   const [items, setItems] = useState<Array<{ product_id: string; name: string; sku: string | null; image: string | null; unit_price: number; quantity: number; reward_points: number; is_gift?: boolean; base_price?: number }>>([]);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [shippingFee, setShippingFee] = useState("0");
@@ -1003,7 +1004,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     queryFn: async () => {
       let q = supabase
         .from("customers")
-        .select("id,name,email,phone,company,shipping_address")
+        .select("id,name,email,phone,company,shipping_address,pickup_store")
         .eq("company_id", currentCompanyId!);
       const s = escLike(debouncedSearch);
       if (s) {
@@ -1634,7 +1635,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     onSuccess: (res) => {
       toast.success(res?.createdNewCustomer ? "訂單已建立，並同步新增客戶" : "訂單已建立");
       setOpen(false);
-      setCustomer(""); setEmail(""); setPhone(""); setAddress("");
+      setCustomer(""); setEmail(""); setPhone(""); setAddress(""); setPickupStore("");
       setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource(""); setNoRewardPoints(false);
       setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0"); setCashWalletPay("0");
       setDeposit("0"); setBalance("0");
@@ -1903,6 +1904,49 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                         {qaTouched.company && qaValidation.errors.company && (
                           <p className="text-xs text-destructive mt-1">{qaValidation.errors.company}</p>
                         )}
+                      </div>
+                      <div>
+                        <Label className="text-xs">地址</Label>
+                        <Input
+                          value={qaAddress}
+                          onChange={(e) => setQaAddress(e.target.value)}
+                          onBlur={() => setQaTouched((t) => ({ ...t, shipping_address: true }))}
+                          placeholder="收件地址"
+                          className={qaTouched.shipping_address && qaValidation.errors.shipping_address ? "border-destructive focus-visible:ring-destructive" : ""}
+                        />
+                        {qaTouched.shipping_address && qaValidation.errors.shipping_address && (
+                          <p className="text-xs text-destructive mt-1">{qaValidation.errors.shipping_address}</p>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">取件門市</Label>
+                          <Input
+                            value={qaPickupStore}
+                            onChange={(e) => setQaPickupStore(e.target.value)}
+                            placeholder="超商／自取門市"
+                          />
+                          {qaValidation.errors.pickup_store && (
+                            <p className="text-xs text-destructive mt-1">{qaValidation.errors.pickup_store}</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label className="text-xs">客戶來源</Label>
+                          <Input
+                            list="qa-customer-source-options"
+                            value={qaSource}
+                            onChange={(e) => setQaSource(e.target.value)}
+                            placeholder="官網／電話／介紹..."
+                          />
+                          <datalist id="qa-customer-source-options">
+                            {["官網", "電話", "展會", "介紹", "社群", "廣告", "其他"].map((o) => (
+                              <option key={o} value={o} />
+                            ))}
+                          </datalist>
+                          {qaValidation.errors.source && (
+                            <p className="text-xs text-destructive mt-1">{qaValidation.errors.source}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-2 pt-1">
