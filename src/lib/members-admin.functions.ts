@@ -341,10 +341,9 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
       }
     }
 
-    // Sync auth user (email / password) if provided
-    const authPatch: { email?: string; password?: string } = {};
+    // Sync auth user email only; password changes go through the password tool.
+    const authPatch: { email?: string } = {};
     if (data.email) authPatch.email = data.email;
-    if (data.password) authPatch.password = data.password;
     if (Object.keys(authPatch).length) {
       const { error } = await supabaseAdmin.auth.admin.updateUserById(
         data.userId,
@@ -360,7 +359,7 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
       action: "admin_update_member",
       metadata: {
         fields: Object.keys(profileUpdate),
-        password_changed: !!data.password,
+        password_changed: false,
         tier_change: tierChange,
       },
     });
