@@ -7,9 +7,9 @@ const toDateOnly = (date: Date) => date.toISOString().slice(0, 10);
 /**
  * 每日獎金排程入口。
  *
- * pg_cron 在台灣時間 03:00 呼叫，執行的是前一個營業日的池分紅。
+ * pg_cron 於每日 UTC 05:00（台灣時間 13:00）呼叫，執行的是前一個營業日的池分紅。
  * 因此營業分紅與消費分紅都必須用「來源訂單的台灣日期」作為日基準，
- * 不可直接使用凌晨執行當天的 settlement_date。
+ * 不可直接使用執行當天的 settlement_date。
  */
 export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
   server: {
@@ -32,9 +32,10 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
         const settlementDate = toDateOnly(twNow);
         const dailyDueAt = new Date((s as any).daily_next_settlement_at);
         const fallbackPoolSourceDate = toDateOnly(new Date(twNow.getTime() - DAY_MS));
+        // 池分紅日基準＝排程到期時間的「台灣日期前一天」，與排程時刻（UTC 05:00）無關。
         const poolSourceDate = Number.isNaN(dailyDueAt.getTime())
           ? fallbackPoolSourceDate
-          : toDateOnly(dailyDueAt);
+          : toDateOnly(new Date(dailyDueAt.getTime() + 8 * 60 * 60 * 1000 - DAY_MS));
         const result: Record<string, any> = {
           ran_at: now.toISOString(),
           settlement_date: settlementDate,
