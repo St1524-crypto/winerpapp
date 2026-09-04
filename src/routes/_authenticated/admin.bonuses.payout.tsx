@@ -20,6 +20,7 @@ import {
   runMonthlySettlement,
   updateBonusSettings,
 } from "@/lib/bonus.functions";
+import { bonusTypeLabel } from "@/lib/bonus-labels";
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -290,7 +291,7 @@ function Page() {
             <TableHeader>
               <TableRow>
                 <TableHead>會員</TableHead>
-                <TableHead>類型</TableHead>
+                <TableHead>獎金項目</TableHead>
                 <TableHead className="text-right">獎金</TableHead>
                 <TableHead className="text-right">現金錢包 80%</TableHead>
                 <TableHead className="text-right">貢獻點 20%</TableHead>
@@ -311,7 +312,10 @@ function Page() {
                   <TableCell className="text-xs">
                     {r.name ?? "—"} <Badge variant="outline">{r.memberNo ?? "—"}</Badge>
                   </TableCell>
-                  <TableCell className="text-xs">{r.bonusType}</TableCell>
+                  <TableCell className="text-xs">
+                    <Badge variant="secondary">{bonusTypeLabel(r.bonusType)}</Badge>
+                    <span className="ml-1 text-[10px] text-muted-foreground font-mono">{r.bonusType}</span>
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">{fmt(r.points)}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmt(r.cash)}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmt(r.point)}</TableCell>
