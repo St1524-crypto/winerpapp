@@ -492,7 +492,7 @@ export const adminResetMemberPassword = createServerFn({ method: "POST" })
       password,
       email,
       loginVerified: true,
-      company: company
+      company: company?.slug
         ? { slug: company.slug, name: company.company_name }
         : null,
     };

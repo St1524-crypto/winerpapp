@@ -129,7 +129,7 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
         return {
           ok: false as const,
           error: "company_mismatch" as const,
-          company: company
+          company: company?.slug
             ? { slug: company.slug, name: company.company_name }
             : null,
         };

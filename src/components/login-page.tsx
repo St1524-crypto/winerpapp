@@ -127,7 +127,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
         if (!signInRes.ok) {
           await recordLoginAttempt({ data: { email: rawIdentifier, success: false, failureReason: signInRes.error } }).catch(() => {});
-          if (signInRes.error === "company_mismatch" && signInRes.company) {
+          if (signInRes.error === "company_mismatch" && "company" in signInRes && signInRes.company) {
             throw new Error(
               `帳號與密碼正確，但不屬於目前官網。請將官網ID改為 ${signInRes.company.slug}（${signInRes.company.name}）後再登入。`,
             );

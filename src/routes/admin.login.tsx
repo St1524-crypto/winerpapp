@@ -91,7 +91,7 @@ function AdminLoginPage() {
       }).catch(() => ({ ok: false as const, error: "invalid_credentials" }));
       if (!signInRes.ok) {
         await recordLoginAttempt({ data: { email: rawIdentifier, success: false, failureReason: signInRes.error } }).catch(() => {});
-        if (signInRes.error === "company_mismatch" && signInRes.company) {
+        if (signInRes.error === "company_mismatch" && "company" in signInRes && signInRes.company) {
           throw new Error(
             `帳號與密碼正確，但所屬官網是 ${signInRes.company.slug}（${signInRes.company.name}）。請更正官網ID後再登入。`,
           );
