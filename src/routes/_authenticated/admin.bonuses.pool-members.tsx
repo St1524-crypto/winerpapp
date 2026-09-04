@@ -67,6 +67,7 @@ function PoolMembersPage() {
   const [reason, setReason] = useState("");
   const [bulkStart, setBulkStart] = useState(todayStr());
   const [bulkEnd, setBulkEnd] = useState(plusMonths(todayStr(), 3));
+  const [poolPoints, setPoolPoints] = useState("");
 
   const load = useCallback(async () => {
     try {
