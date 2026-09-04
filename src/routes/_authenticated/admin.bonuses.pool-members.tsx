@@ -171,6 +171,23 @@ function PoolMembersPage() {
 
   const canEdit = !!data.canEdit;
 
+  // 均分試算：有效且未達上限者平均分配，再依 80% 現金 / 20% 貢獻點拆分
+  const payableRows = (data.rows as any[]).filter((r) => r.active && !r.capReached);
+  const totalPoints = Number(poolPoints) > 0 ? Number(poolPoints) : 0;
+  const perPerson = payableRows.length > 0 ? round2(totalPoints / payableRows.length) : 0;
+  const shareOf = (row: any) => {
+    if (!row.active || row.capReached || perPerson <= 0) return splitPoints(0);
+    const limited = row.cap > 0 && row.remaining != null ? Math.min(perPerson, Number(row.remaining)) : perPerson;
+    return splitPoints(limited);
+  };
+  const shareTotals = (data.rows as any[]).reduce(
+    (acc, r) => {
+      const s = shareOf(r);
+      return { total: acc.total + s.total, cash: acc.cash + s.cash, point: acc.point + s.point };
+    },
+    { total: 0, cash: 0, point: 0 },
+  );
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
