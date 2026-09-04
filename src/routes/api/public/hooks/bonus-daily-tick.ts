@@ -32,9 +32,10 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
         const settlementDate = toDateOnly(twNow);
         const dailyDueAt = new Date((s as any).daily_next_settlement_at);
         const fallbackPoolSourceDate = toDateOnly(new Date(twNow.getTime() - DAY_MS));
+        // 池分紅日基準＝排程到期時間的「台灣日期前一天」，與排程時刻（UTC 05:00）無關。
         const poolSourceDate = Number.isNaN(dailyDueAt.getTime())
           ? fallbackPoolSourceDate
-          : toDateOnly(dailyDueAt);
+          : toDateOnly(new Date(dailyDueAt.getTime() + 8 * 60 * 60 * 1000 - DAY_MS));
         const result: Record<string, any> = {
           ran_at: now.toISOString(),
           settlement_date: settlementDate,
