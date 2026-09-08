@@ -11,6 +11,7 @@ const TABS = [
   { to: "/admin/operations/members", label: "協作成員" },
   { to: "/admin/operations/tasks", label: "任務管理" },
   { to: "/admin/operations/attendance", label: "打卡紀錄" },
+  { to: "/admin/operations/documents", label: "公司管理文件" },
   { to: "/admin/operations/assistant", label: "AI 助理" },
 ];
 
