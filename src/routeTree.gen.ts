@@ -139,6 +139,7 @@ import { Route as AuthenticatedB2bAccountsIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminQuotesNewRouteImport } from './routes/_authenticated/admin.quotes.new'
 import { Route as AuthenticatedAdminOperationsTasksRouteImport } from './routes/_authenticated/admin.operations.tasks'
 import { Route as AuthenticatedAdminOperationsMembersRouteImport } from './routes/_authenticated/admin.operations.members'
+import { Route as AuthenticatedAdminOperationsDocumentsRouteImport } from './routes/_authenticated/admin.operations.documents'
 import { Route as AuthenticatedAdminOperationsAttendanceRouteImport } from './routes/_authenticated/admin.operations.attendance'
 import { Route as AuthenticatedAdminOperationsAssistantRouteImport } from './routes/_authenticated/admin.operations.assistant'
 import { Route as AuthenticatedAdminCompaniesNewRouteImport } from './routes/_authenticated/admin.companies.new'
@@ -873,6 +874,12 @@ const AuthenticatedAdminOperationsMembersRoute =
     path: '/members',
     getParentRoute: () => AuthenticatedAdminOperationsRoute,
   } as any)
+const AuthenticatedAdminOperationsDocumentsRoute =
+  AuthenticatedAdminOperationsDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => AuthenticatedAdminOperationsRoute,
+  } as any)
 const AuthenticatedAdminOperationsAttendanceRoute =
   AuthenticatedAdminOperationsAttendanceRouteImport.update({
     id: '/attendance',
@@ -1165,6 +1172,7 @@ export interface FileRoutesByFullPath {
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
   '/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
+  '/admin/operations/documents': typeof AuthenticatedAdminOperationsDocumentsRoute
   '/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
   '/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
   '/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
@@ -1317,6 +1325,7 @@ export interface FileRoutesByTo {
   '/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
   '/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
+  '/admin/operations/documents': typeof AuthenticatedAdminOperationsDocumentsRoute
   '/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
   '/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
   '/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
@@ -1476,6 +1485,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/companies/new': typeof AuthenticatedAdminCompaniesNewRoute
   '/_authenticated/admin/operations/assistant': typeof AuthenticatedAdminOperationsAssistantRoute
   '/_authenticated/admin/operations/attendance': typeof AuthenticatedAdminOperationsAttendanceRoute
+  '/_authenticated/admin/operations/documents': typeof AuthenticatedAdminOperationsDocumentsRoute
   '/_authenticated/admin/operations/members': typeof AuthenticatedAdminOperationsMembersRoute
   '/_authenticated/admin/operations/tasks': typeof AuthenticatedAdminOperationsTasksRoute
   '/_authenticated/admin/quotes/new': typeof AuthenticatedAdminQuotesNewRoute
@@ -1635,6 +1645,7 @@ export interface FileRouteTypes {
     | '/admin/companies/new'
     | '/admin/operations/assistant'
     | '/admin/operations/attendance'
+    | '/admin/operations/documents'
     | '/admin/operations/members'
     | '/admin/operations/tasks'
     | '/admin/quotes/new'
@@ -1787,6 +1798,7 @@ export interface FileRouteTypes {
     | '/admin/companies/new'
     | '/admin/operations/assistant'
     | '/admin/operations/attendance'
+    | '/admin/operations/documents'
     | '/admin/operations/members'
     | '/admin/operations/tasks'
     | '/admin/quotes/new'
@@ -1945,6 +1957,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/companies/new'
     | '/_authenticated/admin/operations/assistant'
     | '/_authenticated/admin/operations/attendance'
+    | '/_authenticated/admin/operations/documents'
     | '/_authenticated/admin/operations/members'
     | '/_authenticated/admin/operations/tasks'
     | '/_authenticated/admin/quotes/new'
@@ -2911,6 +2924,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminOperationsMembersRouteImport
       parentRoute: typeof AuthenticatedAdminOperationsRoute
     }
+    '/_authenticated/admin/operations/documents': {
+      id: '/_authenticated/admin/operations/documents'
+      path: '/documents'
+      fullPath: '/admin/operations/documents'
+      preLoaderRoute: typeof AuthenticatedAdminOperationsDocumentsRouteImport
+      parentRoute: typeof AuthenticatedAdminOperationsRoute
+    }
     '/_authenticated/admin/operations/attendance': {
       id: '/_authenticated/admin/operations/attendance'
       path: '/attendance'
@@ -3218,6 +3238,7 @@ const AuthenticatedAdminCompaniesRouteWithChildren =
 interface AuthenticatedAdminOperationsRouteChildren {
   AuthenticatedAdminOperationsAssistantRoute: typeof AuthenticatedAdminOperationsAssistantRoute
   AuthenticatedAdminOperationsAttendanceRoute: typeof AuthenticatedAdminOperationsAttendanceRoute
+  AuthenticatedAdminOperationsDocumentsRoute: typeof AuthenticatedAdminOperationsDocumentsRoute
   AuthenticatedAdminOperationsMembersRoute: typeof AuthenticatedAdminOperationsMembersRoute
   AuthenticatedAdminOperationsTasksRoute: typeof AuthenticatedAdminOperationsTasksRoute
 }
@@ -3228,6 +3249,8 @@ const AuthenticatedAdminOperationsRouteChildren: AuthenticatedAdminOperationsRou
       AuthenticatedAdminOperationsAssistantRoute,
     AuthenticatedAdminOperationsAttendanceRoute:
       AuthenticatedAdminOperationsAttendanceRoute,
+    AuthenticatedAdminOperationsDocumentsRoute:
+      AuthenticatedAdminOperationsDocumentsRoute,
     AuthenticatedAdminOperationsMembersRoute:
       AuthenticatedAdminOperationsMembersRoute,
     AuthenticatedAdminOperationsTasksRoute:
