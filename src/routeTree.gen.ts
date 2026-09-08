@@ -84,6 +84,7 @@ import { Route as ShopAccountTasksRouteImport } from './routes/shop.account.task
 import { Route as ShopAccountStorefrontRouteImport } from './routes/shop.account.storefront'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
+import { Route as ShopAccountDocumentsRouteImport } from './routes/shop.account.documents'
 import { Route as ShopAccountAttendanceRouteImport } from './routes/shop.account.attendance'
 import { Route as ShopAccountAddressesRouteImport } from './routes/shop.account.addresses'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
@@ -550,6 +551,11 @@ const ShopAccountProfileRoute = ShopAccountProfileRouteImport.update({
 const ShopAccountPointsRoute = ShopAccountPointsRouteImport.update({
   id: '/points',
   path: '/points',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
+const ShopAccountDocumentsRoute = ShopAccountDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => ShopAccountRoute,
 } as any)
 const ShopAccountAttendanceRoute = ShopAccountAttendanceRouteImport.update({
@@ -1134,6 +1140,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
+  '/shop/account/documents': typeof ShopAccountDocumentsRoute
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
@@ -1288,6 +1295,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
+  '/shop/account/documents': typeof ShopAccountDocumentsRoute
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/tasks': typeof ShopAccountTasksRoute
@@ -1447,6 +1455,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
+  '/shop/account/documents': typeof ShopAccountDocumentsRoute
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
@@ -1607,6 +1616,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
+    | '/shop/account/documents'
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/storefront'
@@ -1761,6 +1771,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
+    | '/shop/account/documents'
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/tasks'
@@ -1919,6 +1930,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
+    | '/shop/account/documents'
     | '/shop/account/points'
     | '/shop/account/profile'
     | '/shop/account/storefront'
@@ -2537,6 +2549,13 @@ declare module '@tanstack/react-router' {
       path: '/points'
       fullPath: '/shop/account/points'
       preLoaderRoute: typeof ShopAccountPointsRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
+    '/shop/account/documents': {
+      id: '/shop/account/documents'
+      path: '/documents'
+      fullPath: '/shop/account/documents'
+      preLoaderRoute: typeof ShopAccountDocumentsRouteImport
       parentRoute: typeof ShopAccountRoute
     }
     '/shop/account/attendance': {
@@ -3448,6 +3467,7 @@ const ShopAccountStorefrontRouteWithChildren =
 interface ShopAccountRouteChildren {
   ShopAccountAddressesRoute: typeof ShopAccountAddressesRoute
   ShopAccountAttendanceRoute: typeof ShopAccountAttendanceRoute
+  ShopAccountDocumentsRoute: typeof ShopAccountDocumentsRoute
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
   ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRouteWithChildren
@@ -3463,6 +3483,7 @@ interface ShopAccountRouteChildren {
 const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountAddressesRoute: ShopAccountAddressesRoute,
   ShopAccountAttendanceRoute: ShopAccountAttendanceRoute,
+  ShopAccountDocumentsRoute: ShopAccountDocumentsRoute,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
   ShopAccountStorefrontRoute: ShopAccountStorefrontRouteWithChildren,

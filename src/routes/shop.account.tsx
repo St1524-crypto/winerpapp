@@ -20,6 +20,7 @@ const NAV = [
   { to: "/shop/account/orders", label: "我的訂單", icon: ShoppingBag },
   { to: "/shop/account/points", label: "我的點數 / 推薦", icon: Coins },
   { to: "/shop/account/wallet", label: "現金錢包", icon: Wallet },
+  { to: "/shop/account/documents", label: "公司管理文件", icon: FileText },
   { to: "/shop/vip", label: "VIP 升級", icon: Crown },
 ];
 
