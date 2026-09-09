@@ -847,6 +847,19 @@ function OrdersPage() {
                             ? <span className="text-primary font-medium">-{rewardUsedMap[o.id].toLocaleString()} 點</span>
                             : <span className="text-muted-foreground">—</span>}
                         </TableCell>
+                        <TableCell className="text-xs">
+                          {payMethodMap[o.id]?.length
+                            ? payMethodMap[o.id].map((m) => (
+                                <Badge key={m} variant="outline" className="mr-1 text-[10px] px-1.5 py-0">{m}</Badge>
+                              ))
+                            : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-xs">
+                          {earnedPoints(o)
+                            ? <span className="text-amber-600 font-medium">+{earnedPoints(o).toLocaleString()} 點</span>
+                            : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+
 
 
                         <TableCell>
