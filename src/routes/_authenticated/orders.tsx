@@ -781,6 +781,8 @@ function OrdersPage() {
                       <TableHead>備註</TableHead>
                       <TableHead className="text-right">總金額</TableHead>
                       <TableHead className="text-right">貢獻點</TableHead>
+                      <TableHead>支付方式</TableHead>
+                      <TableHead className="text-right">獎勵點</TableHead>
 
 
                       <TableHead>訂單狀態</TableHead>
