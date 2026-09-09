@@ -405,6 +405,30 @@ function OrdersPage() {
     },
   });
 
+  // 每筆訂單使用的貢獻點（reward 錢包折抵）
+  const orderIdsKey = (ordersQ.data ?? []).map((o) => o.id).join(",");
+  const rewardUsedQ = useQuery({
+    queryKey: ["sales-orders-reward-used", orderIdsKey],
+    enabled: !!orderIdsKey,
+    queryFn: async () => {
+      const ids = orderIdsKey.split(",");
+      const { data, error } = await supabase
+        .from("order_point_payments")
+        .select("sales_order_id, points_used")
+        .in("sales_order_id", ids)
+        .eq("point_type", "reward");
+      if (error) throw new Error(error.message);
+      const map: Record<string, number> = {};
+      for (const r of (data ?? []) as any[]) {
+        map[r.sales_order_id] = (map[r.sales_order_id] ?? 0) + Number(r.points_used ?? 0);
+      }
+      return map;
+    },
+  });
+  const rewardUsedMap = rewardUsedQ.data ?? {};
+
+
+
   const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month" | "custom">("month");
   const todayStr = useMemo(() => {
     const d = new Date();
@@ -636,6 +660,12 @@ function OrdersPage() {
                         <div className="text-xs text-muted-foreground truncate">
                           {o.customer_email ?? "—"} · {new Date(o.created_at).toLocaleDateString("zh-TW")}
                         </div>
+                        {!!rewardUsedMap[o.id] && (
+                          <div className="text-xs text-primary">
+                            貢獻點折抵 -{rewardUsedMap[o.id].toLocaleString()} 點
+                          </div>
+                        )}
+
                         <div className="text-xs text-muted-foreground truncate">
                           業務：{o.salesperson_name ?? "—"} · 建檔：{o.created_by_name ?? "—"}
                         </div>
@@ -702,6 +732,8 @@ function OrdersPage() {
                       <TableHead>建檔人員</TableHead>
                       <TableHead>備註</TableHead>
                       <TableHead className="text-right">總金額</TableHead>
+                      <TableHead className="text-right">貢獻點</TableHead>
+
 
                       <TableHead>訂單狀態</TableHead>
                       <TableHead>出貨</TableHead>
@@ -760,6 +792,12 @@ function OrdersPage() {
                             : <span className="text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
+                        <TableCell className="text-right tabular-nums text-xs">
+                          {rewardUsedMap[o.id]
+                            ? <span className="text-primary font-medium">-{rewardUsedMap[o.id].toLocaleString()} 點</span>
+                            : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+
 
                         <TableCell>
                           <OrderStatusCell orderId={o.id} value={o.order_status} onChanged={refresh} />

@@ -7752,10 +7752,6 @@ export type Database = {
         }
       }
       current_company_id: { Args: never; Returns: string }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
       distribute_daily_revenue_bonus: {
         Args: { _date?: string }
         Returns: {
@@ -7797,11 +7793,6 @@ export type Database = {
           pool_id: string
           skipped_count: number
         }[]
-      }
-      email_queue_dispatch: { Args: never; Returns: undefined }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
       }
       generate_customer_no: { Args: never; Returns: string }
       generate_member_no: { Args: never; Returns: string }
@@ -7919,15 +7910,6 @@ export type Database = {
       }
       is_operation_participant: { Args: { _user_id: string }; Returns: boolean }
       map_legacy_rank_to_code: { Args: { _legacy: string }; Returns: string }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
-        Returns: number
-      }
       process_paid_order_upgrades: {
         Args: { p_operator?: string; p_order_id: string }
         Returns: Json
@@ -7963,14 +7945,6 @@ export type Database = {
           unit_price: number
           unit_reward_points: number
           visibility: string
-        }[]
-      }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
         }[]
       }
       recalc_order_shipping_status: {
