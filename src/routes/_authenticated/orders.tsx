@@ -708,6 +708,11 @@ function OrdersPage() {
                             貢獻點折抵 -{rewardUsedMap[o.id].toLocaleString()} 點
                           </div>
                         )}
+                        <div className="text-xs text-muted-foreground truncate">
+                          支付方式：{payMethodMap[o.id]?.join("、") ?? "—"} · 獎勵點：
+                          {earnedPoints(o) ? `+${earnedPoints(o).toLocaleString()} 點` : "—"}
+                        </div>
+
 
                         <div className="text-xs text-muted-foreground truncate">
                           業務：{o.salesperson_name ?? "—"} · 建檔：{o.created_by_name ?? "—"}
