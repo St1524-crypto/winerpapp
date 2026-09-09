@@ -82,35 +82,42 @@ export const requestGuestSignupOtp = createServerFn({ method: "POST" })
       return { ok: false as const, error: "send_failed" as const };
     }
 
-    // Enqueue OTP email via existing transactional queue.
+    // Send OTP email through Lovable's managed email delivery.
     try {
-      const messageId = crypto.randomUUID();
-      const subject = "【源晶商城】會員註冊驗證碼";
-      const html = `<div style="font-family:sans-serif;line-height:1.6"><p>您的會員註冊驗證碼是：</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;color:#0f172a">${code}</p><p style="color:#64748b;font-size:13px">此驗證碼 10 分鐘內有效。若非本人操作請忽略本信。</p></div>`;
-      const text = `您的會員註冊驗證碼是：${code}（10 分鐘內有效）`;
-      await supabaseAdmin.from("email_send_log").insert({
-        message_id: messageId,
+      const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+      const result = await sendTemplateEmail("guest-signup-otp", email, {
+        templateData: { code },
+      });
+      const { error: logError } = await supabaseAdmin.from("email_send_log").insert({
+        message_id: null,
         template_name: "guest-signup-otp",
         recipient_email: email,
-        status: "pending",
+        status: result.sent ? "sent" : "suppressed",
       });
-      await (supabaseAdmin as any).rpc("enqueue_email", {
-        queue_name: "transactional_emails",
-        payload: {
-          message_id: messageId,
-          to: email,
-          from: "winerpapp <noreply@winerp.app>",
-          sender_domain: "win889999.winerp.app",
-          subject,
-          html,
-          text,
-          purpose: "transactional",
-          label: "guest-signup-otp",
-          queued_at: new Date().toISOString(),
-        },
+      if (logError) {
+        console.error("[guest-otp] email_send_log insert failed", {
+          code: logError.code,
+          message: logError.message,
+        });
+      }
+      if (!result.sent) {
+        return { ok: false as const, error: "send_failed" as const };
+      }
+    } catch (e: any) {
+      console.error("[guest-otp] email send failed", e);
+      const { error: logError } = await supabaseAdmin.from("email_send_log").insert({
+        message_id: null,
+        template_name: "guest-signup-otp",
+        recipient_email: email,
+        status: "failed",
+        error_message: e?.message || String(e),
       });
-    } catch (e) {
-      console.error("[guest-otp] email enqueue failed", e);
+      if (logError) {
+        console.error("[guest-otp] email_send_log insert failed", {
+          code: logError.code,
+          message: logError.message,
+        });
+      }
       return { ok: false as const, error: "send_failed" as const };
     }
 
