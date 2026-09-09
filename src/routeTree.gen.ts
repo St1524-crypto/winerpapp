@@ -88,6 +88,7 @@ import { Route as ShopAccountDocumentsRouteImport } from './routes/shop.account.
 import { Route as ShopAccountAttendanceRouteImport } from './routes/shop.account.attendance'
 import { Route as ShopAccountAddressesRouteImport } from './routes/shop.account.addresses'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as AuthenticatedProductsProductIdRouteImport } from './routes/_authenticated/products.$productId'
 import { Route as AuthenticatedFinanceTransactionsRouteImport } from './routes/_authenticated/finance.transactions'
 import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_authenticated/finance.receivable'
@@ -573,6 +574,11 @@ const ShopAccountAddressesRoute = ShopAccountAddressesRouteImport.update({
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
+  id: '/lovable/email/events',
+  path: '/lovable/email/events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedProductsProductIdRoute =
@@ -1149,6 +1155,7 @@ export interface FileRoutesByFullPath {
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
@@ -1306,6 +1313,7 @@ export interface FileRoutesByTo {
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
@@ -1468,6 +1476,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/_authenticated/finance/transactions': typeof AuthenticatedFinanceTransactionsRoute
   '/_authenticated/products/$productId': typeof AuthenticatedProductsProductIdRoute
+  '/lovable/email/events': typeof LovableEmailEventsRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/shop/account/addresses': typeof ShopAccountAddressesRoute
   '/shop/account/attendance': typeof ShopAccountAttendanceRoute
@@ -1631,6 +1640,7 @@ export interface FileRouteTypes {
     | '/finance/receivable'
     | '/finance/transactions'
     | '/products/$productId'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
@@ -1788,6 +1798,7 @@ export interface FileRouteTypes {
     | '/finance/receivable'
     | '/finance/transactions'
     | '/products/$productId'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
@@ -1949,6 +1960,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/receivable'
     | '/_authenticated/finance/transactions'
     | '/_authenticated/products/$productId'
+    | '/lovable/email/events'
     | '/lovable/email/suppression'
     | '/shop/account/addresses'
     | '/shop/account/attendance'
@@ -2038,6 +2050,7 @@ export interface RootRouteChildren {
   UCodeRoute: typeof UCodeRoute
   GroupBuysIndexRoute: typeof GroupBuysIndexRoute
   LoginIndexRoute: typeof LoginIndexRoute
+  LovableEmailEventsRoute: typeof LovableEmailEventsRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicAiRecruitRoute: typeof ApiPublicAiRecruitRoute
   ApiPublicAiSupportGuestRoute: typeof ApiPublicAiSupportGuestRoute
@@ -2603,6 +2616,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/suppression'
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/events': {
+      id: '/lovable/email/events'
+      path: '/lovable/email/events'
+      fullPath: '/lovable/email/events'
+      preLoaderRoute: typeof LovableEmailEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/products/$productId': {
@@ -3622,6 +3642,7 @@ const rootRouteChildren: RootRouteChildren = {
   UCodeRoute: UCodeRoute,
   GroupBuysIndexRoute: GroupBuysIndexRoute,
   LoginIndexRoute: LoginIndexRoute,
+  LovableEmailEventsRoute: LovableEmailEventsRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicAiRecruitRoute: ApiPublicAiRecruitRoute,
   ApiPublicAiSupportGuestRoute: ApiPublicAiSupportGuestRoute,
