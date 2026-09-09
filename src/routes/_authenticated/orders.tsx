@@ -786,6 +786,12 @@ function OrdersPage() {
                             : <span className="text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
+                        <TableCell className="text-right tabular-nums text-xs">
+                          {rewardUsedMap[o.id]
+                            ? <span className="text-primary font-medium">-{rewardUsedMap[o.id].toLocaleString()} 點</span>
+                            : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+
 
                         <TableCell>
                           <OrderStatusCell orderId={o.id} value={o.order_status} onChanged={refresh} />
