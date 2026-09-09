@@ -427,6 +427,49 @@ function OrdersPage() {
   });
   const rewardUsedMap = rewardUsedQ.data ?? {};
 
+  // 每筆訂單的支付方式與產生的獎勵點
+  const payMethodQ = useQuery({
+    queryKey: ["sales-orders-pay-methods", orderIdsKey],
+    enabled: !!orderIdsKey,
+    queryFn: async () => {
+      const ids = orderIdsKey.split(",");
+      const { data, error } = await supabase
+        .from("payments")
+        .select("sales_order_id, payment_method, amount")
+        .in("sales_order_id", ids);
+      if (error) throw new Error(error.message);
+      const map: Record<string, string[]> = {};
+      for (const r of (data ?? []) as any[]) {
+        const label = PAYMENT_METHOD_LABEL[r.payment_method] ?? r.payment_method;
+        const arr = (map[r.sales_order_id] ??= []);
+        if (!arr.includes(label)) arr.push(label);
+      }
+      return map;
+    },
+  });
+  const payMethodMap = payMethodQ.data ?? {};
+
+  const rewardEarnedQ = useQuery({
+    queryKey: ["sales-orders-reward-earned", orderIdsKey],
+    enabled: !!orderIdsKey,
+    queryFn: async () => {
+      const ids = orderIdsKey.split(",");
+      const { data, error } = await supabase
+        .from("sales_order_items")
+        .select("sales_order_id, quantity, tier_reward_points")
+        .in("sales_order_id", ids);
+      if (error) throw new Error(error.message);
+      const map: Record<string, number> = {};
+      for (const r of (data ?? []) as any[]) {
+        const pts = Number(r.tier_reward_points ?? 0) * Number(r.quantity ?? 0);
+        map[r.sales_order_id] = (map[r.sales_order_id] ?? 0) + (Number.isFinite(pts) ? pts : 0);
+      }
+      return map;
+    },
+  });
+  const rewardEarnedMap = rewardEarnedQ.data ?? {};
+  const earnedPoints = (o: OrderRow) => (o.no_reward_points ? 0 : rewardEarnedMap[o.id] ?? 0);
+
 
 
   const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month" | "custom">("month");
