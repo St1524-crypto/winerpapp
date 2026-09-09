@@ -121,20 +121,35 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
         .eq("id", signIn.user.id)
         .maybeSingle();
       if (profile?.current_company_id && profile.current_company_id !== data.companyId) {
-        const { data: company } = await supabaseAdmin
-          .from("companies")
-          .select("slug, company_name")
-          .eq("id", profile.current_company_id)
-          .maybeSingle();
-        return {
-          ok: false as const,
-          error: "company_mismatch" as const,
-          company: company?.slug
-            ? { slug: company.slug, name: company.company_name }
-            : null,
-        };
+        // 使用者可能同時隸屬多家公司；若其為所選公司的成員，視為合法登入並切換目前公司。
+        const { data: membership } = await supabaseAdmin
+          .from("company_members")
+          .select("id")
+          .eq("user_id", signIn.user.id)
+          .eq("company_id", data.companyId)
+          .limit(1);
+        if (membership?.length) {
+          await supabaseAdmin
+            .from("profiles")
+            .update({ current_company_id: data.companyId })
+            .eq("id", signIn.user.id);
+        } else {
+          const { data: company } = await supabaseAdmin
+            .from("companies")
+            .select("slug, company_name")
+            .eq("id", profile.current_company_id)
+            .maybeSingle();
+          return {
+            ok: false as const,
+            error: "company_mismatch" as const,
+            company: company?.slug
+              ? { slug: company.slug, name: company.company_name }
+              : null,
+          };
+        }
       }
     }
+
 
     return {
       ok: true as const,
