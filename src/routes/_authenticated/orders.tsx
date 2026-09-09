@@ -405,6 +405,30 @@ function OrdersPage() {
     },
   });
 
+  // 每筆訂單使用的貢獻點（reward 錢包折抵）
+  const orderIdsKey = (ordersQ.data ?? []).map((o) => o.id).join(",");
+  const rewardUsedQ = useQuery({
+    queryKey: ["sales-orders-reward-used", orderIdsKey],
+    enabled: !!orderIdsKey,
+    queryFn: async () => {
+      const ids = orderIdsKey.split(",");
+      const { data, error } = await supabase
+        .from("order_point_payments")
+        .select("sales_order_id, points_used")
+        .in("sales_order_id", ids)
+        .eq("point_type", "reward");
+      if (error) throw new Error(error.message);
+      const map: Record<string, number> = {};
+      for (const r of (data ?? []) as any[]) {
+        map[r.sales_order_id] = (map[r.sales_order_id] ?? 0) + Number(r.points_used ?? 0);
+      }
+      return map;
+    },
+  });
+  const rewardUsedMap = rewardUsedQ.data ?? {};
+
+
+
   const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month" | "custom">("month");
   const todayStr = useMemo(() => {
     const d = new Date();
