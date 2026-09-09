@@ -427,6 +427,49 @@ function OrdersPage() {
   });
   const rewardUsedMap = rewardUsedQ.data ?? {};
 
+  // 每筆訂單的支付方式與產生的獎勵點
+  const payMethodQ = useQuery({
+    queryKey: ["sales-orders-pay-methods", orderIdsKey],
+    enabled: !!orderIdsKey,
+    queryFn: async () => {
+      const ids = orderIdsKey.split(",");
+      const { data, error } = await supabase
+        .from("payments")
+        .select("sales_order_id, payment_method, amount")
+        .in("sales_order_id", ids);
+      if (error) throw new Error(error.message);
+      const map: Record<string, string[]> = {};
+      for (const r of (data ?? []) as any[]) {
+        const label = PAYMENT_METHOD_LABEL[r.payment_method] ?? r.payment_method;
+        const arr = (map[r.sales_order_id] ??= []);
+        if (!arr.includes(label)) arr.push(label);
+      }
+      return map;
+    },
+  });
+  const payMethodMap = payMethodQ.data ?? {};
+
+  const rewardEarnedQ = useQuery({
+    queryKey: ["sales-orders-reward-earned", orderIdsKey],
+    enabled: !!orderIdsKey,
+    queryFn: async () => {
+      const ids = orderIdsKey.split(",");
+      const { data, error } = await supabase
+        .from("sales_order_items")
+        .select("sales_order_id, quantity, tier_reward_points")
+        .in("sales_order_id", ids);
+      if (error) throw new Error(error.message);
+      const map: Record<string, number> = {};
+      for (const r of (data ?? []) as any[]) {
+        const pts = Number(r.tier_reward_points ?? 0) * Number(r.quantity ?? 0);
+        map[r.sales_order_id] = (map[r.sales_order_id] ?? 0) + (Number.isFinite(pts) ? pts : 0);
+      }
+      return map;
+    },
+  });
+  const rewardEarnedMap = rewardEarnedQ.data ?? {};
+  const earnedPoints = (o: OrderRow) => (o.no_reward_points ? 0 : rewardEarnedMap[o.id] ?? 0);
+
 
 
   const [revenuePeriod, setRevenuePeriod] = useState<"today" | "week" | "month" | "custom">("month");
@@ -665,6 +708,11 @@ function OrdersPage() {
                             貢獻點折抵 -{rewardUsedMap[o.id].toLocaleString()} 點
                           </div>
                         )}
+                        <div className="text-xs text-muted-foreground truncate">
+                          支付方式：{payMethodMap[o.id]?.join("、") ?? "—"} · 獎勵點：
+                          {earnedPoints(o) ? `+${earnedPoints(o).toLocaleString()} 點` : "—"}
+                        </div>
+
 
                         <div className="text-xs text-muted-foreground truncate">
                           業務：{o.salesperson_name ?? "—"} · 建檔：{o.created_by_name ?? "—"}
@@ -733,6 +781,8 @@ function OrdersPage() {
                       <TableHead>備註</TableHead>
                       <TableHead className="text-right">總金額</TableHead>
                       <TableHead className="text-right">貢獻點</TableHead>
+                      <TableHead>支付方式</TableHead>
+                      <TableHead className="text-right">獎勵點</TableHead>
 
 
                       <TableHead>訂單狀態</TableHead>
@@ -797,6 +847,19 @@ function OrdersPage() {
                             ? <span className="text-primary font-medium">-{rewardUsedMap[o.id].toLocaleString()} 點</span>
                             : <span className="text-muted-foreground">—</span>}
                         </TableCell>
+                        <TableCell className="text-xs">
+                          {payMethodMap[o.id]?.length
+                            ? payMethodMap[o.id].map((m) => (
+                                <Badge key={m} variant="outline" className="mr-1 text-[10px] px-1.5 py-0">{m}</Badge>
+                              ))
+                            : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-xs">
+                          {earnedPoints(o)
+                            ? <span className="text-amber-600 font-medium">+{earnedPoints(o).toLocaleString()} 點</span>
+                            : <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+
 
 
                         <TableCell>
