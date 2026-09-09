@@ -660,6 +660,12 @@ function OrdersPage() {
                         <div className="text-xs text-muted-foreground truncate">
                           {o.customer_email ?? "—"} · {new Date(o.created_at).toLocaleDateString("zh-TW")}
                         </div>
+                        {!!rewardUsedMap[o.id] && (
+                          <div className="text-xs text-primary">
+                            貢獻點折抵 -{rewardUsedMap[o.id].toLocaleString()} 點
+                          </div>
+                        )}
+
                         <div className="text-xs text-muted-foreground truncate">
                           業務：{o.salesperson_name ?? "—"} · 建檔：{o.created_by_name ?? "—"}
                         </div>
