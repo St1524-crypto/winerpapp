@@ -1341,6 +1341,47 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     });
     setProductPickerOpen(false);
   }
+  async function quickCreateProduct() {
+    const name = qpName.trim();
+    if (!name) { toast.error("請輸入商品名稱"); return; }
+    if (!currentCompanyId) { toast.error("請先選擇公司"); return; }
+    const price = Number(qpPrice) || 0;
+    if (price < 0) { toast.error("售價不可小於 0"); return; }
+    setQpSaving(true);
+    try {
+      let sku = qpSku.trim();
+      if (!sku) {
+        const { generateSku } = await import("@/lib/sku");
+        sku = await generateSku("GEN");
+      } else {
+        const { isSkuUnique } = await import("@/lib/sku");
+        if (!(await isSkuUnique(sku))) throw new Error("SKU 已存在，請換一組");
+      }
+      const { data, error } = await supabase
+        .from("products")
+        .insert({
+          company_id: currentCompanyId,
+          name,
+          sku,
+          price,
+          stock: Number(qpStock) || 0,
+          reward_points: Number(qpReward) || 0,
+          status: "active",
+        })
+        .select("id,name,sku,price,image,stock,status,reward_points")
+        .single();
+      if (error) throw new Error(error.message);
+      await productsQ.refetch();
+      addItem(data as any);
+      toast.success(`已新增商品並加入訂單：${name}`);
+      setQpOpen(false);
+      setQpName(""); setQpSku(""); setQpPrice("0"); setQpStock("0"); setQpReward("0");
+    } catch (e: any) {
+      toast.error("新增商品失敗", { description: String(e?.message ?? e) });
+    } finally {
+      setQpSaving(false);
+    }
+  }
   function updateItem(idx: number, patch: Partial<{ unit_price: number; quantity: number; is_gift: boolean }>) {
     setItems((prev) => prev.map((it, i) => {
       if (i !== idx) return it;
