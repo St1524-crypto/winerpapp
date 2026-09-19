@@ -1085,6 +1085,14 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [qaAddress, setQaAddress] = useState("");
   const [qaPickupStore, setQaPickupStore] = useState("");
   const [qaSource, setQaSource] = useState("");
+  // 快速新增商品
+  const [qpOpen, setQpOpen] = useState(false);
+  const [qpName, setQpName] = useState("");
+  const [qpSku, setQpSku] = useState("");
+  const [qpPrice, setQpPrice] = useState("0");
+  const [qpStock, setQpStock] = useState("0");
+  const [qpReward, setQpReward] = useState("0");
+  const [qpSaving, setQpSaving] = useState(false);
   const qc = useQueryClient();
   const { currentCompanyId } = useCurrentCompany();
 
@@ -1332,6 +1340,47 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       return [...prev, { product_id: p.id, name: p.name, sku: p.sku, image: p.image, unit_price: Number(p.price ?? 0), quantity: 1, reward_points: Number(p.reward_points ?? 0), is_gift: false, base_price: Number(p.price ?? 0) }];
     });
     setProductPickerOpen(false);
+  }
+  async function quickCreateProduct() {
+    const name = qpName.trim();
+    if (!name) { toast.error("請輸入商品名稱"); return; }
+    if (!currentCompanyId) { toast.error("請先選擇公司"); return; }
+    const price = Number(qpPrice) || 0;
+    if (price < 0) { toast.error("售價不可小於 0"); return; }
+    setQpSaving(true);
+    try {
+      let sku = qpSku.trim();
+      if (!sku) {
+        const { generateSku } = await import("@/lib/sku");
+        sku = await generateSku("GEN");
+      } else {
+        const { isSkuUnique } = await import("@/lib/sku");
+        if (!(await isSkuUnique(sku))) throw new Error("SKU 已存在，請換一組");
+      }
+      const { data, error } = await supabase
+        .from("products")
+        .insert({
+          company_id: currentCompanyId,
+          name,
+          sku,
+          price,
+          stock: Number(qpStock) || 0,
+          reward_points: Number(qpReward) || 0,
+          status: "active",
+        })
+        .select("id,name,sku,price,image,stock,status,reward_points")
+        .single();
+      if (error) throw new Error(error.message);
+      await productsQ.refetch();
+      addItem(data as any);
+      toast.success(`已新增商品並加入訂單：${name}`);
+      setQpOpen(false);
+      setQpName(""); setQpSku(""); setQpPrice("0"); setQpStock("0"); setQpReward("0");
+    } catch (e: any) {
+      toast.error("新增商品失敗", { description: String(e?.message ?? e) });
+    } finally {
+      setQpSaving(false);
+    }
   }
   function updateItem(idx: number, patch: Partial<{ unit_price: number; quantity: number; is_gift: boolean }>) {
     setItems((prev) => prev.map((it, i) => {
@@ -2288,6 +2337,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" /> 商品明細 *</Label>
+              <div className="flex items-center gap-2">
+              <Button type="button" variant="secondary" size="sm" onClick={() => setQpOpen(true)}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> 新增商品
+              </Button>
               <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
                 <PopoverTrigger asChild>
                   <Button type="button" variant="outline" size="sm">
@@ -2331,7 +2384,30 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   </Command>
                 </PopoverContent>
               </Popover>
+              </div>
             </div>
+
+            <Dialog open={qpOpen} onOpenChange={setQpOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader><DialogTitle>快速新增商品</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label>商品名稱 *</Label><Input value={qpName} onChange={(e) => setQpName(e.target.value)} /></div>
+                  <div><Label>SKU（留空自動產生）</Label><Input value={qpSku} onChange={(e) => setQpSku(e.target.value)} /></div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div><Label>售價</Label><Input type="number" value={qpPrice} onChange={(e) => setQpPrice(e.target.value)} /></div>
+                    <div><Label>庫存</Label><Input type="number" value={qpStock} onChange={(e) => setQpStock(e.target.value)} /></div>
+                    <div><Label>獎勵點</Label><Input type="number" value={qpReward} onChange={(e) => setQpReward(e.target.value)} /></div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setQpOpen(false)}>取消</Button>
+                  <Button type="button" onClick={quickCreateProduct} disabled={qpSaving}>
+                    {qpSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}新增並加入訂單
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
 
             {items.length === 0 ? (
               <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
