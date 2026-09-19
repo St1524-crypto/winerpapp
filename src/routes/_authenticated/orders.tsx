@@ -2337,6 +2337,10 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" /> 商品明細 *</Label>
+              <div className="flex items-center gap-2">
+              <Button type="button" variant="secondary" size="sm" onClick={() => setQpOpen(true)}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> 新增商品
+              </Button>
               <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
                 <PopoverTrigger asChild>
                   <Button type="button" variant="outline" size="sm">
