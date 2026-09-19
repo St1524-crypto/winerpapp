@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { UserCircle, MapPin, ShoppingBag, LogOut, LayoutDashboard, Coins, Crown, Wallet, Store, FileText } from "lucide-react";
+import { UserCircle, MapPin, ShoppingBag, LogOut, LayoutDashboard, Coins, Crown, Wallet, Store, FileText, CalendarClock } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
