@@ -80,6 +80,7 @@ import { Route as ShopAccountWalletRouteImport } from './routes/shop.account.wal
 import { Route as ShopAccountVipRouteImport } from './routes/shop.account.vip'
 import { Route as ShopAccountTasksRouteImport } from './routes/shop.account.tasks'
 import { Route as ShopAccountStorefrontRouteImport } from './routes/shop.account.storefront'
+import { Route as ShopAccountRenewalRouteImport } from './routes/shop.account.renewal'
 import { Route as ShopAccountProfileRouteImport } from './routes/shop.account.profile'
 import { Route as ShopAccountPointsRouteImport } from './routes/shop.account.points'
 import { Route as ShopAccountDocumentsRouteImport } from './routes/shop.account.documents'
@@ -529,6 +530,11 @@ const ShopAccountTasksRoute = ShopAccountTasksRouteImport.update({
 const ShopAccountStorefrontRoute = ShopAccountStorefrontRouteImport.update({
   id: '/storefront',
   path: '/storefront',
+  getParentRoute: () => ShopAccountRoute,
+} as any)
+const ShopAccountRenewalRoute = ShopAccountRenewalRouteImport.update({
+  id: '/renewal',
+  path: '/renewal',
   getParentRoute: () => ShopAccountRoute,
 } as any)
 const ShopAccountProfileRoute = ShopAccountProfileRouteImport.update({
@@ -1127,6 +1133,7 @@ export interface FileRoutesByFullPath {
   '/shop/account/documents': typeof ShopAccountDocumentsRoute
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/renewal': typeof ShopAccountRenewalRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
   '/shop/account/tasks': typeof ShopAccountTasksRoute
   '/shop/account/vip': typeof ShopAccountVipRoute
@@ -1280,6 +1287,7 @@ export interface FileRoutesByTo {
   '/shop/account/documents': typeof ShopAccountDocumentsRoute
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/renewal': typeof ShopAccountRenewalRoute
   '/shop/account/tasks': typeof ShopAccountTasksRoute
   '/shop/account/vip': typeof ShopAccountVipRoute
   '/shop/account/wallet': typeof ShopAccountWalletRoute
@@ -1438,6 +1446,7 @@ export interface FileRoutesById {
   '/shop/account/documents': typeof ShopAccountDocumentsRoute
   '/shop/account/points': typeof ShopAccountPointsRoute
   '/shop/account/profile': typeof ShopAccountProfileRoute
+  '/shop/account/renewal': typeof ShopAccountRenewalRoute
   '/shop/account/storefront': typeof ShopAccountStorefrontRouteWithChildren
   '/shop/account/tasks': typeof ShopAccountTasksRoute
   '/shop/account/vip': typeof ShopAccountVipRoute
@@ -1597,6 +1606,7 @@ export interface FileRouteTypes {
     | '/shop/account/documents'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/renewal'
     | '/shop/account/storefront'
     | '/shop/account/tasks'
     | '/shop/account/vip'
@@ -1750,6 +1760,7 @@ export interface FileRouteTypes {
     | '/shop/account/documents'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/renewal'
     | '/shop/account/tasks'
     | '/shop/account/vip'
     | '/shop/account/wallet'
@@ -1907,6 +1918,7 @@ export interface FileRouteTypes {
     | '/shop/account/documents'
     | '/shop/account/points'
     | '/shop/account/profile'
+    | '/shop/account/renewal'
     | '/shop/account/storefront'
     | '/shop/account/tasks'
     | '/shop/account/vip'
@@ -2493,6 +2505,13 @@ declare module '@tanstack/react-router' {
       path: '/storefront'
       fullPath: '/shop/account/storefront'
       preLoaderRoute: typeof ShopAccountStorefrontRouteImport
+      parentRoute: typeof ShopAccountRoute
+    }
+    '/shop/account/renewal': {
+      id: '/shop/account/renewal'
+      path: '/renewal'
+      fullPath: '/shop/account/renewal'
+      preLoaderRoute: typeof ShopAccountRenewalRouteImport
       parentRoute: typeof ShopAccountRoute
     }
     '/shop/account/profile': {
@@ -3428,6 +3447,7 @@ interface ShopAccountRouteChildren {
   ShopAccountDocumentsRoute: typeof ShopAccountDocumentsRoute
   ShopAccountPointsRoute: typeof ShopAccountPointsRoute
   ShopAccountProfileRoute: typeof ShopAccountProfileRoute
+  ShopAccountRenewalRoute: typeof ShopAccountRenewalRoute
   ShopAccountStorefrontRoute: typeof ShopAccountStorefrontRouteWithChildren
   ShopAccountTasksRoute: typeof ShopAccountTasksRoute
   ShopAccountVipRoute: typeof ShopAccountVipRoute
@@ -3444,6 +3464,7 @@ const ShopAccountRouteChildren: ShopAccountRouteChildren = {
   ShopAccountDocumentsRoute: ShopAccountDocumentsRoute,
   ShopAccountPointsRoute: ShopAccountPointsRoute,
   ShopAccountProfileRoute: ShopAccountProfileRoute,
+  ShopAccountRenewalRoute: ShopAccountRenewalRoute,
   ShopAccountStorefrontRoute: ShopAccountStorefrontRouteWithChildren,
   ShopAccountTasksRoute: ShopAccountTasksRoute,
   ShopAccountVipRoute: ShopAccountVipRoute,

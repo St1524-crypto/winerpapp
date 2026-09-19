@@ -21,6 +21,7 @@ const NAV = [
   { to: "/shop/account/points", label: "我的點數 / 推薦", icon: Coins },
   { to: "/shop/account/wallet", label: "現金錢包", icon: Wallet },
   { to: "/shop/account/documents", label: "公司管理文件", icon: FileText },
+  { to: "/shop/account/renewal", label: "年費續約", icon: CalendarClock },
   { to: "/shop/vip", label: "VIP 升級", icon: Crown },
 ];
 
