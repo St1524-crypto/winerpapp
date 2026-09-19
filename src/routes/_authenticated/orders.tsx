@@ -2384,7 +2384,30 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                   </Command>
                 </PopoverContent>
               </Popover>
+              </div>
             </div>
+
+            <Dialog open={qpOpen} onOpenChange={setQpOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader><DialogTitle>快速新增商品</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div><Label>商品名稱 *</Label><Input value={qpName} onChange={(e) => setQpName(e.target.value)} /></div>
+                  <div><Label>SKU（留空自動產生）</Label><Input value={qpSku} onChange={(e) => setQpSku(e.target.value)} /></div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div><Label>售價</Label><Input type="number" value={qpPrice} onChange={(e) => setQpPrice(e.target.value)} /></div>
+                    <div><Label>庫存</Label><Input type="number" value={qpStock} onChange={(e) => setQpStock(e.target.value)} /></div>
+                    <div><Label>獎勵點</Label><Input type="number" value={qpReward} onChange={(e) => setQpReward(e.target.value)} /></div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setQpOpen(false)}>取消</Button>
+                  <Button type="button" onClick={quickCreateProduct} disabled={qpSaving}>
+                    {qpSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}新增並加入訂單
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
 
             {items.length === 0 ? (
               <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
