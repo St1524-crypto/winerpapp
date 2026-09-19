@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { UserCircle, MapPin, ShoppingBag, LogOut, LayoutDashboard, Coins, Crown, Wallet, Store, FileText } from "lucide-react";
+import { UserCircle, MapPin, ShoppingBag, LogOut, LayoutDashboard, Coins, Crown, Wallet, Store, FileText, CalendarClock } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ const NAV = [
   { to: "/shop/account/points", label: "我的點數 / 推薦", icon: Coins },
   { to: "/shop/account/wallet", label: "現金錢包", icon: Wallet },
   { to: "/shop/account/documents", label: "公司管理文件", icon: FileText },
+  { to: "/shop/account/renewal", label: "年費續約", icon: CalendarClock },
   { to: "/shop/vip", label: "VIP 升級", icon: Crown },
 ];
 
