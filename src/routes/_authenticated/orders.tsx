@@ -1085,6 +1085,14 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [qaAddress, setQaAddress] = useState("");
   const [qaPickupStore, setQaPickupStore] = useState("");
   const [qaSource, setQaSource] = useState("");
+  // 快速新增商品
+  const [qpOpen, setQpOpen] = useState(false);
+  const [qpName, setQpName] = useState("");
+  const [qpSku, setQpSku] = useState("");
+  const [qpPrice, setQpPrice] = useState("0");
+  const [qpStock, setQpStock] = useState("0");
+  const [qpReward, setQpReward] = useState("0");
+  const [qpSaving, setQpSaving] = useState(false);
   const qc = useQueryClient();
   const { currentCompanyId } = useCurrentCompany();
 
