@@ -1087,6 +1087,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [qaSource, setQaSource] = useState("");
   // 快速新增商品
   const [qpOpen, setQpOpen] = useState(false);
+  const [renewalPickerOpen, setRenewalPickerOpen] = useState(false);
+
   const [qpName, setQpName] = useState("");
   const [qpSku, setQpSku] = useState("");
   const [qpPrice, setQpPrice] = useState("0");
@@ -1329,7 +1331,31 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  // 年費續約商品（依年費 VIP 規則的 SKU 對應商品）
+  const annualFeeQ = useQuery({
+    queryKey: ["annual-fee-renewal-products", currentCompanyId],
+    enabled: !!currentCompanyId,
+    queryFn: async () => {
+      const { data: rules, error } = await supabase
+        .from("annual_fee_vip_rules")
+        .select("sku, upgrade_days, is_active")
+        .eq("is_active", true);
+      if (error) throw new Error(error.message);
+      const skus = (rules ?? []).map((r: any) => r.sku).filter(Boolean);
+      if (skus.length === 0) return [] as any[];
+      const { data: prods, error: pErr } = await supabase
+        .from("products")
+        .select("id,name,sku,price,image,stock,status,reward_points")
+        .in("sku", skus)
+        .eq("status", "active");
+      if (pErr) throw new Error(pErr.message);
+      const dayBySku = new Map((rules ?? []).map((r: any) => [r.sku, r.upgrade_days]));
+      return (prods ?? []).map((p: any) => ({ ...p, upgrade_days: dayBySku.get(p.sku) ?? 365 }));
+    },
+  });
+
   function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null; reward_points?: number | null }) {
+
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.product_id === p.id);
       if (idx >= 0) {
@@ -2338,9 +2364,46 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-1.5"><Package className="h-3.5 w-3.5" /> 商品明細 *</Label>
               <div className="flex items-center gap-2">
+              <Popover open={renewalPickerOpen} onOpenChange={setRenewalPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="outline" size="sm">
+                    <Plus className="h-3.5 w-3.5 mr-1" /> 年費續約
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[380px]" align="end">
+                  <Command>
+                    <CommandList>
+                      {annualFeeQ.isLoading ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">載入中...</div>
+                      ) : (annualFeeQ.data ?? []).length === 0 ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">尚未設定年費續約商品</div>
+                      ) : (
+                        <CommandGroup heading="年費續約方案">
+                          {(annualFeeQ.data ?? []).map((p: any) => (
+                            <CommandItem
+                              key={p.id}
+                              value={`${p.name} ${p.sku ?? ""}`}
+                              onSelect={() => { addItem(p); setRenewalPickerOpen(false); }}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium truncate">{p.name}</div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {p.sku ?? "—"} · 付款後延長 {p.upgrade_days} 天
+                                </div>
+                              </div>
+                              <div className="text-sm tabular-nums ml-2">{fmt(p.price)}</div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <Button type="button" variant="secondary" size="sm" onClick={() => setQpOpen(true)}>
                 <Plus className="h-3.5 w-3.5 mr-1" /> 新增商品
               </Button>
+
               <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
                 <PopoverTrigger asChild>
                   <Button type="button" variant="outline" size="sm">
