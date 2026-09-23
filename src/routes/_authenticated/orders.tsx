@@ -1329,7 +1329,31 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
     },
   });
 
+  // 年費續約商品（依年費 VIP 規則的 SKU 對應商品）
+  const annualFeeQ = useQuery({
+    queryKey: ["annual-fee-renewal-products", currentCompanyId],
+    enabled: !!currentCompanyId,
+    queryFn: async () => {
+      const { data: rules, error } = await supabase
+        .from("annual_fee_vip_rules")
+        .select("sku, upgrade_days, is_active")
+        .eq("is_active", true);
+      if (error) throw new Error(error.message);
+      const skus = (rules ?? []).map((r: any) => r.sku).filter(Boolean);
+      if (skus.length === 0) return [] as any[];
+      const { data: prods, error: pErr } = await supabase
+        .from("products")
+        .select("id,name,sku,price,image,stock,status,reward_points")
+        .in("sku", skus)
+        .eq("status", "active");
+      if (pErr) throw new Error(pErr.message);
+      const dayBySku = new Map((rules ?? []).map((r: any) => [r.sku, r.upgrade_days]));
+      return (prods ?? []).map((p: any) => ({ ...p, upgrade_days: dayBySku.get(p.sku) ?? 365 }));
+    },
+  });
+
   function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null; reward_points?: number | null }) {
+
     setItems((prev) => {
       const idx = prev.findIndex((x) => x.product_id === p.id);
       if (idx >= 0) {
