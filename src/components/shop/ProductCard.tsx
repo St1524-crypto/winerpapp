@@ -34,10 +34,13 @@ export function ProductCard({ product }: { product: Product }) {
         <Link to="/shop/product/$id" params={{ id: product.id }}>
           <div className="text-[13px] sm:text-sm font-medium line-clamp-2 min-h-[2.25rem] sm:min-h-[2.5rem] leading-snug group-hover:text-primary transition-colors">{product.name}</div>
         </Link>
-        <div className="text-[10px] sm:text-[11px] text-muted-foreground truncate">{product.sku}</div>
-        <div className="flex items-end justify-between gap-2 pt-0.5 sm:pt-1">
-          <div className="min-w-0">
-            <div className="text-base sm:text-lg font-bold text-primary tabular-nums truncate">NT$ {price.toLocaleString()}</div>
+        <div className="hidden sm:block text-[11px] text-muted-foreground truncate">{product.sku}</div>
+        <div className="flex items-center justify-between gap-1.5 pt-0.5 sm:pt-1">
+          <div className="min-w-0 flex-1">
+            <div className="font-extrabold text-primary tabular-nums leading-none whitespace-nowrap">
+              <span className="text-[11px] sm:text-xs font-semibold mr-0.5">NT$</span>
+              <span className="text-lg sm:text-xl">{price.toLocaleString()}</span>
+            </div>
             {showDealer && (
               <div className="text-[10px] sm:text-[11px] text-muted-foreground line-through tabular-nums">NT$ {product.price.toLocaleString()}</div>
             )}
