@@ -26,7 +26,7 @@ export const Route = createFileRoute("/shop/content/$slug")({
   }),
   errorComponent: ({ error }) => (
     <div className="container mx-auto px-4 py-16 text-center text-sm text-muted-foreground">
-      {error.message}
+      {(error as Error)?.message}
     </div>
   ),
   notFoundComponent: () => (

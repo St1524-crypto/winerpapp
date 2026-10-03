@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/vip-business-bonus-c
     const router = useRouter();
     return (
       <div className="p-6">
-        <p className="text-destructive">載入失敗：{error.message}</p>
+        <p className="text-destructive">載入失敗：{(error as Error)?.message}</p>
         <Button className="mt-2" onClick={() => { reset(); router.invalidate(); }}>重試</Button>
       </div>
     );
