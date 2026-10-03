@@ -1339,7 +1339,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       const { data: rules, error } = await supabase
         .from("annual_fee_vip_rules")
         .select("sku, upgrade_days, is_active")
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .eq("company_id", currentCompanyId!);
       if (error) throw new Error(error.message);
       const skus = (rules ?? []).map((r: any) => r.sku).filter(Boolean);
       if (skus.length === 0) return [] as any[];
@@ -1347,6 +1348,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         .from("products")
         .select("id,name,sku,price,image,stock,status,reward_points")
         .in("sku", skus)
+        .eq("company_id", currentCompanyId!)
         .eq("status", "active");
       if (pErr) throw new Error(pErr.message);
       const dayBySku = new Map((rules ?? []).map((r: any) => [r.sku, r.upgrade_days]));
