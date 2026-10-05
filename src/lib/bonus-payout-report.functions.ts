@@ -197,3 +197,60 @@ export const getPayoutSummaryForRules = createServerFn({ method: "GET" })
       poolActiveMembers: activeGrants ?? 0,
     };
   });
+
+/** 只讀：單一會員的逐筆獎金發放明細（含 80/20 拆分） */
+export const getMemberPayoutDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({ memberId: z.string().uuid(), from: z.string().optional(), to: z.string().optional() })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await ensureReader(context as any);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let q = (supabaseAdmin as any)
+      .from("bonus_records")
+      .select(
+        "id, member_id, released_member_id, source_member_id, source_order_id, bonus_type, bonus_points, status, settlement_date, release_date, released_at, fail_reason",
+      )
+      .or(`released_member_id.eq.${data.memberId},and(released_member_id.is.null,member_id.eq.${data.memberId})`)
+      .order("settlement_date", { ascending: false })
+      .limit(2000);
+    if (data.from) q = q.gte("settlement_date", data.from);
+    if (data.to) q = q.lte("settlement_date", data.to);
+    const { data: recs, error } = await q;
+    if (error) throw new Error(error.message);
+    const rows = (recs ?? []) as any[];
+    const srcIds = Array.from(new Set(rows.map((r) => r.source_member_id).filter(Boolean)));
+    const orderIds = Array.from(new Set(rows.map((r) => r.source_order_id).filter(Boolean)));
+    const [{ data: ps }, { data: os }] = await Promise.all([
+      srcIds.length
+        ? (supabaseAdmin as any).from("profiles").select("id, name, member_no").in("id", srcIds)
+        : Promise.resolve({ data: [] }),
+      orderIds.length
+        ? (supabaseAdmin as any).from("sales_orders").select("id, order_no").in("id", orderIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+    const pMap = new Map(((ps ?? []) as any[]).map((p) => [p.id, p]));
+    const oMap = new Map(((os ?? []) as any[]).map((o) => [o.id, o.order_no]));
+    return rows.map((r) => {
+      const s = splitPayout(r.bonus_points);
+      const src = pMap.get(r.source_member_id) as any;
+      return {
+        id: r.id as string,
+        kind: kindOf(r.bonus_type),
+        bonusType: r.bonus_type as string,
+        status: r.status as string,
+        points: Number(r.bonus_points ?? 0),
+        cash: s.cash,
+        point: s.point,
+        settlementDate: r.settlement_date as string | null,
+        releaseDate: r.release_date as string | null,
+        releasedAt: r.released_at as string | null,
+        sourceMember: src ? `${src.name ?? ""} (${src.member_no ?? "—"})` : null,
+        orderNo: (oMap.get(r.source_order_id) as string) ?? null,
+        failReason: r.fail_reason as string | null,
+      };
+    });
+  });
