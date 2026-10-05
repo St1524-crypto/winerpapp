@@ -592,6 +592,11 @@ function UnsettledMonthsCard({ busy, onSettled }: { busy: boolean; onSettled: ()
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
   const [backfill, setBackfill] = useState<{ ym: string; label: string } | null>(null);
+  const [recalcMonth, setRecalcMonth] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
 
 
   const load = async () => {
@@ -635,7 +640,18 @@ function UnsettledMonthsCard({ busy, onSettled }: { busy: boolean; onSettled: ()
             </span>
           )}
         </CardTitle>
-        <Button size="sm" variant="outline" onClick={load} disabled={loading}>重新掃描</Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input type="month" className="h-8 w-40" value={recalcMonth}
+            onChange={(e) => setRecalcMonth(e.target.value)} />
+          <Button size="sm" disabled={!recalcMonth}
+            onClick={() => {
+              const [y, m] = recalcMonth.split("-");
+              setBackfill({ ym: `${y}${m}`, label: `${y}/${m}` });
+            }}>
+            <RotateCcw className="h-4 w-4 mr-1" />重新計算月獎金
+          </Button>
+          <Button size="sm" variant="outline" onClick={load} disabled={loading}>重新掃描</Button>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
