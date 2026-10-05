@@ -209,7 +209,7 @@ export function BonusCalculationDetailDialog({
                   <div className="flex flex-wrap justify-between gap-2">
                     <span className="font-medium">{o.order_no}</span>
                     <span className="text-muted-foreground">{new Date(o.created_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</span>
-                    <span>{bonusStatusLabel(o.payment_status) ?? o.payment_status}</span>
+                    <span>{({ paid: "已付款", pending: "未付款", partial: "部分付款", refunded: "已退款" } as Record<string, string>)[o.payment_status] ?? o.payment_status}</span>
                     {o.no_reward_points && <Badge variant="destructive">不列入業績</Badge>}
                     <span className="font-semibold tabular-nums">NT$ {Number(o.total_amount ?? 0).toLocaleString()}</span>
                   </div>
