@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791206732060,
+      "tag": "0000_unify_responsibility_points_200",
+      "breakpoints": true
+    }
+  ]
+}
