@@ -92,6 +92,24 @@ export const createSalesOrderWithPointPayments = createServerFn({ method: "POST"
       paymentStatus: data.order.payment_status,
     });
 
+    // 折扣點上限：各商品 discount_points_max × 數量；未設定的商品不可使用折扣點
+    const discountPay = data.pointPayments.find((p) => p.point_type === "discount");
+    if (discountPay && discountPay.points_used > 0) {
+      const pids = Array.from(new Set(data.items.map((i) => i.product_id).filter(Boolean))) as string[];
+      let cap = 0;
+      if (pids.length) {
+        const { data: prods, error: pErr } = await context.supabase
+          .from("products")
+          .select("id, discount_points_max")
+          .in("id", pids);
+        if (pErr) throw new Error(pErr.message);
+        const m = new Map((prods ?? []).map((p: any) => [p.id, Number(p.discount_points_max) || 0]));
+        cap = data.items.reduce((s, i) => s + (i.product_id ? (m.get(i.product_id) ?? 0) : 0) * i.quantity, 0);
+      }
+      if (discountPay.points_used > cap || discountPay.amount_offset > cap) {
+        throw new Error(cap === 0 ? "此訂單商品未設定可抵扣折扣點，無法使用折扣點。" : `折扣點最多可使用 ${cap} 點。`);
+      }
+    }
 
 
     const { data: order, error } = (await (context.supabase.rpc as any).call(
