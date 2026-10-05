@@ -80,8 +80,12 @@ function CheckoutPage() {
   }, [selectedAddrId, addresses]);
 
   const shipping = subtotal >= FREE_SHIPPING || subtotal === 0 ? 0 : SHIPPING_FEE;
-  // 折扣點僅 VIP（復購）可用；最多折抵小計
-  const maxDiscount = is_vip ? Math.min(wallet.discount_points, subtotal) : 0;
+  // 折扣點僅 VIP（復購）可用；上限為各商品「可抵扣折扣點」× 數量，未設定的商品不可折抵
+  const productDiscountCap = items.reduce(
+    (s, i) => s + (Number((i.product as any)?.discount_points_max) || 0) * i.quantity,
+    0,
+  );
+  const maxDiscount = is_vip ? Math.max(0, Math.min(wallet.discount_points, subtotal, productDiscountCap)) : 0;
   const discountApplied = Math.max(0, Math.min(Math.floor(useDiscount) || 0, maxDiscount));
   const afterDiscount = Math.max(0, subtotal - discountApplied + shipping);
   // 餘額（購物點）可全額折抵；1 點 = NT$1
@@ -338,6 +342,7 @@ function CheckoutPage() {
                 <Label className="flex items-center gap-1 text-muted-foreground font-normal">
                   <Percent className="h-3 w-3" />折扣點折抵
                   {!is_vip && <span className="text-[10px] text-muted-foreground">（限 VIP 復購）</span>}
+                  {is_vip && productDiscountCap === 0 && <span className="text-[10px] text-muted-foreground">（商品未開放折扣點）</span>}
                 </Label>
                 <span className="text-muted-foreground">可用 {wallet.discount_points.toLocaleString()}</span>
               </div>
