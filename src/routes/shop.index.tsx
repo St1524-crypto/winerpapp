@@ -7,6 +7,7 @@ import { listPublicHomepageSections } from "@/lib/homepage-sections.functions";
 import { ProductCard } from "@/components/shop/ProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { MemberBenefitsDialog } from "@/components/shop/MemberBenefitsDialog";
 import { ArrowRight, Sparkles, Flame, Tag, Gift, Truck, Crown, Coins } from "lucide-react";
 import type { Product, Category } from "@/types/product";
 
@@ -135,14 +136,17 @@ function ShopHome() {
             >
               <Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }}>立即購物 <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-0.5 md:ml-1" /></Link>
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="rounded-full px-2 md:px-8 h-10 md:h-12 text-xs md:text-base bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
-              asChild
-            >
-              <Link to="/login">免費加入</Link>
-            </Button>
+            <MemberBenefitsDialog
+              trigger={
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="rounded-full px-2 md:px-8 h-10 md:h-12 text-xs md:text-base bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
+                >
+                  免費加入
+                </Button>
+              }
+            />
             <Button
               size="lg"
               variant="outline"
