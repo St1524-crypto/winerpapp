@@ -234,8 +234,9 @@ async function getOrderGeneratedRewardPoints(orderId: string) {
 
   for (const row of soloRows) {
     const quantity = Math.max(0, Number(row.quantity ?? 0));
+    // tier_reward_points 有值（含 0）時以訂單明細為準；0 = 此品項不增加獎勵點，不可回退商品預設值
     let unitReward = Number(row.tier_reward_points ?? 0);
-    if (unitReward <= 0 && row.product_id) {
+    if ((row.tier_reward_points === null || row.tier_reward_points === undefined) && row.product_id) {
       const { data: product } = await supabaseAdmin
         .from("products")
         .select("reward_points")
