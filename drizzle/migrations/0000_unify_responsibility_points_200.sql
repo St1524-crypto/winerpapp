@@ -1,0 +1,2 @@
+UPDATE public.rank_rebate_settings SET required_points = 200, updated_at = now() WHERE required_points <> 200;
+UPDATE public.vip_tiers SET monthly_points_required = 200 WHERE monthly_points_required <> 200;
