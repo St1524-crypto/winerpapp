@@ -1,4 +1,7 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, FileSearch } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,6 +34,7 @@ export function BonusCalculationDetailDialog({
   orders?: Record<string, any>;
   tiers?: Record<string, string>;
 }) {
+  const [open, setOpen] = useState(false);
   const detail = record?.calculation_detail && typeof record.calculation_detail === "object"
     ? record.calculation_detail
     : null;
@@ -110,8 +114,36 @@ export function BonusCalculationDetailDialog({
         : monthlyFields;
 
 
+  // 訂單明細：月結 = 該會員當月（台北時間）訂單；日結 = 來源訂單
+  const sd: string | undefined = record?.settlement_date;
+  const ordersQ = useQuery({
+    queryKey: ["bonus-detail-orders", mode, record?.id],
+    enabled: open && !!record,
+    queryFn: async () => {
+      let q = supabase
+        .from("sales_orders")
+        .select("id,order_no,created_at,total_amount,payment_status,order_status,no_reward_points,sales_order_items(product_name,quantity,subtotal,tier_reward_points)")
+        .order("created_at", { ascending: true })
+        .limit(200);
+      if (mode === "daily") {
+        if (!record?.source_order_id) return [];
+        q = q.eq("id", record.source_order_id);
+      } else {
+        const memberId = record?.source_member_id ?? record?.member_id;
+        if (!memberId || !sd) return [];
+        const [y, m] = sd.slice(0, 7).split("-").map(Number);
+        const start = new Date(Date.UTC(y, m - 1, 1, -8)).toISOString();
+        const end = new Date(Date.UTC(y, m, 1, -8)).toISOString();
+        q = q.eq("user_id", memberId).gte("created_at", start).lt("created_at", end);
+      }
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
           <FileSearch className="h-3.5 w-3.5 mr-1" />詳情
@@ -158,6 +190,42 @@ export function BonusCalculationDetailDialog({
               <span className="text-right font-medium break-all">{f.value ?? "—"}</span>
             </div>
           ))}
+        </div>
+
+        <div className="mt-3 space-y-1">
+          <div className="text-sm font-medium">
+            {mode === "daily" ? "來源訂單明細" : `當月訂單明細（${sd?.slice(0, 7) ?? "—"}，台北時間）`}
+          </div>
+          {ordersQ.isLoading ? (
+            <div className="text-xs text-muted-foreground">載入中...</div>
+          ) : ordersQ.error ? (
+            <div className="text-xs text-destructive">讀取失敗：{(ordersQ.error as Error).message}</div>
+          ) : (ordersQ.data ?? []).length === 0 ? (
+            <div className="text-xs text-muted-foreground">查無訂單</div>
+          ) : (
+            <div className="max-h-64 overflow-auto rounded-md border divide-y text-xs">
+              {(ordersQ.data ?? []).map((o) => (
+                <div key={o.id} className="p-2 space-y-1">
+                  <div className="flex flex-wrap justify-between gap-2">
+                    <span className="font-medium">{o.order_no}</span>
+                    <span className="text-muted-foreground">{new Date(o.created_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</span>
+                    <span>{bonusStatusLabel(o.payment_status) ?? o.payment_status}</span>
+                    {o.no_reward_points && <Badge variant="destructive">不列入業績</Badge>}
+                    <span className="font-semibold tabular-nums">NT$ {Number(o.total_amount ?? 0).toLocaleString()}</span>
+                  </div>
+                  {(o.sales_order_items ?? []).map((it: any, i: number) => (
+                    <div key={i} className="flex justify-between gap-2 text-muted-foreground pl-2">
+                      <span className="truncate">{it.product_name} × {it.quantity}</span>
+                      <span className="tabular-nums shrink-0">
+                        NT$ {Number(it.subtotal ?? 0).toLocaleString()}
+                        {Number(it.tier_reward_points ?? 0) > 0 && ` · 獎勵點 ${Number(it.tier_reward_points).toLocaleString()}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {detail && (
