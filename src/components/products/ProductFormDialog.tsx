@@ -275,7 +275,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                 <Input type="number" min={0} value={form.reward_points} onChange={(e) => setForm({ ...form, reward_points: +e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>折扣點上限 <span className="text-xs text-muted-foreground">(0=不限)</span></Label>
+                <Label>折扣點上限 <span className="text-xs text-muted-foreground">(0=不可使用)</span></Label>
                 <Input type="number" min={0} value={form.discount_points_max} onChange={(e) => setForm({ ...form, discount_points_max: +e.target.value })} />
               </div>
               <div className="space-y-2">
@@ -283,7 +283,7 @@ export function ProductFormDialog({ open, onOpenChange, product, categories, onS
                 <Input type="number" value={form.display_priority} onChange={(e) => setForm({ ...form, display_priority: +e.target.value })} />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">獎勵點：客戶購買此商品後自動入帳。折扣點上限：此商品最多可被折扣點折抵的點數（每點 1 元）。優先順位：影響商城列表顯示順序，數字越大越前面，0 為預設。</p>
+            <p className="text-xs text-muted-foreground">獎勵點：客戶購買此商品後自動入帳。折扣點上限：此商品最多可被折扣點折抵的點數（每點 1 元），設為 0 則此商品不可使用折扣點。優先順位：影響商城列表顯示順序，數字越大越前面，0 為預設。</p>
           </TabsContent>
 
 
