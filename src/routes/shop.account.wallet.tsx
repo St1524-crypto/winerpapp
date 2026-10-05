@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Wallet, ArrowDownToLine, ArrowUpFromLine, Coins } from "lucide-react";
 import { toast } from "sonner";
+import { TopupBankInfo } from "@/components/shop/TopupBankInfo";
 import {
   getMyCashWallet,
   getMyCashLedger,
@@ -181,6 +182,7 @@ function WalletPage() {
                 <option value="other">其他</option>
               </select>
             </div>
+            <TopupBankInfo show={topupOpen && (topupMethod === "bank_transfer" || topupMethod === "atm")} />
             <div className="space-y-1"><Label>備註（匯款帳號末五碼 / 說明）</Label><Input value={topupNote} onChange={(e) => setTopupNote(e.target.value)} /></div>
             <p className="text-xs text-muted-foreground">送出後待管理員確認入帳。</p>
           </div>
