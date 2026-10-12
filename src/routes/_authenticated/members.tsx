@@ -19,7 +19,7 @@ import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 import { listMemberBonusGrants, listActiveBonusGrants, setMemberBonusGrant, type BonusEligibilityGrant, type BonusPoolKind } from "@/lib/bonus-grants.functions";
-import { adminGetMemberWallet } from "@/lib/cash-wallet.functions";
+import { adminGetMemberWallet, adminGetMemberWalletLedger } from "@/lib/cash-wallet.functions";
 import { adminGetMemberEarnings } from "@/lib/members-admin.functions";
 import { resolveVipTierCode, vipTierLabel } from "@/lib/vip-tier-label";
 
@@ -97,6 +97,13 @@ function Page() {
   const [earnings, setEarnings] = useState<{ status: "loading" | "ready" | "error"; legacy: number; bonus: number; total: number }>({ status: "loading", legacy: 0, bonus: 0, total: 0 });
   const [walletStatus, setWalletStatus] = useState<"loading" | "ready" | "error">("loading");
   const walletReqRef = useRef(0);
+  const [ledger, setLedger] = useState<{ open: boolean; label: string; status: "loading" | "ready" | "error"; rows: { id: string; created_at: string; type: string; amount: number; balance_after: number | null; status: string | null; note: string | null }[] }>({ open: false, label: "", status: "loading", rows: [] });
+  function openLedger(userId: string, kind: "cash" | "shopping" | "reward" | "discount", label: string) {
+    setLedger({ open: true, label, status: "loading", rows: [] });
+    adminGetMemberWalletLedger({ data: { userId, kind } })
+      .then((rows) => setLedger((l) => ({ ...l, status: "ready", rows: rows as any })))
+      .catch(() => setLedger((l) => ({ ...l, status: "error" })));
+  }
   const [rewardPts, setRewardPts] = useState<{ status: "loading" | "ready" | "error"; pkg: number; order: number }>({ status: "loading", pkg: 0, order: 0 });
   const rewardPtsReqRef = useRef(0);
 
@@ -860,15 +867,21 @@ function Page() {
                 {walletStatus === "ready" && wallet && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {([
-                      ["現金餘額", wallet.cash_balance],
-                      ["購物點", wallet.shopping_points],
-                      ["貢獻點", wallet.reward_points],
-                      ["折扣點", wallet.discount_points],
-                    ] as const).map(([label, value]) => (
-                      <div key={label}>
-                        <div className="text-[11px] text-muted-foreground">{label}</div>
+                      ["現金餘額", wallet.cash_balance, "cash"],
+                      ["購物點", wallet.shopping_points, "shopping"],
+                      ["貢獻點", wallet.reward_points, "reward"],
+                      ["折扣點", wallet.discount_points, "discount"],
+                    ] as const).map(([label, value, kind]) => (
+                      <button
+                        type="button"
+                        key={label}
+                        onClick={() => editProfile && openLedger(editProfile.id, kind, label)}
+                        className="text-left rounded-md p-1 -m-1 hover:bg-accent transition-colors"
+                        title={`查看${label}明細`}
+                      >
+                        <div className="text-[11px] text-muted-foreground">{label} <span className="text-primary">明細›</span></div>
                         <div className="text-sm font-semibold font-mono">{Number(value).toLocaleString("zh-TW")}</div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -1159,6 +1172,37 @@ function Page() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => { setPwTarget(null); setPwResult(null); }}>關閉</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={ledger.open} onOpenChange={(v) => !v && setLedger((l) => ({ ...l, open: false }))}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{ledger.label}明細{editProfile ? `（${editProfile.member_no ?? ""} ${editProfile.name ?? ""}）` : ""}</DialogTitle></DialogHeader>
+          {ledger.status === "loading" && <p className="text-sm text-muted-foreground">載入中…</p>}
+          {ledger.status === "error" && <p className="text-sm text-destructive">明細載入失敗</p>}
+          {ledger.status === "ready" && (
+            <Table>
+              <TableHeader><TableRow>
+                <TableHead>時間</TableHead><TableHead>類型／來源</TableHead>
+                <TableHead className="text-right">異動</TableHead><TableHead className="text-right">餘額</TableHead>
+                <TableHead>狀態</TableHead><TableHead>備註</TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {ledger.rows.length === 0 ? (
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">尚無紀錄</TableCell></TableRow>
+                ) : ledger.rows.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="text-xs whitespace-nowrap">{new Date(r.created_at).toLocaleString("zh-TW")}</TableCell>
+                    <TableCell className="text-xs">{r.type || "—"}</TableCell>
+                    <TableCell className={`text-right font-mono ${r.amount >= 0 ? "text-primary" : "text-destructive"}`}>{r.amount >= 0 ? "+" : ""}{r.amount.toLocaleString("zh-TW")}</TableCell>
+                    <TableCell className="text-right font-mono">{r.balance_after === null ? "—" : r.balance_after.toLocaleString("zh-TW")}</TableCell>
+                    <TableCell className="text-xs">{r.status ?? "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[240px]">{r.note ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          {ledger.status === "ready" && ledger.rows.length >= 500 && <p className="text-xs text-muted-foreground">只顯示最近 500 筆。</p>}
         </DialogContent>
       </Dialog>
     </div>

@@ -439,6 +439,41 @@ export const adminGetMemberWallet = createServerFn({ method: "GET" })
     };
   });
 
+// 管理員查詢會員錢包明細（現金 / 購物點 / 貢獻點 / 折扣點）
+export const adminGetMemberWalletLedger = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ userId: z.string().uuid(), kind: z.enum(["cash", "shopping", "reward", "discount"]) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    if (!(await isFinanceAdmin(context.userId))) throw new Error("沒有權限");
+    if (data.kind === "cash") {
+      const { data: rows, error } = await supabaseAdmin
+        .from("cash_transactions")
+        .select("id, created_at, tx_type, amount, balance_after, status, note")
+        .eq("user_id", data.userId)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw new Error(error.message);
+      return (rows ?? []).map((r: any) => ({
+        id: r.id, created_at: r.created_at, type: r.tx_type, amount: Number(r.amount ?? 0),
+        balance_after: r.balance_after === null ? null : Number(r.balance_after), status: r.status ?? null, note: r.note ?? null,
+      }));
+    }
+    const { data: rows, error } = await supabaseAdmin
+      .from("point_transactions")
+      .select("id, created_at, source, amount, balance_after, note")
+      .eq("user_id", data.userId)
+      .eq("point_type", data.kind)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r: any) => ({
+      id: r.id, created_at: r.created_at, type: r.source ?? "", amount: Number(r.amount ?? 0),
+      balance_after: r.balance_after === null ? null : Number(r.balance_after), status: null as string | null, note: r.note ?? null,
+    }));
+  });
+
 // ============ 訂單：以現金餘額付款 ============
 const PayOrderSchema = z.object({
   orderId: z.string().uuid(),
