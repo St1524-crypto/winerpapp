@@ -15,6 +15,13 @@
       "when": 1791775430165,
       "tag": "0001_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791845001606,
+      "tag": "0002_grant_carts_authenticated",
+      "breakpoints": true
     }
   ]
 }
