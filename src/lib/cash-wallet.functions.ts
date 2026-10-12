@@ -491,7 +491,34 @@ export const adminGetMemberWalletLedger = createServerFn({ method: "POST" })
       const { data: os } = await supabaseAdmin.from("sales_orders").select("id, order_no").in("id", refIds);
       (os ?? []).forEach((o: any) => orderMap.set(o.id, o.order_no));
     }
-    return rowsOut.map((r) => ({ ...r, order_no: r.reference_id ? orderMap.get(r.reference_id) ?? null : null }));
+    // 同一時間戳記的多筆紀錄，依餘額鏈（前一筆餘額 + 異動 = 本筆餘額）排序，避免餘額顯示跳動
+    const sorted: any[] = [];
+    for (let i = 0; i < rowsOut.length; ) {
+      let j = i;
+      while (j < rowsOut.length && rowsOut[j].created_at === rowsOut[i].created_at) j++;
+      const group = rowsOut.slice(i, j);
+      if (group.length > 1 && group.every((g) => g.balance_after !== null)) {
+        const key = (n: number) => Math.round(n * 100);
+        const pool = [...group];
+        const chain: any[] = [];
+        while (pool.length) {
+          const afters = new Set(pool.map((g) => key(g.balance_after)));
+          let idx = pool.findIndex((g) => !afters.has(key(g.balance_after - g.amount)));
+          if (idx < 0) idx = 0;
+          let cur = pool.splice(idx, 1)[0];
+          chain.push(cur);
+          for (;;) {
+            const n = pool.findIndex((g) => key(g.balance_after - g.amount) === key(cur.balance_after));
+            if (n < 0) break;
+            cur = pool.splice(n, 1)[0];
+            chain.push(cur);
+          }
+        }
+        sorted.push(...chain.reverse());
+      } else sorted.push(...group);
+      i = j;
+    }
+    return sorted.map((r) => ({ ...r, order_no: r.reference_id ? orderMap.get(r.reference_id) ?? null : null }));
   });
 
 // 超級管理員：直接調整會員錢包點數（寫入異動紀錄）
