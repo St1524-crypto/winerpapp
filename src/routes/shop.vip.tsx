@@ -81,7 +81,7 @@ function VipPage() {
       </div>
 
       <div className="space-y-8">
-        {groups.map((g) => (
+        {groups.filter((g) => g.items.length > 0).map((g) => (
           <div key={g.tier.code}>
             <div className="flex items-baseline gap-3 mb-3">
               <h2 className="text-xl font-bold">{g.tier.code} 級 — {g.tier.name}</h2>
