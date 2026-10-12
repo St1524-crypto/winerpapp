@@ -84,6 +84,7 @@ function Page() {
         recs: Object.fromEntries(list.map((x) => [x.id, x])),
         members: Object.fromEntries(((ps ?? []) as any[]).map((x) => [x.id, x])),
         orders: Object.fromEntries(((os ?? []) as any[]).map((x) => [x.id, x])),
+        tiers: Object.fromEntries(((ps ?? []) as any[]).filter((x) => x.vip_tier).map((x) => [x.id, String(x.vip_tier)])),
       };
     },
   });
@@ -346,6 +347,7 @@ function Page() {
                         mode={MONTHLY_BT.has(r.bonusType) ? "monthly" : "daily"}
                         members={recDetail.data.members}
                         orders={recDetail.data.orders}
+                        tiers={recDetail.data.tiers}
                       />
                     )}
                   </TableCell>

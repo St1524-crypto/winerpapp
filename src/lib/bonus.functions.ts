@@ -652,7 +652,7 @@ export const runDailyBonusReconciliation = createServerFn({ method: "POST" })
     const batches = batchSet.size > 0
       ? (await (supabaseAdmin as any)
           .from("bonus_settlement_batches")
-          .select("id, batch_type, period_start, period_end, total_points, status, created_at")
+          .select("id, batch_type:settlement_type, period_start:settlement_period_start, period_end:settlement_period_end, total_points:total_bonus_points, status, created_at")
           .in("id", Array.from(batchSet))).data ?? []
       : [];
 
