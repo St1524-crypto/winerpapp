@@ -99,6 +99,7 @@ function Page() {
   const walletReqRef = useRef(0);
   type LedgerKind = "cash" | "shopping" | "reward" | "discount";
   const [ledger, setLedger] = useState<{ open: boolean; label: string; userId: string; kind: LedgerKind; from: string; to: string; status: "loading" | "ready" | "error"; rows: { id: string; created_at: string; type: string; amount: number; balance_after: number | null; status: string | null; note: string | null; order_no: string | null }[] }>({ open: false, label: "", userId: "", kind: "cash", from: "", to: "", status: "loading", rows: [] });
+  const [orderNo, setOrderNo] = useState<string | null>(null);
   const [adj, setAdj] = useState({ mode: "delta" as "delta" | "set", value: "", note: "", busy: false });
   function loadLedger(userId: string, kind: LedgerKind, from: string, to: string) {
     setLedger((l) => ({ ...l, status: "loading", rows: [] }));
@@ -1244,7 +1245,7 @@ function Page() {
                     <TableCell className="text-xs">{r.type || "—"}</TableCell>
                     <TableCell className={`text-right font-mono ${r.amount >= 0 ? "text-primary" : "text-destructive"}`}>{r.amount >= 0 ? "+" : ""}{r.amount.toLocaleString("zh-TW")}</TableCell>
                     <TableCell className="text-right font-mono">{r.balance_after === null ? "—" : r.balance_after.toLocaleString("zh-TW")}</TableCell>
-                    <TableCell className="text-xs font-mono whitespace-nowrap">{r.order_no ?? "—"}</TableCell>
+                    <TableCell className="text-xs font-mono whitespace-nowrap">{r.order_no ? <button type="button" className="text-primary underline" onClick={() => setOrderNo(r.order_no)}>{r.order_no}</button> : "—"}</TableCell>
                     <TableCell className="text-xs">{r.status ?? "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[240px]">{r.note ?? "—"}</TableCell>
                   </TableRow>
@@ -1255,7 +1256,72 @@ function Page() {
           {ledger.status === "ready" && ledger.rows.length >= 500 && <p className="text-xs text-muted-foreground">只顯示最近 500 筆。</p>}
         </DialogContent>
       </Dialog>
+      <OrderBonusDialog orderNo={orderNo} onClose={() => setOrderNo(null)} />
     </div>
+  );
+}
+
+const BONUS_LABEL: Record<string, string> = { referral: "推薦獎金", repurchase: "消費回饋", rank_diff_rebate: "級差獎金", monthly_vip: "達成分紅", rank_rebate: "消費分紅", business_bonus: "營業分紅", national_share: "全國分紅", upgrade_bonus: "升級獎金" };
+const BONUS_STATUS: Record<string, string> = { waiting_release: "待發放", released: "已發放", cancelled: "已取消", failed: "失敗", pending: "待結算" };
+
+function OrderBonusDialog({ orderNo, onClose }: { orderNo: string | null; onClose: () => void }) {
+  const [st, setSt] = useState<{ loading: boolean; order: any; items: any[]; bonuses: any[]; names: Record<string, string> }>({ loading: false, order: null, items: [], bonuses: [], names: {} });
+  useEffect(() => {
+    if (!orderNo) return;
+    (async () => {
+      setSt({ loading: true, order: null, items: [], bonuses: [], names: {} });
+      const sb = supabase as any;
+      const { data: order } = await sb.from("sales_orders").select("id, order_no, created_at, customer_name, total_amount, payment_status, order_status, no_reward_points, user_id").eq("order_no", orderNo).maybeSingle();
+      if (!order) return setSt((s) => ({ ...s, loading: false }));
+      const [{ data: items }, { data: bonuses }] = await Promise.all([
+        sb.from("sales_order_items").select("id, product_name, sku, unit_price, quantity, subtotal, tier_reward_points").eq("sales_order_id", order.id),
+        sb.from("bonus_records").select("id, member_id, released_member_id, bonus_type, bonus_points, status, settlement_date, release_date, generation_level").eq("source_order_id", order.id).order("settlement_date"),
+      ]);
+      const ids = Array.from(new Set((bonuses ?? []).flatMap((b: any) => [b.released_member_id ?? b.member_id])));
+      const names: Record<string, string> = {};
+      if (ids.length) {
+        const { data: ps } = await sb.from("profiles").select("id, member_no, name").in("id", ids);
+        (ps ?? []).forEach((p: any) => (names[p.id] = `${p.member_no ?? ""} ${p.name ?? ""}`));
+      }
+      setSt({ loading: false, order, items: items ?? [], bonuses: bonuses ?? [], names });
+    })();
+  }, [orderNo]);
+  const o = st.order;
+  return (
+    <Dialog open={!!orderNo} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>訂單與獎金明細（{orderNo}）</DialogTitle></DialogHeader>
+        {st.loading ? <p className="text-sm text-muted-foreground">載入中…</p> : !o ? <p className="text-sm text-muted-foreground">找不到此訂單</p> : (
+          <div className="space-y-4">
+            <div className="text-sm grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div>日期：{new Date(o.created_at).toLocaleString("zh-TW")}</div>
+              <div>客戶：{o.customer_name}</div>
+              <div>金額：NT$ {Number(o.total_amount).toLocaleString("zh-TW")}</div>
+              <div>付款：{o.payment_status}{o.no_reward_points ? "（不列入業績）" : ""}</div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold mb-1">訂單商品</div>
+              <Table>
+                <TableHeader><TableRow><TableHead>品名</TableHead><TableHead className="text-right">單價</TableHead><TableHead className="text-right">數量</TableHead><TableHead className="text-right">小計</TableHead><TableHead className="text-right">獎勵點</TableHead></TableRow></TableHeader>
+                <TableBody>{st.items.map((i) => (
+                  <TableRow key={i.id}><TableCell className="text-xs">{i.product_name}</TableCell><TableCell className="text-right text-xs">{Number(i.unit_price).toLocaleString("zh-TW")}</TableCell><TableCell className="text-right text-xs">{i.quantity}</TableCell><TableCell className="text-right text-xs">{Number(i.subtotal).toLocaleString("zh-TW")}</TableCell><TableCell className="text-right text-xs">{i.tier_reward_points == null ? "預設" : Number(i.tier_reward_points) * Number(i.quantity)}</TableCell></TableRow>
+                ))}</TableBody>
+              </Table>
+            </div>
+            <div>
+              <div className="text-xs font-semibold mb-1">此訂單產生的獎金（共 {st.bonuses.length} 筆）</div>
+              <Table>
+                <TableHeader><TableRow><TableHead>領取會員</TableHead><TableHead>獎金項目</TableHead><TableHead className="text-right">點數</TableHead><TableHead className="text-right">現金 80%</TableHead><TableHead className="text-right">貢獻點 20%</TableHead><TableHead>結算日</TableHead><TableHead>狀態</TableHead></TableRow></TableHeader>
+                <TableBody>{st.bonuses.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground">無獎金紀錄</TableCell></TableRow> : st.bonuses.map((b) => {
+                  const p = Number(b.bonus_points ?? 0); const cash = Math.round(p * 0.8 * 100) / 100;
+                  return <TableRow key={b.id}><TableCell className="text-xs">{st.names[b.released_member_id ?? b.member_id] ?? "—"}</TableCell><TableCell className="text-xs">{BONUS_LABEL[b.bonus_type] ?? b.bonus_type}{b.generation_level ? `（第${b.generation_level}代）` : ""}</TableCell><TableCell className="text-right text-xs">{p.toLocaleString("zh-TW")}</TableCell><TableCell className="text-right text-xs">{cash.toLocaleString("zh-TW")}</TableCell><TableCell className="text-right text-xs">{(Math.round((p - cash) * 100) / 100).toLocaleString("zh-TW")}</TableCell><TableCell className="text-xs">{b.settlement_date ?? "—"}</TableCell><TableCell className="text-xs">{BONUS_STATUS[b.status] ?? b.status}</TableCell></TableRow>;
+                })}</TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
