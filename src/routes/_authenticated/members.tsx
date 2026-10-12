@@ -19,7 +19,7 @@ import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 import { listMemberBonusGrants, listActiveBonusGrants, setMemberBonusGrant, type BonusEligibilityGrant, type BonusPoolKind } from "@/lib/bonus-grants.functions";
-import { adminGetMemberWallet, adminGetMemberWalletLedger } from "@/lib/cash-wallet.functions";
+import { adminGetMemberWallet, adminGetMemberWalletLedger, adminAdjustMemberWallet } from "@/lib/cash-wallet.functions";
 import { adminGetMemberEarnings } from "@/lib/members-admin.functions";
 import { resolveVipTierCode, vipTierLabel } from "@/lib/vip-tier-label";
 
@@ -97,12 +97,36 @@ function Page() {
   const [earnings, setEarnings] = useState<{ status: "loading" | "ready" | "error"; legacy: number; bonus: number; total: number }>({ status: "loading", legacy: 0, bonus: 0, total: 0 });
   const [walletStatus, setWalletStatus] = useState<"loading" | "ready" | "error">("loading");
   const walletReqRef = useRef(0);
-  const [ledger, setLedger] = useState<{ open: boolean; label: string; status: "loading" | "ready" | "error"; rows: { id: string; created_at: string; type: string; amount: number; balance_after: number | null; status: string | null; note: string | null }[] }>({ open: false, label: "", status: "loading", rows: [] });
-  function openLedger(userId: string, kind: "cash" | "shopping" | "reward" | "discount", label: string) {
-    setLedger({ open: true, label, status: "loading", rows: [] });
-    adminGetMemberWalletLedger({ data: { userId, kind } })
+  type LedgerKind = "cash" | "shopping" | "reward" | "discount";
+  const [ledger, setLedger] = useState<{ open: boolean; label: string; userId: string; kind: LedgerKind; from: string; to: string; status: "loading" | "ready" | "error"; rows: { id: string; created_at: string; type: string; amount: number; balance_after: number | null; status: string | null; note: string | null; order_no: string | null }[] }>({ open: false, label: "", userId: "", kind: "cash", from: "", to: "", status: "loading", rows: [] });
+  const [adj, setAdj] = useState({ mode: "delta" as "delta" | "set", value: "", note: "", busy: false });
+  function loadLedger(userId: string, kind: LedgerKind, from: string, to: string) {
+    setLedger((l) => ({ ...l, status: "loading", rows: [] }));
+    adminGetMemberWalletLedger({ data: { userId, kind, from: from || undefined, to: to || undefined } })
       .then((rows) => setLedger((l) => ({ ...l, status: "ready", rows: rows as any })))
       .catch(() => setLedger((l) => ({ ...l, status: "error" })));
+  }
+  function openLedger(userId: string, kind: LedgerKind, label: string) {
+    setLedger({ open: true, label, userId, kind, from: "", to: "", status: "loading", rows: [] });
+    setAdj({ mode: "delta", value: "", note: "", busy: false });
+    loadLedger(userId, kind, "", "");
+  }
+  async function submitAdjust() {
+    const v = Number(adj.value);
+    if (adj.value === "" || !Number.isFinite(v)) return toast.error("請輸入數值");
+    if (!adj.note.trim()) return toast.error("請填寫原因");
+    setAdj((a) => ({ ...a, busy: true }));
+    try {
+      const r = await adminAdjustMemberWallet({ data: { userId: ledger.userId, kind: ledger.kind, mode: adj.mode, value: v, note: adj.note.trim() } });
+      toast.success(`${ledger.label}已更新：${r.before.toLocaleString("zh-TW")} → ${r.after.toLocaleString("zh-TW")}`);
+      setAdj({ mode: "delta", value: "", note: "", busy: false });
+      loadLedger(ledger.userId, ledger.kind, ledger.from, ledger.to);
+      const col = { cash: "cash_balance", shopping: "shopping_points", reward: "reward_points", discount: "discount_points" }[ledger.kind];
+      setWallet((w) => (w ? ({ ...w, [col]: r.after } as MemberWallet) : w));
+    } catch (e) {
+      toast.error((e as Error).message);
+      setAdj((a) => ({ ...a, busy: false }));
+    }
   }
   const [rewardPts, setRewardPts] = useState<{ status: "loading" | "ready" | "error"; pkg: number; order: number }>({ status: "loading", pkg: 0, order: 0 });
   const rewardPtsReqRef = useRef(0);
@@ -1177,6 +1201,31 @@ function Page() {
       <Dialog open={ledger.open} onOpenChange={(v) => !v && setLedger((l) => ({ ...l, open: false }))}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{ledger.label}明細{editProfile ? `（${editProfile.member_no ?? ""} ${editProfile.name ?? ""}）` : ""}</DialogTitle></DialogHeader>
+          <div className="flex flex-wrap items-end gap-2">
+            <div><Label className="text-xs">起日</Label><Input type="date" className="h-8 w-40" value={ledger.from} onChange={(e) => setLedger((l) => ({ ...l, from: e.target.value }))} /></div>
+            <div><Label className="text-xs">迄日</Label><Input type="date" className="h-8 w-40" value={ledger.to} onChange={(e) => setLedger((l) => ({ ...l, to: e.target.value }))} /></div>
+            <Button size="sm" onClick={() => loadLedger(ledger.userId, ledger.kind, ledger.from, ledger.to)}>查詢</Button>
+            <Button size="sm" variant="outline" onClick={() => { setLedger((l) => ({ ...l, from: "", to: "" })); loadLedger(ledger.userId, ledger.kind, "", ""); }}>全部</Button>
+            {ledger.status === "ready" && (
+              <span className="text-xs text-muted-foreground ml-auto">
+                共 {ledger.rows.length} 筆｜增加 +{ledger.rows.filter((r) => r.amount > 0).reduce((a, r) => a + r.amount, 0).toLocaleString("zh-TW")}｜減少 {ledger.rows.filter((r) => r.amount < 0).reduce((a, r) => a + r.amount, 0).toLocaleString("zh-TW")}
+              </span>
+            )}
+          </div>
+          {isSuperAdmin && (
+            <div className="rounded-md border p-3 space-y-2">
+              <div className="text-xs font-semibold">超級管理員修改{ledger.label}</div>
+              <div className="flex flex-wrap items-end gap-2">
+                <select className="h-8 rounded-md border bg-background px-2 text-sm" value={adj.mode} onChange={(e) => setAdj((a) => ({ ...a, mode: e.target.value as "delta" | "set" }))}>
+                  <option value="delta">增減（可輸入負數）</option>
+                  <option value="set">直接設定餘額</option>
+                </select>
+                <Input type="number" className="h-8 w-32" placeholder={adj.mode === "delta" ? "例：+100 / -50" : "新餘額"} value={adj.value} onChange={(e) => setAdj((a) => ({ ...a, value: e.target.value }))} />
+                <Input className="h-8 flex-1 min-w-[180px]" placeholder="原因（必填，會寫入備註）" value={adj.note} onChange={(e) => setAdj((a) => ({ ...a, note: e.target.value }))} />
+                <Button size="sm" disabled={adj.busy} onClick={submitAdjust}>{adj.busy ? "處理中…" : "確認修改"}</Button>
+              </div>
+            </div>
+          )}
           {ledger.status === "loading" && <p className="text-sm text-muted-foreground">載入中…</p>}
           {ledger.status === "error" && <p className="text-sm text-destructive">明細載入失敗</p>}
           {ledger.status === "ready" && (
@@ -1184,17 +1233,18 @@ function Page() {
               <TableHeader><TableRow>
                 <TableHead>時間</TableHead><TableHead>類型／來源</TableHead>
                 <TableHead className="text-right">異動</TableHead><TableHead className="text-right">餘額</TableHead>
-                <TableHead>狀態</TableHead><TableHead>備註</TableHead>
+                <TableHead>訂單</TableHead><TableHead>狀態</TableHead><TableHead>備註</TableHead>
               </TableRow></TableHeader>
               <TableBody>
                 {ledger.rows.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">尚無紀錄</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">尚無紀錄</TableCell></TableRow>
                 ) : ledger.rows.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="text-xs whitespace-nowrap">{new Date(r.created_at).toLocaleString("zh-TW")}</TableCell>
                     <TableCell className="text-xs">{r.type || "—"}</TableCell>
                     <TableCell className={`text-right font-mono ${r.amount >= 0 ? "text-primary" : "text-destructive"}`}>{r.amount >= 0 ? "+" : ""}{r.amount.toLocaleString("zh-TW")}</TableCell>
                     <TableCell className="text-right font-mono">{r.balance_after === null ? "—" : r.balance_after.toLocaleString("zh-TW")}</TableCell>
+                    <TableCell className="text-xs font-mono whitespace-nowrap">{r.order_no ?? "—"}</TableCell>
                     <TableCell className="text-xs">{r.status ?? "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[240px]">{r.note ?? "—"}</TableCell>
                   </TableRow>
