@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 import { listMemberBonusGrants, listActiveBonusGrants, setMemberBonusGrant, type BonusEligibilityGrant, type BonusPoolKind } from "@/lib/bonus-grants.functions";
 import { adminGetMemberWallet, adminGetMemberWalletLedger, adminAdjustMemberWallet } from "@/lib/cash-wallet.functions";
+import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
 import { adminGetMemberEarnings } from "@/lib/members-admin.functions";
 import { resolveVipTierCode, vipTierLabel } from "@/lib/vip-tier-label";
 
@@ -100,6 +101,30 @@ function Page() {
   type LedgerKind = "cash" | "shopping" | "reward" | "discount";
   const [ledger, setLedger] = useState<{ open: boolean; label: string; userId: string; kind: LedgerKind; from: string; to: string; status: "loading" | "ready" | "error"; rows: { id: string; created_at: string; type: string; amount: number; balance_after: number | null; status: string | null; note: string | null; order_no: string | null }[] }>({ open: false, label: "", userId: "", kind: "cash", from: "", to: "", status: "loading", rows: [] });
   const [orderNo, setOrderNo] = useState<string | null>(null);
+  const [ledgerBonus, setLedgerBonus] = useState<{ recs: Record<string, any>; members: Record<string, any>; orders: Record<string, any>; tiers: Record<string, string> }>({ recs: {}, members: {}, orders: {}, tiers: {} });
+  useEffect(() => {
+    const ids = Array.from(new Set(ledger.rows.filter((r: any) => !r.order_no && r.reference_id && /^[0-9a-f-]{36}$/i.test(r.reference_id)).map((r: any) => r.reference_id as string)));
+    if (!ids.length) { setLedgerBonus({ recs: {}, members: {}, orders: {}, tiers: {} }); return; }
+    let alive = true;
+    (async () => {
+      const { data: rs } = await (supabase as any).from("bonus_records").select("*").in("id", ids);
+      const list = (rs ?? []) as any[];
+      const mids = Array.from(new Set(list.flatMap((x) => [x.member_id, x.source_member_id, x.released_member_id]).filter(Boolean)));
+      const oids = Array.from(new Set(list.map((x) => x.source_order_id).filter(Boolean)));
+      const [{ data: ps }, { data: os }] = await Promise.all([
+        mids.length ? (supabase as any).from("profiles").select("*").in("id", mids) : Promise.resolve({ data: [] }),
+        oids.length ? (supabase as any).from("sales_orders").select("id, order_no").in("id", oids) : Promise.resolve({ data: [] }),
+      ]);
+      if (!alive) return;
+      setLedgerBonus({
+        recs: Object.fromEntries(list.map((x) => [x.id, x])),
+        members: Object.fromEntries(((ps ?? []) as any[]).map((x) => [x.id, x])),
+        orders: Object.fromEntries(((os ?? []) as any[]).map((x) => [x.id, x])),
+        tiers: Object.fromEntries(((ps ?? []) as any[]).filter((x) => x.vip_tier).map((x) => [x.id, String(x.vip_tier)])),
+      });
+    })();
+    return () => { alive = false; };
+  }, [ledger.rows]);
   const [adj, setAdj] = useState({ mode: "delta" as "delta" | "set", value: "", note: "", busy: false });
   function loadLedger(userId: string, kind: LedgerKind, from: string, to: string) {
     setLedger((l) => ({ ...l, status: "loading", rows: [] }));
@@ -1245,7 +1270,17 @@ function Page() {
                     <TableCell className="text-xs">{r.type || "—"}</TableCell>
                     <TableCell className={`text-right font-mono ${r.amount >= 0 ? "text-primary" : "text-destructive"}`}>{r.amount >= 0 ? "+" : ""}{r.amount.toLocaleString("zh-TW")}</TableCell>
                     <TableCell className="text-right font-mono">{r.balance_after === null ? "—" : r.balance_after.toLocaleString("zh-TW")}</TableCell>
-                    <TableCell className="text-xs font-mono whitespace-nowrap">{r.order_no ? <button type="button" className="text-primary underline" onClick={() => setOrderNo(r.order_no)}>{r.order_no}</button> : "—"}</TableCell>
+                    <TableCell className="text-xs font-mono whitespace-nowrap">{r.order_no ? <button type="button" className="text-primary underline" onClick={() => setOrderNo(r.order_no)}>{r.order_no}</button> : (() => {
+                      const rec = (r as any).reference_id ? ledgerBonus.recs[(r as any).reference_id] : null;
+                      if (!rec) return "—";
+                      const ord = rec.source_order_id ? ledgerBonus.orders[rec.source_order_id] : null;
+                      return (
+                        <div className="flex items-center gap-1">
+                          {ord?.order_no ? <button type="button" className="text-primary underline" onClick={() => setOrderNo(ord.order_no)}>{ord.order_no}</button> : <span className="text-muted-foreground">{String(rec.settlement_date ?? "").slice(0, 7)}</span>}
+                          <BonusCalculationDetailDialog record={rec} mode={["monthly_vip", "rank_rebate", "rank_diff_rebate", "national_share"].includes(rec.bonus_type) ? "monthly" : "daily"} members={ledgerBonus.members} orders={ledgerBonus.orders} tiers={ledgerBonus.tiers} />
+                        </div>
+                      );
+                    })()}</TableCell>
                     <TableCell className="text-xs">{r.status ?? "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[240px]">{r.note ?? "—"}</TableCell>
                   </TableRow>
