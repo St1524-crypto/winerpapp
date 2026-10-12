@@ -8,6 +8,13 @@
       "when": 1791206732060,
       "tag": "0000_unify_responsibility_points_200",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791775430165,
+      "tag": "0001_migration",
+      "breakpoints": true
     }
   ]
 }

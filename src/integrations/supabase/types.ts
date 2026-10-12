@@ -7895,6 +7895,35 @@ export type Database = {
         Returns: number
       }
       get_upgrade_bonus_total_earnings_types: { Args: never; Returns: string[] }
+      guest_cart_add: {
+        Args: { _product_id: string; _qty: number; _token: string }
+        Returns: undefined
+      }
+      guest_cart_claim: { Args: { _token: string }; Returns: string }
+      guest_cart_clear: { Args: { _token: string }; Returns: undefined }
+      guest_cart_ensure: { Args: { _token: string }; Returns: string }
+      guest_cart_items: {
+        Args: { _token: string }
+        Returns: {
+          bundle_id: string | null
+          bundle_line_key: string | null
+          cart_id: string
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "cart_items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      guest_cart_set_qty: {
+        Args: { _item_id: string; _qty: number; _token: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
