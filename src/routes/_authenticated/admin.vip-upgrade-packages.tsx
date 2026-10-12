@@ -14,6 +14,7 @@ import {
   adminListVipPackages, upsertVipPackage, deleteVipPackage, adminListVipTiers,
   searchProductsForVipPackage,
 } from "@/lib/vip-tiers.functions";
+import { ImageUploader } from "@/components/products/ImageUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/vip-upgrade-packages")({
   component: VipPackagesAdmin,
@@ -25,6 +26,7 @@ type BoundProduct = { id: string; name?: string; sku?: string; price?: number; q
 const empty = {
   id: "", tier_code: "V", name: "", description: "",
   price: 0, bonus_points: 0, duration_days: 365, sort_order: 0, status: "active",
+  images: [] as string[], youtube_url: "",
 };
 
 function VipPackagesAdmin() {
@@ -96,6 +98,8 @@ function VipPackagesAdmin() {
         duration_days: Math.max(0, Math.floor(Number(form.duration_days) || 0)),
         sort_order: Math.floor(Number(form.sort_order) || 0),
         description: form.description || null,
+        images: (form.images ?? []).slice(0, 5),
+        youtube_url: form.youtube_url?.trim() || null,
         product_items: bound.map((b) => ({ product_id: b.id, quantity: b.quantity })),
       };
       if (!payload.id) delete payload.id;
@@ -177,6 +181,16 @@ function VipPackagesAdmin() {
             <div><Label>有效天數 (0=永久)</Label><Input type="number" value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: e.target.value })} /></div>
             <div><Label>排序</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} /></div>
             <div className="col-span-2"><Label>說明</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+            <div className="col-span-2 space-y-1"><Label>套組圖片（最多 5 張）</Label>
+              <ImageUploader
+                max={5}
+                images={(form.images ?? []).map((url: string, i: number) => ({ url, sort: i }))}
+                onChange={(next) => setForm({ ...form, images: next.map((n) => n.url) })}
+              />
+            </div>
+            <div className="col-span-2"><Label>YouTube 影片連結</Label>
+              <Input value={form.youtube_url ?? ""} placeholder="https://www.youtube.com/watch?v=..." onChange={(e) => setForm({ ...form, youtube_url: e.target.value })} />
+            </div>
 
             <div className="col-span-2 space-y-2">
               <Label>綁定商品（可多個，任一付款後觸發升級；獎勵點仍依設定僅發 1 次）</Label>

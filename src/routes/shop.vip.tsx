@@ -17,6 +17,12 @@ export const Route = createFileRoute("/shop/vip")({
   head: () => ({ meta: [{ title: "VIP 升級套組 — 源晶商城" }] }),
 });
 
+function youtubeId(url?: string | null): string | null {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 function VipPage() {
   const { user } = useAuth();
   const { is_vip, vip_expires_at, refresh } = useVipStatus();
@@ -108,6 +114,25 @@ function VipPage() {
                         {p.duration_days > 0 && <span className="text-sm font-normal text-muted-foreground"> / {p.duration_days} 天</span>}
                       </div>
                       {p.description && <p className="text-sm text-muted-foreground">{p.description}</p>}
+                      {(p.images?.length ?? 0) > 0 && (
+                        <div className="flex gap-2 overflow-x-auto snap-x">
+                          {(p.images as string[]).slice(0, 5).map((src, i) => (
+                            <img key={i} src={src} alt={`${p.name} ${i + 1}`} loading="lazy" className="h-28 w-28 shrink-0 snap-start rounded-md object-cover border" />
+                          ))}
+                        </div>
+                      )}
+                      {youtubeId(p.youtube_url) && (
+                        <div className="aspect-video w-full overflow-hidden rounded-md border">
+                          <iframe
+                            className="h-full w-full"
+                            src={`https://www.youtube-nocookie.com/embed/${youtubeId(p.youtube_url)}`}
+                            title={p.name}
+                            loading="lazy"
+                            allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      )}
                       <ul className="space-y-1 text-sm">
                         <li className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />升級至 {p.tier_code} 級 VIP</li>
                         {p.bonus_points > 0 && <li className="flex items-center gap-2"><Check className="h-4 w-4 text-success" />贈送 {p.bonus_points} 獎勵點（整組僅 1 次）</li>}
