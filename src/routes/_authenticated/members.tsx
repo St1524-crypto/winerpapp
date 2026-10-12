@@ -860,15 +860,21 @@ function Page() {
                 {walletStatus === "ready" && wallet && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {([
-                      ["現金餘額", wallet.cash_balance],
-                      ["購物點", wallet.shopping_points],
-                      ["貢獻點", wallet.reward_points],
-                      ["折扣點", wallet.discount_points],
-                    ] as const).map(([label, value]) => (
-                      <div key={label}>
-                        <div className="text-[11px] text-muted-foreground">{label}</div>
+                      ["現金餘額", wallet.cash_balance, "cash"],
+                      ["購物點", wallet.shopping_points, "shopping"],
+                      ["貢獻點", wallet.reward_points, "reward"],
+                      ["折扣點", wallet.discount_points, "discount"],
+                    ] as const).map(([label, value, kind]) => (
+                      <button
+                        type="button"
+                        key={label}
+                        onClick={() => editing && openLedger(editing.id, kind, label)}
+                        className="text-left rounded-md p-1 -m-1 hover:bg-accent transition-colors"
+                        title={`查看${label}明細`}
+                      >
+                        <div className="text-[11px] text-muted-foreground">{label} <span className="text-primary">明細›</span></div>
                         <div className="text-sm font-semibold font-mono">{Number(value).toLocaleString("zh-TW")}</div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
