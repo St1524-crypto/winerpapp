@@ -21,6 +21,10 @@ import {
   updateBonusSettings,
 } from "@/lib/bonus.functions";
 import { bonusTypeLabel } from "@/lib/bonus-labels";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
+const MONTHLY_BT = new Set(["monthly_vip", "rank_rebate", "rank_diff_rebate", "national_share"]);
 
 const ALLOWED: AppRole[] = ["super_admin", "admin", "finance"];
 
@@ -63,6 +67,26 @@ function Page() {
   const [data, setData] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [ym, setYm] = useState(prevMonthYm());
+  const recentIds: string[] = (data?.recent ?? []).map((r: any) => r.id);
+  const recDetail = useQuery({
+    queryKey: ["payout-recent-detail", recentIds.join(",")],
+    enabled: recentIds.length > 0,
+    queryFn: async () => {
+      const { data: rs } = await (supabase as any).from("bonus_records").select("*").in("id", recentIds);
+      const list = (rs ?? []) as any[];
+      const mids = Array.from(new Set(list.flatMap((x) => [x.member_id, x.source_member_id, x.released_member_id]).filter(Boolean)));
+      const oids = Array.from(new Set(list.map((x) => x.source_order_id).filter(Boolean)));
+      const [{ data: ps }, { data: os }] = await Promise.all([
+        mids.length ? (supabase as any).from("profiles").select("*").in("id", mids) : Promise.resolve({ data: [] }),
+        oids.length ? (supabase as any).from("sales_orders").select("id, order_no").in("id", oids) : Promise.resolve({ data: [] }),
+      ]);
+      return {
+        recs: Object.fromEntries(list.map((x) => [x.id, x])),
+        members: Object.fromEntries(((ps ?? []) as any[]).map((x) => [x.id, x])),
+        orders: Object.fromEntries(((os ?? []) as any[]).map((x) => [x.id, x])),
+      };
+    },
+  });
   const [lastResult, setLastResult] = useState<{ label: string; payload: any } | null>(null);
 
   const load = useCallback(async () => {
@@ -285,6 +309,7 @@ function Page() {
       <Card>
         <CardHeader>
           <CardTitle>最近發放紀錄（80/20 拆分）</CardTitle>
+          <CardDescription>點「詳情」可查詢該筆獎金的演算與訂單發放明細。</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
@@ -315,6 +340,14 @@ function Page() {
                   <TableCell className="text-xs">
                     <Badge variant="secondary">{bonusTypeLabel(r.bonusType)}</Badge>
                     <span className="ml-1 text-[10px] text-muted-foreground font-mono">{r.bonusType}</span>
+                    {recDetail.data?.recs[r.id] && (
+                      <BonusCalculationDetailDialog
+                        record={recDetail.data.recs[r.id]}
+                        mode={MONTHLY_BT.has(r.bonusType) ? "monthly" : "daily"}
+                        members={recDetail.data.members}
+                        orders={recDetail.data.orders}
+                      />
+                    )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{fmt(r.points)}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmt(r.cash)}</TableCell>
