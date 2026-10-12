@@ -45,6 +45,8 @@ function Page() {
   const [editGr, setEditGr] = useState<GR | null>(null);
   const [editNotes, setEditNotes] = useState("");
   const [editWarehouseId, setEditWarehouseId] = useState<string>("");
+  const [editItems, setEditItems] = useState<Item[]>([]);
+  const [editItemsLoading, setEditItemsLoading] = useState(false);
   const [delGr, setDelGr] = useState<GR | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerPOs, setPickerPOs] = useState<PO[]>([]);
@@ -156,10 +158,16 @@ function Page() {
     setReceiving(null); load(); loadGR();
   }
 
-  function startEdit(g: GR) {
+  async function startEdit(g: GR) {
     setEditGr(g);
     setEditNotes(g.notes ?? "");
     setEditWarehouseId(g.warehouse_id ?? "");
+    setEditItems([]);
+    setEditItemsLoading(true);
+    const { data, error } = await sb.from("purchase_order_items").select("*").eq("purchase_order_id", g.purchase_order_id);
+    if (error) toast.error(error.message);
+    setEditItems(data ?? []);
+    setEditItemsLoading(false);
   }
 
   async function saveEdit() {
@@ -340,11 +348,43 @@ function Page() {
       </Dialog>
 
       <Dialog open={!!editGr} onOpenChange={(v) => !v && setEditGr(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>修改進貨單 — {editGr?.receipt_no}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="text-sm text-muted-foreground">
               採購單：<span className="font-mono">{editGr?.po_no ?? "—"}</span> · 供應商：{editGr?.vendor_name ?? "—"}
+            </div>
+            <div className="space-y-2">
+              <Label>採購明細</Label>
+              <div className="border rounded-md overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>SKU</TableHead><TableHead>商品</TableHead>
+                      <TableHead className="text-right">單價</TableHead>
+                      <TableHead className="text-right">採購數</TableHead>
+                      <TableHead className="text-right">已到貨</TableHead>
+                      <TableHead className="text-right">未到貨</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {editItemsLoading ? (
+                      <TableRow><TableCell colSpan={6}><Skeleton className="h-6 w-full" /></TableCell></TableRow>
+                    ) : editItems.length === 0 ? (
+                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-4">無採購明細</TableCell></TableRow>
+                    ) : editItems.map((i) => (
+                      <TableRow key={i.id}>
+                        <TableCell className="font-mono text-xs">{i.sku || "—"}</TableCell>
+                        <TableCell>{i.product_name}</TableCell>
+                        <TableCell className="text-right tabular-nums">{Number(i.price || 0).toLocaleString()}</TableCell>
+                        <TableCell className="text-right tabular-nums">{i.quantity}</TableCell>
+                        <TableCell className="text-right tabular-nums">{i.received_quantity}</TableCell>
+                        <TableCell className="text-right tabular-nums">{Math.max(0, i.quantity - i.received_quantity)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>入庫倉庫</Label>
