@@ -439,39 +439,101 @@ export const adminGetMemberWallet = createServerFn({ method: "GET" })
     };
   });
 
-// 管理員查詢會員錢包明細（現金 / 購物點 / 貢獻點 / 折扣點）
+// 管理員查詢會員錢包明細（現金 / 購物點 / 貢獻點 / 折扣點），可依日期（台北時間）篩選，並帶出訂單編號
+const WALLET_COL = { cash: "cash_balance", shopping: "shopping_points", reward: "reward_points", discount: "discount_points" } as const;
+function tpeStart(d: string) { return new Date(`${d}T00:00:00+08:00`).toISOString(); }
+function tpeEnd(d: string) { return new Date(new Date(`${d}T00:00:00+08:00`).getTime() + 86400000).toISOString(); }
+
 export const adminGetMemberWalletLedger = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ userId: z.string().uuid(), kind: z.enum(["cash", "shopping", "reward", "discount"]) }).parse(d),
+    z.object({
+      userId: z.string().uuid(),
+      kind: z.enum(["cash", "shopping", "reward", "discount"]),
+      from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    }).parse(d),
   )
   .handler(async ({ data, context }) => {
     if (!(await isFinanceAdmin(context.userId))) throw new Error("沒有權限");
+    let rowsOut: any[] = [];
     if (data.kind === "cash") {
-      const { data: rows, error } = await supabaseAdmin
+      let q = supabaseAdmin
         .from("cash_transactions")
-        .select("id, created_at, tx_type, amount, balance_after, status, note")
-        .eq("user_id", data.userId)
-        .order("created_at", { ascending: false })
-        .limit(500);
+        .select("id, created_at, tx_type, amount, balance_after, status, note, reference_id")
+        .eq("user_id", data.userId);
+      if (data.from) q = q.gte("created_at", tpeStart(data.from));
+      if (data.to) q = q.lt("created_at", tpeEnd(data.to));
+      const { data: rows, error } = await q.order("created_at", { ascending: false }).limit(500);
       if (error) throw new Error(error.message);
-      return (rows ?? []).map((r: any) => ({
+      rowsOut = (rows ?? []).map((r: any) => ({
         id: r.id, created_at: r.created_at, type: r.tx_type, amount: Number(r.amount ?? 0),
-        balance_after: r.balance_after === null ? null : Number(r.balance_after), status: r.status ?? null, note: r.note ?? null,
+        balance_after: r.balance_after === null ? null : Number(r.balance_after), status: r.status ?? null, note: r.note ?? null, reference_id: r.reference_id ?? null,
+      }));
+    } else {
+      let q = supabaseAdmin
+        .from("point_transactions")
+        .select("id, created_at, source, amount, balance_after, note, reference_id")
+        .eq("user_id", data.userId)
+        .eq("point_type", data.kind);
+      if (data.from) q = q.gte("created_at", tpeStart(data.from));
+      if (data.to) q = q.lt("created_at", tpeEnd(data.to));
+      const { data: rows, error } = await q.order("created_at", { ascending: false }).limit(500);
+      if (error) throw new Error(error.message);
+      rowsOut = (rows ?? []).map((r: any) => ({
+        id: r.id, created_at: r.created_at, type: r.source ?? "", amount: Number(r.amount ?? 0),
+        balance_after: r.balance_after === null ? null : Number(r.balance_after), status: null as string | null, note: r.note ?? null, reference_id: r.reference_id ?? null,
       }));
     }
-    const { data: rows, error } = await supabaseAdmin
-      .from("point_transactions")
-      .select("id, created_at, source, amount, balance_after, note")
-      .eq("user_id", data.userId)
-      .eq("point_type", data.kind)
-      .order("created_at", { ascending: false })
-      .limit(500);
-    if (error) throw new Error(error.message);
-    return (rows ?? []).map((r: any) => ({
-      id: r.id, created_at: r.created_at, type: r.source ?? "", amount: Number(r.amount ?? 0),
-      balance_after: r.balance_after === null ? null : Number(r.balance_after), status: null as string | null, note: r.note ?? null,
-    }));
+    const refIds = Array.from(new Set(rowsOut.map((r) => r.reference_id).filter((x) => typeof x === "string" && /^[0-9a-f-]{36}$/i.test(x))));
+    const orderMap = new Map<string, string>();
+    if (refIds.length) {
+      const { data: os } = await supabaseAdmin.from("sales_orders").select("id, order_no").in("id", refIds);
+      (os ?? []).forEach((o: any) => orderMap.set(o.id, o.order_no));
+    }
+    return rowsOut.map((r) => ({ ...r, order_no: r.reference_id ? orderMap.get(r.reference_id) ?? null : null }));
+  });
+
+// 超級管理員：直接調整會員錢包點數（寫入異動紀錄）
+export const adminAdjustMemberWallet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      userId: z.string().uuid(),
+      kind: z.enum(["cash", "shopping", "reward", "discount"]),
+      mode: z.enum(["delta", "set"]),
+      value: z.number().finite().min(-100_000_000).max(100_000_000),
+      note: z.string().trim().min(1, "請填寫原因").max(500),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: roles } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", context.userId).eq("role", "super_admin");
+    if (!(roles ?? []).length) throw new Error("只有超級管理員可以修改點數");
+    const col = WALLET_COL[data.kind];
+    const { data: w } = await supabaseAdmin.from("member_points_wallet").select(col).eq("user_id", data.userId).maybeSingle();
+    if (!w) await supabaseAdmin.from("member_points_wallet").insert({ user_id: data.userId });
+    const cur = Number((w as any)?.[col] ?? 0);
+    const after = Math.round((data.mode === "set" ? data.value : cur + data.value) * 100) / 100;
+    if (after < 0) throw new Error("調整後餘額不可小於 0");
+    const delta = Math.round((after - cur) * 100) / 100;
+    if (delta === 0) return { before: cur, after };
+    const { error: uErr } = await supabaseAdmin.from("member_points_wallet")
+      .update({ [col]: after, updated_at: new Date().toISOString() } as any).eq("user_id", data.userId);
+    if (uErr) throw new Error(uErr.message);
+    const note = `超級管理員調整：${data.note}`;
+    const { error: tErr } = data.kind === "cash"
+      ? await supabaseAdmin.from("cash_transactions").insert({
+          user_id: data.userId, tx_type: "adjust", amount: delta, balance_after: after, status: "completed",
+          note, created_by: context.userId, processed_by: context.userId, processed_at: new Date().toISOString(),
+        })
+      : await supabaseAdmin.from("point_transactions").insert({
+          user_id: data.userId, point_type: data.kind, amount: delta, balance_after: after, source: "admin_adjust", note, created_by: context.userId,
+        } as any);
+    if (tErr) {
+      await supabaseAdmin.from("member_points_wallet").update({ [col]: cur } as any).eq("user_id", data.userId);
+      throw new Error(tErr.message);
+    }
+    return { before: cur, after };
   });
 
 // ============ 訂單：以現金餘額付款 ============
