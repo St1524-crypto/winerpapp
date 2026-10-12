@@ -205,6 +205,15 @@ const pkgSchema = z.object({
   sort_order: z.number().int().default(0),
   status: z.enum(["active", "inactive"]).default("active"),
   product_id: z.string().uuid().nullable().optional(),
+  images: z.array(z.string().url().max(1000)).max(5).optional(),
+  youtube_url: z
+    .string()
+    .trim()
+    .max(500)
+    .regex(/^(https?:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\//i, "請輸入有效的 YouTube 連結")
+    .nullable()
+    .optional()
+    .or(z.literal("").transform(() => null)),
   product_ids: z.array(z.string().uuid()).optional(),
   product_items: z
     .array(z.object({ product_id: z.string().uuid(), quantity: z.number().int().min(1).default(1) }))

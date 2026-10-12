@@ -7101,6 +7101,7 @@ export type Database = {
           description: string | null
           duration_days: number
           id: string
+          images: string[]
           name: string
           package_product_id: string | null
           price: number
@@ -7109,6 +7110,7 @@ export type Database = {
           status: string
           tier_code: string
           updated_at: string
+          youtube_url: string | null
         }
         Insert: {
           bonus_points?: number
@@ -7116,6 +7118,7 @@ export type Database = {
           description?: string | null
           duration_days?: number
           id?: string
+          images?: string[]
           name: string
           package_product_id?: string | null
           price?: number
@@ -7124,6 +7127,7 @@ export type Database = {
           status?: string
           tier_code: string
           updated_at?: string
+          youtube_url?: string | null
         }
         Update: {
           bonus_points?: number
@@ -7131,6 +7135,7 @@ export type Database = {
           description?: string | null
           duration_days?: number
           id?: string
+          images?: string[]
           name?: string
           package_product_id?: string | null
           price?: number
@@ -7139,6 +7144,7 @@ export type Database = {
           status?: string
           tier_code?: string
           updated_at?: string
+          youtube_url?: string | null
         }
         Relationships: [
           {
