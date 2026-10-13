@@ -207,12 +207,17 @@ export const processOrderAnnualFeeUpgrade = createServerFn({ method: "POST" })
     const skus = (items ?? []).map((i: any) => i.sku).filter(Boolean);
     if (skus.length === 0) return { ok: false, reason: "no_items" };
 
-    const { data: rules } = await supabaseAdmin
+    const { data: dbRules } = await supabaseAdmin
       .from("annual_fee_vip_rules")
       .select("*")
       .eq("is_active", true)
       .in("sku", skus);
-    if (!rules || rules.length === 0) return { ok: false, reason: "no_matching_rule" };
+    const rules: any[] = [...(dbRules ?? [])];
+    // 不需設定商品的年度續約：訂單明細 SKU ANNUAL-RENEWAL-365 → 延展 365 天（不發獎勵點、無贈品）
+    if (skus.includes("ANNUAL-RENEWAL-365") && !rules.some((r) => r.sku === "ANNUAL-RENEWAL-365")) {
+      rules.push({ id: null, sku: "ANNUAL-RENEWAL-365", upgrade_days: 365, reward_points: 0, gift_product_id: null, gift_quantity: 0 });
+    }
+    if (rules.length === 0) return { ok: false, reason: "no_matching_rule" };
 
     const results: any[] = [];
     for (const rule of rules as any[]) {
