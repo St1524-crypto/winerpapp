@@ -2377,9 +2377,24 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                     <CommandList>
                       {annualFeeQ.isLoading ? (
                         <div className="py-6 text-center text-sm text-muted-foreground">載入中...</div>
-                      ) : (annualFeeQ.data ?? []).length === 0 ? (
-                        <div className="py-6 text-center text-sm text-muted-foreground">尚未設定年費續約商品</div>
                       ) : (
+                        <>
+                        <CommandGroup heading="不需設定商品">
+                          <CommandItem
+                            value="VIP 年度續約 365 天 ANNUAL-RENEWAL-365"
+                            onSelect={() => {
+                              setItems((prev) => prev.some((x) => x.sku === "ANNUAL-RENEWAL-365") ? prev : [...prev, { product_id: "", name: "VIP 年度續約（延展 365 天）", sku: "ANNUAL-RENEWAL-365", image: null, unit_price: 1500, quantity: 1, reward_points: 0, is_gift: false, base_price: 1500 } as any]);
+                              setRenewalPickerOpen(false);
+                            }}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium truncate">VIP 年度續約</div>
+                              <div className="text-xs text-muted-foreground truncate">不需商品 · 付款後延長 365 天</div>
+                            </div>
+                            <div className="text-sm tabular-nums ml-2">{fmt(1500)}</div>
+                          </CommandItem>
+                        </CommandGroup>
+                        {(annualFeeQ.data ?? []).length > 0 && (
                         <CommandGroup heading="年費續約方案">
                           {(annualFeeQ.data ?? []).map((p: any) => (
                             <CommandItem
@@ -2397,6 +2412,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                             </CommandItem>
                           ))}
                         </CommandGroup>
+                        )}
+                        </>
                       )}
                     </CommandList>
                   </Command>
