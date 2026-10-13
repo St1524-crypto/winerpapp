@@ -222,12 +222,12 @@ export const processOrderAnnualFeeUpgrade = createServerFn({ method: "POST" })
     const results: any[] = [];
     for (const rule of rules as any[]) {
       // 冪等：同一張訂單 + 同一條規則只執行一次
-      const { data: existing } = await supabaseAdmin
+      let exQ = supabaseAdmin
         .from("annual_fee_upgrade_logs")
         .select("id")
-        .eq("sales_order_id", data.orderId)
-        .eq("rule_id", rule.id)
-        .maybeSingle();
+        .eq("sales_order_id", data.orderId);
+      exQ = rule.id ? exQ.eq("rule_id", rule.id) : exQ.is("rule_id", null).eq("sku", rule.sku);
+      const { data: existing } = await exQ.limit(1).maybeSingle();
       if (existing) {
         results.push({ rule_id: rule.id, skipped: "already_processed" });
         continue;
