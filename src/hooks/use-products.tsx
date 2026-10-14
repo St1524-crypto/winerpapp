@@ -72,7 +72,8 @@ export function useProducts(filters: ProductFilters) {
       q = q.or(`name.ilike.${s},sku.ilike.${s}`);
     }
     if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
-    if (filters.status) q = q.eq("status", filters.status);
+    if (filters.status === "sold_out") q = q.lte("stock", 0);
+    else if (filters.status) q = q.eq("status", filters.status);
     q = q.order(sort.col as string, { ascending: sort.dir === "asc" });
     q = q.range((page - 1) * pageSize, page * pageSize - 1);
     const { data, count } = await q;

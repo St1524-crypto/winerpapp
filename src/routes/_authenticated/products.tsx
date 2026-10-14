@@ -133,6 +133,7 @@ function ProductsPage() {
               <SelectContent>
                 <SelectItem value="all">全部狀態</SelectItem>
                 {PRODUCT_STATUS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                <SelectItem value="sold_out">已售完（庫存 ≤ 0）</SelectItem>
               </SelectContent>
             </Select>
           </div>
