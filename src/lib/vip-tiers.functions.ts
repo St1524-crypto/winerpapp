@@ -528,26 +528,7 @@ export const confirmVipUpgradePayment = createServerFn({ method: "POST" })
         .eq("id", userId);
     }
 
-    if ((pkg as any).bonus_points > 0) {
-      const { data: wallet } = await supabaseAdmin
-        .from("member_points_wallet")
-        .select("reward_points")
-        .eq("user_id", userId)
-        .maybeSingle();
-      const newBalance = Number((wallet as any)?.reward_points ?? 0) + (pkg as any).bonus_points;
-      await supabaseAdmin
-        .from("member_points_wallet")
-        .upsert(
-          { user_id: userId, reward_points: newBalance, updated_at: now },
-          { onConflict: "user_id" },
-        );
-      await supabaseAdmin.from("reward_wallet_logs").insert({
-        member_id: userId,
-        points: (pkg as any).bonus_points,
-        type: "earn",
-        description: `VIP 升級套組贈點：${(pkg as any).name}`,
-      });
-    }
+    // 升級套組獎勵點只作為獎金計算基礎，不可存入會員貢獻點錢包。
 
     await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,
@@ -732,24 +713,8 @@ export const processOrderVipPackageUpgrade = createServerFn({ method: "POST" })
         if (upErr) throw upErr;
       }
 
-      let grantedPoints = 0;
-      if (pkg.bonus_points > 0) {
-        await supabaseAdmin.from("reward_wallet_logs").insert({
-          member_id: userId,
-          points: pkg.bonus_points,
-          type: "earn",
-          description: `VIP 升級套組贈點：${pkg.name}`,
-        });
-        const { data: sum } = await supabaseAdmin
-          .from("reward_wallet_logs")
-          .select("points")
-          .eq("member_id", userId);
-        const total = (sum ?? []).reduce((s: number, r: any) => s + Number(r.points ?? 0), 0);
-        await supabaseAdmin
-          .from("member_points_wallet")
-          .upsert({ user_id: userId, reward_points: total }, { onConflict: "user_id" });
-        grantedPoints = pkg.bonus_points;
-      }
+      // 升級套組獎勵點只作為獎金計算基礎，不可存入會員貢獻點錢包。
+      const grantedPoints = 0;
 
       // === 發放贈品商品：依設定數量扣庫存 + 寫 inventory_logs ===
       const giftItems: { product_id: string; quantity: number }[] = [];
