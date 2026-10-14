@@ -1744,7 +1744,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
           no_reward_points: noRewardPoints,
           },
           items: items.map((it) => ({
-            product_id: it.product_id,
+            product_id: it.product_id || null,
             product_name: it.is_gift ? `${it.name}（贈品）` : it.name,
             sku: it.sku,
             image: it.image,
