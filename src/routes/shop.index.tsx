@@ -278,6 +278,7 @@ function HomepageProductSection({ section }: { section: HomepageSection }) {
         icon={meta.icon}
         title={section.title || meta.title}
         desc={section.subtitle || meta.desc}
+        highlight={!!section.subtitle}
         action={<Link to="/shop/products" search={{ q: "", cat: "", sort: "new", section: "" }} className="text-sm text-primary hover:underline">查看全部</Link>}
       />
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4 mt-4">
@@ -303,12 +304,14 @@ function FeatureCard({ icon: Icon, title, desc }: { icon: any; title: string; de
   );
 }
 
-function SectionHeader({ icon: Icon, title, desc, action }: { icon: any; title: string; desc?: string; action?: React.ReactNode }) {
+function SectionHeader({ icon: Icon, title, desc, action, highlight }: { icon: any; title: string; desc?: string; action?: React.ReactNode; highlight?: boolean }) {
   return (
     <div className="flex items-end justify-between gap-2">
       <div>
         <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2"><Icon className="h-5 w-5 text-primary" />{title}</h2>
-        {desc && <p className="text-xs md:text-sm text-muted-foreground mt-1">{desc}</p>}
+        {desc && (highlight
+          ? <p className="mt-2 inline-block rounded-md bg-primary px-3 py-1 text-lg md:text-2xl font-extrabold tracking-wide text-primary-foreground shadow-sm">{desc}</p>
+          : <p className="text-xs md:text-sm text-muted-foreground mt-1">{desc}</p>)}
       </div>
       {action}
     </div>
