@@ -675,6 +675,24 @@ function Page() {
           )}
         </SheetContent>
       </Sheet>
+
+      <Dialog open={npOpen} onOpenChange={setNpOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>新增未建檔商品</DialogTitle></DialogHeader>
+          <div className="grid sm:grid-cols-2 gap-3 py-2">
+            <div className="space-y-1 sm:col-span-2"><Label>商品名稱 *</Label><Input value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} /></div>
+            <div className="space-y-1"><Label>SKU（空白自動產生）</Label><Input value={np.sku} onChange={(e) => setNp({ ...np, sku: e.target.value })} /></div>
+            <div className="space-y-1"><Label>單位</Label><Input value={np.unit} onChange={(e) => setNp({ ...np, unit: e.target.value })} /></div>
+            <div className="space-y-1"><Label>售價</Label><Input type="number" value={np.price} onChange={(e) => setNp({ ...np, price: e.target.value })} /></div>
+            <div className="space-y-1"><Label>採購單價</Label><Input type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} /></div>
+            <div className="space-y-1"><Label>採購數量</Label><Input type="number" value={np.qty} onChange={(e) => setNp({ ...np, qty: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNpOpen(false)}>取消</Button>
+            <Button onClick={createNewProduct} disabled={npSaving}>{npSaving ? "建立中..." : "建檔並加入採購"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
