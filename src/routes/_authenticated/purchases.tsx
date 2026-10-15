@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Plus, Search, Truck, Eye, Printer, Trash2, FileDown, ArrowRight, Pencil } from "lucide-react";
 import { exportPdfReport } from "@/lib/pdf-report";
 import { useBranding } from "@/hooks/use-branding";
+import { useCurrentCompany } from "@/hooks/use-current-company";
 
 const STATUS = [
   { v: "draft", label: "草稿", variant: "secondary" as const },
@@ -165,6 +166,37 @@ function Page() {
     setItems(arr);
   }
   function removeItem(i: number) { setItems(items.filter((_, idx) => idx !== i)); }
+
+  const { currentCompanyId } = useCurrentCompany();
+  const [npOpen, setNpOpen] = useState(false);
+  const [np, setNp] = useState({ name: "", sku: "", price: "0", cost: "0", qty: "1", unit: "件" });
+  const [npSaving, setNpSaving] = useState(false);
+  async function createNewProduct() {
+    const name = np.name.trim();
+    if (!name) return toast.error("請輸入商品名稱");
+    if (!currentCompanyId) return toast.error("尚未選擇公司");
+    setNpSaving(true);
+    try {
+      let sku = np.sku.trim();
+      const { generateSku, isSkuUnique } = await import("@/lib/sku");
+      if (!sku) sku = await generateSku("GEN");
+      else if (!(await isSkuUnique(sku))) throw new Error("SKU 已存在，請換一組");
+      const { data, error } = await sb.from("products").insert({
+        company_id: currentCompanyId, name, sku,
+        price: Number(np.price) || 0, stock: 0, status: "active",
+      }).select("id,sku,name,status").single();
+      if (error) throw new Error(error.message);
+      const cost = Number(np.cost) || 0;
+      const qty = Number(np.qty) || 1;
+      setProducts((ps) => [...ps, { ...data, cost_price: cost }]);
+      setItems((arr) => [...arr, { product_id: data.id, product_name: data.name, sku: data.sku, unit: np.unit || "件", quantity: qty, received_quantity: 0, price: cost, subtotal: qty * cost }]);
+      toast.success(`已建檔並加入採購：${name}`);
+      setNpOpen(false);
+      setNp({ name: "", sku: "", price: "0", cost: "0", qty: "1", unit: "件" });
+    } catch (e: any) {
+      toast.error(e?.message ?? "新增失敗");
+    } finally { setNpSaving(false); }
+  }
 
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
   const tax = Math.round(subtotal * (taxRate / 100));
@@ -502,7 +534,10 @@ function Page() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>商品明細</Label>
-                <Button size="sm" variant="outline" onClick={addItem}><Plus className="h-4 w-4 mr-1" />新增商品</Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setNpOpen(true)}><Plus className="h-4 w-4 mr-1" />新增未建檔商品</Button>
+                  <Button size="sm" variant="outline" onClick={addItem}><Plus className="h-4 w-4 mr-1" />採購商品</Button>
+                </div>
               </div>
               <div className="border rounded-lg overflow-x-auto">
                 <Table>
