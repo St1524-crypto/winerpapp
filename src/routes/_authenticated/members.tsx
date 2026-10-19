@@ -23,6 +23,8 @@ import { adminGetMemberWallet, adminGetMemberWalletLedger, adminAdjustMemberWall
 import { BonusCalculationDetailDialog } from "@/components/admin/BonusCalculationDetailDialog";
 import { adminGetMemberEarnings } from "@/lib/members-admin.functions";
 import { resolveVipTierCode, vipTierLabel } from "@/lib/vip-tier-label";
+import { useServerFn } from "@tanstack/react-start";
+import { getMemberDividendExclusion, setMemberDividendExclusion } from "@/lib/dividend-exclusion.functions";
 
 type MemberWallet = { cash_balance: number; shopping_points: number; reward_points: number; discount_points: number; updated_at: string | null };
 
@@ -61,6 +63,10 @@ function Page() {
   const { roles: myRoles } = useAuth();
   const isAdmin = myRoles.includes("super_admin") || myRoles.includes("admin");
   const isSuperAdmin = myRoles.includes("super_admin");
+  const fetchExclusion = useServerFn(getMemberDividendExclusion);
+  const saveExclusion = useServerFn(setMemberDividendExclusion);
+  const [exclusion, setExclusion] = useState({ excluded: false, reason: "", ready: false, error: false });
+  const [exclusionInitial, setExclusionInitial] = useState({ excluded: false, reason: "" });
 
   const PAGE_SIZE = 15;
 
@@ -385,6 +391,14 @@ function Page() {
 
     setGrantsStatus("loading");
     const token = ++grantsReqRef.current;
+    setExclusion({ excluded: false, reason: "", ready: false, error: false });
+    fetchExclusion({ data: { userId: m.id } }).then((value) => {
+      if (token !== grantsReqRef.current) return;
+      setExclusion({ ...value, ready: true, error: false });
+      setExclusionInitial(value);
+    }).catch(() => {
+      if (token === grantsReqRef.current) setExclusion((value) => ({ ...value, error: true }));
+    });
     listMemberBonusGrants({ data: { userId: m.id } })
       .then((rows) => {
         if (token !== grantsReqRef.current) return;
@@ -423,6 +437,8 @@ function Page() {
 
   async function submitEditProfile() {
     if (!editProfile) return;
+    if (isSuperAdmin && !exclusion.ready) return toast.error("分紅設定尚未載入，請重新開啟會員資料");
+    if (isSuperAdmin && exclusion.excluded && !exclusion.reason.trim()) return toast.error("請填寫停止分紅原因");
     setSaving(true);
     try {
       const trimmedRef = form.referrerMemberNo.trim();
@@ -451,6 +467,9 @@ function Page() {
             : {}),
         },
       });
+      if (isSuperAdmin && (exclusion.excluded !== exclusionInitial.excluded || exclusion.reason !== exclusionInitial.reason)) {
+        await saveExclusion({ data: { userId: editProfile.id, excluded: exclusion.excluded, reason: exclusion.reason } });
+      }
       // 只有在授權資料成功載入後才寫入，且僅送出實際被修改的項目，
       // 避免載入失敗/尚未載入時誤刪既有授權。
       if (grantsStatus === "ready") {
@@ -1045,6 +1064,23 @@ function Page() {
                   <Label>分紅資格授權</Label>
                   <p className="text-[11px] text-muted-foreground">勾選後，授權期間內該會員參與對應分紅池不受原本資格條件限制（預設 3 個月，可調整）。</p>
                 </div>
+                {(isSuperAdmin || exclusion.excluded) && (
+                  <div className="space-y-2 border-b border-border pb-3">
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <Checkbox checked={exclusion.excluded} disabled={!isSuperAdmin || !exclusion.ready}
+                        onCheckedChange={(value) => setExclusion((previous) => ({ ...previous, excluded: value === true }))} />
+                      不參與分紅（消費分紅／營業分紅）
+                    </label>
+                    {exclusion.error && <p className="text-xs text-destructive">分紅設定載入失敗，請重新開啟會員資料。</p>}
+                    {exclusion.excluded && (
+                      <div className="space-y-1">
+                        <Label htmlFor="dividend-stop-reason">停止分紅原因</Label>
+                        <Input id="dividend-stop-reason" value={exclusion.reason} maxLength={200} disabled={!isSuperAdmin}
+                          onChange={(event) => setExclusion((previous) => ({ ...previous, reason: event.target.value }))} />
+                      </div>
+                    )}
+                  </div>
+                )}
                 {grantsStatus === "loading" && (
                   <p className="text-[11px] text-muted-foreground">授權資料載入中…（載入完成前不會變更授權）</p>
                 )}
@@ -1360,4 +1396,12 @@ function OrderBonusDialog({ orderNo, onClose }: { orderNo: string | null; onClos
   );
 }
 
-export const Route = createFileRoute("/_authenticated/members")({ component: Page });
+export const Route = createFileRoute("/_authenticated/members")({ component: Page,
+  head: () => ({ meta: [
+    { title: "會員管理 — 源晶 ERP" },
+    { name: "description", content: "管理源晶會員資料、錢包及個別會員分紅參與設定。" },
+    { property: "og:title", content: "會員管理 — 源晶 ERP" },
+    { property: "og:description", content: "管理源晶會員資料、錢包及個別會員分紅參與設定。" },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
+});

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { canParticipateInDividends } from "./dividend-exclusion";
 
 export type DividendPoolStatus = {
   kind: "consumption" | "business";
@@ -62,6 +63,9 @@ export const getMyDividendStatus = createServerFn({ method: "GET" })
       admin.from("monthly_responsibility_points").select("points").eq("member_id", userId).eq("ym", ym).maybeSingle(),
     ]);
     const refs = (referredVips ?? []) as any[];
+    const { data: exclusion, error: exclusionError } = await context.supabase
+      .from("member_dividend_exclusions").select("reason").eq("user_id", userId).maybeSingle();
+    if (exclusionError) throw new Error(exclusionError.message);
     const monthlyPoints = Number(monthly?.points ?? 0);
 
     const build = (kind: "consumption" | "business"): DividendPoolStatus => {
@@ -77,6 +81,7 @@ export const getMyDividendStatus = createServerFn({ method: "GET" })
 
       const isStarTier = tierCode ? BUSINESS_TIERS.has(tierCode) : false;
       const reasons: string[] = [];
+      if (!canParticipateInDividends(!!exclusion)) reasons.push(`超級管理員設定不參與分紅：${exclusion?.reason ?? ""}`);
       if (!tierOk) {
         if (isConsumption) {
           reasons.push(
@@ -111,7 +116,7 @@ export const getMyDividendStatus = createServerFn({ method: "GET" })
         return code === "E代理商" || code.toUpperCase() === "E";
       }).length;
 
-      const task = grant
+      const task = grant && !exclusion
         ? isConsumption
           ? {
               deadline: grant.ends_on as string,
@@ -129,7 +134,7 @@ export const getMyDividendStatus = createServerFn({ method: "GET" })
       return {
         kind,
         label,
-        eligible: tierOk,
+        eligible: tierOk && !exclusion,
         status: active ? "active" : "stopped",
         statusLabel: active ? `${label}中` : "停止分紅",
         reasons,
