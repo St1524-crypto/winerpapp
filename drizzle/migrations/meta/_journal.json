@@ -29,6 +29,13 @@
       "when": 1791845161517,
       "tag": "0003_vip_package_media",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792396928221,
+      "tag": "0004_member_dividend_exclusion",
+      "breakpoints": true
     }
   ]
 }

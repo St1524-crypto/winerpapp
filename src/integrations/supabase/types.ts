@@ -2937,6 +2937,59 @@ export type Database = {
           },
         ]
       }
+      member_dividend_exclusions: {
+        Row: {
+          company_id: string
+          reason: string
+          updated_at: string
+          updated_by: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          reason: string
+          updated_at?: string
+          updated_by: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          reason?: string
+          updated_at?: string
+          updated_by?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_dividend_exclusions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_dividend_exclusions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_dividend_exclusions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_dividend_exclusions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_member_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_featured_products: {
         Row: {
           created_at: string
@@ -8102,6 +8155,10 @@ export type Database = {
         Returns: Json
       }
       set_default_address: { Args: { _address_id: string }; Returns: undefined }
+      set_member_dividend_exclusion: {
+        Args: { _excluded: boolean; _reason?: string; _user_id: string }
+        Returns: undefined
+      }
       settle_daily_bonus: {
         Args: { _advance_next?: boolean; _created_by?: string }
         Returns: Json
