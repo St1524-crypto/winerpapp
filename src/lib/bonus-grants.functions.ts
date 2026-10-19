@@ -61,7 +61,11 @@ export const listActiveBonusGrants = createServerFn({ method: "GET" })
       .lte("starts_on", today)
       .gte("ends_on", today);
     if (error) throw new Error(error.message);
-    return (data ?? []) as BonusEligibilityGrant[];
+    const { data: exclusions, error: exclusionError } = await (supabaseAdmin as any)
+      .from("member_dividend_exclusions").select("user_id");
+    if (exclusionError) throw new Error(exclusionError.message);
+    const excluded = new Set((exclusions ?? []).map((row: any) => row.user_id));
+    return ((data ?? []) as BonusEligibilityGrant[]).filter((grant) => !excluded.has(grant.user_id));
   });
 
 /** 設定或撤銷授權。啟用時未指定期間則預設今天起算 3 個月。 */

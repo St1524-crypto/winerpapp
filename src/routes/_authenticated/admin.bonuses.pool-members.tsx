@@ -436,9 +436,9 @@ function PoolMembersPage() {
                     />
                   </TableCell>
                   <TableCell>
-                    <Badge variant={r.active ? "default" : "outline"}>{r.active ? "有效" : "已到期"}</Badge>
+                    <Badge variant={r.excluded ? "destructive" : r.active ? "default" : "outline"}>{r.excluded ? "不參與分紅" : r.active ? "有效" : "已到期"}</Badge>
                   </TableCell>
-                  <TableCell className="max-w-[220px] truncate text-xs">{r.reason ?? "—"}</TableCell>
+                  <TableCell className="max-w-[220px] truncate text-xs" title={r.exclusionReason ?? r.reason ?? undefined}>{r.exclusionReason ?? r.reason ?? "—"}</TableCell>
                   <TableCell className="text-right">
                     <Button size="sm" variant="ghost" disabled={!canEdit || busy} onClick={() => removeRow(r)}>
                       <Trash2 className="h-4 w-4" />

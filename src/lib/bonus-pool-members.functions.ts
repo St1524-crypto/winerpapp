@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { canParticipateInDividends } from "./dividend-exclusion";
 
 /** POOL_VSTEA（消費分紅池）＝ pool_kind: consumption；營業分紅池＝ business */
 export const POOL_KIND_LABELS: Record<string, string> = {
@@ -56,6 +57,10 @@ export const listBonusPoolMembers = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     const ids = (grants ?? []).map((g: any) => g.user_id);
+    const { data: exclusions, error: exclusionError } = await (supabaseAdmin as any)
+      .from("member_dividend_exclusions").select("user_id, reason");
+    if (exclusionError) throw new Error(exclusionError.message);
+    const excluded = new Map<string, string>((exclusions ?? []).map((row: any) => [row.user_id, row.reason]));
     let profiles: any[] = [];
     if (ids.length) {
       const { data: p } = await (supabaseAdmin as any)
@@ -90,7 +95,9 @@ export const listBonusPoolMembers = createServerFn({ method: "POST" })
       const total = e.total;
       return {
         ...g,
-        active: String(g.starts_on) <= today && String(g.ends_on) >= today,
+        active: canParticipateInDividends(excluded.has(g.user_id)) && String(g.starts_on) <= today && String(g.ends_on) >= today,
+        excluded: excluded.has(g.user_id),
+        exclusionReason: excluded.get(g.user_id) ?? null,
         name: profile?.name ?? null,
         memberNo: profile?.member_no ?? null,
         phone: profile?.phone ?? null,
