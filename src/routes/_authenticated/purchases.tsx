@@ -21,6 +21,7 @@ import { Plus, Search, Truck, Eye, Printer, Trash2, FileDown, ArrowRight, Pencil
 import { exportPdfReport } from "@/lib/pdf-report";
 import { useBranding } from "@/hooks/use-branding";
 import { useCurrentCompany } from "@/hooks/use-current-company";
+import { buildPurchaseProduct } from "@/lib/purchase-product";
 
 const STATUS = [
   { v: "draft", label: "草稿", variant: "secondary" as const },
@@ -181,10 +182,9 @@ function Page() {
       const { generateSku, isSkuUnique } = await import("@/lib/sku");
       if (!sku) sku = await generateSku("GEN");
       else if (!(await isSkuUnique(sku))) throw new Error("SKU 已存在，請換一組");
-      const { data, error } = await sb.from("products").insert({
-        company_id: currentCompanyId, name, sku,
-        price: Number(np.price) || 0, stock: 0, status: "active",
-      }).select("id,sku,name,status").single();
+      const { data, error } = await sb.from("products").insert(buildPurchaseProduct({
+        companyId: currentCompanyId, name, sku, price: Number(np.price) || 0,
+      })).select("id,sku,name,status").single();
       if (error) throw new Error(error.message);
       const cost = Number(np.cost) || 0;
       const qty = Number(np.qty) || 1;
@@ -697,4 +697,14 @@ function Page() {
   );
 }
 
-export const Route = createFileRoute("/_authenticated/purchases")({ component: Page });
+export const Route = createFileRoute("/_authenticated/purchases")({
+  component: Page,
+  head: () => ({ meta: [
+    { title: "採購單管理 — 源晶 ERP" },
+    { name: "description", content: "管理源晶 ERP 採購單、採購品項與到貨進度。" },
+    { property: "og:title", content: "採購單管理 — 源晶 ERP" },
+    { property: "og:description", content: "管理源晶 ERP 採購單、採購品項與到貨進度。" },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
+});
