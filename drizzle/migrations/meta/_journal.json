@@ -43,6 +43,13 @@
       "when": 1792397067582,
       "tag": "0005_preserve_exclusive_dividend_pool_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792464108661,
+      "tag": "0006_fix_legacy_member_dividend_company_check",
+      "breakpoints": true
     }
   ]
 }
