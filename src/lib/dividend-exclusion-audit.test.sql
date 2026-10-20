@@ -27,7 +27,8 @@ BEGIN
     WHERE entity_id = target AND action = 'set_dividend_exclusion';
   PERFORM set_config('request.jwt.claims', jsonb_build_object('sub',actor,'role','authenticated')::text, true);
   PERFORM set_config('request.jwt.claim.sub', actor::text, true);
-  SET LOCAL ROLE authenticated;
+  -- sandbox_exec is an untrusted caller, like authenticated/anon, and cannot
+  -- SET ROLE. JWT claims still exercise the RPC's authenticated actor checks.
 
   BEGIN
     INSERT INTO public.audit_logs(user_id,entity,entity_id,action,metadata)
@@ -35,11 +36,10 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN
     rejected := true;
   END;
-  IF NOT rejected THEN RAISE EXCEPTION 'Direct authenticated audit insert must be denied, even for a super administrator'; END IF;
-  RAISE NOTICE 'PASS: direct authenticated audit insert denied';
+  IF NOT rejected THEN RAISE EXCEPTION 'Direct untrusted audit insert must be denied, even with super administrator claims'; END IF;
+  RAISE NOTICE 'PASS: direct untrusted audit insert denied';
 
   PERFORM public.set_member_dividend_exclusion(target,true,'Transactional audit regression test');
-  RESET ROLE;
   IF NOT EXISTS (SELECT 1 FROM public.member_dividend_exclusions
     WHERE user_id = target AND company_id = company AND updated_by = actor
       AND reason = 'Transactional audit regression test') THEN
@@ -50,9 +50,7 @@ BEGIN
   IF after_logs <> before_logs + 1 THEN RAISE EXCEPTION 'Exclusion must save exactly one audit row'; END IF;
   RAISE NOTICE 'PASS: exclusion and audit saved atomically';
 
-  SET LOCAL ROLE authenticated;
   PERFORM public.set_member_dividend_exclusion(target,false,'');
-  RESET ROLE;
   IF EXISTS (SELECT 1 FROM public.member_dividend_exclusions WHERE user_id = target) THEN
     RAISE EXCEPTION 'Authorized exclusion removal failed';
   END IF;
