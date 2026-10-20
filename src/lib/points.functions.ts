@@ -457,9 +457,9 @@ export const handleReferralSignup = createServerFn({ method: "POST" })
       signup_rewarded_at: new Date().toISOString(),
     });
     await supabaseAdmin.from("profiles").update({ referred_by: refUser.id }).eq("id", userId);
-    // 雙方都獲得獎勵點
-    await applyDelta(userId, "reward", SIGNUP_BONUS, "referral", { note: `推薦碼 ${code} 註冊獎勵` });
-    await applyDelta(refUser.id, "reward", SIGNUP_BONUS, "referral", {
+    // 雙方各獲得 100 折扣點
+    await applyDelta(userId, "discount", SIGNUP_BONUS, "referral", { note: `推薦碼 ${code} 註冊獎勵（折扣點）` });
+    await applyDelta(refUser.id, "discount", SIGNUP_BONUS, "referral", {
       note: `推薦會員註冊獎勵`,
       reference_id: userId,
     });
