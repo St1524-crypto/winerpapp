@@ -19,6 +19,7 @@ export const Route = createFileRoute("/u/$code")({
       { property: "og:title", content: `${params.code} 邀請您加入 WinERP 會員` },
       { property: "og:description", content: `掃描或點擊專屬連結即可註冊` },
       { property: "og:type", content: "profile" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
@@ -39,6 +40,9 @@ function VipLandingPage() {
         if (res.found && res.referrer.referralCode) {
           // 立刻寫入 cookie，後續無論瀏覽到哪一頁、何時註冊都能保留
           setReferralCode(res.referrer.referralCode);
+          const signupSlug = res.company?.slug ?? "ST0985";
+          window.location.replace(`/m/${encodeURIComponent(signupSlug)}?ref=${encodeURIComponent(res.referrer.referralCode)}&mode=signup`);
+          return;
         }
         setData(res);
       } finally {

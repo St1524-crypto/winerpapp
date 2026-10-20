@@ -13,10 +13,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { referralSignupPath } from "@/lib/referral-signup";
 
 export const Route = createFileRoute("/shop/account/points")({
   component: PointsPage,
-  head: () => ({ meta: [{ title: "我的點數 — 源晶商城" }] }),
+  head: () => ({ meta: [
+    { title: "我的點數 — 源晶商城" },
+    { name: "description", content: "查看源晶會員錢包、點數明細與推薦註冊連結。" },
+    { property: "og:title", content: "我的點數 — 源晶商城" },
+    { property: "og:description", content: "源晶會員點數與推薦註冊服務。" },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -118,7 +126,7 @@ function PointsPage() {
   }, []);
 
   const shareLink = ref.referral_code
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/login?ref=${encodeURIComponent(ref.referral_code)}&mode=signup`
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}${referralSignupPath(ref.referral_code)}`
     : "";
 
   // 全部異動（現金 + 點數）

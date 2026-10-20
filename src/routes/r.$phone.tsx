@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { resolveReferrerByPhone } from "@/lib/auth-lookup.functions";
-import { isMobileDevice } from "@/lib/device";
 import { setReferralCode } from "@/lib/referral-tracking";
 
 
@@ -12,6 +11,10 @@ export const Route = createFileRoute("/r/$phone")({
     meta: [
       { title: `推薦註冊 ${params.phone} — WinERP` },
       { name: "description", content: `透過推薦人 ${params.phone} 註冊會員專屬入口` },
+      { property: "og:title", content: "WinERP 推薦電話註冊" },
+      { property: "og:description", content: "透過推薦連結直接開啟電話註冊並確認推薦人。" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
@@ -32,7 +35,7 @@ function ReferralLandingPage() {
         // 寫入 cookie，90 天內任何頁面註冊都會自動綁定該推薦人
         if (ref) setReferralCode(ref);
         if (slug) {
-          const target = isMobileDevice() ? "/m/$slug" : "/login/$slug";
+          const target = "/m/$slug";
           navigate({
             to: target,
             params: { slug },
