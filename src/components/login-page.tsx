@@ -70,8 +70,9 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         // Existing copied /login?ref= links also bypass the company-code entry.
         const resolved = await getReferrerPublicProfile({ data: { code: ref } }).catch(() => null);
         if (cancelled) return;
-        if (resolved?.found && resolved.company?.slug && !pathSlug) {
-          window.location.replace(`/m/${encodeURIComponent(resolved.company.slug)}?ref=${encodeURIComponent(ref)}&mode=signup`);
+        if (resolved?.found && !pathSlug) {
+          const signupSlug = resolved.company?.slug ?? "ST0985";
+          window.location.replace(`/m/${encodeURIComponent(signupSlug)}?ref=${encodeURIComponent(ref)}&mode=signup`);
           return;
         }
       }
@@ -205,7 +206,8 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           const code = referralCodeSchema.parse(refCode);
           const resolved = await getReferrerPublicProfile({ data: { code } });
           if (!resolved.found || !resolved.referrer.name) throw new Error("找不到推薦人，請確認推薦連結後再試。");
-          if (resolved.company?.id !== activeCompany.id) throw new Error("推薦人與目前公司不符，請重新開啟推薦連結。");
+          if (resolved.company && resolved.company.id !== activeCompany.id) throw new Error("推薦人與目前公司不符，請重新開啟推薦連結。");
+          if (!resolved.company && activeCompany.slug !== "ST0985") throw new Error("推薦人尚未設定公司，請使用原推薦連結的預設註冊入口。");
           if (!canCreateReferredAccount(code, confirmedCode)) {
             setRefConfirmation({ code, name: resolved.referrer.name });
             return;

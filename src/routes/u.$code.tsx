@@ -40,10 +40,9 @@ function VipLandingPage() {
         if (res.found && res.referrer.referralCode) {
           // 立刻寫入 cookie，後續無論瀏覽到哪一頁、何時註冊都能保留
           setReferralCode(res.referrer.referralCode);
-          if (res.company?.slug) {
-            window.location.replace(`/m/${encodeURIComponent(res.company.slug)}?ref=${encodeURIComponent(res.referrer.referralCode)}&mode=signup`);
-            return;
-          }
+          const signupSlug = res.company?.slug ?? "ST0985";
+          window.location.replace(`/m/${encodeURIComponent(signupSlug)}?ref=${encodeURIComponent(res.referrer.referralCode)}&mode=signup`);
+          return;
         }
         setData(res);
       } finally {
