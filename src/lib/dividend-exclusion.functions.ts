@@ -1,9 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertDividendEditor, belongsToDividendCompany, dividendExclusionSchema } from "./dividend-exclusion";
 
-async function checkCompany(db: Parameters<typeof requireSupabaseAuth>[0] extends never ? never : any, userId: string) {
+async function checkCompany(db: SupabaseClient<Database>, userId: string) {
   const [company, profile, memberships] = await Promise.all([
     db.rpc("current_company_id"),
     db.from("profiles").select("current_company_id").eq("id", userId).maybeSingle(),
