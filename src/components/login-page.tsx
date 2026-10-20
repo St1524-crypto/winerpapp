@@ -16,6 +16,9 @@ import { bindSponsorByCode } from "@/lib/referral.functions";
 import { LineQuickButton } from "@/components/LineContactButton";
 import { getReferralCode, clearReferralCode } from "@/lib/referral-tracking";
 import { getPortalRouteForRoles } from "@/lib/roles";
+import { getReferrerPublicProfile } from "@/lib/referral.functions";
+import { canCreateReferredAccount, referralCodeSchema, registrationSchema } from "@/lib/referral-signup";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
 
 type PublicCompany = { id: string; slug: string; company_name: string; logo_url: string | null };
 
@@ -36,6 +39,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   const [refCode, setRefCode] = useState("");
   const [refLocked, setRefLocked] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [refConfirmation, setRefConfirmation] = useState<{ code: string; name: string } | null>(null);
 
   const [companies, setCompanies] = useState<PublicCompany[]>([]);
   const [selectedSlug, setSelectedSlug] = useState<string>("");
@@ -58,7 +62,19 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
       const slugFromQuery = params.get("company");
       const ref = params.get("ref") || getReferralCode(); // 優先網址，其次 cookie
       const m = params.get("mode");
-      if (ref) { setRefCode(ref.toUpperCase()); setRefLocked(true); }
+      if (ref && referralCodeSchema.safeParse(ref).success) {
+        setRefCode(ref.toUpperCase());
+        setRefLocked(true);
+        setMode("signup");
+        setSignupType("phone");
+        // Existing copied /login?ref= links also bypass the company-code entry.
+        const resolved = await getReferrerPublicProfile({ data: { code: ref } }).catch(() => null);
+        if (cancelled) return;
+        if (resolved?.found && resolved.company?.slug && !pathSlug) {
+          window.location.replace(`/m/${encodeURIComponent(resolved.company.slug)}?ref=${encodeURIComponent(ref)}&mode=signup`);
+          return;
+        }
+      }
       if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
 
       const targetSlug = pathSlug || slugFromQuery || "";
@@ -102,8 +118,9 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
     }
   }, [user, loading, roles, rolesLoaded, navigate]);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(e?: React.FormEvent, confirmedCode?: string) {
+    e?.preventDefault();
+    if (busy) return;
     const activeCompany = selectedCompany ?? findCompanyByCode(websiteId, companies);
 
     if (mode === "signup" && !activeCompany) {
@@ -180,6 +197,21 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
         toast.success(activeCompany ? `已登入 ${activeCompany.company_name}` : "登入成功");
       } else if (mode === "signup" && activeCompany) {
+        if (signupType === "phone") {
+          const parsed = registrationSchema.safeParse({ name, phone, password });
+          if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "請確認註冊資料");
+        }
+        if (refCode) {
+          const code = referralCodeSchema.parse(refCode);
+          const resolved = await getReferrerPublicProfile({ data: { code } });
+          if (!resolved.found || !resolved.referrer.name) throw new Error("找不到推薦人，請確認推薦連結後再試。");
+          if (resolved.company?.id !== activeCompany.id) throw new Error("推薦人與目前公司不符，請重新開啟推薦連結。");
+          if (!canCreateReferredAccount(code, confirmedCode)) {
+            setRefConfirmation({ code, name: resolved.referrer.name });
+            return;
+          }
+          setRefConfirmation(null);
+        }
         let signupEmail = email.trim();
         const cleanPhone = phone.trim().replace(/[\s-]/g, "");
         if (signupType === "phone") {
@@ -375,11 +407,11 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-primary">姓名</Label>
-                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="王小明" />
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} placeholder="王小明" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="refCode" className="text-primary">{refLocked ? "推薦碼（已綁定）" : "推薦碼（選填）"}</Label>
-                  <Input id="refCode" value={refCode} onChange={(e) => { if (!refLocked) setRefCode(e.target.value.toUpperCase()); }} readOnly={refLocked} placeholder="例：A1B2C3D4" className={`font-mono ${refLocked ? "bg-muted cursor-not-allowed" : ""}`} />
+                  <Input id="refCode" value={refCode} maxLength={64} onChange={(e) => { if (!refLocked) setRefCode(e.target.value.toUpperCase()); }} readOnly={refLocked} placeholder="例：A1B2C3D4" className={`font-mono ${refLocked ? "bg-muted cursor-not-allowed" : ""}`} />
                 </div>
               </>
             )}
@@ -424,7 +456,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                     <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
                   )}
                 </div>
-                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••" className="placeholder:text-muted-foreground/50" />
+                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === "signup" ? 6 : 1} maxLength={200} placeholder={mode === "signup" ? "須5個字以上" : "請輸入密碼"} className="placeholder:text-muted-foreground/50" />
                 <label className="flex items-center gap-2 text-xs text-foreground/70">
                   <input
                     type="checkbox"
@@ -446,6 +478,23 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
             )}
           </form>
         </div>
+
+        <AlertDialog open={!!refConfirmation} onOpenChange={(open) => { if (!open && !busy) setRefConfirmation(null); }}>
+          <AlertDialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle>確認推薦人</AlertDialogTitle>
+              <AlertDialogDescription>
+                您的推薦人是「{refConfirmation?.name}」。確認後建立帳號並綁定此推薦人；取消則不建立帳號。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={busy}>取消</AlertDialogCancel>
+              <Button disabled={busy} onClick={() => { if (refConfirmation) void submit(undefined, refConfirmation.code); }}>
+                {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}確認並建立帳號
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <div className="mt-4 space-y-2">
           <div className="text-center text-[11px] text-foreground/60">還沒帳號？先加 LINE 免登入諮詢促銷、商品、福利</div>
