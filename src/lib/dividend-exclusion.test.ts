@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { assertDividendEditor, canParticipateInDividends, dividendExclusionSchema } from "./dividend-exclusion";
+import { assertDividendEditor, belongsToDividendCompany, canParticipateInDividends, dividendExclusionSchema } from "./dividend-exclusion";
 
 describe("member dividend exclusion", () => {
+  it("allows legacy members only in their assigned company", () => {
+    expect(belongsToDividendCompany("company-a", "company-a", [])).toBe(true);
+    expect(belongsToDividendCompany("company-b", "company-a", [])).toBe(false);
+  });
+  it("does not let a selected profile company override explicit memberships", () => {
+    expect(belongsToDividendCompany("company-a", "company-a", ["company-b"])).toBe(false);
+    expect(belongsToDividendCompany("company-b", "company-a", ["company-b"])).toBe(true);
+  });
+  it("rejects missing company assignments", () => {
+    expect(belongsToDividendCompany(null, null, [])).toBe(false);
+    expect(belongsToDividendCompany("company-a", null, [])).toBe(false);
+  });
   it("allows only super administrators to edit", () => {
     expect(() => assertDividendEditor(["super_admin"])).not.toThrow();
     for (const role of ["admin", "finance", "member", "sales", "warehouse"]) {

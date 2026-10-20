@@ -16,3 +16,11 @@ export function assertDividendEditor(roles: readonly string[]) {
 export function canParticipateInDividends(excluded: boolean) {
   return !excluded;
 }
+
+/** Legacy profiles without memberships retain their assigned company only. */
+export function belongsToDividendCompany(companyId: string | null, profileCompanyId: string | null, membershipCompanyIds: readonly string[]) {
+  if (!companyId) return false;
+  return membershipCompanyIds.length > 0
+    ? membershipCompanyIds.includes(companyId)
+    : profileCompanyId === companyId;
+}

@@ -65,7 +65,7 @@ function Page() {
   const isSuperAdmin = myRoles.includes("super_admin");
   const fetchExclusion = useServerFn(getMemberDividendExclusion);
   const saveExclusion = useServerFn(setMemberDividendExclusion);
-  const [exclusion, setExclusion] = useState({ excluded: false, reason: "", ready: false, error: false });
+  const [exclusion, setExclusion] = useState({ excluded: false, reason: "", ready: false, error: false, canEditCompany: false });
   const [exclusionInitial, setExclusionInitial] = useState({ excluded: false, reason: "" });
 
   const PAGE_SIZE = 15;
@@ -391,7 +391,7 @@ function Page() {
 
     setGrantsStatus("loading");
     const token = ++grantsReqRef.current;
-    setExclusion({ excluded: false, reason: "", ready: false, error: false });
+    setExclusion({ excluded: false, reason: "", ready: false, error: false, canEditCompany: false });
     fetchExclusion({ data: { userId: m.id } }).then((value) => {
       if (token !== grantsReqRef.current) return;
       setExclusion({ ...value, ready: true, error: false });
@@ -441,6 +441,11 @@ function Page() {
     if (isSuperAdmin && exclusion.excluded && !exclusion.reason.trim()) return toast.error("請填寫停止分紅原因");
     setSaving(true);
     try {
+      // Validate the current workspace again before writing any profile changes.
+      if (isSuperAdmin && (exclusion.excluded !== exclusionInitial.excluded || exclusion.reason !== exclusionInitial.reason)) {
+        const latest = await fetchExclusion({ data: { userId: editProfile.id } });
+        if (!latest.canEditCompany) throw new Error("會員不屬於目前公司，請切換至會員所屬公司後再設定分紅");
+      }
       const trimmedRef = form.referrerMemberNo.trim();
       const originalRef = editProfile.referrer_member_no ?? "";
       await adminUpdateMember({
@@ -1067,15 +1072,16 @@ function Page() {
                 {(isSuperAdmin || exclusion.excluded) && (
                   <div className="space-y-2 border-b border-border pb-3">
                     <label className="flex items-center gap-2 text-sm font-medium">
-                      <Checkbox checked={exclusion.excluded} disabled={!isSuperAdmin || !exclusion.ready}
+                      <Checkbox checked={exclusion.excluded} disabled={!isSuperAdmin || !exclusion.ready || !exclusion.canEditCompany}
                         onCheckedChange={(value) => setExclusion((previous) => ({ ...previous, excluded: value === true }))} />
                       不參與分紅（消費分紅／營業分紅）
                     </label>
                     {exclusion.error && <p className="text-xs text-destructive">分紅設定載入失敗，請重新開啟會員資料。</p>}
+                    {isSuperAdmin && exclusion.ready && !exclusion.canEditCompany && <p className="text-xs text-destructive">會員不屬於目前公司，請切換至會員所屬公司後再設定分紅。</p>}
                     {exclusion.excluded && (
                       <div className="space-y-1">
                         <Label htmlFor="dividend-stop-reason">停止分紅原因</Label>
-                        <Input id="dividend-stop-reason" value={exclusion.reason} maxLength={200} disabled={!isSuperAdmin}
+                        <Input id="dividend-stop-reason" value={exclusion.reason} maxLength={200} disabled={!isSuperAdmin || !exclusion.canEditCompany}
                           onChange={(event) => setExclusion((previous) => ({ ...previous, reason: event.target.value }))} />
                       </div>
                     )}
