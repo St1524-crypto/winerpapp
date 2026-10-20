@@ -34,6 +34,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [refCode, setRefCode] = useState("");
+  const [refLocked, setRefLocked] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const [companies, setCompanies] = useState<PublicCompany[]>([]);
@@ -57,7 +58,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
       const slugFromQuery = params.get("company");
       const ref = params.get("ref") || getReferralCode(); // 優先網址，其次 cookie
       const m = params.get("mode");
-      if (ref) { setRefCode(ref.toUpperCase()); }
+      if (ref) { setRefCode(ref.toUpperCase()); setRefLocked(true); }
       if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
 
       const targetSlug = pathSlug || slugFromQuery || "";
@@ -377,8 +378,8 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="王小明" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="refCode" className="text-primary">推薦碼（選填）</Label>
-                  <Input id="refCode" value={refCode} onChange={(e) => setRefCode(e.target.value.toUpperCase())} placeholder="例：A1B2C3D4" className="font-mono" />
+                  <Label htmlFor="refCode" className="text-primary">{refLocked ? "推薦碼（已綁定）" : "推薦碼（選填）"}</Label>
+                  <Input id="refCode" value={refCode} onChange={(e) => { if (!refLocked) setRefCode(e.target.value.toUpperCase()); }} readOnly={refLocked} placeholder="例：A1B2C3D4" className={`font-mono ${refLocked ? "bg-muted cursor-not-allowed" : ""}`} />
                 </div>
               </>
             )}
@@ -403,7 +404,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
             {mode === "signup" && signupType === "phone" && (
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-primary">電話號碼</Label>
-                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="0912345678" />
+                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} required maxLength={10} inputMode="numeric" placeholder="0912345678" className="placeholder:text-muted-foreground/50" />
                 <p className="text-[11px] text-foreground/70">註冊後系統將自動產生會員編號，可使用電話號碼直接登入。</p>
               </div>
             )}
@@ -423,7 +424,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                     <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
                   )}
                 </div>
-                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" />
+                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="••••" className="placeholder:text-muted-foreground/50" />
                 <label className="flex items-center gap-2 text-xs text-foreground/70">
                   <input
                     type="checkbox"
