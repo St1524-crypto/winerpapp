@@ -50,6 +50,13 @@
       "when": 1792464108661,
       "tag": "0006_fix_legacy_member_dividend_company_check",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792474872599,
+      "tag": "0007_fix_dividend_exclusion_transactional_audit",
+      "breakpoints": true
     }
   ]
 }
