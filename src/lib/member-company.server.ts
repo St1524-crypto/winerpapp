@@ -3,12 +3,8 @@ import type { Database } from "@/integrations/supabase/types";
 import { assertMemberCompany } from "./member-company";
 
 export async function requireMemberCompany(db: SupabaseClient<Database>, userId?: string, expectedCompanyId?: string) {
-  const { data: roles, error: roleError } = await db.from("user_roles").select("role");
-  if (roleError) throw new Error(roleError.message);
-  // Caller roles are scoped by the authenticated identity, never a browser flag.
   const { data: viewer, error: viewerError } = await db.auth.getUser();
   if (viewerError || !viewer.user) throw new Error("Unauthorized");
-  if (!(roles ?? []).some((r) => ["admin", "super_admin"].includes(r.role))) throw new Error("需要管理員權限");
   const { data: ownRoles, error: ownRoleError } = await db.from("user_roles").select("role").eq("user_id", viewer.user.id);
   if (ownRoleError || !(ownRoles ?? []).some((r) => ["admin", "super_admin"].includes(r.role))) throw new Error("需要管理員權限");
   const { data: companyId, error } = await db.rpc("current_company_id");
