@@ -5,3 +5,4 @@
 - Dividend exclusion company checks use explicit company memberships first; only legacy profiles with no memberships may fall back to their assigned current_company_id, preventing imported members from being rejected without widening cross-company access.
 - Audit insert guards must use SECURITY INVOKER and validate current_user against trusted server roles so authorized SECURITY DEFINER business transactions can atomically save their audit rows without allowing direct client inserts.
 - Referral shares use the dedicated resolver entry and company telephone signup; require same-code referrer-name confirmation before invoking account creation so cancellation has no signup side effects.
+- Member management directory, referral pickers, and privileged member actions enforce explicit company memberships first and legacy assigned-company fallback; company changes close dialogs and discard stale requests to prevent cross-company display or edits.
