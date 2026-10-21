@@ -3,10 +3,11 @@ import { z } from "zod";
 import { randomInt } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
-async function assertAdmin(userId: string) {
-  const { data } = await supabaseAdmin
+async function assertAdmin(db: SupabaseClient<Database>, userId: string) {
+  const { data } = await db
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
@@ -22,6 +23,7 @@ function normalizePhone(p?: string | null) {
 }
 
 async function assertMarketingSlugAvailable(userId: string, slug: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const normalized = slug.trim();
   if (!normalized) return;
 
@@ -46,6 +48,7 @@ async function assertMarketingSlugAvailable(userId: string, slug: string) {
 
 // ============== Create a new member account ==============
 const CreateSchema = z.object({
+  companyId: z.string().uuid(),
   name: z.string().trim().min(1).max(120),
   email: z.string().trim().email().max(255).optional().or(z.literal("")),
   phone: z.string().trim().max(32).optional().or(z.literal("")),
@@ -56,8 +59,13 @@ export const adminCreateMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => CreateSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
+    const { requireMemberCompany } = await import("./member-company.server");
+    await requireMemberCompany(context.supabase, "userId" in data ? data.userId : undefined, "companyId" in data ? data.companyId : undefined);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const { data: company, error: companyError } = await context.supabase.from("companies").select("slug").eq("id", data.companyId).single();
+    if (companyError || !company) throw new Error("無法確認目前公司");
     const phone = normalizePhone(data.phone);
     const explicitEmail = data.email?.trim() || "";
     // 同一組電話最多可註冊 3 位會員：未填 Email 時，為第 2、3 位自動產生不重複的
@@ -116,7 +124,7 @@ export const adminCreateMember = createServerFn({ method: "POST" })
         email: candidate,
         password: data.password,
         email_confirm: true,
-        user_metadata: { name: data.name, phone: phone ?? undefined },
+        user_metadata: { name: data.name, phone: phone ?? undefined, company_slug: company.slug },
       });
       if (!res.error) {
         created = res.data;
@@ -140,7 +148,7 @@ export const adminCreateMember = createServerFn({ method: "POST" })
     // Ensure phone/name are set even if metadata path differs.
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
-      .update({ name: data.name, phone })
+      .update({ name: data.name, phone, current_company_id: data.companyId })
       .eq("id", uid);
     if (profileError) {
       if (/註冊上限|profiles_phone_uidx|duplicate/i.test(profileError.message)) {
@@ -148,6 +156,9 @@ export const adminCreateMember = createServerFn({ method: "POST" })
       }
       throw new Error(`會員資料寫入失敗：${profileError.message}`);
     }
+
+    const { error: membershipError } = await supabaseAdmin.from("company_members").upsert({ user_id: uid, company_id: data.companyId, role: "member" }, { onConflict: "company_id,user_id" });
+    if (membershipError) throw new Error("會員公司設定失敗，請勿重複建立，請重新整理確認");
 
     await supabaseAdmin.from("audit_logs").insert({
       user_id: context.userId,
@@ -163,6 +174,7 @@ export const adminCreateMember = createServerFn({ method: "POST" })
 
 // ============== Update member basic profile ==============
 const UpdateSchema = z.object({
+  companyId: z.string().uuid().optional(),
   userId: z.string().uuid(),
   name: z.string().trim().min(1).max(120).optional(),
   email: z.string().trim().email().max(255).optional().or(z.literal("")),
@@ -193,7 +205,10 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => UpdateSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
+    const { requireMemberCompany } = await import("./member-company.server");
+    await requireMemberCompany(context.supabase, "userId" in data ? data.userId : undefined, "companyId" in data ? data.companyId : undefined);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Snapshot current profile for audit diff (marketing_slug)
     const { data: prior } = await supabaseAdmin
@@ -323,6 +338,7 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
         .maybeSingle();
       if (refErr) throw new Error(refErr.message);
       if (!ref?.id) throw new Error(`找不到推薦人會員編號：${code}`);
+      await requireMemberCompany(context.supabase, ref.id, data.companyId);
       if (ref.id === data.userId) throw new Error("推薦人不能是會員本人");
       profileUpdate.referred_by = ref.id;
     }
@@ -421,7 +437,10 @@ export const adminResetMemberPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ResetSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
+    const { requireMemberCompany } = await import("./member-company.server");
+    await requireMemberCompany(context.supabase, "userId" in data ? data.userId : undefined, "companyId" in data ? data.companyId : undefined);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const password = data.password && data.password.length >= 6
       ? data.password
@@ -500,8 +519,8 @@ export const adminResetMemberPassword = createServerFn({ method: "POST" })
 
 const ImpersonateSchema = z.object({ userId: z.string().uuid() });
 
-async function assertSuperAdmin(userId: string) {
-  const { data } = await supabaseAdmin
+async function assertSuperAdmin(db: SupabaseClient<Database>, userId: string) {
+  const { data } = await db
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
@@ -511,6 +530,7 @@ async function assertSuperAdmin(userId: string) {
 }
 
 async function targetHasPrivilegedRole(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("user_roles")
     .select("role")
@@ -525,7 +545,10 @@ export const adminImpersonateMember = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ImpersonateSchema.parse(d))
   .handler(async ({ data, context }) => {
     // Only super_admin can issue impersonation links (privilege-escalation defense).
-    await assertSuperAdmin(context.userId);
+    await assertSuperAdmin(context.supabase, context.userId);
+    const { requireMemberCompany } = await import("./member-company.server");
+    await requireMemberCompany(context.supabase, data.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Never allow impersonating another super_admin or admin — that would let
     // a compromised super_admin session pivot into another top-level account
@@ -572,7 +595,10 @@ export const adminGetMemberEarnings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    await assertAdmin(context.supabase, context.userId);
+    const { requireMemberCompany } = await import("./member-company.server");
+    await requireMemberCompany(context.supabase, "userId" in data ? data.userId : undefined, "companyId" in data ? data.companyId : undefined);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { computeMemberEarnings } = await import("@/lib/member-earnings.server");
     const map = await computeMemberEarnings(supabaseAdmin, [data.userId]);
     return map.get(data.userId) ?? { legacy: 0, bonus: 0, total: 0 };

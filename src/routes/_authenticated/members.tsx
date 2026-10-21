@@ -17,6 +17,8 @@ import { CopyButton } from "@/components/CopyButton";
 import type { AppRole } from "@/hooks/use-auth";
 import { ROLE_LABELS } from "@/lib/nav";
 import { useAuth } from "@/hooks/use-auth";
+import { useCurrentCompany } from "@/hooks/use-current-company";
+import { listCompanyMembers } from "@/lib/member-directory.functions";
 import { adminCreateMember, adminUpdateMember, adminResetMemberPassword, adminImpersonateMember } from "@/lib/members-admin.functions";
 import { listMemberBonusGrants, listActiveBonusGrants, setMemberBonusGrant, type BonusEligibilityGrant, type BonusPoolKind } from "@/lib/bonus-grants.functions";
 import { adminGetMemberWallet, adminGetMemberWalletLedger, adminAdjustMemberWallet } from "@/lib/cash-wallet.functions";
@@ -61,6 +63,12 @@ const ROLE_COLORS: Record<AppRole, string> = {
 
 function Page() {
   const { roles: myRoles } = useAuth();
+  const { currentCompanyId, loading: companyLoading } = useCurrentCompany();
+  const directoryFn = useServerFn(listCompanyMembers);
+  const loadRequest = useRef(0);
+  const companyRef = useRef(currentCompanyId);
+  companyRef.current = currentCompanyId;
+  const [loadedCompanyId, setLoadedCompanyId] = useState<string | null>(null);
   const isAdmin = myRoles.includes("super_admin") || myRoles.includes("admin");
   const isSuperAdmin = myRoles.includes("super_admin");
   const fetchExclusion = useServerFn(getMemberDividendExclusion);
@@ -182,24 +190,20 @@ function Page() {
     let cancelled = false;
     setReferrerLookup((prev) => ({ ...prev, code, status: "loading" }));
     const t = setTimeout(async () => {
-      const { data: exact } = await supabase.from("profiles").select("id, name, member_no, phone").eq("member_no", code).maybeSingle();
+      if (!currentCompanyId || companyLoading) return;
+      let result;
+      try { result = await directoryFn({ data: { companyId: currentCompanyId, search: code, page: 1, pageSize: 8 } }); }
+      catch { if (!cancelled) { setReferrerLookup({ code, name: null, tier: null, status: "notfound" }); setReferrerCandidates([]); } return; }
       if (cancelled) return;
+      const exact = result.profiles.find((p) => p.member_no === code);
       if (exact) {
-        const { data: ts } = await supabase.from("dealer_tier_status").select("current_tier").eq("user_id", (exact as any).id).maybeSingle();
+        const { data: ts } = await supabase.from("dealer_tier_status").select("current_tier").eq("user_id", exact.id).maybeSingle();
         if (cancelled) return;
-        setReferrerLookup({ code, name: (exact as any).name ?? null, tier: (ts as any)?.current_tier ?? null, status: "found" });
+        setReferrerLookup({ code, name: exact.name, tier: ts?.current_tier ?? null, status: "found" });
         setReferrerCandidates([]);
         return;
       }
-      const esc = code.replace(/[%,]/g, "");
-      const { data: fuzzy } = await supabase
-        .from("profiles")
-        .select("id, name, member_no, phone")
-        .or(`name.ilike.%${esc}%,phone.ilike.%${esc}%,member_no.ilike.%${esc}%`)
-        .not("member_no", "is", null)
-        .limit(8);
-      if (cancelled) return;
-      const list = ((fuzzy as any[]) ?? []) as { id: string; name: string | null; member_no: string | null; phone: string | null }[];
+      const list = result.profiles;
       const ids = list.map((r) => r.id);
       const tierMap = new Map<string, string>();
       if (ids.length > 0) {
@@ -211,7 +215,7 @@ function Page() {
       setReferrerLookup({ code, name: null, tier: null, status: "notfound" });
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [form.referrerMemberNo]);
+  }, [form.referrerMemberNo, currentCompanyId, companyLoading]);
 
   // Password tools dialog state
   const [pwTarget, setPwTarget] = useState<Member | null>(null);
@@ -236,21 +240,16 @@ function Page() {
 
   async function load() {
     setLoading(true);
-    const from = (page - 1) * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
-    let q = supabase
-      .from("profiles")
-      .select("id, name, email, phone, member_no, avatar_url, created_at, is_dealer, referred_by, marketing_slug, legacy_rank, id_no, apply_date, sex, addr_mail, addr_home, birthday, vip_expires_at, is_vip, legacy_bonus_total", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    if (search) {
-      const esc = search.replace(/[%,]/g, "");
-      q = q.or(`name.ilike.%${esc}%,email.ilike.%${esc}%,phone.ilike.%${esc}%,member_no.ilike.%${esc}%,id_no.ilike.%${esc}%`);
-    }
-    const { data: profiles, error: e1, count } = await q;
-    if (e1) { toast.error(e1.message ?? "載入失敗"); setLoading(false); return; }
-    setTotalCount(count ?? 0);
-
+    const request = ++loadRequest.current;
+    const companyId = currentCompanyId;
+    if (!companyId || companyLoading || !isAdmin) { setList([]); setTotalCount(0); setLoading(false); return; }
+    let result;
+    try { result = await directoryFn({ data: { companyId, search, page, pageSize: PAGE_SIZE } }); }
+    catch (error) { if (request === loadRequest.current && companyRef.current === companyId) { setList([]); setTotalCount(0); setStats({ total: 0, id_no: 0, apply_date: 0, sex: 0, addr_mail: 0, addr_home: 0, birthday: 0 }); toast.error((error as Error).message); setLoading(false); } return; }
+    if (request !== loadRequest.current || companyRef.current !== companyId) return;
+    const { profiles, count, stats: companyStats } = result;
+    setTotalCount(count);
+    setStats(companyStats);
     const userIds = (profiles ?? []).map((p: any) => p.id);
     const [rolesRes, tierRes] = userIds.length === 0
       ? [{ data: [] as any[] }, { data: [] as any[] }]
@@ -286,6 +285,8 @@ function Page() {
       (refTierRes.data ?? []).forEach((t: any) => { if (t.current_tier) refTierMap.set(t.user_id, t.current_tier); });
     }
 
+    if (request !== loadRequest.current || companyRef.current !== companyId) return;
+    setLoadedCompanyId(companyId);
     setList((profiles ?? []).map((p: any) => {
       const ref = p.referred_by ? byId.get(p.referred_by) : null;
       return {
@@ -300,29 +301,17 @@ function Page() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, search]);
-
-  // Load lightweight profile-fill stats (counts only)
   useEffect(() => {
-    (async () => {
-      const fields: Array<keyof Profile> = ["id_no","apply_date","sex","addr_mail","addr_home","birthday"];
-      const totalRes = await supabase.from("profiles").select("id", { count: "exact", head: true });
-      const counts = await Promise.all(fields.map((f) =>
-        supabase.from("profiles").select("id", { count: "exact", head: true }).not(f as string, "is", null)
-      ));
-      setStats({
-        total: totalRes.count ?? 0,
-        id_no: counts[0].count ?? 0,
-        apply_date: counts[1].count ?? 0,
-        sex: counts[2].count ?? 0,
-        addr_mail: counts[3].count ?? 0,
-        addr_home: counts[4].count ?? 0,
-        birthday: counts[5].count ?? 0,
-      });
-    })();
-  }, []);
+    ++loadRequest.current;
+    setList([]); setTotalCount(0); setLoadedCompanyId(null);
+    setStats({ total: 0, id_no: 0, apply_date: 0, sex: 0, addr_mail: 0, addr_home: 0, birthday: 0 });
+    setPage(1); setEditProfile(null); setEditingRoles(null); setPwTarget(null); setPwResult(null); setCreateOpen(false);
+    setLedger((l) => ({ ...l, open: false, rows: [] }));
+    ++walletReqRef.current; ++grantsReqRef.current; ++rewardPtsReqRef.current;
+  }, [currentCompanyId]);
+  useEffect(() => { load(); }, [page, search, currentCompanyId, companyLoading, isAdmin]);
 
-  const filtered = list;
+  const filtered = loadedCompanyId === currentCompanyId && !companyLoading ? list : [];
   const fieldStats = stats;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -334,6 +323,7 @@ function Page() {
   }
   function fmtDate(d?: string | null) { if (!d) return ""; return d.length >= 10 ? d.slice(0, 10) : d; }
   function openEditProfile(m: Member) {
+    if (loadedCompanyId !== currentCompanyId || companyLoading || !list.some((p) => p.id === m.id)) return;
     setEditProfile(m);
     setShowFormPassword(false);
     setForm({
@@ -427,7 +417,8 @@ function Page() {
   async function submitCreate() {
     setSaving(true);
     try {
-      await adminCreateMember({ data: form });
+      if (!currentCompanyId || companyLoading) throw new Error("請先選擇公司");
+      await adminCreateMember({ data: { ...form, companyId: currentCompanyId } });
       toast.success("會員已建立");
       setCreateOpen(false);
       load();
@@ -436,7 +427,7 @@ function Page() {
   }
 
   async function submitEditProfile() {
-    if (!editProfile) return;
+    if (!editProfile || loadedCompanyId !== currentCompanyId || companyLoading) return;
     if (isSuperAdmin && !exclusion.ready) return toast.error("分紅設定尚未載入，請重新開啟會員資料");
     if (isSuperAdmin && exclusion.excluded && !exclusion.reason.trim()) return toast.error("請填寫停止分紅原因");
     setSaving(true);
@@ -451,6 +442,7 @@ function Page() {
       await adminUpdateMember({
         data: {
           userId: editProfile.id,
+          companyId: currentCompanyId ?? undefined,
           name: form.name,
           email: form.email,
           phone: form.phone,
@@ -612,7 +604,7 @@ function Page() {
           <p className="text-xs md:text-sm text-muted-foreground mt-1">管理會員帳號、基本資料與角色權限</p>
         </div>
         {isAdmin && (
-          <Button onClick={openCreate} size="sm" className="bg-gradient-primary">
+          <Button onClick={openCreate} disabled={!currentCompanyId || companyLoading} size="sm" className="bg-gradient-primary">
             <UserPlus className="h-4 w-4 mr-2" />新增會員
           </Button>
         )}
