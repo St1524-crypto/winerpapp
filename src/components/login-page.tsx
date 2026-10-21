@@ -60,21 +60,25 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
       const params = new URLSearchParams(window.location.search);
       const slugFromQuery = params.get("company");
-      const ref = params.get("ref") || getReferralCode(); // 優先網址，其次 cookie
+      const urlRef = params.get("ref");
       const m = params.get("mode");
-      if (ref && referralCodeSchema.safeParse(ref).success) {
-        setRefCode(ref.toUpperCase());
+      if (urlRef && referralCodeSchema.safeParse(urlRef).success) {
+        // Only an explicit referral link locks the code and redirects.
+        setRefCode(urlRef.toUpperCase());
         setRefLocked(true);
         setMode("signup");
         setSignupType("phone");
-        // Existing copied /login?ref= links also bypass the company-code entry.
-        const resolved = await getReferrerPublicProfile({ data: { code: ref } }).catch(() => null);
+        const resolved = await getReferrerPublicProfile({ data: { code: urlRef } }).catch(() => null);
         if (cancelled) return;
-        if (resolved?.found && !pathSlug) {
+        if (resolved?.found && !pathSlug && !slugFromQuery && m !== "signin") {
           const signupSlug = resolved.company?.slug ?? "ST0985";
-          window.location.replace(`/m/${encodeURIComponent(signupSlug)}?ref=${encodeURIComponent(ref)}&mode=signup`);
+          window.location.replace(`/m/${encodeURIComponent(signupSlug)}?ref=${encodeURIComponent(urlRef)}&mode=signup`);
           return;
         }
+      } else {
+        // A saved (cookie) code only pre-fills an editable field.
+        const saved = getReferralCode();
+        if (saved && referralCodeSchema.safeParse(saved).success) setRefCode(saved.toUpperCase());
       }
       if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
 
