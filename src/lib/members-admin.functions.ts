@@ -61,7 +61,7 @@ export const adminCreateMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const { requireMemberCompany } = await import("./member-company.server");
-    await requireMemberCompany(context.supabase, "userId" in data ? data.userId : undefined, "companyId" in data ? data.companyId : undefined);
+    await requireMemberCompany(context.supabase, undefined, data.companyId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: company, error: companyError } = await context.supabase.from("companies").select("slug").eq("id", data.companyId).single();
@@ -207,7 +207,7 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const { requireMemberCompany } = await import("./member-company.server");
-    await requireMemberCompany(context.supabase, "userId" in data ? data.userId : undefined, "companyId" in data ? data.companyId : undefined);
+    await requireMemberCompany(context.supabase, data.userId, data.companyId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Snapshot current profile for audit diff (marketing_slug)
@@ -439,7 +439,7 @@ export const adminResetMemberPassword = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const { requireMemberCompany } = await import("./member-company.server");
-    await requireMemberCompany(context.supabase, "userId" in data ? data.userId : undefined, "companyId" in data ? data.companyId : undefined);
+    await requireMemberCompany(context.supabase, data.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const password = data.password && data.password.length >= 6
@@ -597,7 +597,7 @@ export const adminGetMemberEarnings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const { requireMemberCompany } = await import("./member-company.server");
-    await requireMemberCompany(context.supabase, "userId" in data ? data.userId : undefined, "companyId" in data ? data.companyId : undefined);
+    await requireMemberCompany(context.supabase, data.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { computeMemberEarnings } = await import("@/lib/member-earnings.server");
     const map = await computeMemberEarnings(supabaseAdmin, [data.userId]);
