@@ -57,6 +57,13 @@
       "when": 1792474872599,
       "tag": "0007_fix_dividend_exclusion_transactional_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793261487647,
+      "tag": "0008_pool_daily_business_caps",
+      "breakpoints": true
     }
   ]
 }

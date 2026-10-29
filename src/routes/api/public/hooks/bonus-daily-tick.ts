@@ -76,19 +76,11 @@ export const Route = createFileRoute("/api/public/hooks/bonus-daily-tick")({
             result.daily_total_reward_points_error = e.message;
           }
 
-          // 營業分紅：一星以上 VIP，依同一來源訂單日基準平均分配。
-          try {
-            const { data: revenue, error: revErr } = await (supabaseAdmin as any).rpc(
-              "distribute_daily_revenue_bonus",
-              { _date: poolSourceDate },
-            );
-            if (revErr) throw new Error(revErr.message);
-            result.daily_revenue_bonus = Array.isArray(revenue) ? revenue[0] : revenue;
-          } catch (e: any) {
-            result.daily_revenue_bonus_error = e.message;
-          }
+          // 營業分紅與消費分紅皆依「分紅池設定」每日結算：
+          // 只處理 active 池，比例、適用階級依各池設定；營業池上限採星級營業分紅上限。
+          result.daily_revenue_bonus_skipped = "replaced_by_vip_bonus_pools";
 
-          // 消費分紅：V/S/T/E/A active pool，依同一來源訂單日基準平均分配。
+          // 所有 active 分紅池（消費 POOL_VSTEA、營業 POOL_123 / POOL_67D 等）依同一來源訂單日基準均分。
           try {
             const { data: pools, error: poolErr } = await (supabaseAdmin as any)
               .from("vip_bonus_pools")
