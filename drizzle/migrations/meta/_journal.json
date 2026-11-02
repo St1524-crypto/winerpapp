@@ -64,6 +64,13 @@
       "when": 1793261487647,
       "tag": "0008_pool_daily_business_caps",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793620199203,
+      "tag": "0009_fix_pool_skipped_capped_status",
+      "breakpoints": true
     }
   ]
 }
