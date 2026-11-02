@@ -7,8 +7,9 @@ CREATE SCHEMA private;
 CREATE SCHEMA auth;
 CREATE ROLE authenticated;
 CREATE ROLE service_role;
+CREATE TYPE public.app_role AS ENUM ('super_admin','admin','finance');
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT NULL::uuid $$;
-CREATE FUNCTION private.has_role(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
+CREATE FUNCTION private.has_role(uuid,public.app_role) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
 CREATE FUNCTION public.touch_updated_at() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$;
 \ir ../../supabase/migrations/20260624140016_e1cc67ff-f058-41e5-9ea9-26a1514c6331.sql
 ALTER TABLE public.vip_bonus_pool_payouts ADD COLUMN calculation_detail jsonb;
