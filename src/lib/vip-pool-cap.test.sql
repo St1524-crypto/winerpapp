@@ -24,6 +24,8 @@ CREATE FUNCTION private.list_pool_eligible_members(uuid,date)
 RETURNS TABLE(member_id uuid, legacy_code text, mapped_code text, pool_ordinal text, tier_mapping_source text)
 LANGUAGE sql AS $$ SELECT * FROM candidates $$;
 \ir ../../drizzle/migrations/0008_pool_daily_business_caps.sql
+-- The historical schema includes default pools; discard fixtures inside rollback.
+DELETE FROM public.vip_bonus_pools WHERE code IS NOT NULL;
 INSERT INTO public.vip_bonus_pools(id,name,code,tier_codes,bonus_rate,total_income_cap_amount)
 VALUES ('00000000-0000-0000-0000-000000000001','Test business','POOL_123','{STAR1}',0.05,100),
        ('00000000-0000-0000-0000-000000000002','Test consumption','POOL_VSTEA','{E}',0.05,100);
