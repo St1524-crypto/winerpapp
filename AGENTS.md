@@ -6,3 +6,4 @@
 - Audit insert guards must use SECURITY INVOKER and validate current_user against trusted server roles so authorized SECURITY DEFINER business transactions can atomically save their audit rows without allowing direct client inserts.
 - Referral shares use the dedicated resolver entry and company telephone signup; require same-code referrer-name confirmation before invoking account creation so cancellation has no signup side effects.
 - Member management directory, referral pickers, and privileged member actions enforce explicit company memberships first and legacy assigned-company fallback; company changes close dialogs and discard stale requests to prevent cross-company display or edits.
+- Pool payouts use the existing skipped_capped status for zero-payable capped members; keep cap regression tests isolated from live data so one member cannot roll back other allocations.
