@@ -1,5 +1,5 @@
 import { useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -426,6 +426,11 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           </div>
 
           <form onSubmit={submit} className="space-y-4">
+            {mode === "signup" && user && stayOnReferralSignup && (
+              <div className="rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+                此裝置目前已登入其他帳號，建立新帳號時會先自動登出。
+              </div>
+            )}
             {mode === "signup" && (
               <>
                 <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2 text-xs text-foreground">
