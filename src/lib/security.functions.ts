@@ -396,11 +396,12 @@ export const recordLoginAttempt = createServerFn({ method: "POST" })
 export const listMyLoginAttempts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const email = (context.claims.email as string)?.toLowerCase() ?? "";
+    // Only the caller's own records by verified user id; never match by
+    // email claim (unverified sign-ups could claim someone else's email).
     const { data } = await supabaseAdmin
       .from("login_attempts")
       .select("*")
-      .or(`user_id.eq.${context.userId},email.eq.${email}`)
+      .eq("user_id", context.userId)
       .order("created_at", { ascending: false })
       .limit(50);
     return data ?? [];
