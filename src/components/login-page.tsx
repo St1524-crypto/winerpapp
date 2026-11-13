@@ -35,6 +35,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [refCode, setRefCode] = useState("");
   const [refLocked, setRefLocked] = useState(false);
@@ -84,7 +85,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         if (saved && referralCodeSchema.safeParse(saved).success) setRefCode(saved.toUpperCase());
       }
       if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
-      if (m === "signup") { setPhone(""); setPassword(""); setEmail(""); }
+      if (m === "signup") { setPhone(""); setPassword(""); setConfirmPassword(""); setEmail(""); }
 
       const targetSlug = pathSlug || slugFromQuery || "";
       if (targetSlug) {
@@ -208,6 +209,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
         toast.success(activeCompany ? `已登入 ${activeCompany.company_name}` : "登入成功");
       } else if (mode === "signup" && activeCompany) {
+        if (password !== confirmPassword) throw new Error("兩次輸入的密碼不一致");
         if (signupType === "phone") {
           const parsed = registrationSchema.safeParse({ name, phone, password });
           if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "請確認註冊資料");
@@ -474,6 +476,13 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                   )}
                 </div>
                 <Input id="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === "signup" ? 6 : 1} maxLength={200} placeholder={mode === "signup" ? "須6個字以上" : "請輸入密碼"} className="placeholder:text-muted-foreground/50" />
+                {mode === "signup" && (
+                  <>
+                    <Label htmlFor="confirm-password" className="text-primary">確認密碼</Label>
+                    <Input id="confirm-password" autoComplete="new-password" type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} maxLength={200} placeholder="請再輸入一次密碼" className="placeholder:text-muted-foreground/50" />
+                    {confirmPassword && confirmPassword !== password && <p className="text-xs text-destructive">兩次輸入的密碼不一致</p>}
+                  </>
+                )}
                 <label className="flex items-center gap-2 text-xs text-foreground/70">
                   <input
                     type="checkbox"
