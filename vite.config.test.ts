@@ -28,7 +28,7 @@ describe("HTML parser dependency resolution", () => {
         );
         expect(resolved?.id).toBeTruthy();
         expect(existsSync(resolved?.id ?? "")).toBe(true);
-        expect(resolved?.id).toMatch(/\/dist\/esm\/decode\.js$/);
+        expect(resolved?.id).toMatch(/\/entities\/dist\/decode\.js$/);
       }
     } finally {
       await server.close();
