@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { referralSignupPath } from "@/lib/referral-signup";
+import { referralSignupPath, publicShareOrigin } from "@/lib/referral-signup";
 
 export const Route = createFileRoute("/shop/account/points")({
   component: PointsPage,
@@ -126,7 +126,7 @@ function PointsPage() {
   }, []);
 
   const shareLink = ref.referral_code
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}${referralSignupPath(ref.referral_code)}`
+    ? `${publicShareOrigin()}${referralSignupPath(ref.referral_code)}`
     : "";
 
   // 全部異動（現金 + 點數）

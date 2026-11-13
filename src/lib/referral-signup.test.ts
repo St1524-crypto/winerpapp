@@ -18,3 +18,13 @@ describe("referral signup rules", () => {
     expect(referralSignupPath("B2D63A70")).toBe("/u/B2D63A70");
   });
 });
+import { publicShareOrigin } from "./referral-signup";
+describe("publicShareOrigin", () => {
+  it("preview host becomes winerp.app", () => {
+    expect(publicShareOrigin("https://8759c219-ed53-49ec-b52a-60a002da48ec.lovableproject.com")).toBe("https://winerp.app");
+    expect(publicShareOrigin("https://winerpapp.lovable.app")).toBe("https://winerp.app");
+  });
+  it("custom domain kept", () => {
+    expect(publicShareOrigin("https://www.winerp.app")).toBe("https://www.winerp.app");
+  });
+});

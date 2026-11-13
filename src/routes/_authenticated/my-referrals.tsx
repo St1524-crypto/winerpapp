@@ -1,3 +1,4 @@
+import { publicShareOrigin } from "@/lib/referral-signup";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +41,7 @@ function MyReferralsPage() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!data) return null;
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = publicShareOrigin();
   const myUrl = `${origin}/u/${profile.marketing_slug || profile.referral_code || ""}`;
 
   function copy() { navigator.clipboard.writeText(myUrl); toast.success("專屬連結已複製"); }

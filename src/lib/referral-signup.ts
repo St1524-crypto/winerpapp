@@ -14,3 +14,19 @@ export function canCreateReferredAccount(code: string, confirmedCode: string | u
 export function referralSignupPath(code: string) {
   return `/u/${encodeURIComponent(referralCodeSchema.parse(code))}`;
 }
+export const PUBLIC_SITE_ORIGIN = "https://winerp.app";
+
+/** 分享給會員的網址一律用正式網域；預覽/內部網址改成 winerp.app。 */
+export function publicShareOrigin(currentOrigin?: string): string {
+  const origin = currentOrigin ?? (typeof window !== "undefined" ? window.location.origin : "");
+  if (!origin) return PUBLIC_SITE_ORIGIN;
+  try {
+    const host = new URL(origin).hostname;
+    if (host.endsWith("lovableproject.com") || host.endsWith("lovable.app") || host === "localhost" || host === "127.0.0.1") {
+      return PUBLIC_SITE_ORIGIN;
+    }
+  } catch {
+    return PUBLIC_SITE_ORIGIN;
+  }
+  return origin;
+}

@@ -1,3 +1,4 @@
+import { publicShareOrigin } from "@/lib/referral-signup";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,8 +41,7 @@ export function ShareProductButtons({ productId, productName }: Props) {
       });
   }, [user]);
 
-  const origin =
-    typeof window !== "undefined" ? window.location.origin : "";
+  const origin = publicShareOrigin();
   const path = `/shop/product/${productId}`;
   const shareUrl = refCode
     ? `${origin}${path}?ref=${encodeURIComponent(refCode)}`
