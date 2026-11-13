@@ -84,6 +84,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         if (saved && referralCodeSchema.safeParse(saved).success) setRefCode(saved.toUpperCase());
       }
       if (m === "signup" || m === "signin" || m === "forgot") setMode(m);
+      if (m === "signup") { setPhone(""); setPassword(""); setEmail(""); }
 
       const targetSlug = pathSlug || slugFromQuery || "";
       if (targetSlug) {
@@ -422,7 +423,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-primary">姓名</Label>
-                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} placeholder="王小明" />
+                  <Input id="name" autoComplete="off" value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} placeholder="王小明" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="refCode" className="text-primary">{refLocked ? "推薦碼（已綁定）" : "推薦碼（選填）"}</Label>
@@ -452,7 +453,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
             {mode === "signup" && signupType === "phone" && (
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-primary">電話號碼</Label>
-                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} required maxLength={10} inputMode="numeric" placeholder="0912345678" className="placeholder:text-muted-foreground/50" />
+                <Input id="phone" name="signup-phone" autoComplete="off" type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} required maxLength={10} inputMode="numeric" placeholder="0912345678" className="placeholder:text-muted-foreground/50" />
                 <p className="text-[11px] text-foreground/70">註冊後系統將自動產生會員編號，可使用電話號碼直接登入。</p>
               </div>
             )}
@@ -472,7 +473,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                     <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
                   )}
                 </div>
-                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === "signup" ? 6 : 1} maxLength={200} placeholder={mode === "signup" ? "須6個字以上" : "請輸入密碼"} className="placeholder:text-muted-foreground/50" />
+                <Input id="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === "signup" ? 6 : 1} maxLength={200} placeholder={mode === "signup" ? "須6個字以上" : "請輸入密碼"} className="placeholder:text-muted-foreground/50" />
                 <label className="flex items-center gap-2 text-xs text-foreground/70">
                   <input
                     type="checkbox"
