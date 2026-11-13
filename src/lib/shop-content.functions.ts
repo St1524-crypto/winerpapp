@@ -1,3 +1,4 @@
+import sanitize from "sanitize-html";
 import { createServerFn } from "@tanstack/react-start";
 import { notFound } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
@@ -16,13 +17,21 @@ const PUBLIC_COLUMNS =
 // Strips dangerous tags and inline event handlers / javascript: URLs without
 // requiring jsdom (which does not run in Cloudflare Workers).
 function sanitizeHtml(html: string): string {
-  return html
-    .replace(/<\/?(?:script|style|iframe|object|embed|form|meta|link|base)\b[^>]*>/gi, "")
-    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "")
-    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "")
-    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
-    .replace(/(href|src)\s*=\s*"\s*javascript:[^"]*"/gi, '$1="#"')
-    .replace(/(href|src)\s*=\s*'\s*javascript:[^']*'/gi, "$1='#'");
+  // Allowlist sanitizer (htmlparser2-based, Worker-safe): only safe tags,
+  // attributes and URL schemes survive, so javascript: links and event
+  // handlers are always removed.
+  return sanitize(html, {
+    allowedTags: sanitize.defaults.allowedTags.concat(["img", "h1", "h2", "span", "u", "s"]),
+    allowedAttributes: {
+      a: ["href", "title", "target", "rel"],
+      img: ["src", "alt", "title", "width", "height"],
+      "*": ["class"],
+    },
+    allowedSchemes: ["http", "https", "mailto", "tel"],
+    allowedSchemesAppliedToAttributes: ["href", "src"],
+    allowProtocolRelative: false,
+    transformTags: { a: sanitize.simpleTransform("a", { rel: "noopener noreferrer" }) },
+  });
 }
 
 function publicDb() {
@@ -164,7 +173,7 @@ export const upsertShopContentPage = createServerFn({ method: "POST" })
       cover_image: nullIfEmpty(data.cover_image),
       images: (data.images ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 7),
       content_json: data.content_json ?? {},
-      content_html: nullIfEmpty(data.content_html),
+      content_html: data.content_html ? nullIfEmpty(sanitizeHtml(data.content_html)) : null,
       external_url: nullIfEmpty(data.external_url),
       sort_order: Number(data.sort_order) || 0,
       is_published: data.is_published,
