@@ -87,6 +87,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         const exact = list.find((c) => c.slug === targetSlug);
         const fuzzy =
           exact ||
+          findCompanyByCode(targetSlug, list) ||
           list.find(
             (c) =>
               c.slug.includes(targetSlug) ||
