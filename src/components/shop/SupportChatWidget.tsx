@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -322,9 +323,16 @@ function GuestChatPanel() {
     setInput("");
     setPending(true);
     try {
+      const { data: sess } = await supabase.auth.getSession();
+      const accessToken = sess.session?.access_token;
+      if (!accessToken) {
+        toast.error("請先登入後再使用 AI 客服，或加 LINE 客服 @win8799999");
+        setPending(false);
+        return;
+      }
       const res = await fetch("/api/public/ai/support-guest", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ message: text, history }),
       });
       if (res.status === 429) {
@@ -353,7 +361,7 @@ function GuestChatPanel() {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <div className="mx-3 mt-3 rounded-lg border bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
-        訪客唯讀模式：可詢問促銷、商品、福利。對話不會保存，登入後可享打卡、下單與對話紀錄。
+        AI 客服需登入後使用；未登入可加 LINE 客服 @win8799999 洽詢。登入後可享打卡、下單與對話紀錄。
         <div className="mt-1 flex gap-2">
           <Button asChild size="sm" variant="outline" className="h-7 text-xs">
             <Link to="/login">登入 / 註冊</Link>

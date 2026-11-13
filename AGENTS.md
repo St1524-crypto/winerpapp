@@ -8,3 +8,5 @@
 - Member management directory, referral pickers, and privileged member actions enforce explicit company memberships first and legacy assigned-company fallback; company changes close dialogs and discard stale requests to prevent cross-company display or edits.
 - Pool payouts use the existing skipped_capped status for zero-payable capped members; keep cap regression tests isolated from live data so one member cannot roll back other allocations.
 - Monthly responsibility points record per-order contributions in order_points; sales_orders triggers deduct them on delete, cancellation, refund, or proportionally on completed partial returns so voided goods never inflate monthly bonuses.
+- Sanitize admin-authored shop HTML with the sanitize-html allowlist on both save and public read so stored markup can never carry scripts or javascript: links.
+- Bonus/earnings SECURITY DEFINER RPCs reject direct anon/authenticated callers unless they are the member or an admin/finance role, while nested definer calls stay allowed.
