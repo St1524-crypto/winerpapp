@@ -3264,6 +3264,7 @@ export type Database = {
           created_at: string
           id: string
           member_id: string
+          order_points: Json
           points: number
           source_order_ids: string[]
           updated_at: string
@@ -3273,6 +3274,7 @@ export type Database = {
           created_at?: string
           id?: string
           member_id: string
+          order_points?: Json
           points?: number
           source_order_ids?: string[]
           updated_at?: string
@@ -3282,6 +3284,7 @@ export type Database = {
           created_at?: string
           id?: string
           member_id?: string
+          order_points?: Json
           points?: number
           source_order_ids?: string[]
           updated_at?: string
