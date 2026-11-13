@@ -28,7 +28,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   const { logoUrl } = useBranding();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
-  const [signupType, setSignupType] = useState<"email" | "phone">(memberMode ? "phone" : "email");
+  const [signupType, setSignupType] = useState<"email" | "phone">("phone");
   const [websiteId, setWebsiteId] = useState("ST0985");
   const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
@@ -232,6 +232,8 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
           if (!/^\+?\d{8,15}$/.test(cleanPhone)) throw new Error("請輸入有效的電話號碼");
           signupEmail = `${cleanPhone.replace(/^\+/, "")}@phone.local`;
         }
+        const contactEmail = email.trim();
+        if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) throw new Error("請輸入有效的 Email");
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: signupEmail,
           password,
@@ -240,6 +242,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
             data: {
               name,
               phone: signupType === "phone" ? cleanPhone : undefined,
+              contact_email: contactEmail || undefined,
               company_slug: activeCompany.slug,
             },
           },
@@ -417,12 +420,6 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                 <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2 text-xs text-foreground">
                   您將在 <span className="font-semibold">{selectedCompany.company_name}</span> 公司入口註冊新帳號
                 </div>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setSignupType("email")}
-                    className={`flex-1 py-1.5 text-xs rounded-md border ${signupType === "email" ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground"}`}>Email 註冊</button>
-                  <button type="button" onClick={() => setSignupType("phone")}
-                    className={`flex-1 py-1.5 text-xs rounded-md border ${signupType === "phone" ? "bg-primary text-primary-foreground border-primary" : "text-muted-foreground"}`}>電話註冊</button>
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-primary">姓名</Label>
                   <Input id="name" autoComplete="off" value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} />
@@ -445,18 +442,19 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
               </div>
             )}
 
-            {mode === "signup" && signupType === "email" && (
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-primary">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
-              </div>
-            )}
 
             {mode === "signup" && signupType === "phone" && (
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-primary">電話號碼</Label>
                 <Input id="phone" name="signup-phone" autoComplete="off" type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} required maxLength={10} inputMode="numeric" placeholder="0912345678" className="placeholder:text-muted-foreground/50" />
                 <p className="text-[11px] text-foreground/70">註冊後系統將自動產生會員編號，可使用電話號碼直接登入。</p>
+              </div>
+            )}
+
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <Label htmlFor="signup-email" className="text-primary">Email（選填）</Label>
+                <Input id="signup-email" name="signup-email" autoComplete="off" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} placeholder="you@example.com" className="placeholder:text-muted-foreground/50" />
               </div>
             )}
 

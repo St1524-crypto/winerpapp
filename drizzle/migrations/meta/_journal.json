@@ -106,6 +106,13 @@
       "when": 1794579678994,
       "tag": "0014_business_cap_total_income",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794587988179,
+      "tag": "0015_signup_contact_email",
+      "breakpoints": true
     }
   ]
 }
