@@ -78,6 +78,13 @@
       "when": 1794571778133,
       "tag": "0010_monthly_unique_ignore_cancelled",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794572127132,
+      "tag": "0011_deduct_monthly_points_on_order_delete",
+      "breakpoints": true
     }
   ]
 }
