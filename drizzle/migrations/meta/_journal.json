@@ -99,6 +99,13 @@
       "when": 1794572762057,
       "tag": "0013_deduct_monthly_points_on_partial_return",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794579678994,
+      "tag": "0014_business_cap_total_income",
+      "breakpoints": true
     }
   ]
 }
