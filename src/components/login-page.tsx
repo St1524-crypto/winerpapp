@@ -38,6 +38,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   const [name, setName] = useState("");
   const [refCode, setRefCode] = useState("");
   const [refLocked, setRefLocked] = useState(false);
+  const [refName, setRefName] = useState("");
   const [busy, setBusy] = useState(false);
   const [refConfirmation, setRefConfirmation] = useState<{ code: string; name: string } | null>(null);
 
@@ -71,6 +72,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         setSignupType("phone");
         const resolved = await getReferrerPublicProfile({ data: { code: urlRef } }).catch(() => null);
         if (cancelled) return;
+        if (resolved?.found) setRefName((resolved as any).referrer?.name ?? "");
         if (resolved?.found && !pathSlug && !slugFromQuery && m !== "signin") {
           const signupSlug = resolved.company?.slug ?? "ST0985";
           window.location.replace(`/m/${encodeURIComponent(signupSlug)}?ref=${encodeURIComponent(urlRef)}&mode=signup`);
@@ -425,6 +427,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                 <div className="space-y-2">
                   <Label htmlFor="refCode" className="text-primary">{refLocked ? "推薦碼（已綁定）" : "推薦碼（選填）"}</Label>
                   <Input id="refCode" value={refCode} maxLength={64} onChange={(e) => { if (!refLocked) setRefCode(e.target.value.toUpperCase()); }} readOnly={refLocked} placeholder="例：A1B2C3D4" className={`font-mono ${refLocked ? "bg-muted cursor-not-allowed" : ""}`} />
+                  {refLocked && refName && <p className="text-sm">推薦人：<span className="font-bold text-primary">{refName}</span></p>}
                 </div>
               </>
             )}
