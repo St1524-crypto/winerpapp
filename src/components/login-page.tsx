@@ -42,6 +42,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   const [refConfirmation, setRefConfirmation] = useState<{ code: string; name: string } | null>(null);
 
   const [companies, setCompanies] = useState<PublicCompany[]>([]);
+  const [resolving, setResolving] = useState(true);
   const [selectedSlug, setSelectedSlug] = useState<string>("");
 
   const selectedCompany = useMemo(
@@ -87,6 +88,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         const exact = list.find((c) => c.slug === targetSlug);
         const fuzzy =
           exact ||
+          findCompanyByCode(targetSlug, list) ||
           list.find(
             (c) =>
               c.slug.includes(targetSlug) ||
@@ -97,6 +99,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         if (fuzzy) setSelectedSlug(fuzzy.slug);
         else if (list.length === 1) setSelectedSlug(list[0].slug);
       }
+      setResolving(false);
     })();
     return () => { cancelled = true; };
   }, [pathSlug]);
@@ -258,6 +261,10 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
     }
   }
 
+
+  if (!selectedCompany && resolving) {
+    return <div className="min-h-screen flex items-center justify-center text-muted-foreground">載入中…</div>;
+  }
 
   // Generic login entry requires an explicit company code.
   if (!selectedCompany) {
@@ -462,7 +469,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                     <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline">忘記密碼？</button>
                   )}
                 </div>
-                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === "signup" ? 6 : 1} maxLength={200} placeholder={mode === "signup" ? "須5個字以上" : "請輸入密碼"} className="placeholder:text-muted-foreground/50" />
+                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === "signup" ? 6 : 1} maxLength={200} placeholder={mode === "signup" ? "須6個字以上" : "請輸入密碼"} className="placeholder:text-muted-foreground/50" />
                 <label className="flex items-center gap-2 text-xs text-foreground/70">
                   <input
                     type="checkbox"
