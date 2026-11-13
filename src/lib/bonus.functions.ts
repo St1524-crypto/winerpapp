@@ -154,7 +154,7 @@ async function addMonthlyResponsibility(memberId: string, points: number, orderI
   const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
   const { data: existing } = await supabaseAdmin
     .from("monthly_responsibility_points")
-    .select("id, points, source_order_ids")
+    .select("id, points, source_order_ids, order_points")
     .eq("member_id", memberId).eq("ym", ym).maybeSingle();
   if (existing) {
     const ids = ((existing as any).source_order_ids ?? []) as string[];
@@ -163,12 +163,15 @@ async function addMonthlyResponsibility(memberId: string, points: number, orderI
       .update({
         points: Number((existing as any).points ?? 0) + points,
         source_order_ids: [...ids, orderId],
-      })
+        // 記錄每筆訂單貢獻的點數，刪單時由資料庫觸發器精準扣回
+        order_points: { ...(((existing as any).order_points ?? {}) as Record<string, number>), [orderId]: points },
+      } as any)
       .eq("id", (existing as any).id);
   } else {
     await supabaseAdmin.from("monthly_responsibility_points").insert({
       member_id: memberId, ym, points, source_order_ids: [orderId],
-    });
+      order_points: { [orderId]: points },
+    } as any);
   }
 }
 
