@@ -7,4 +7,4 @@
 - Referral shares use the dedicated resolver entry and company telephone signup; require same-code referrer-name confirmation before invoking account creation so cancellation has no signup side effects.
 - Member management directory, referral pickers, and privileged member actions enforce explicit company memberships first and legacy assigned-company fallback; company changes close dialogs and discard stale requests to prevent cross-company display or edits.
 - Pool payouts use the existing skipped_capped status for zero-payable capped members; keep cap regression tests isolated from live data so one member cannot roll back other allocations.
-- Monthly responsibility points record per-order contributions in order_points; a BEFORE DELETE trigger on sales_orders deducts them so deleted orders never inflate monthly bonuses.
+- Monthly responsibility points record per-order contributions in order_points; sales_orders triggers deduct them on delete, cancellation or refund so voided orders never inflate monthly bonuses.
