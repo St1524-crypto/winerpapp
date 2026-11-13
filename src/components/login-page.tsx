@@ -423,7 +423,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-primary">姓名</Label>
-                  <Input id="name" autoComplete="off" value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} placeholder="王小明" />
+                  <Input id="name" autoComplete="off" value={name} onChange={(e) => setName(e.target.value)} required maxLength={60} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="refCode" className="text-primary">{refLocked ? "推薦碼（已綁定）" : "推薦碼（選填）"}</Label>
