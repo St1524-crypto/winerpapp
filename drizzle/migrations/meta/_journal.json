@@ -92,6 +92,13 @@
       "when": 1794572437221,
       "tag": "0012_deduct_monthly_points_on_cancel_refund",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794572762057,
+      "tag": "0013_deduct_monthly_points_on_partial_return",
+      "breakpoints": true
     }
   ]
 }
