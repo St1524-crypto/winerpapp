@@ -71,6 +71,13 @@
       "when": 1793620199203,
       "tag": "0009_fix_pool_skipped_capped_status",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794571778133,
+      "tag": "0010_monthly_unique_ignore_cancelled",
+      "breakpoints": true
     }
   ]
 }
