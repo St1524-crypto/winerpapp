@@ -76,6 +76,23 @@ export const Route = createFileRoute("/api/public/ai/support-guest")({
         if (!access.ok) return access.response;
         const cors = publicAiCorsHeaders(access.origin);
 
+        // Require a signed-in user so anonymous callers cannot spend the AI budget.
+        const authHeader = request.headers.get("authorization") ?? "";
+        const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+        if (!token) {
+          return Response.json({ error: "請先登入後再使用 AI 客服" }, { status: 401, headers: cors });
+        }
+        {
+          const { createClient } = await import("@supabase/supabase-js");
+          const authClient = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+            auth: { persistSession: false, autoRefreshToken: false },
+          });
+          const { data: claims, error: claimsErr } = await authClient.auth.getClaims(token);
+          if (claimsErr || !claims?.claims?.sub) {
+            return Response.json({ error: "請先登入後再使用 AI 客服" }, { status: 401, headers: cors });
+          }
+        }
+
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500, headers: cors });
 
