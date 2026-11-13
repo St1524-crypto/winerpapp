@@ -42,6 +42,13 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
   const [refName, setRefName] = useState("");
   const [busy, setBusy] = useState(false);
   const [refConfirmation, setRefConfirmation] = useState<{ code: string; name: string } | null>(null);
+  // 推薦註冊連結（?ref=...&mode=signup）即使已登入也停留在註冊頁，不自動跳會員中心
+  const [stayOnReferralSignup] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const p = new URLSearchParams(window.location.search);
+    return !!p.get("ref") && p.get("mode") === "signup";
+  });
+  const signupSubmittedRef = useRef(false);
 
   const [companies, setCompanies] = useState<PublicCompany[]>([]);
   const [resolving, setResolving] = useState(true);
@@ -121,6 +128,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
 
   useEffect(() => {
     if (!loading && user && rolesLoaded) {
+      if (stayOnReferralSignup && !signupSubmittedRef.current) return;
       if (sessionStorage.getItem("mfa_pending") === user.id) {
         navigate({ to: "/two-factor" });
         return;
@@ -128,7 +136,7 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
       // 會員登入頁一律進入會員前台，管理員若要進後台請使用「管理員登入」
       navigate({ to: "/shop/account" });
     }
-  }, [user, loading, roles, rolesLoaded, navigate]);
+  }, [user, loading, roles, rolesLoaded, navigate, stayOnReferralSignup]);
 
   async function submit(e?: React.FormEvent, confirmedCode?: string) {
     e?.preventDefault();
@@ -234,6 +242,9 @@ export function LoginPage({ pathSlug, memberMode = false }: { pathSlug?: string;
         }
         const contactEmail = email.trim();
         if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) throw new Error("請輸入有效的 Email");
+        // 已登入其他帳號時，先登出再建立新帳號，避免沿用舊帳號
+        if (user) await supabase.auth.signOut();
+        signupSubmittedRef.current = true;
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: signupEmail,
           password,
