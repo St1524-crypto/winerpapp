@@ -286,7 +286,7 @@ function ShipmentDialog({
                     onCheckedChange={(v) => setChecked((s) => ({ ...s, [it.id]: !!v }))}
                   />
                   <span className="flex-1 truncate text-sm">{it.product_name}</span>
-                  <span className="text-xs text-muted-foreground">剩 {rem}</span>
+                  <span className="text-xs text-muted-foreground">總數 {it.quantity}／未出 {rem}</span>
                   <Input
                     type="number"
                     min={1}
@@ -298,6 +298,9 @@ function ShipmentDialog({
                     }
                     className="w-20 h-8"
                   />
+                  <span className="w-20 text-right text-xs text-muted-foreground">
+                    出貨後剩 {Math.max(rem - (checked[it.id] ? Number(qty[it.id] ?? 0) : 0), 0)}
+                  </span>
                 </div>
               );
             })}
