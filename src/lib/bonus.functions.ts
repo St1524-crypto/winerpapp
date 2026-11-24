@@ -152,6 +152,19 @@ async function addMonthlyResponsibility(memberId: string, points: number, orderI
   if (points <= 0) return;
   const now = new Date();
   const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+  // 訂單勾選「分月計算」時，依每月責任額拆到之後幾個月（責任額與月獎金都按月計）
+  const [{ data: flag }, { data: settings }] = await Promise.all([
+    supabaseAdmin.from("sales_orders").select("spread_responsibility").eq("id", orderId).maybeSingle(),
+    supabaseAdmin.from("bonus_settings").select("vip_required_points").order("created_at").limit(1).maybeSingle(),
+  ]);
+  const { splitPointsByMonth } = await import("./next-repurchase");
+  const parts = (flag as any)?.spread_responsibility
+    ? splitPointsByMonth(points, ym, Number((settings as any)?.vip_required_points ?? 200))
+    : [{ ym, points }];
+  for (const part of parts) await addMonthlyPointsRow(memberId, part.points, orderId, part.ym);
+}
+
+async function addMonthlyPointsRow(memberId: string, points: number, orderId: string, ym: string) {
   const { data: existing } = await supabaseAdmin
     .from("monthly_responsibility_points")
     .select("id, points, source_order_ids, order_points")

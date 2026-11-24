@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { NextRepurchaseDate } from "@/components/members/NextRepurchaseDate";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Search, Shield, UserCircle, UserPlus, Pencil, Handshake, KeyRound, Copy, LogIn, Sparkles, Link2, ExternalLink } from "lucide-react";
@@ -900,6 +901,7 @@ function Page() {
             <div className="space-y-3 py-2">
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <span>會員編號：<span className="font-mono">{editProfile.member_no ?? "—"}</span></span>
+                <NextRepurchaseDate memberId={editProfile.id} className="text-primary" />
                 <Badge variant="outline" className="text-[11px]">
                   位階：{vipTierLabel(resolveVipTierCode(editProfile as any)) || "—"}
                 </Badge>

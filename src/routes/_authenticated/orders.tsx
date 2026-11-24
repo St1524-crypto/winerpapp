@@ -1072,6 +1072,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   const [depositMethod, setDepositMethod] = useState("bank_transfer");
   const [taxAdded, setTaxAdded] = useState(false);
   const [noRewardPoints, setNoRewardPoints] = useState(false);
+  const [spreadResp, setSpreadResp] = useState(false);
   const [notes, setNotes] = useState("");
   const [orderSource, setOrderSource] = useState("");
   const [salespersonId, setSalespersonId] = useState<string>("");
@@ -1831,7 +1832,9 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         user_id?: string;
         payment_status?: string;
         pickup_store?: string;
+        spread_responsibility?: boolean;
       } = {};
+      if (spreadResp && !noRewardPoints) patch.spread_responsibility = true;
       if (pickupStore.trim()) patch.pickup_store = pickupStore.trim();
       if (orderSource.trim()) patch.order_source = orderSource.trim();
       if (salespersonId) patch.salesperson_id = salespersonId;
@@ -1864,7 +1867,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       toast.success(res?.createdNewCustomer ? "訂單已建立，並同步新增客戶" : "訂單已建立");
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress(""); setPickupStore("");
-      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource(""); setNoRewardPoints(false);
+      setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource(""); setNoRewardPoints(false); setSpreadResp(false);
       setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0"); setCashWalletPay("0");
       setDeposit("0"); setBalance("0");
       setCustomerId(null); setSalespersonId("");
@@ -2681,6 +2684,17 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                 onCheckedChange={(v) => setNoRewardPoints(v === true)}
               />
               <span>本訂單不列入業績（不發獎勵點、不列入分紅基數）</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox
+                checked={spreadResp && !noRewardPoints}
+                disabled={noRewardPoints || totalRewardPoints < 400}
+                onCheckedChange={(v) => setSpreadResp(v === true)}
+              />
+              <span>
+                獎勵點分月計算（每月 200 點）
+                {totalRewardPoints >= 400 && `：可維持 ${Math.floor(totalRewardPoints / 200)} 個月責任額合格，月獎金也按每月 200 點計算`}
+              </span>
             </label>
             {autoNoRewardReason && (
               <div className="text-xs text-amber-700">系統自動設定：{autoNoRewardReason}</div>

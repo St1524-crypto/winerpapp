@@ -134,6 +134,13 @@
       "when": 1795539774108,
       "tag": "0018_user_sessions_auth_session_id",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795541979296,
+      "tag": "0019_order_spread_responsibility",
+      "breakpoints": true
     }
   ]
 }

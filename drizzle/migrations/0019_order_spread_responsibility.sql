@@ -1,0 +1,2 @@
+ALTER TABLE public.sales_orders ADD COLUMN IF NOT EXISTS spread_responsibility boolean NOT NULL DEFAULT false;
+COMMENT ON COLUMN public.sales_orders.spread_responsibility IS 'Split this order reward points across months by the monthly responsibility amount';

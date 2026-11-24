@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ShoppingBag, MapPin, Wallet, Package, Info, ListChecks } from "lucide-react";
 import { ORDER_STATUS_LABELS } from "@/types/shop";
+import { NextRepurchaseDate } from "@/components/members/NextRepurchaseDate";
 import { getMyDividendStatus } from "@/lib/member-dividend-status.functions";
 
 export const Route = createFileRoute("/shop/account/")({ component: Overview });
@@ -67,6 +68,10 @@ function Overview() {
           </Card>
         ))}
       </div>
+
+      {user?.id && (
+        <Card><CardContent className="py-4 text-sm"><NextRepurchaseDate memberId={user.id} className="font-medium" /></CardContent></Card>
+      )}
 
       {pools.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2">

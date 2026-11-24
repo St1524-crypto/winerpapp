@@ -5444,6 +5444,7 @@ export type Database = {
           shipping_fee: number
           shipping_method: string
           shipping_status: string
+          spread_responsibility: boolean
           subtotal: number
           total_amount: number
           updated_at: string
@@ -5480,6 +5481,7 @@ export type Database = {
           shipping_fee?: number
           shipping_method?: string
           shipping_status?: string
+          spread_responsibility?: boolean
           subtotal?: number
           total_amount?: number
           updated_at?: string
@@ -5516,6 +5518,7 @@ export type Database = {
           shipping_fee?: number
           shipping_method?: string
           shipping_status?: string
+          spread_responsibility?: boolean
           subtotal?: number
           total_amount?: number
           updated_at?: string
@@ -7754,6 +7757,7 @@ export type Database = {
           shipping_fee: number
           shipping_method: string
           shipping_status: string
+          spread_responsibility: boolean
           subtotal: number
           total_amount: number
           updated_at: string
@@ -7804,6 +7808,7 @@ export type Database = {
           shipping_fee: number
           shipping_method: string
           shipping_status: string
+          spread_responsibility: boolean
           subtotal: number
           total_amount: number
           updated_at: string
