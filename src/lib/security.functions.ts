@@ -261,6 +261,10 @@ export const recordSession = createServerFn({ method: "POST" })
       {
         user_id: context.userId,
         session_token_hash: hash,
+        auth_session_id:
+          typeof (context.claims as Record<string, unknown>)["session_id"] === "string"
+            ? ((context.claims as Record<string, unknown>)["session_id"] as string)
+            : null,
         ip_address: ip,
         user_agent: userAgent,
         device_label: data.deviceLabel ?? null,

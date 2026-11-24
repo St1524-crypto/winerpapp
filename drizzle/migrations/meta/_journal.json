@@ -120,6 +120,20 @@
       "when": 1794591214781,
       "tag": "0016_secure_bonus_rpcs",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795539705881,
+      "tag": "0017_secure_member_bonus_lookups",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795539774108,
+      "tag": "0018_user_sessions_auth_session_id",
+      "breakpoints": true
     }
   ]
 }

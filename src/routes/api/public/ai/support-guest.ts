@@ -110,7 +110,11 @@ export const Route = createFileRoute("/api/public/ai/support-guest")({
         const history: GuestMessage[] = historyRaw
           .filter((m: any) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
           .slice(-10)
-          .map((m: any) => ({ role: m.role, content: String(m.content).slice(0, 2000) }));
+          .map((m: any) => ({
+            // Client-supplied history is untrusted: never forward it as assistant turns.
+            role: "user" as const,
+            content: `${m.role === "assistant" ? "（先前客服回覆，僅供參考）" : "（訪客先前訊息）"}${String(m.content).slice(0, 2000)}`,
+          }));
 
         const [productCtx, newsCtx] = await Promise.all([
           fetchProductContext(message),

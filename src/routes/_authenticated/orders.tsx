@@ -1,3 +1,4 @@
+import { neutralizeCsvText } from "@/lib/table-export";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -3495,7 +3496,7 @@ function OrderDetailDialog({
                     const typeLabelOf = (t: string) =>
                       t === "discount" ? "折扣點" : t === "shopping" ? "購物點" : t === "reward" ? "貢獻點" : t ?? "";
                     const esc = (v: any) => {
-                      const s = v == null ? "" : String(v);
+                      const s = neutralizeCsvText(v);
                       return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
                     };
                     const headers = [

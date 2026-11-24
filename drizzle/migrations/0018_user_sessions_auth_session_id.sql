@@ -1,0 +1,2 @@
+ALTER TABLE public.user_sessions ADD COLUMN IF NOT EXISTS auth_session_id uuid;
+CREATE INDEX IF NOT EXISTS user_sessions_revoked_auth_session_idx ON public.user_sessions (auth_session_id) WHERE revoked_at IS NOT NULL;

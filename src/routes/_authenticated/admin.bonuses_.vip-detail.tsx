@@ -1,3 +1,4 @@
+import { neutralizeCsvText } from "@/lib/table-export";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -347,7 +348,7 @@ function ExportCsvButton({ onClick, disabled }: { onClick: () => void; disabled?
 
 function csvCell(v: unknown): string {
   if (v === null || v === undefined) return "";
-  const s = String(v);
+  const s = neutralizeCsvText(v);
   if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }

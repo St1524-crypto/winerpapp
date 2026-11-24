@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Info, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { exportTable, buildExportFileName } from "@/lib/table-export";
+import { exportTable, buildExportFileName, csvSafeCell } from "@/lib/table-export";
 import { useAuth, type AppRole } from "@/hooks/use-auth";
 import { ForbiddenScreen } from "@/components/ForbiddenScreen";
 import { Button } from "@/components/ui/button";
@@ -169,7 +169,7 @@ function Page() {
     if (!data.length) { toast.info("此期間無已發放的收款人資料"); return; }
     const header = ["會員編號", "姓名", "收入貢獻點", "筆數"];
     const csvRows = data.map((r) => [r.member_no, r.name, r.income, r.count]
-      .map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(","));
+      .map(csvSafeCell).join(","));
     const total = data.reduce((s, r) => s + r.income, 0);
     csvRows.push(["合計", "", total, data.reduce((s, r) => s + r.count, 0)]
       .map((x) => `"${x}"`).join(","));

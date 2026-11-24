@@ -2,6 +2,19 @@ export type ExportFormat = "csv" | "xlsx";
 
 type Cell = string | number | null | undefined;
 
+/** Neutralize spreadsheet formula injection: text starting with = + - @ tab or CR is prefixed with an apostrophe. */
+export function neutralizeCsvText(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  if (typeof v === "string" && /^[=+\-@\t\r]/.test(s)) return `'${s}`;
+  return s;
+}
+
+/** Always-quoted, formula-safe CSV cell. */
+export function csvSafeCell(v: unknown): string {
+  return `"${neutralizeCsvText(v).replace(/"/g, '""')}"`;
+}
+
 function download(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -12,8 +25,7 @@ function download(blob: Blob, filename: string) {
 }
 
 export function exportCsvFile(header: string[], rows: Cell[][], baseName: string) {
-  const escape = (x: Cell) => `"${String(x ?? "").replace(/"/g, '""')}"`;
-  const content = [header.map(escape).join(","), ...rows.map((r) => r.map(escape).join(","))].join("\n");
+  const content = [header.map(csvSafeCell).join(","), ...rows.map((r) => r.map(csvSafeCell).join(","))].join("\n");
   download(new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8" }), `${baseName}.csv`);
 }
 

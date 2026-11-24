@@ -11,3 +11,5 @@
 - Sanitize admin-authored shop HTML with the sanitize-html allowlist on both save and public read so stored markup can never carry scripts or javascript: links.
 - Bonus/earnings SECURITY DEFINER RPCs reject direct anon/authenticated callers unless they are the member or an admin/finance role, while nested definer calls stay allowed.
 - Resolve parser dependencies through their package exports without global entities aliases so legacy email parsers and modern HTML sanitizers can use their own compatible versions.
+- Revoked sign-ins are enforced by a global server-function middleware matching user_sessions by auth session id (survives token refresh), because the generated auth middleware cannot be edited.
+- All CSV exports go through table-export formula neutralization so member-controlled text never runs as a spreadsheet formula.

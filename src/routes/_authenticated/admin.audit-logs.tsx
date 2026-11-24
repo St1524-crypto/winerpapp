@@ -1,3 +1,4 @@
+import { csvSafeCell } from "@/lib/table-export";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -79,9 +80,9 @@ function AuditLogsPage() {
           r.entity,
           r.entity_id ?? "",
           r.action,
-          JSON.stringify(r.metadata ?? {}).replace(/"/g, '""'),
+          JSON.stringify(r.metadata ?? {}),
         ]
-          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .map(csvSafeCell)
           .join(","),
       ),
     ].join("\n");

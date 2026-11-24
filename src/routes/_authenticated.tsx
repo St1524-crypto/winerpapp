@@ -72,8 +72,12 @@ function AuthLayout() {
           return;
         }
         sessionStorage.removeItem("mfa_pending");
-      } catch {
-        // ignore; allow render if status check fails
+      } catch (e) {
+        // Revoked sign-in: end it on this device.
+        if (!cancelled && String((e as Error)?.message ?? "").includes("session revoked")) {
+          await supabase.auth.signOut();
+          return;
+        }
       } finally {
         if (!cancelled) setMfaChecked(true);
       }
