@@ -4086,6 +4086,14 @@ function OrderDetailDialog({
 }
 
 // =================== Edit order dialog ===================
+function inferOrderTaxAdded(o: { subtotal?: number | null; shipping_fee?: number | null; discount_amount?: number | null; total_amount?: number | null }) {
+  const sub = Number(o.subtotal ?? 0);
+  const tax = Math.round(sub * 0.05);
+  if (tax <= 0) return false;
+  const base = Math.max(0, sub + Number(o.shipping_fee ?? 0) - Number(o.discount_amount ?? 0));
+  return Math.abs(Number(o.total_amount ?? 0) - (base + tax)) <= 1;
+}
+
 function EditOrderDialog({
   open, onClose, order, items: initialItems, onSaved,
 }: {
@@ -4103,6 +4111,7 @@ function EditOrderDialog({
   const [address, setAddress] = useState(order.shipping_address);
   const [shippingFee, setShippingFee] = useState(String(order.shipping_fee ?? 0));
   const [discount, setDiscount] = useState(String(order.discount_amount ?? 0));
+  const [taxAdded, setTaxAdded] = useState(() => inferOrderTaxAdded(order));
   const [notes, setNotes] = useState(order.notes ?? "");
   const [orderSource, setOrderSource] = useState(order.order_source ?? "");
   const [salespersonId, setSalespersonId] = useState<string>(order.salesperson_id ?? "");
@@ -4130,6 +4139,7 @@ function EditOrderDialog({
     setAddress(order.shipping_address);
     setShippingFee(String(order.shipping_fee ?? 0));
     setDiscount(String(order.discount_amount ?? 0));
+    setTaxAdded(inferOrderTaxAdded(order));
     setNotes(order.notes ?? "");
     setOrderSource(order.order_source ?? "");
     setSalespersonId(order.salesperson_id ?? "");
@@ -4291,9 +4301,10 @@ function EditOrderDialog({
     () => editItems.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 0), 0),
     [editItems],
   );
+  const editTaxAmount = taxAdded ? Math.round(subtotalNum * 0.05) : 0;
   const total = useMemo(
-    () => Math.max(0, subtotalNum + Number(shippingFee || 0) - Number(discount || 0)),
-    [subtotalNum, shippingFee, discount],
+    () => Math.max(0, subtotalNum + editTaxAmount + Number(shippingFee || 0) - Number(discount || 0)),
+    [subtotalNum, editTaxAmount, shippingFee, discount],
   );
 
   const qc = useQueryClient();
@@ -4644,9 +4655,19 @@ function EditOrderDialog({
             <div><Label>折扣</Label><Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} /></div>
           </div>
 
+          <div className="flex items-center justify-between rounded-md border p-3 bg-muted/20">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={taxAdded} onCheckedChange={(v) => setTaxAdded(v === true)} />
+              <span>稅外加 5%</span>
+            </label>
+            <div className="text-sm text-muted-foreground">
+              稅額：<span className="tabular-nums font-medium text-foreground">{fmt(editTaxAmount)}</span>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between border-t pt-3">
             <div className="text-xs text-muted-foreground">
-              小計 {fmt(subtotalNum)} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)}
+              小計 {fmt(subtotalNum)}{taxAdded ? ` ＋ 稅 ${fmt(editTaxAmount)}` : ""} ＋ 運費 {fmt(shippingFee)} － 折扣 {fmt(discount)}
             </div>
             <div className="text-sm">
               訂單總額：<span className="text-lg font-bold text-primary ml-1">{fmt(total)}</span>
