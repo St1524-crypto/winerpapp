@@ -457,18 +457,23 @@ function OrdersPage() {
       const ids = orderIdsKey.split(",");
       const { data, error } = await supabase
         .from("sales_order_items")
-        .select("sales_order_id, quantity, tier_reward_points")
-        .in("sales_order_id", ids);
+        .select("sales_order_id, quantity, tier_reward_points, product_name, created_at")
+        .in("sales_order_id", ids)
+        .order("created_at");
       if (error) throw new Error(error.message);
       const map: Record<string, number> = {};
+      const first: Record<string, { name: string; count: number }> = {};
       for (const r of (data ?? []) as any[]) {
+        const f = first[r.sales_order_id];
+        if (f) f.count += 1; else first[r.sales_order_id] = { name: String(r.product_name ?? "—"), count: 1 };
         const pts = Number(r.tier_reward_points ?? 0) * Number(r.quantity ?? 0);
         map[r.sales_order_id] = (map[r.sales_order_id] ?? 0) + (Number.isFinite(pts) ? pts : 0);
       }
-      return map;
+      return { map, first };
     },
   });
-  const rewardEarnedMap = rewardEarnedQ.data ?? {};
+  const rewardEarnedMap = rewardEarnedQ.data?.map ?? {};
+  const firstItemMap = rewardEarnedQ.data?.first ?? {};
   const earnedPoints = (o: OrderRow) => (o.no_reward_points ? 0 : rewardEarnedMap[o.id] ?? 0);
 
 
@@ -775,6 +780,7 @@ function OrdersPage() {
                       </TableHead>
                       <TableHead>訂單號</TableHead>
                       <TableHead>客戶</TableHead>
+                      <TableHead>品項</TableHead>
                       <TableHead>建立日期</TableHead>
                       <TableHead>來源</TableHead>
                       <TableHead>業務</TableHead>
@@ -815,6 +821,14 @@ function OrdersPage() {
                           <div className="text-xs text-muted-foreground truncate max-w-[180px]">
                             {o.customer_email ?? "—"}
                           </div>
+                        </TableCell>
+                        <TableCell className="text-xs max-w-[180px]">
+                          {firstItemMap[o.id] ? (
+                            <span className="line-clamp-2">
+                              {firstItemMap[o.id]!.name}
+                              {firstItemMap[o.id]!.count > 1 && <span className="text-muted-foreground"> 等 {firstItemMap[o.id]!.count} 項</span>}
+                            </span>
+                          ) : <span className="text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {new Date(o.created_at).toLocaleDateString("zh-TW")}

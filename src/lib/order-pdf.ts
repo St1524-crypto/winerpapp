@@ -91,7 +91,7 @@ function buildOrderHtml(data: Omit<OrderPdfData, "logoUrl">, logoData: string): 
   const created = new Date(order.created_at).toLocaleString("zh-TW", { hour12: false });
 
   const paidTotal = payments
-    .filter((p) => p.payment_status === "completed")
+    .filter((p) => p.payment_status === "completed" || p.payment_status === "paid")
     .reduce((s, p) => s + Number(p.amount ?? 0), 0);
   const unpaid = Math.max(0, Number(order.total_amount) - paidTotal);
 
