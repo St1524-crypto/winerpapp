@@ -21,6 +21,7 @@ import { processOrderVipPackageUpgrade, listVipUpgradeBonusMap, listVipUpgradeGi
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 import { payOrderWithCashBalance } from "@/lib/cash-wallet.functions";
 import { computeOrderPaymentTotals } from "@/lib/order-payment-totals";
+import { previewOrderEditPayment } from "@/lib/order-edit-payment";
 import { countQuoteImports, withQuoteSource, quoteSourceSearchPattern } from "@/lib/quote-import";
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
 import { useOrderRewardPreview } from "@/hooks/use-order-reward-preview";
@@ -4295,6 +4296,59 @@ function EditOrderDialog({
     [subtotalNum, shippingFee, discount],
   );
 
+  const qc = useQueryClient();
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
+  const [paymentTransactionId, setPaymentTransactionId] = useState("");
+  const paymentIdRef = useRef<string | null>(null);
+  const [paymentCommitted, setPaymentCommitted] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    setPaymentAmount("");
+    setPaymentMethod("bank_transfer");
+    setPaymentTransactionId("");
+    setPaymentCommitted(false);
+    paymentIdRef.current = crypto.randomUUID();
+  }, [open, order.id]);
+
+  async function readEditPayments() {
+    if (!order.company_id) throw new Error("訂單缺少公司資料");
+    const [cash, points] = await Promise.all([
+      supabase.from("payments").select("id, amount, payment_status").eq("sales_order_id", order.id).eq("company_id", order.company_id),
+      supabase.from("order_point_payments").select("amount_offset, status").eq("sales_order_id", order.id),
+    ]);
+    if (cash.error) throw new Error(cash.error.message);
+    if (points.error) throw new Error(points.error.message);
+    return { payments: cash.data ?? [], pointPayments: points.data ?? [] };
+  }
+  const editPaymentsQ = useQuery({
+    queryKey: ["order-edit-payments", order.company_id, order.id],
+    enabled: open && !!order.company_id,
+    queryFn: readEditPayments,
+    staleTime: 0,
+  });
+  useEffect(() => {
+    if (!open || !paymentIdRef.current) return;
+    if (editPaymentsQ.data?.payments.some((p) => p.id === paymentIdRef.current)) {
+      setPaymentCommitted(true);
+      setPaymentAmount("");
+    }
+  }, [open, editPaymentsQ.data]);
+  const editPaymentTotals = computeOrderPaymentTotals({
+    totalAmount: total,
+    payments: editPaymentsQ.data?.payments ?? [],
+    pointPayments: editPaymentsQ.data?.pointPayments ?? [],
+  });
+  const canRecordPayment = order.order_status !== "cancelled" && order.payment_status !== "refunded";
+  let paymentError = "";
+  if (editPaymentsQ.data && !paymentCommitted) {
+    try {
+      previewOrderEditPayment({ totalAmount: total, ...editPaymentsQ.data, amount: paymentAmount });
+    } catch (e) {
+      paymentError = e instanceof Error ? e.message : "付款金額不正確";
+    }
+  }
+
   function addProduct(p: { id: string; name: string; sku: string | null; price: number; image: string | null }) {
     setEditItems((prev) => {
       const idx = prev.findIndex((x) => x.product_id === p.id);
@@ -4321,6 +4375,17 @@ function EditOrderDialog({
       if (editItems.some((it) => !it.quantity || it.quantity <= 0 || it.unit_price < 0)) {
         throw new Error("商品數量需大於 0，且單價不可為負");
       }
+
+      const freshPayments = await readEditPayments();
+      const receiptId = paymentIdRef.current;
+      const existingReceipt = freshPayments.payments.find((p) => p.id === receiptId);
+      const paymentPreview = previewOrderEditPayment({
+        totalAmount: total,
+        ...freshPayments,
+        amount: existingReceipt ? "0" : paymentAmount,
+      });
+      if (paymentPreview.amount > 0 && !canRecordPayment) throw new Error("已取消或退款訂單不可新增付款");
+      if (paymentPreview.amount > 0 && !receiptId) throw new Error("請重新開啟編輯訂單後再記錄付款");
 
       // Snapshot 編輯前的「本次發放獎勵點」狀態
       const beforeNotice = resolveRewardNotice(rewardTxQ.data ?? []);
@@ -4354,7 +4419,12 @@ function EditOrderDialog({
         .eq("id", order.id);
       if (upErr) throw new Error(`更新訂單失敗：${upErr.message}`);
 
-      // 2) 重建品項（先刪後新增，較簡單可靠）
+      // 2) 只有品項實際改變才重建，避免付款編輯刪掉出貨關聯。
+      const originalItems = initialItems.map((it) => ({
+        product_id: it.product_id, product_name: it.product_name, sku: it.sku, image: it.image,
+        unit_price: Number(it.unit_price), quantity: Number(it.quantity),
+      }));
+      if (JSON.stringify(editItems) !== JSON.stringify(originalItems)) {
       const { error: delErr } = await supabase
         .from("sales_order_items")
         .delete()
@@ -4377,6 +4447,36 @@ function EditOrderDialog({
           })),
         );
       if (insErr) throw new Error(`寫入新品項失敗：${insErr.message}`);
+      }
+
+      // 同一次儲存的重試沿用 receipt ID，不覆寫既有收款或重複新增。
+      if (paymentPreview.amount > 0 && receiptId) {
+        const { error } = await supabase.from("payments").insert({
+          id: receiptId,
+          sales_order_id: order.id,
+          company_id: order.company_id,
+          payment_method: paymentMethod,
+          payment_status: "completed",
+          amount: paymentPreview.amount,
+          transaction_id: paymentTransactionId.trim() || null,
+          paid_at: new Date().toISOString(),
+        });
+        if (error) throw new Error(`訂單已更新，但本次付款未確認：${error.message}；可重試儲存`);
+      }
+      if (paymentPreview.amount > 0 || existingReceipt) {
+        setPaymentCommitted(true);
+        setPaymentAmount("");
+      }
+      if (canRecordPayment) {
+        const balances = await readEditPayments();
+        const result = previewOrderEditPayment({ totalAmount: total, ...balances, amount: "0" });
+        const { error } = await supabase.from("sales_orders")
+          .update({ payment_status: result.paymentStatus }).eq("id", order.id).eq("company_id", order.company_id ?? "");
+        if (error) throw new Error(`訂單已儲存，付款狀態更新失敗：${error.message}；可重試儲存，不會重複收款`);
+        if (order.payment_status !== "paid" && result.paymentStatus === "paid") {
+          await autoSettleCommission(order.id, result.paymentStatus);
+        }
+      }
 
       // 3) 重新讀取獎勵點交易，寫入審計紀錄
       const { data: afterRows } = await supabase
@@ -4412,6 +4512,13 @@ function EditOrderDialog({
       onSaved();
     },
     onError: (e: any) => toast.error(e?.message ?? "更新失敗"),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["order-edit-payments", order.company_id, order.id] });
+      qc.invalidateQueries({ queryKey: ["sales-order-detail", order.id] });
+      qc.invalidateQueries({ queryKey: ["sales-orders-payment-totals"] });
+      qc.invalidateQueries({ queryKey: ["sales-orders-pay-methods"] });
+      qc.invalidateQueries({ queryKey: ["sales-orders"] });
+    },
   });
 
 
@@ -4559,6 +4666,45 @@ function EditOrderDialog({
             )
           )}
 
+          <div className="space-y-3 border-t pt-3">
+            <Label className="flex items-center gap-1.5"><CreditCard className="h-4 w-4" />收款</Label>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>已收款：<span className="font-semibold tabular-nums">{editPaymentsQ.data ? fmt(editPaymentTotals.totalReceived) : editPaymentsQ.isError ? "讀取失敗" : "載入中…"}</span></div>
+              <div>未收款：<span className="font-semibold tabular-nums text-warning">{editPaymentsQ.data ? fmt(editPaymentTotals.unpaid) : "—"}</span></div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-order-payment-amount">本次付款</Label>
+                <Input id="edit-order-payment-amount" type="number" min={0} max={editPaymentTotals.unpaid} step="0.01"
+                  value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder="0"
+                  disabled={m.isPending || paymentCommitted || !canRecordPayment || !editPaymentsQ.data}
+                  aria-invalid={!!paymentError} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-order-payment-method">付款方式</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={m.isPending || paymentCommitted || !canRecordPayment}>
+                  <SelectTrigger id="edit-order-payment-method"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bank_transfer">銀行轉帳</SelectItem>
+                    <SelectItem value="credit_card">信用卡</SelectItem>
+                    <SelectItem value="cash">現金</SelectItem>
+                    <SelectItem value="cod">貨到付款</SelectItem>
+                    <SelectItem value="other">其他</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="edit-order-payment-transaction">交易編號（選填）</Label>
+                <Input id="edit-order-payment-transaction" value={paymentTransactionId} onChange={(e) => setPaymentTransactionId(e.target.value)} disabled={m.isPending || paymentCommitted || !canRecordPayment} />
+              </div>
+            </div>
+            {paymentError && <p role="alert" className="text-sm text-destructive">{paymentError}</p>}
+            {editPaymentsQ.data && !paymentError && <div className="flex justify-between text-sm">
+              <span>本次付款後未收款</span>
+              <span className="font-semibold tabular-nums">{fmt(Math.max(0, editPaymentTotals.unpaid - (paymentCommitted ? 0 : Number(paymentAmount || 0))))}</span>
+            </div>}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>訂單來源</Label>
@@ -4590,13 +4736,10 @@ function EditOrderDialog({
             </div>
           </div>
 
-          <div className="text-xs text-muted-foreground">
-            注意：訂單金額變動後，付款 / 收款狀態需於詳情頁另行核對。
-          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={m.isPending}>取消</Button>
-          <Button onClick={() => m.mutate()} disabled={m.isPending} className="bg-gradient-primary">
+          <Button onClick={() => m.mutate()} disabled={m.isPending || !!paymentError || !editPaymentsQ.data} className="bg-gradient-primary">
             {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} 儲存變更
           </Button>
         </DialogFooter>

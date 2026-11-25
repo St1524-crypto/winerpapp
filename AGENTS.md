@@ -15,3 +15,4 @@
 - All CSV exports go through table-export formula neutralization so member-controlled text never runs as a spreadsheet formula.
 - Order-list outstanding balances use computeOrderPaymentTotals with cash receipts and point offsets; invalidate the list balance query after order changes so list and detail totals agree.
 - Quote re-import warnings count exact source markers in company-scoped saved orders plus current-form imports; confirmation must precede form changes, and stale company/closed-dialog requests must be discarded.
+- Order edit receipts are append-only, use a stable receipt ID for retries, and validate against fresh cash/point balances before saving; unchanged order items must not be rebuilt so payment-only edits preserve shipment references.
