@@ -13,3 +13,4 @@
 - Resolve parser dependencies through their package exports without global entities aliases so legacy email parsers and modern HTML sanitizers can use their own compatible versions.
 - Revoked sign-ins are enforced by a global server-function middleware matching user_sessions by auth session id (survives token refresh), because the generated auth middleware cannot be edited.
 - All CSV exports go through table-export formula neutralization so member-controlled text never runs as a spreadsheet formula.
+- Order-list outstanding balances use computeOrderPaymentTotals with cash receipts and point offsets; invalidate the list balance query after order changes so list and detail totals agree.

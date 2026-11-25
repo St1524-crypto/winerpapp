@@ -141,6 +141,10 @@ export const Route = createFileRoute("/_authenticated/orders")({
     meta: [
       { title: "訂單管理 — 源倍力 ERP" },
       { name: "description", content: "訂單流程、出貨狀態與金流追蹤" },
+      { property: "og:title", content: "訂單管理 — 源倍力 ERP" },
+      { property: "og:description", content: "訂單流程、出貨狀態與金流追蹤" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: OrdersPage,
@@ -450,6 +454,42 @@ function OrdersPage() {
   });
   const payMethodMap = payMethodQ.data ?? {};
 
+  const paymentTotalsQ = useQuery({
+    queryKey: ["sales-orders-payment-totals", activeCompanyId, orderIdsKey],
+    enabled: !!activeCompanyId && !!orderIdsKey,
+    queryFn: async () => {
+      const ids = orderIdsKey.split(",");
+      const [cash, points] = await Promise.all([
+        supabase.from("payments").select("sales_order_id, amount, payment_status").in("sales_order_id", ids),
+        supabase.from("order_point_payments").select("sales_order_id, amount_offset, status").in("sales_order_id", ids),
+      ]);
+      if (cash.error) throw new Error(cash.error.message);
+      if (points.error) throw new Error(points.error.message);
+      const cashByOrder = new Map<string, NonNullable<typeof cash.data>>();
+      const pointsByOrder = new Map<string, NonNullable<typeof points.data>>();
+      for (const row of cash.data ?? []) {
+        if (!row.sales_order_id) continue;
+        const rows = cashByOrder.get(row.sales_order_id) ?? [];
+        rows.push(row);
+        cashByOrder.set(row.sales_order_id, rows);
+      }
+      for (const row of points.data ?? []) {
+        const rows = pointsByOrder.get(row.sales_order_id) ?? [];
+        rows.push(row);
+        pointsByOrder.set(row.sales_order_id, rows);
+      }
+      return { cashByOrder, pointsByOrder };
+    },
+  });
+  const unpaidAmount = (order: OrderRow) => computeOrderPaymentTotals({
+    totalAmount: order.total_amount,
+    payments: paymentTotalsQ.data?.cashByOrder.get(order.id) ?? [],
+    pointPayments: paymentTotalsQ.data?.pointsByOrder.get(order.id) ?? [],
+  }).unpaid;
+  const unpaidDisplay = (order: OrderRow) => paymentTotalsQ.isError
+    ? "讀取失敗"
+    : paymentTotalsQ.data ? fmt(unpaidAmount(order)) : "載入中…";
+
   const rewardEarnedQ = useQuery({
     queryKey: ["sales-orders-reward-earned", orderIdsKey],
     enabled: !!orderIdsKey,
@@ -540,6 +580,7 @@ function OrdersPage() {
 
   function refresh() {
     qc.invalidateQueries({ queryKey: ["sales-orders"] });
+    qc.invalidateQueries({ queryKey: ["sales-orders-payment-totals"] });
     if (detailId) qc.invalidateQueries({ queryKey: ["sales-order-detail", detailId] });
   }
 
@@ -705,6 +746,7 @@ function OrdersPage() {
                           </span>
                           <span className="text-base font-semibold">{fmt(o.total_amount)}</span>
                         </div>
+                        <div className="text-xs text-muted-foreground text-right">未收款：{unpaidDisplay(o)}</div>
                         <div className="mt-1 font-medium text-sm truncate">{o.customer_name}</div>
                         <div className="text-xs text-muted-foreground truncate">
                           {o.customer_email ?? "—"} · {new Date(o.created_at).toLocaleDateString("zh-TW")}
@@ -787,6 +829,7 @@ function OrdersPage() {
                       <TableHead>建檔人員</TableHead>
                       <TableHead>備註</TableHead>
                       <TableHead className="text-right">總金額</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">未收款</TableHead>
                       <TableHead className="text-right">貢獻點</TableHead>
                       <TableHead>支付方式</TableHead>
                       <TableHead className="text-right">獎勵點</TableHead>
@@ -857,6 +900,9 @@ function OrdersPage() {
                             : <span className="text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="text-right font-semibold">{fmt(o.total_amount)}</TableCell>
+                        <TableCell className={`text-right tabular-nums whitespace-nowrap ${paymentTotalsQ.data && unpaidAmount(o) > 0 ? "text-warning" : "text-muted-foreground"}`}>
+                          {unpaidDisplay(o)}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums text-xs">
                           {rewardUsedMap[o.id]
                             ? <span className="text-primary font-medium">-{rewardUsedMap[o.id].toLocaleString()} 點</span>
