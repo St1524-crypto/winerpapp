@@ -14,3 +14,4 @@
 - Revoked sign-ins are enforced by a global server-function middleware matching user_sessions by auth session id (survives token refresh), because the generated auth middleware cannot be edited.
 - All CSV exports go through table-export formula neutralization so member-controlled text never runs as a spreadsheet formula.
 - Order-list outstanding balances use computeOrderPaymentTotals with cash receipts and point offsets; invalidate the list balance query after order changes so list and detail totals agree.
+- Quote re-import warnings count exact source markers in company-scoped saved orders plus current-form imports; confirmation must precede form changes, and stale company/closed-dialog requests must be discarded.

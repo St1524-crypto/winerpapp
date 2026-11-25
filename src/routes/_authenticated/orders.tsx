@@ -21,6 +21,7 @@ import { processOrderVipPackageUpgrade, listVipUpgradeBonusMap, listVipUpgradeGi
 import { createSalesOrderWithPointPayments } from "@/lib/order-point-payments.functions";
 import { payOrderWithCashBalance } from "@/lib/cash-wallet.functions";
 import { computeOrderPaymentTotals } from "@/lib/order-payment-totals";
+import { countQuoteImports, withQuoteSource, quoteSourceSearchPattern } from "@/lib/quote-import";
 import { resolveRewardNotice, type RewardTxRow } from "@/lib/checkout-reward-notice";
 import { useOrderRewardPreview } from "@/hooks/use-order-reward-preview";
 import { OrderRewardSummary } from "@/components/OrderRewardSummary";
@@ -1419,6 +1420,24 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
   });
 
   const [quotePickerOpen, setQuotePickerOpen] = useState(false);
+  const [quoteImportBusy, setQuoteImportBusy] = useState(false);
+  const quoteImportRequest = useRef(0);
+  const draftQuoteImports = useRef(new Map<string, number>());
+  useEffect(() => {
+    quoteImportRequest.current += 1;
+    setQuoteImportBusy(false);
+    setRepeatQuoteImport(null);
+    setQuotePickerOpen(false);
+    draftQuoteImports.current.clear();
+  }, [currentCompanyId]);
+  useEffect(() => {
+    if (!open) {
+      quoteImportRequest.current += 1;
+      setQuoteImportBusy(false);
+      setRepeatQuoteImport(null);
+      setQuotePickerOpen(false);
+    }
+  }, [open]);
   const quotesQ = useQuery({
     queryKey: ["order-import-quotes", currentCompanyId],
     enabled: open && quotePickerOpen && !!currentCompanyId,
@@ -1426,7 +1445,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       const { data, error } = await supabase
         .from("quotes")
         .select("id,quote_no,customer_name,customer_phone,customer_email,customer_address,discount_amount,tax_amount,total_amount,notes,converted_order_id,status")
-        .eq("company_id", currentCompanyId!)
+        .eq("company_id", currentCompanyId ?? "")
         .is("converted_order_id", null)
         .neq("status", "cancelled")
         .order("quote_date", { ascending: false })
@@ -1435,18 +1454,52 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       return data ?? [];
     },
   });
-  async function importQuote(q: any) {
+  type ImportableQuote = NonNullable<typeof quotesQ.data>[number];
+  const [repeatQuoteImport, setRepeatQuoteImport] = useState<{
+    quote: ImportableQuote; companyId: string; savedCount: number; draftCount: number;
+  } | null>(null);
+  async function importQuote(q: ImportableQuote, confirmed = false) {
+    if (!currentCompanyId || quoteImportBusy) return;
+    const companyId = currentCompanyId;
+    const request = ++quoteImportRequest.current;
+    const isCurrent = () => quoteImportRequest.current === request;
+    setQuoteImportBusy(true);
     try {
+      if (!confirmed) {
+        let savedCount = 0;
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          const { data, error } = await supabase.from("sales_orders")
+            .select("notes")
+            .eq("company_id", companyId)
+            .like("notes", quoteSourceSearchPattern(q.quote_no))
+            .order("id")
+            .range(offset, offset + pageSize - 1);
+          if (!isCurrent()) return;
+          if (error) throw error;
+          savedCount += countQuoteImports(data ?? [], q.quote_no);
+          if ((data?.length ?? 0) < pageSize) break;
+        }
+        const draftCount = draftQuoteImports.current.get(q.id) ?? 0;
+        if (savedCount + draftCount > 0) {
+          setQuotePickerOpen(false);
+          setRepeatQuoteImport({ quote: q, companyId, savedCount, draftCount });
+          return;
+        }
+      }
       const { data: qi, error } = await supabase
         .from("quote_items")
         .select("product_id,item_name,quantity,unit_price,subtotal,sort_order")
         .eq("quote_id", q.id)
         .order("sort_order");
+      if (!isCurrent()) return;
       if (error) throw error;
       const ids = (qi ?? []).map((r: any) => r.product_id).filter(Boolean);
-      const { data: prods } = ids.length
-        ? await supabase.from("products").select("id,sku,image,reward_points").in("id", ids)
-        : { data: [] as any[] };
+      const { data: prods, error: productsError } = ids.length
+        ? await supabase.from("products").select("id,sku,image,reward_points").eq("company_id", companyId).in("id", ids)
+        : { data: [] as any[], error: null };
+      if (!isCurrent()) return;
+      if (productsError) throw productsError;
       const pm = new Map((prods ?? []).map((p: any) => [p.id, p]));
       setItems((qi ?? []).map((r: any) => {
         const p: any = r.product_id ? pm.get(r.product_id) : null;
@@ -1460,11 +1513,14 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       if (q.customer_address) setAddress(q.customer_address);
       setDiscount(String(Number(q.discount_amount ?? 0)));
       setTaxAdded(Number(q.tax_amount ?? 0) > 0);
-      setNotes((n) => [n, `來源報價單：${q.quote_no}`].filter(Boolean).join("\n"));
+      setNotes((n) => withQuoteSource(n, q.quote_no));
+      draftQuoteImports.current.set(q.id, (draftQuoteImports.current.get(q.id) ?? 0) + 1);
       setQuotePickerOpen(false);
       toast.success(`已導入報價單 ${q.quote_no}`);
     } catch (e: any) {
-      toast.error("導入報價單失敗", { description: String(e?.message ?? e) });
+      if (isCurrent()) toast.error("導入報價單失敗", { description: String(e?.message ?? e) });
+    } finally {
+      if (isCurrent()) setQuoteImportBusy(false);
     }
   }
   function addItem(p: { id: string; name: string; sku: string | null; price: number; image: string | null; reward_points?: number | null }) {
@@ -1928,6 +1984,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
       setOpen(false);
       setCustomer(""); setEmail(""); setPhone(""); setAddress(""); setPickupStore("");
       setItems([]); setShippingFee("0"); setDiscount("0"); setNotes(""); setOrderSource(""); setNoRewardPoints(false); setSpreadResp(false);
+      draftQuoteImports.current.clear();
       setDiscountPoints("0"); setShoppingPoints("0"); setRewardPoints("0"); setCashWalletPay("0");
       setDeposit("0"); setBalance("0");
       setCustomerId(null); setSalespersonId("");
@@ -2481,8 +2538,8 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
               <div className="flex items-center gap-2">
               <Popover open={quotePickerOpen} onOpenChange={setQuotePickerOpen}>
                 <PopoverTrigger asChild>
-                  <Button type="button" variant="outline" size="sm">
-                    <Plus className="h-3.5 w-3.5 mr-1" /> 導入報價單
+                  <Button type="button" variant="outline" size="sm" disabled={quoteImportBusy}>
+                    {quoteImportBusy ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Plus className="h-3.5 w-3.5 mr-1" />} 導入報價單
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0 w-[420px]" align="end">
@@ -2492,7 +2549,7 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
                       <CommandEmpty>{quotesQ.isLoading ? "載入中…" : "沒有可導入的報價單"}</CommandEmpty>
                       <CommandGroup heading="報價單（未轉訂單）">
                         {(quotesQ.data ?? []).map((q: any) => (
-                          <CommandItem key={q.id} value={`${q.quote_no} ${q.customer_name}`} onSelect={() => importQuote(q)}>
+                          <CommandItem key={q.id} value={`${q.quote_no} ${q.customer_name}`} disabled={quoteImportBusy} onSelect={() => importQuote(q)}>
                             <div className="flex w-full justify-between gap-2 text-sm">
                               <span className="font-mono">{q.quote_no}</span>
                               <span className="truncate flex-1">{q.customer_name}</span>
@@ -2938,10 +2995,29 @@ function NewOrderDialog({ onCreated }: { onCreated: () => void }) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>取消</Button>
-          <Button onClick={() => m.mutate()} disabled={m.isPending} className="bg-gradient-primary">
+          <Button onClick={() => m.mutate()} disabled={m.isPending || quoteImportBusy || !!repeatQuoteImport} className="bg-gradient-primary">
             {m.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} 建立訂單
           </Button>
         </DialogFooter>
+        <AlertDialog open={!!repeatQuoteImport} onOpenChange={(nextOpen) => { if (!nextOpen) setRepeatQuoteImport(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>報價單已導入過</AlertDialogTitle>
+              <AlertDialogDescription>
+                報價單 {repeatQuoteImport?.quote.quote_no} 已導入 {(repeatQuoteImport?.savedCount ?? 0) + (repeatQuoteImport?.draftCount ?? 0)} 次
+                （已建立訂單 {repeatQuoteImport?.savedCount ?? 0} 筆，本次填單 {repeatQuoteImport?.draftCount ?? 0} 次）。確定要再次導入嗎？
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>取消</AlertDialogCancel>
+              <AlertDialogAction onClick={() => {
+                const pending = repeatQuoteImport;
+                setRepeatQuoteImport(null);
+                if (pending?.companyId === currentCompanyId) void importQuote(pending.quote, true);
+              }}>仍要導入</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
